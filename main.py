@@ -2,7 +2,7 @@
 
 from argparse import ArgumentParser
 from datetime import date
-from s3 import S3, DFIO
+from data import S3, DFIO
 
 
 if __name__ == "__main__":
