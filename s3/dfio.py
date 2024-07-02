@@ -49,7 +49,6 @@ class DFIO:
             header_str = stream.readline()
             incoming = header_str.rstrip("\n").split("\t")[1:]
             existing = self._df.columns.values.tolist()
-            print(len(incoming), len(existing))
             if incoming == existing:
                 return len(header_str)
 
