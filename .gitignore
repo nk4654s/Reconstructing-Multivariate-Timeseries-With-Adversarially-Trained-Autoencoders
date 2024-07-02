@@ -4,3 +4,6 @@
 # ignore python cache and log files
 *.log
 __pycache__/
+
+# ignore dataset filde
+*.h5
