@@ -35,14 +35,13 @@ def try_retrieve_tsv_stream_s3(
         return None
 
 
-def fetch_interval(company: str, machine_uuid: str | UUID, interval: tuple[date, date],
+def fetch_interval(machine_uuid: str | UUID, interval: tuple[date, date],
                    *, s3_bucket: str = None, file_ending: str = "tsv", progress_bar: bool = True,
                    ) -> Generator[TextIO | None, None, None,]:
     """
     A generator which fetches the measurements data in the tsv_streams for the given machine in the given interval.
     This function has a resolution of days, as it currently also only supports aggregation of day data.
 
-    :param company: The company of the machine.
     :param machine_uuid: The uuid of the machine to aggregate the data for.
     :param interval: The interval over which to aggregate.
     :param s3_bucket: The s3_bucket to use. Defaults to the env var S3_BUCKET.
@@ -93,7 +92,7 @@ def fetch_latest_header(company: str, machine_uuid: str | UUID, interval: tuple[
     last_tsv = None
     # Ensure we find the latest header possible
     while last_tsv is None:
-        last_tsv = next(fetch_interval(company, machine_uuid, (end_date, end_date),
+        last_tsv = next(fetch_interval(machine_uuid, (end_date, end_date),
                                        s3_bucket=s3_bucket, file_ending="tsv", progress_bar=False))
         # Subtract day from end_date
         end_date = end_date - timedelta(days=1)

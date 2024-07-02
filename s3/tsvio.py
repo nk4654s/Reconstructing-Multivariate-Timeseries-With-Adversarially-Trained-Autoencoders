@@ -8,16 +8,17 @@ from io import StringIO, TextIOBase, TextIOWrapper
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
 import shutil
-
+from typing import Literal, Any, Optional, TextIO, Iterable
 import pandas as pd
 
-from typing import Literal, Any, Optional, TextIO, Iterable
 from .utils import StorageMode, logger
 
 GiB = 1024 * 1024 * 1024
 
 
 class TSVDialect(csv.Dialect):
+    """The TSVDialect defines how the tsv file is formatted and how it can be processed.
+    """
     delimiter = "\t"
     doublequote = True
     lineterminator = "\n"
@@ -47,7 +48,8 @@ class TsvIO(TextIOBase):
 
     The TSV file can be provided as a string, a TextIO stream or a dictionary.
 
-    Can be read like a TextIO stream, or as a dictionary of rows or columns. The ReadMode can be used to specify how the
+    Can be read like a TextIO stream, or as a dictionary of rows or columns. The ReadMode can be
+    used to specify how the
     file should be read when iterated.
     """
 
@@ -63,20 +65,28 @@ class TsvIO(TextIOBase):
             **kwargs,
     ):
         """
+        Initializes the VsvIO class and defines how to handle the s3 input stream.
 
-        :param stream_implementation: A class type that implements the TextIO interface.
-        :param tsv_stream: The TSV file as a TextIO buffer. Assumed to have a timestamp as first column, followed by columns of data.
-        :param storage_mode: Whether to store the TSV in memory or on disk.
-        :param file_path: The path to the file to read from or write to. Only relevant for mode "on_disk".
-        :param read_mode: Row: Read the TSV as a dictionary of timestamp rows. More specifically a tuple ts, sensor -> val. Skips the header column automatically
-                          \nStr: Read the TSV as a string directly from the underlying stream.
-        :param dict_mode: Row: A dictionary mapping the first column as keys for each complete row. I.e. ts -> sensor -> val
-                          \nCol: A dictionary mapping every but the first column as the key for their entire column with timestamps. I.e. sensor -> ts -> val
-        :param mask: A dict of column names to mask values. If None, no masking is done.
-                            \nThe mask is interpreted as exclusive if any value is -1. Otherwise, it is interpreted as inclusive.
-                            \nFor now: Only has effect when dictionary like data is returned.
-                            \nDefaults to None.
-        :param kwargs: Additional arguments to pass to internals.
+        Args:
+            tsv (TextIO | str | dict[Any, dict[Any, Any]]): The TSV file as a TextIO buffer.
+            Assumed to have a timestamp as first column, followed by columns of data.
+            storage_mode (StorageMode): Whether to store the TSV in memory or on disk.
+            Defaults to `StorageMode.IN_MEMORY`.\n
+            file_path (str): The path to the file to read from or write to. Only relevant
+            for mode "on_disk". Defaults to None.\n
+            read_mode (ReadMode): Row: Read the TSV as a dictionary of timestamp rows. More
+            specifically a tuple ts, sensor -> val. Skips the header column automatically.
+            Str: Read the TSV as a string directly from the underlying stream. Defaults to
+            `ReadMode.STR`.\n
+            dict_mode (DictMode): Row: A dictionary mapping the first column as keys for each
+            complete row. I.e. ts -> sensor -> val. Col: A dictionary mapping every but the
+            first column as the key for their entire column with timestamps. I.e. sensor ->
+            ts -> val. Defaults to `DictMode.ROW`.\n
+            mask (dict): A dict of column names to mask values. If None, no masking is done.
+            The mask is interpreted as exclusive if any value is -1. Otherwise, it is
+            interpreted as inclusive. For now: Only has effect when dictionary like data is
+            returned. Defaults to None.\n
+            kwargs: Additional arguments to pass to internals.
         """
 
         # Determine tsv input type
@@ -104,12 +114,13 @@ class TsvIO(TextIOBase):
 
     @property
     def read_mode(self) -> ReadMode:
+        """Returns the read mode of the stream.
+        """
         return self._read_mode
 
     @read_mode.setter
     def read_mode(self, read_mode: ReadMode):
-        """
-        Sets the read mode.
+        """Sets the read mode.
         """
         if read_mode not in ReadMode:
             raise ValueError(f"read_mode must be one of {ReadMode}")
@@ -117,12 +128,13 @@ class TsvIO(TextIOBase):
 
     @property
     def storage_mode(self) -> StorageMode:
+        """Returns the storage mode.
+        """
         return self._storage_mode
 
     @property
     def header(self) -> list[str]:
-        """
-        The header (only sensor column ids) of the TSV file as a list.
+        """The header (only sensor column ids) of the TSV file as a list.
         """
         return self._header
 
@@ -132,23 +144,19 @@ class TsvIO(TextIOBase):
 
     @property
     def mask(self) -> dict | None:
-        """
-        The column mask to use for every read action.
+        """The column mask to use for every read action.
         """
         return self.mask
 
     @mask.setter
     def mask(self, mask: list[str] | None):
-        """
-        Sets the column mask to use for every read action.
+        """Sets the column mask to use for every read action.
         """
         self._mask = self._normalize_mask(mask)
 
     @mask.getter
     def mask(self) -> dict | None:
-        """
-        The column inclusive mask to use for every read action.
-        :return:
+        """The column inclusive mask to use for every read action.
         """
         if self._mask is None:
             return None
@@ -157,8 +165,7 @@ class TsvIO(TextIOBase):
 
     @property
     def masked_header(self) -> list[str]:
-        """
-        The header with the mask applied.
+        """The header with the mask applied.
         """
         if self._mask is None:
             return self.header
@@ -166,26 +173,25 @@ class TsvIO(TextIOBase):
             return [col for i, col in enumerate(self.header) if self._mask[i] == 1]
 
     def get_full_header_string(self) -> str:
-        """
-        Returns the full header string of the TSV file without trailing newline.
+        """Returns the full header string of the TSV file without trailing newline.
         """
         return "ts\t{}".format("\t".join(self.header)) + "\n"
 
     def get_masked_full_header_string(self) -> str:
-        """
-        Returns the full header string of the TSV file without trailing newline.
+        """Returns the full header string of the TSV file without trailing newline.
         """
         return "ts\t{}".format("\t".join(self.masked_header)) + "\n"
 
     @staticmethod
     def _write_row_dict_to_stream(stream: TextIO, d: dict[Any, dict[Any, Any]]) -> None:
-        """
-        Writes a complete nested row dictionary to a stream.
+        """Writes a complete nested row dictionary to a stream.
 
-        :param stream: The stream to write to.
-        :param d: The nested dictionary to write. Can only be nested one level deep.
-                  The first level keys are the timestamps, the second level keys are the column names.
-                  All keys should be present for every timestamp as the first row is used to infer the column names.
+        Args:
+            stream (TextIO): The stream to write to.\n
+            d (dict): The nested dictionary to write. Can only be nested one level deep. The 
+            first level keys are the timestamps, the second level keys are the column names.
+            All keys should be present for every timestamp as the first row is used to infer
+            the column names.
         """
 
         # Infer column names from first row
@@ -211,17 +217,22 @@ class TsvIO(TextIOBase):
             buffering: int = -1,
             **kwargs,
     ):
-        """
-        Handles creating a stream delegate for the tsv in the given mode according to the given parameters.
+        """Handles creating a stream delegate for the tsv in the given mode according to
+        the given parameters.
 
-        :param mode: Whether to store the data in memory or on disk. If on disk, a temporary file is created.
-        :param tsv: The TSV data to write. Can be a string, a TextIO, or a dictionary of timestamp rows or sensor columns.
-        :param file_path: The file path to write to. If not specified, a temporary file will be used. Only relevant for mode "on_disk".
-        :param dict_mode: Whether to interpret the TSV as a dictionary of timestamp rows or sensor columns.
-        :param spooling_size: The size in bytes for which the data is spooled in memory. Defaults to 0.5 GiB. Only relevant for mode "on_disk".
-        :param buffering: How to handle buffering. Defaults to 1, which means line buffering. Only relevant for mode "on_disk".
-        :param kwargs:
-        :return:
+        Args:
+            mode (StorageMode): Whether to store the data in memory or on disk. If on disk,
+            a temporary file is created.\n
+            tsv (TextIO): The TSV data to write. Can be a string, a TextIO, or a dictionary
+            of timestamp rows or sensor columns.\n
+            file_path (str): The file path to write to. If not specified, a temporary file
+            will be used. Only relevant for mode "on_disk".\n
+            dict_mode (DictMode): Whether to interpret the TSV as a dictionary of timestamp
+            rows or sensor columns. Defaults to `DictMode.ROW`.\n
+            spooling_size (int): The size in bytes for which the data is spooled in memory.
+            Only relevant for mode "on_disk". Defaults to 0.5 GiB.\n
+            buffering (int): How to handle buffering. Defaults to -1, which means line buffering.
+            Only relevant for mode "on_disk".
         """
 
         stream = None
@@ -250,7 +261,7 @@ class TsvIO(TextIOBase):
                     if os.path.exists(file_path):
                         raise FileExistsError(f"The file '{file_path}' already exists.")
                     else:
-                        stream = open(file_path, "x+")
+                        stream = open(file_path, "x+", encoding="UTF-8")
                 else:
                     stream = SpooledTemporaryFile(
                         max_size=spooling_size, mode="w+", buffering=buffering, **kwargs
@@ -275,10 +286,14 @@ class TsvIO(TextIOBase):
         return stream
 
     def _normalize_mask(self, mask: dict[str, int] | None) -> list[int] | None:
-        """
-        Normalize the mask to an inclusive mask which consists of an index list of columns to include.
-        :param mask: The mask to normalize.
-        :return: The normalized mask.
+        """Normalize the mask to an inclusive mask which consists of an index list of
+        columns to include.
+
+        Args:
+            mask (dict): The mask to normalize.
+        
+        Returns:
+            list[int]: The normalized mask.
         """
         if mask is None:
             return None
@@ -307,9 +322,7 @@ class TsvIO(TextIOBase):
                 raise ValueError("Invalid read mode")
 
     def readrow(self) -> tuple[int, dict[str, float | None]]:
-        """
-        Read the single next line and return it as a tuple of ts and dictionary sensor -> val.
-        :return:
+        """Read the single next line and return it as a tuple of ts and dictionary sensor -> val.
         """
         # Skip header if we are at the beginning of the file
         if self.tell() == 0:
@@ -323,9 +336,8 @@ class TsvIO(TextIOBase):
         return TsvIO.row_to_dict(row, self._header, mask=self._mask)
 
     def readrows(self, hint: int = -1) -> dict[int, dict[str, float | None]]:
-        """
-        Read the next hint number of lines and return it as a tuple of ts and dictionary sensor -> val.
-        :return:
+        """ Read the next hint number of lines and return it as a tuple of ts and
+        dictionary sensor -> val.
         """
 
         # Skip header if we are at the beginning of the file
@@ -350,13 +362,15 @@ class TsvIO(TextIOBase):
     def writerow(
             self, ts: int, row: dict[str, float | None], *, force_append: bool = True
     ):
-        """
-        Write a single row to the TSV file. Iterates over self.header to ensure the correct order.
-        \nIt has to be ensured by the caller that the reader is at the correct position to not overwrite data.
-        \nThe timestamp is also not scrutinized in any way.
-        :param ts: The timestamp.
-        :param row: The row to write as dictionary sensor -> val.
-        :param force_append: Whether to force appending the row to the very end of the file. Defaults to True.
+        """Write a single row to the TSV file. Iterates over self.header to ensure the correct
+        order. It has to be ensured by the caller that the reader is at the correct position to
+        not overwrite data. The timestamp is also not scrutinized in any way.
+
+        Args:
+            ts (int): The timestamp.\n
+            row (dict): The row to write as dictionary sensor -> val.\n
+            force_append (bool): Whether to force appending the row to the very end of the file.
+            Defaults to True.\n
         """
 
         if force_append:
@@ -376,14 +390,19 @@ class TsvIO(TextIOBase):
     def row_to_dict(
             row: str, header: list[str], *, mask: list[int] = None
     ) -> tuple[int, dict[str, float | None]]:
-        """
-        Convert a single row of a TSV file to a dictionary of ts -> sensor -> val with a given header.
-         Handles empty values and appended newlines.
-        :param row: The row to convert.
-        :param header: The header to use. Is mapped onto the row without any checks. Does not contain the timestamp.
-                       Needs to be in the same order as the row and be of the same length.
-        :param mask: An index mask of columns to include. If None, all columns are included. Has to be of the same length as the header.
-        :return: The row as (ts, sensor -> val)
+        """Convert a single row of a TSV file to a dictionary of ts -> sensor -> val with
+        a given header. Handles empty values and appended newlines.
+
+        Args:
+            row (str): The row to convert.\n
+            header (List[str]): The header to use. Is mapped onto the row without any checks.
+            Does not contain the timestamp. Needs to be in the same order as the row and 
+            be of the same length.\n
+            mask List[int]: An index mask of columns to include. If None, all columns are
+            included. Has to be of the same length as the header.
+        
+        Return:
+            row (Tuple[int, dict[str, float | None]]): The row as (ts, sensor -> val)
         """
 
         ts, *row = row.rstrip("\n").split("\t")
@@ -410,13 +429,13 @@ class TsvIO(TextIOBase):
     # Write Methods #
     #######################
     def append_row(self, ts: int, row: dict[str, float | None], filler: float = ""):
-        """
-        Appends a single row in a "smart" way to the TSV file fitting it to the header of this file.
-        The proper order of the rows needs to be enforced by the caller.
-        :param ts: The timestamp.
-        :param row: The row as dictionary sensor -> val.
-        :param filler: With what to fill missing values. Defaults to "".
-        :return:
+        """Appends a single row in a "smart" way to the TSV file fitting it to the header of
+        this file. The proper order of the rows needs to be enforced by the caller.
+
+        Args:
+            ts (int): The timestamp.
+            row (dict): The row as dictionary sensor -> val.
+            filler (float): With what to fill missing values. Defaults to "".
         """
 
         self._delegate.write(f"{ts}\t")
@@ -487,9 +506,7 @@ class TsvIO(TextIOBase):
 
     # Not directly part of the TextIOBase interface but useful for pytorch as well
     def reset(self):
-        """
-        Reset the stream to the beginning.
-        :return:
+        """Reset the stream to the beginning.
         """
         self._delegate.seek(0)
 
@@ -500,10 +517,12 @@ class TsvIO(TextIOBase):
     ###############
 
     def write_to_file(self, file_path: str | Path, *, overwrite: bool = False):
-        """
-        Writes the TSV to a given file.
-        :param file_path: The file path to write to.
-        :param overwrite: Whether to overwrite the file if it already exists. Defaults to False.
+        """Writes the TSV to a given file.
+        
+        Args:
+            file_path (str): The file path to write to.
+            overwrite (bool): Whether to overwrite the file if it already exists.
+            Defaults to False.
         """
         if os.path.exists(file_path):
             if overwrite:
@@ -511,18 +530,19 @@ class TsvIO(TextIOBase):
             else:
                 raise FileExistsError(f"The file '{file_path}' already exists.")
 
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="UTF-8") as f:
             self.reset()
             shutil.copyfileobj(self, f)
 
         logger.info(f"Wrote TSV to '{file_path}'")
 
     def to_dataframe(self, *, ignore_mask: bool = False, **kwargs) -> pd.DataFrame:
-        """
-        Converts the TSV to a pandas DataFrame.
-        :param ignore_mask: Whether to ignore the mask of this object and return all columns. Defaults to False.
-        :param kwargs: Keyword arguments passed to pandas.read_csv.
-        :return:
+        """Converts the TSV to a pandas DataFrame.
+
+        Args:
+            ignore_mask (bool): Whether to ignore the mask of this object and return all
+            columns. Defaults to False.
+            kwargs (dict): Keyword arguments passed to pandas.read_csv.
         """
         self.reset()
         df = pd.read_csv(self, sep="\t", index_col="ts", **kwargs)
@@ -541,21 +561,26 @@ def splice_streams(
         default_fill_value: float | str | None = "",
         **tsv_io_kwargs,
 ) -> TsvIO:
-    """
-    Splices the given TextIO streams in the given order.
-    By comparing the headers of each TextIO this method for now throws an error when the headers do not match.
-    It is planned to in the future be able to splice headers (and therefore columns) as well.
-    This can be circumvented by getting a header that encompasses all columns of the given streams ahead of time.
+    """Splices the given TextIO streams in the given order. By comparing the headers of
+    each TextIO this method for now throws an error when the headers do not match. It is
+    planned to in the future be able to splice headers (and therefore columns) as well. This
+    can be circumvented by getting a header that encompasses all columns of the given
+    streams ahead of time.
 
-    :param streams: TextIOs with matching headers.
-    :param header: The header to use. If None, the header of the first stream is used.
-                   Can be used to splice TSVs with different headers.
-    :param storage_mode: Due to this function usually producing large files, it is recommended to use mode.ON_DISK to which this defaults.
-    :param drop_additional_columns: Whether to drop columns which are not present in the given header.
-    :param default_fill_value: The value to fill missing values with. Defaults to "".
-                               \nIf None, a ValueError is raised when a column is missing relative to the given header.
-    :param tsv_io_kwargs: Keyword arguments passed to the TsvIO constructor.
-    :return: The spliced stream wrapped in a TsvIO.
+    Args:
+        streams (Iterable[TextIO]): TextIOs with matching headers.
+        header (list[str]): The header to use. If None, the header of the first stream is
+        used. Can be used to splice TSVs with different headers. Defaults to None.
+        storage_mode (StorageMode): Defines the output mode. Defaults to StorageMode.ON_DISK.
+        drop_additional_columns (bool): Whether to drop columns which are not present in the
+        given header. Defaults to False.
+        default_fill_value (float): The value to fill missing values with. If None, a
+        ValueError is raised when a column is missing relative to the given header. Defaults
+        to "".
+        tsv_io_kwargs (dict): Keyword arguments passed to the TsvIO constructor.
+
+    Return:        
+        (TsvIO): The spliced stream wrapped in a TsvIO.
     """
     # Create iterator of streams in case it is not already
     streams = iter(streams)
