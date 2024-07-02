@@ -9,17 +9,25 @@ from uuid import UUID
 
 import boto3
 
-from .tsvio import logger
-from .utils import get_day_list
+from .utils import get_day_list, logger
 
 
 class S3:
+    """This class opens S3 streams to download machine sensor data.
+     """
     def __init__(
         self,
         machine_uuid: str | UUID,
         interval: Tuple[date, date],
     ) -> None:
+        """Initialize the class and defines the s3 bucket.
 
+        Args:
+            machine_uuid (str): The machine uuid, from which sensor data can be
+            downloaded.
+            interval (tuple): A tuple of two dates. The first one is the start
+            date and the second one is the end date.
+        """
         self._bucket = os.getenv("S3_BUCKET", "xplore-measurements")
         self._client = boto3.client("s3")
 
@@ -30,10 +38,17 @@ class S3:
         assert self._start < self._end, "Start date must be before end date"
 
     @property
-    def machine_uuid(self):
+    def machine_uuid(self) -> str:
+        """The machines uuid.
+        """
         return self._machine_uuid
 
     def set_machine(self, machine_uuid: str | UUID) -> None:
+        """Sets the machines uuid.
+
+        Args:
+            machine_uuid (str | UUID): The machines uuid
+        """
         self._machine_uuid = machine_uuid
 
     def _open_stream(self, s3_path: str) -> Union[TextIO, None]:
