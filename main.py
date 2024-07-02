@@ -2,7 +2,7 @@
 
 from argparse import ArgumentParser
 from datetime import date
-from s3 import S3, splice_streams, StorageMode, TsvIO
+from s3 import S3, DFIO
 
 
 if __name__ == "__main__":
@@ -21,7 +21,5 @@ if __name__ == "__main__":
     )
 
     s3 = S3(machine_uuid, interval)
-    tsv_io: TsvIO = splice_streams(s3, storage_mode=StorageMode.ON_DISK)
-    tsv_io.write_to_file(args.output_file)
-
-    assert tsv_io
+    dfio = DFIO(s3)
+    dfio.download()
