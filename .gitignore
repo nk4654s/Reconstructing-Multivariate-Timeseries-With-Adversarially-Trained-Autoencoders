@@ -1,0 +1,12 @@
+# remove MacOS files
+.DS_Store
+
+# ignore python cache and log files
+*.log
+__pycache__/
+
+# ignore dataset filde
+*.h5
+
+# ignore playground
+playground.ipynb
