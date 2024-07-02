@@ -1,0 +1,6 @@
+name: s3prep
+dependencies:
+  - python=3.12
+  - pandas
+  - tqdm
+  - boto3
