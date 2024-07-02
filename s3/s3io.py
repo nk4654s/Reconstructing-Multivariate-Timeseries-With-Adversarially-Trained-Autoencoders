@@ -51,6 +51,14 @@ class S3:
         """
         self._machine_uuid = machine_uuid
 
+    def day(self, i: int) -> date:
+        """Returns the day according to the index.
+
+        Args:
+            i (int): The index of the day
+        """
+        return self._days[i]
+
     def _open_stream(self, s3_path: str) -> Union[TextIO, None]:
         logger.debug("Retrieving '%s:%s' from S3", self._bucket, s3_path)
         try:

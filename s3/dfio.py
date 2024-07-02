@@ -7,6 +7,7 @@ import numpy as np
 from tqdm import trange
 
 from .s3io import S3
+from .utils import logger
 
 
 class DFIO:
@@ -37,27 +38,31 @@ class DFIO:
         while os.path.exists(temp_path):
             parts = file_path.split(".")
             temp_path = f"{parts[0]}_{num}.{parts[-1]}"
+            num += 1
 
         return temp_path
 
     def _check_header(self, stream: TextIO) -> int:
+        header_str = None
         if self._df is not None:
             # check if the dataframe's heaeder matches the stream's header
             header_str = stream.readline()
             incoming = header_str.rstrip("\n").split("\t")[1:]
             existing = self._df.columns.values.tolist()
+            print(len(incoming), len(existing))
             if incoming == existing:
                 return len(header_str)
 
             # inconsistent headers, save the progress so far and continue on a
             # fresh dataframe instance
+            logger.info("Perform save and reset, due to inconsistent headers")
             self.save_reset()
+        else:
+            # get the header from stream and create a new dataframe
+            header_str = stream.readline()
+            incoming = header_str.rstrip("\n").split("\t")[1:]
 
-        # get the header from stream and create a new dataframe
-        header_str = stream.readline()
-        header = header_str.rstrip("\n").split("\t")[1:]
-
-        data = {s: [] for s in header}
+        data = {s: [] for s in incoming}
         self._df = pd.DataFrame(data=data)
         return len(header_str)
 
@@ -73,7 +78,7 @@ class DFIO:
             file_path (str): Path of the HDF5 file to be saved. If not provided, the
             machines uuid will be used as file name. Defaults to None.
         """
-        assert self._df, "No dataframe to save"
+        assert self._df is not None, "No dataframe to save"
         self._df.to_hdf(self._check_path(file_path), key="df", mode="w")
 
     def save_reset(self, file_path: str = None) -> None:
@@ -108,6 +113,7 @@ class DFIO:
             # check if the dataframe is empty and set it up accordingly
             # also check if the header is consistent with the stream's one
             # if not, save the progress so far and continue on a fresh dataframe instance
+            logger.debug("Streaming day %s", self._s3.day(i))
             position = self._check_header(stream)
             stream.seek(position)
 
