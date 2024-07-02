@@ -11,7 +11,6 @@ if __name__ == "__main__":
         "--machine-uuid", type=str, default="0b3426b3-94af-4b8c-89c1-da57493c099a"
     )
     parser.add_argument("--interval", nargs="+", default=["2020-10-28", "2024-06-30"])
-    parser.add_argument("--output-file", "-o", type=str, default="file.tsv")
     args = parser.parse_args()
 
     machine_uuid = args.machine_uuid
