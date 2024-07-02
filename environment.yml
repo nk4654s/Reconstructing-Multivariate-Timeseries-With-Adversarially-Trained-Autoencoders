@@ -4,3 +4,5 @@ dependencies:
   - pandas
   - tqdm
   - boto3
+  - pytables
+  - numpy
