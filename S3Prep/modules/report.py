@@ -7,6 +7,9 @@ from S3Prep.modules.module import BasePreProcessor
 
 
 class Report(BasePreProcessor):
+    """This class logs some report about a downloaded
+    dataframe.
+    """
     def __init__(self, folder: str = "report"):
         super().__init__()
 
@@ -102,7 +105,7 @@ class Report(BasePreProcessor):
         plt.savefig(self._check_file_path("trend_" + path))
 
         # 2. Boxplot graph
-        fig, ax = plt.subplots(figsize=(10, 6))
+        _, ax = plt.subplots(figsize=(10, 6))
         ax.boxplot(series.values)
         ax.set_title(f"Boxplot: {col_name}")
         ax.set_xlabel("")

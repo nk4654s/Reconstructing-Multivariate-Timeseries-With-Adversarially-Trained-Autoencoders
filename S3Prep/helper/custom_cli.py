@@ -5,6 +5,8 @@ from S3Prep.modules.module import BasePreProcessor
 
 
 class MyCLIArgumentParser(CLIArgumentParser):
+    """This custom class expands the CLIArgumentParser class.
+    """
     def __init__(self, preps: List[BasePreProcessor] | BasePreProcessor, *args, **kwargs):
         super().__init__(preps, *args, **kwargs)
 
@@ -20,8 +22,8 @@ class MyCLIArgumentParser(CLIArgumentParser):
                           default=["2020-10-28", "2024-06-30"],
                           help="Interval to get the data from. Format: [YYYY-MM-DD, YYYY-MM-DD]"
                           )
-        self.add_argument("--folder",
+        self.add_argument("--file",
                           type=str,
                           default=".",
-                          help="Folder to save the dataframes in."
+                          help="File path to save the dataframe. Format: [path/to/file.h5]"
                          )
