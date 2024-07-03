@@ -2,12 +2,12 @@
 
 from datetime import date
 from S3Prep.helper import CLIArgumentParser
-from S3Prep.modules import InterpolatePreProcessor
+from S3Prep.modules import InterpolatePreProcessor, IncludeMachineOnPrePreProcessor
 from S3Prep.data import S3, DFIO
 
 
 if __name__ == "__main__":
-    parser = CLIArgumentParser([InterpolatePreProcessor])
+    parser = CLIArgumentParser(preps=[InterpolatePreProcessor, IncludeMachineOnPrePreProcessor])
     prep_modules = parser.get_pre_processors()
 
     machine_uuid = parser.args.machine_uuid
