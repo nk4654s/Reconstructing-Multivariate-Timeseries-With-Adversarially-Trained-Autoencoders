@@ -16,6 +16,7 @@ class OutlierPreProcessor(BasePreProcessor):
             upper_quantile (float): The upper quantile to be used for outlier removal
             threshold (float): The threshold to be used for outlier removal
         """
+        super().__init__()
         self._lower = lower_quantile
         self._upper = upper_quantile
         self._threshold = threshold

@@ -25,6 +25,9 @@ class DFIO:
         self._last_header = None
         self._store = None
 
+        self._intermediate_modules = []
+        self._final_modules = []
+
     def _check_path(self, file_path: str, day_index: int = 0) -> str:
         """Check the file path to ensure it is valid
 
@@ -35,6 +38,12 @@ class DFIO:
         if not file_path:
             day = self._s3.day(day_index).strftime("%Y-%m-%d")
             file_path = f"{self._s3.machine_uuid}_{day}.h5"
+
+        # check if the folder for the dataframes exist
+        if "/" in file_path:
+            folder_path = "/".join(file_path.split("/")[:-1])
+            if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
+                os.makedirs(folder_path)
 
         # add increasing number to file path
         num = 1
@@ -90,11 +99,20 @@ class DFIO:
             machines uuid will be used as file name. Defaults to None.
             day_index (int): Index of the day to be saved. Defaults to 0.
         """
+        # run methods
+        df = self._store.get("data")
+        logger.debug("Final processing of dataset with shape %s", str(df.shape))
+        for method in self._final_modules:
+            df = method(df)
+        self._store.put("data", df, format="table")
+
         # close and create a new HDF5 file
         self._store.close()
-        self._create_storage(file_path=file_path, day_index=day_index)
 
-        self._last_header = None
+        # reset the class
+        if day_index >= 0:
+            self._create_storage(file_path=file_path, day_index=day_index)
+            self._last_header = None
 
     def download(self, file_path: str = None, modules: List[BasePreProcessor] = None) -> None:
         """Downloads the dataframe from a S3 stream and downloads the dataframe as file.
@@ -104,6 +122,11 @@ class DFIO:
             machines uuid will be used as file name. Defaults to None.
             modules (List[BasePreProcessor]): List of modules to be used. Defaults to None.
         """
+        # organize modules
+        modules = modules if modules else []
+        self._intermediate_modules = [m for m in modules if m.intermediate_run]
+        self._final_modules = [m for m in modules if not m.intermediate_run]
+
         # create the hdf store to save ram usage
         self._create_storage(file_path=file_path)
 
@@ -142,10 +165,10 @@ class DFIO:
             self._df = pd.DataFrame(data)
 
             # apply pre-processing
-            modules = modules if modules else []
-            for module in modules:
+            for module in self._intermediate_modules:
                 self._df = module(self._df)
 
             self.save()
 
-        self._store.close()
+        # do not create a new h5-file, so set day_index to -1
+        self.reset(day_index=-1)

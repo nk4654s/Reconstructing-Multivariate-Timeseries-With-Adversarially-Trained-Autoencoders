@@ -14,6 +14,7 @@ class DeleteWhenMachineOff(BasePreProcessor):
             on_key (str): The key of the column that contains the machine state.
             Defaults to "eedce5b6-b341-4c58-bf3a-c6c1f265ba02".
         """
+        super().__init__()
         self._column_key = on_key
 
     def __call__(self, df: DataFrame) -> DataFrame:

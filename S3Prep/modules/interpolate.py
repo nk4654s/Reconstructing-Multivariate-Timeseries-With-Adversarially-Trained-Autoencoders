@@ -16,6 +16,7 @@ class InterpolatePreProcessor(BasePreProcessor):
     """
     METHODS = ["ffill", "bfill", "linear", "quadratic", "cubic", "polynomial"]
     def __init__(self, method: str = "ffill"):
+        super().__init__()
         assert method in InterpolatePreProcessor.METHODS, f"{method} is not a valid method."
         self._method = method
 
