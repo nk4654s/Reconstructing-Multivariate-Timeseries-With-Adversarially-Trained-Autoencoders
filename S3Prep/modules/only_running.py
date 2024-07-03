@@ -4,7 +4,7 @@ import numpy as np
 from . import BasePreProcessor
 
 
-class IncludeMachineOnPrePreProcessor(BasePreProcessor):
+class DeleteWhenMachineOff(BasePreProcessor):
     """This class removes rows from the dataframe if the machine is off."""
     def __init__(self, on_key: str = "eedce5b6-b341-4c58-bf3a-c6c1f265ba02"):
         """The constructor of the class. This will be automatically executed by
