@@ -27,16 +27,11 @@ class CLIArgumentParser(ArgumentParser):
         # init arguments from child classews
         self.prepare_arguments()
 
-        self.add_argument(
-            "--machine-uuid", type=str, default="0b3426b3-94af-4b8c-89c1-da57493c099a"
-        )
-        self.add_argument("--interval", nargs="+", default=["2020-10-28", "2024-06-30"])
-
         # store all pre-processor instances and instantiate their arguments
         self._preps = preps if isinstance(preps, list) else [preps]
         for prep in self._preps:
             prefix = prep.__name__.lower()
-            prefix = prefix if len(prefix) < 5 else prefix[:5]
+            prefix = prefix if len(prefix) < 7 else prefix[:7]
 
             # add arguments from pre-processor
             signature = inspect.signature(prep.__init__).parameters
