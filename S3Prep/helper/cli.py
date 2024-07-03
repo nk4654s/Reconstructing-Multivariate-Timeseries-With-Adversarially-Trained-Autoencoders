@@ -67,7 +67,8 @@ class CLIArgumentParser(ArgumentParser):
 
             # check if class name is in arguments and add the arg to the kwargs
             namespace = self.args.__dict__.get(name, None)
-            kwargs = kwargs | namespace.__dict__
+            if namespace is not None:
+                kwargs = kwargs | namespace.__dict__
 
             # add defaults to kwargs
             if namespace is None:
