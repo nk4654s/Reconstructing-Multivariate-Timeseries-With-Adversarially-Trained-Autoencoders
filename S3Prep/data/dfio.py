@@ -79,7 +79,7 @@ class DFIO:
         """Saves the dataframe in an HDF5 file and frees memory.
         """
         assert self._df is not None, "No dataframe to save"
-        self._store.put("data", self._df, format="table")
+        self._store.put("data", self._df, format="table", append=True)
         self._df = None
 
     def reset(self, file_path: str = None, day_index: int = 0) -> None:
