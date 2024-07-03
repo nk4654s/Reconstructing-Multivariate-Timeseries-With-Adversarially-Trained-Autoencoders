@@ -9,7 +9,7 @@ from uuid import UUID
 
 import boto3
 
-from .utils import get_day_list, logger
+from S3Prep.data.utils import get_day_list, logger
 
 
 class S3:

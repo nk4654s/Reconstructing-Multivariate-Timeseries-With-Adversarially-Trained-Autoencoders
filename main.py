@@ -1,9 +1,9 @@
 """The main module handles program execution and parameter modification."""
 
 from datetime import date
-from helper import CLIArgumentParser
-from prep import InterpolatePreProcessor
-from data import S3, DFIO
+from S3Prep.helper import CLIArgumentParser
+from S3Prep.modules import InterpolatePreProcessor
+from S3Prep.data import S3, DFIO
 
 
 if __name__ == "__main__":
@@ -18,4 +18,4 @@ if __name__ == "__main__":
 
     s3 = S3(machine_uuid, interval)
     dfio = DFIO(s3)
-    dfio.download(prep_modules)
+    dfio.download(modules=prep_modules)

@@ -1,13 +1,14 @@
 """This module handles pandas dataframe input/outut for s3 streams"""
 
 import os
-from typing import TextIO, Tuple
+from typing import List, TextIO, Tuple
 import pandas as pd
 import numpy as np
 from tqdm import trange
 
-from .s3io import S3
-from .utils import logger
+from S3Prep.data import S3
+from S3Prep.data.utils import logger
+from S3Prep.modules import BasePreProcessor
 
 
 class DFIO:
@@ -95,12 +96,13 @@ class DFIO:
 
         self._last_header = None
 
-    def download(self, file_path: str = None) -> None:
+    def download(self, file_path: str = None, modules: List[BasePreProcessor] = None) -> None:
         """Downloads the dataframe from a S3 stream and downloads the dataframe as file.
 
         Args:
             file_path (str): Path of the HDF5 file to be saved. If not provided, the
             machines uuid will be used as file name. Defaults to None.
+            modules (List[BasePreProcessor]): List of modules to be used. Defaults to None.
         """
         # create the hdf store to save ram usage
         self._create_storage(file_path=file_path)
@@ -138,6 +140,12 @@ class DFIO:
             # append the data to the dataframe
             data = {key: val for (key, val) in zip(headers, values.T)}
             self._df = pd.DataFrame(data)
+
+            # apply pre-processing
+            modules = modules if modules else []
+            for module in modules:
+                self._df = module(self._df)
+
             self.save()
 
         self._store.close()

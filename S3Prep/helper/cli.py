@@ -3,7 +3,7 @@ import inspect
 from argparse import ArgumentParser, Namespace, Action
 from typing import List
 
-from prep import BasePreProcessor
+from S3Prep.modules import BasePreProcessor
 
 
 class GroupedAction(Action):
@@ -86,7 +86,7 @@ class CLIArgumentParser(ArgumentParser):
         function in your sub-class and add `self.add_argument` calls for each argument you 
         want to add.
         """
-        pass
+        return
 
     @property
     def args(self):

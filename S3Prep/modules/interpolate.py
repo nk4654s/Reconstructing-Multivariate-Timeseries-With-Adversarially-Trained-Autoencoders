@@ -1,18 +1,30 @@
-from typing import Any
+"""This module pre-processes a dataframe and insters values to NAN."""
 from pandas import DataFrame
-from .module import BasePreProcessor
+from . import BasePreProcessor
 
 
 class InterpolatePreProcessor(BasePreProcessor):
+    """This class replaces missing values in a dataframe using interpolation methods.
+
+    Possible methods are:
+        - "ffill",
+        - "bfill",
+        - "linear",
+        - "quadratic",
+        - "cubic",
+        - "polynomial".
+    """
     METHODS = ["ffill", "bfill", "linear", "quadratic", "cubic", "polynomial"]
     def __init__(self, method: str = "ffill"):
         assert method in InterpolatePreProcessor.METHODS, f"{method} is not a valid method."
         self._method = method
 
-    def __call__(self, df: DataFrame) -> Any:
+    def __call__(self, df: DataFrame) -> DataFrame:
         if self._method == "ffill":
             df.ffill(inplace=True)
         elif self._method == "bfill":
             df.bfill(inplace=True)
         elif self._method in InterpolatePreProcessor.METHODS:
             df.interpolate(method=self._method, inplace=True)
+
+        return df
