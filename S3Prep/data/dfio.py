@@ -36,9 +36,11 @@ class DFIO:
             file_path (str): The file path to check
         """
         # set default file path to machine uuid
+        day = self._s3.day(day_index).strftime("%Y-%m-%d")
         if not file_path:
-            day = self._s3.day(day_index).strftime("%Y-%m-%d")
             file_path = f"{self._s3.machine_uuid}_{day}.h5"
+        else:
+            file_path = file_path.replace(".h5", f"_{day}.h5")
 
         # check if the folder for the dataframes exist
         if "/" in file_path:
@@ -101,7 +103,7 @@ class DFIO:
             day_index (int): Index of the day to be saved. Defaults to 0.
         """
         # run methods
-        df = self._store.get("data")
+        df = self._store.get("/data")
         logger.debug("Final processing of dataset with shape %s", str(df.shape))
         for method in self._final_modules:
             df = method(df)
