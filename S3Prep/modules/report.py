@@ -60,7 +60,7 @@ class Report(BasePreProcessor):
         corr_name = df.columns.values[corr_idx]
 
         corr_vec = df[corr_name]
-        corr_vec[corr_idx] =0
+        corr_vec.iloc[corr_idx] = 0
 
         corr_max = corr_vec.index[np.argmax(corr_vec)]
         return corr_name, corr_max
