@@ -15,15 +15,13 @@ def get_sensor_uuid_to_name(machine_uuid: str) -> dict:
     """
     url = "https://dev.graphql.api.xplore.ac/"
 
-    payload = '{"query":"query getMachine {\\n  machine {\\n    getMachine' + \
-        f'(machineId: \\"{machine_uuid}\\") ' + \
-            '{\\n      name\\n\\t\\t\\tsensors {\\n\\t\\t\\t\\tid\\n\\t\\t\\t\\tname\\n' + \
-                '\\t\\t\\t\\ttype\\n\\t\\t\\t\\tkind {\\n\\t\\t\\t\\t\\tis_plc\\n' + \
-                    '\\t\\t\\t\\t\\tis_hidden\\n\\t\\t\\t\\t\\tis_virtual\\n\\t\\t' + \
-                        '\\t\\t\\tis_setpoint\\n\\t\\t\\t\\t\\tis_plc_alarm\\n\\t\\t' + \
-                            '\\t\\t\\tis_high_frequency\\n\\t\\t\\t\\t\\tis_infrastructure' + \
-                                '\\n\\t\\t\\t\\t}\\n\\t\\t\\t}\\n    }\\n  }\\n}",' + \
-                                    '"operationName":"getMachine"}'
+    payload = '{"query":"query getMachine {\n  machine {\n    getMachine' + \
+        f'(machineId: \\\"{machine_uuid}\\\") ' + \
+            '{\n      name\n \t\t\tsensors { properties\n\t\t\t\tid\n\t\t\t\tname\n' + \
+                '\t\t\t\ttype\n\t\t\t\tkind {\n\t\t\t\t\tis_plc\n\t\t\t\t\tis_hidden\n\t' + \
+                    '\t\t\t\tis_virtual\n\t\t\t\t\tis_setpoint\n\t\t\t\t\tis_plc_alarm\n\t' + \
+                        '\t\t\t\tis_high_frequency\n\t\t\t\t\tis_infrastructure\n\t\t\t\t}' + \
+                            '\n\t\t\t}\n    }\n  }\n}","operationName":"getMachine"}'
     headers = {
         "Content-Type": "application/json",
         "Authorization": "eyJhbGciOiIiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJ" + \
@@ -37,7 +35,11 @@ def get_sensor_uuid_to_name(machine_uuid: str) -> dict:
         return None
 
     sensor_list = response.json()["data"]["machine"]["getMachine"]["sensors"]
-    sensor_dict = {sensor["id"]: sensor["name"] for sensor in sensor_list}
+    sensor_dict = {}
+    for sensor in sensor_list:
+        unit = sensor["properties"].get("unit", None)
+        unit = f" ({unit})" if unit else ""
+        sensor_dict[sensor["id"]] = sensor["name"] + unit
     return sensor_dict
 
 
