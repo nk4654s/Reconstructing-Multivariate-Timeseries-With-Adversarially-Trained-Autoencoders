@@ -24,7 +24,7 @@ class OutlierPreProcessor(BasePreProcessor):
         # execute after all df are gathered
         self._intermediate_run = False
 
-    def __call__(self, df: DataFrame) -> DataFrame:
+    def process_df(self, df: DataFrame) -> DataFrame:
         # Calculate the interquartile range (IQR)
         q1 = df.quantile(self._lower)
         q3 = df.quantile(self._upper)

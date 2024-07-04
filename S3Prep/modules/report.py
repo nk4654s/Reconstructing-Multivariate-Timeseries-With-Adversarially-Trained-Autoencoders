@@ -71,7 +71,7 @@ class Report(BasePreProcessor):
 
         return corr_name
 
-    def __call__(self, df: DataFrame) -> DataFrame:
+    def process_df(self, df: DataFrame) -> DataFrame:
         cf = self._correlation_matrix(df)
 
         f1, f2 = self._highest_correlated_features(cf)

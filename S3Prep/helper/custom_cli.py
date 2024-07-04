@@ -27,3 +27,9 @@ class MyCLIArgumentParser(CLIArgumentParser):
                           default=".",
                           help="File path to save the dataframe. Format: [path/to/file.h5]"
                          )
+        self.add_argument("--limit-headers",
+                          action="store_true",
+                          default=False,
+                          help="Limits the headers matching the headers of the first " + \
+                            "incomming dataframe."
+                         )

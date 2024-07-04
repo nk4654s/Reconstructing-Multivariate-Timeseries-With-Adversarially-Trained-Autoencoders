@@ -14,17 +14,19 @@ from S3Prep.modules import BasePreProcessor
 class DFIO:
     """This class handles pandas dataframe input/outut for s3 streams."""
 
-    def __init__(self, s3: S3) -> None:
+    def __init__(self, s3: S3, limit_headers: bool = False) -> None:
         """Sets the s3 object to this class for iteration over streams.
 
         Args:
             s3 (S3): The s3 class.
+            limit_headers (bool): Limits headers to those of the first
+            incoming dataframe. Defaults to False.
         """
         self._s3 = s3
         self._sensor_names = get_sensor_uuid_to_name(self._s3.machine_uuid)
-        self._df = None
+
+        self._limit_headers = limit_headers
         self._last_header = None
-        self._store = None
 
         self._intermediate_modules = []
         self._final_modules = []
@@ -58,64 +60,63 @@ class DFIO:
 
         return temp_path
 
-    def _check_header(self, stream: TextIO, day_index: int = 0) -> Tuple[int, dict]:
+    def _check_header(self, stream: TextIO) -> Tuple[int, dict, bool]:
         header_str = None
         if self._last_header is not None:
             # check if the dataframe's heaeder matches the stream's header
             header_str = stream.readline()
             incoming = header_str.rstrip("\n").split("\t")[1:]
             if incoming == self._last_header:
-                return len(header_str), self._last_header
+                return len(header_str), self._last_header, False
 
-            # inconsistent headers, save the progress so far and continue on a
-            # fresh dataframe instance
-            logger.info("Perform save and reset, due to inconsistent headers")
-            self.reset(day_index=day_index)
+            if self._limit_headers:
+                return len(header_str), self._last_header, True
         else:
             # get the header from stream and create a new dataframe
             header_str = stream.readline()
             incoming = header_str.rstrip("\n").split("\t")[1:]
 
         self._last_header = incoming
-        return len(header_str), incoming
+        return len(header_str), incoming, False
 
     def _safe_convert_float(self, value: str) -> float:
         if value == "":
             return np.nan
         return float(value)
 
-    def _create_storage(self, file_path: str = None, day_index: int = 0) -> None:
-        self._store = pd.HDFStore(self._check_path(file_path, day_index), "w")
+    def _create_storage(self, file_path: str = None, day_index: int = 0) -> pd.HDFStore:
+        return pd.HDFStore(self._check_path(file_path, day_index), "w")
 
-    def save(self) -> None:
+    def _apply_modules(self, modules: List[BasePreProcessor],
+                       df: pd.DataFrame) -> List[pd.DataFrame]:
+        processed = [df]
+        for module in modules:
+            pointer = len(processed)
+            for i in range(pointer):
+                processed += module(processed[i])
+
+            # remove old dataframes
+            processed = processed[pointer:]
+        return processed
+
+    def save(self, df: pd.DataFrame, file_path: str = None, day_index: int = 0) -> None:
         """Saves the dataframe in an HDF5 file and frees memory.
-        """
-        assert self._df is not None, "No dataframe to save"
-        self._store.put("data", self._df, format="table", append=True)
-        self._df = None
-
-    def reset(self, file_path: str = None, day_index: int = 0) -> None:
-        """Frees memory and creates a new HDF5 file.
 
         Args:
-            file_path (str): Path of the HDF5 file to be saved. If not provided, the
-            machines uuid will be used as file name. Defaults to None.
-            day_index (int): Index of the day to be saved. Defaults to 0.
+            df (pd.DataFrame): dataframe to be saved
+            file_path (str): path of the HDF5 file where to save
+            day_index (int): index of the day to be saved
         """
-        # run methods
-        df = self._store.get("/data")
-        logger.debug("Final processing of dataset with shape %s", str(df.shape))
-        for method in self._final_modules:
-            df = method(df)
-        self._store.put("data", df, format="table")
+        assert df is not None, "No dataframe to save"
+        if not df.empty:
+            processed = self._apply_modules(self._final_modules, df)
 
-        # close and create a new HDF5 file
-        self._store.close()
-
-        # reset the class
-        if day_index >= 0:
-            self._create_storage(file_path=file_path, day_index=day_index)
-            self._last_header = None
+            for df in processed:
+                if df.empty:
+                    continue
+                store = self._create_storage(file_path, day_index)
+                store.put("data", df, format="table", append=False)
+                store.close()
 
     def download(self, file_path: str = None, modules: List[BasePreProcessor] = None) -> None:
         """Downloads the dataframe from a S3 stream and downloads the dataframe as file.
@@ -129,9 +130,6 @@ class DFIO:
         modules = modules if modules else []
         self._intermediate_modules = [m for m in modules if m.intermediate_run]
         self._final_modules = [m for m in modules if not m.intermediate_run]
-
-        # create the hdf store to save ram usage
-        self._create_storage(file_path=file_path)
 
         # iterate over all streams and append their content to the dataframe
         num_streams = len(self._s3)
@@ -149,7 +147,7 @@ class DFIO:
             # also check if the header is consistent with the stream's one
             # if not, save the progress so far and continue on a fresh dataframe instance
             logger.debug("Streaming day %s", self._s3.day(i))
-            position, headers = self._check_header(stream, day_index=i)
+            position, headers, do_merge = self._check_header(stream)
             stream.seek(position)
 
             # read all values from the incoming sensor data
@@ -165,17 +163,20 @@ class DFIO:
 
             # append the data to the dataframe
             data = {key: val for (key, val) in zip(headers, values.T)}
-            self._df = pd.DataFrame(data)
+            raw_df = pd.DataFrame(data)
+            if len(raw_df.columns.values) == 0:
+                continue
+
+            # only select valid columns if inner merge
+            if do_merge:
+                raw_df = raw_df[headers]
 
             # rename uuid to sensor name
-            names = {id: self._sensor_names[id] for id in list(self._df.columns.values)}
-            self._df.rename(columns = names, inplace = True)
+            names = {id: self._sensor_names[id] for id in list(raw_df.columns.values)}
+            raw_df.rename(columns = names, inplace = True)
+            logger.debug("Headers: %s", str(list(raw_df.columns.values)))
 
             # apply pre-processing
-            for module in self._intermediate_modules:
-                self._df = module(self._df)
-
-            self.save()
-
-        # do not create a new h5-file, so set day_index to -1
-        self.reset(day_index=-1)
+            processed = self._apply_modules(self._intermediate_modules, raw_df)
+            for df in processed:
+                self.save(df, file_path, i)

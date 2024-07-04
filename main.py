@@ -2,15 +2,13 @@
 
 from datetime import date
 from S3Prep.helper import MyCLIArgumentParser
-from S3Prep.modules import InterpolatePreProcessor, DeleteWhenMachineOff, OutlierPreProcessor, Report
+from S3Prep.modules import InterpolatePreProcessor, SplitByMachineOff, OutlierPreProcessor, Report
 from S3Prep.data import S3, DFIO
 
 
 if __name__ == "__main__":
     parser = MyCLIArgumentParser(preps=[InterpolatePreProcessor,
-                                      DeleteWhenMachineOff,
-                                      OutlierPreProcessor,
-                                      Report])
+                                        SplitByMachineOff, OutlierPreProcessor])
     prep_modules = parser.get_pre_processors()
 
     machine_uuid = parser.args.machine_uuid
@@ -20,5 +18,5 @@ if __name__ == "__main__":
     )
 
     s3 = S3(machine_uuid, interval)
-    dfio = DFIO(s3)
+    dfio = DFIO(s3, limit_headers=parser.args.limit_headers)
     dfio.download(parser.args.file, modules=prep_modules)

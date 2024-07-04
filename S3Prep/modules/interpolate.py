@@ -20,7 +20,7 @@ class InterpolatePreProcessor(BasePreProcessor):
         assert method in InterpolatePreProcessor.METHODS, f"{method} is not a valid method."
         self._method = method
 
-    def __call__(self, df: DataFrame) -> DataFrame:
+    def process_df(self, df: DataFrame) -> DataFrame:
         if self._method == "ffill":
             df.ffill(inplace=True)
         elif self._method == "bfill":
