@@ -7,7 +7,7 @@ import numpy as np
 from tqdm import trange
 
 from S3Prep.data import S3
-from S3Prep.data.utils import logger
+from S3Prep.data.utils import logger, get_sensor_uuid_to_name
 from S3Prep.modules import BasePreProcessor
 
 
@@ -21,6 +21,7 @@ class DFIO:
             s3 (S3): The s3 class.
         """
         self._s3 = s3
+        self._sensor_names = get_sensor_uuid_to_name(self._s3.machine_uuid)
         self._df = None
         self._last_header = None
         self._store = None
@@ -163,6 +164,10 @@ class DFIO:
             # append the data to the dataframe
             data = {key: val for (key, val) in zip(headers, values.T)}
             self._df = pd.DataFrame(data)
+
+            # rename uuid to sensor name
+            names = {id: self._sensor_names[id] for id in list(self._df.columns.values)}
+            self._df.rename(columns = names, inplace = True)
 
             # apply pre-processing
             for module in self._intermediate_modules:

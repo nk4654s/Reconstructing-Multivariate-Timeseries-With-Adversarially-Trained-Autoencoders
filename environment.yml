@@ -7,3 +7,4 @@ dependencies:
   - pytables
   - numpy
   - matplotlib
+  - requests

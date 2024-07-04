@@ -1,24 +1,44 @@
 """This module contains utilities for handling downloaded data from the s3 bucket."""
+
 import logging
-from enum import Enum
 from typing import Tuple, List
 from datetime import datetime, date, timedelta
+import requests
 
 # create logger object
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='s3prep.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename="s3prep.log", encoding="utf-8", level=logging.DEBUG)
 
 
-class StorageMode(Enum):
+def get_sensor_uuid_to_name(machine_uuid: str) -> dict:
+    """This function returns a dictionary of sensor uuids to sensor names.
     """
-    Enum representing different storage modes.
+    url = "https://dev.graphql.api.xplore.ac/"
 
-    Attributes:
-        IN_MEMORY (str): Storage in memory.
-        ON_DISK (str): Storage on disk.
-    """
-    IN_MEMORY = "in_memory"
-    ON_DISK = "on_disk"
+    payload = '{"query":"query getMachine {\\n  machine {\\n    getMachine' + \
+        f'(machineId: \\"{machine_uuid}\\") ' + \
+            '{\\n      name\\n\\t\\t\\tsensors {\\n\\t\\t\\t\\tid\\n\\t\\t\\t\\tname\\n' + \
+                '\\t\\t\\t\\ttype\\n\\t\\t\\t\\tkind {\\n\\t\\t\\t\\t\\tis_plc\\n' + \
+                    '\\t\\t\\t\\t\\tis_hidden\\n\\t\\t\\t\\t\\tis_virtual\\n\\t\\t' + \
+                        '\\t\\t\\tis_setpoint\\n\\t\\t\\t\\t\\tis_plc_alarm\\n\\t\\t' + \
+                            '\\t\\t\\tis_high_frequency\\n\\t\\t\\t\\t\\tis_infrastructure' + \
+                                '\\n\\t\\t\\t\\t}\\n\\t\\t\\t}\\n    }\\n  }\\n}",' + \
+                                    '"operationName":"getMachine"}'
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "eyJhbGciOiIiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJ" + \
+            "jN2VlN2ZmNi03ZTQ3LTRmMGItYWIxMy0xYjM5NWE1NjZlNmIifQ.",
+    }
+    try:
+        response = requests.request("POST", url, data=payload, headers=headers,
+                                    timeout=30)
+    except requests.Timeout as e:
+        logger.warning("Request to %s timed out: %s", url, e)
+        return None
+
+    sensor_list = response.json()["data"]["machine"]["getMachine"]["sensors"]
+    sensor_dict = {sensor["id"]: sensor["name"] for sensor in sensor_list}
+    return sensor_dict
 
 
 def get_day_list(interval: Tuple[date, date]) -> List[date]:
@@ -65,7 +85,7 @@ def get_week_of_year(day_in_week: date | datetime):
     elif isinstance(day_in_week, datetime):
         date_obj = day_in_week.date()
     else:
-        raise TypeError('Parameter was not of type date or datetime')
+        raise TypeError("Parameter was not of type date or datetime")
 
     # Return the week number from the ISO calendar
     return date_obj.isocalendar()[1]
