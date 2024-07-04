@@ -6,8 +6,8 @@ from . import BasePreProcessor
 
 class OutlierPreProcessor(BasePreProcessor):
     """This class removes outliers from the dataset using IQR-distance from Median."""
-    def __init__(self, lower_quantile: float =0.25, upper_quantile: float = 0.75,
-                 threshold: float = 1.35):
+    def __init__(self, lower_quantile: float =0.02, upper_quantile: float = 0.98,
+                 threshold: float = 1.5):
         """The constructor of the class. This will be automatically executed by
         the CLIArgumentParser.
 
