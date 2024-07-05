@@ -2,11 +2,16 @@
 import os
 from typing import Dict, List, Tuple
 import json
-import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from . import BasePreProcessor
 from S3Prep.modules.module import logger
+
+
+rcParams.update({'figure.autolayout': True})
 
 
 class Report(BasePreProcessor):
@@ -110,9 +115,12 @@ class Report(BasePreProcessor):
         num_features = list(self._features_per_day.values())
         days = list(self._features_per_day.keys())
 
-        plt.plot(days, num_features)
-        plt.xlabel("Day")
-        plt.ylabel("# of features")
+        fig, ax = plt.subplots(figsize=(8, 6))
+        ax.set_title("Number of Features per Day")
+        ax.plot(days, num_features)
+        ax.set_xlabel("Day")
+        ax.set_ylabel("# of features")
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
 
         plt.savefig(self._check_file_path("features_per_day.png"))
 
@@ -120,7 +128,7 @@ class Report(BasePreProcessor):
         corr_matrix = self._sum_correlation_matrix / len(days)
 
         # Create a figure and axis
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(12, 12))
         im = ax.imshow(corr_matrix, cmap='coolwarm', interpolation='nearest')
 
         ax.set_title('Correlation Matrix')
@@ -130,7 +138,9 @@ class Report(BasePreProcessor):
         ax.set_yticklabels(corr_matrix.columns.values)
 
         plt.setp(ax.get_xticklabels(), rotation=90, ha="right", rotation_mode="anchor")
-        fig.colorbar(im, ax=ax)
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        fig.colorbar(im, cax=cax)
         plt.savefig(self._check_file_path("correlation_matrix.png"))
 
         # save the best correlated sensor names

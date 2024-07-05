@@ -29,8 +29,6 @@ class DFIO:
         self._limit_headers = limit_headers
         self._last_header = None
 
-        self._features_per_day = {}
-
     def _check_path(self, file_path: str, day_index: int = 0) -> str:
         """Check the file path to ensure it is valid
 
@@ -86,25 +84,6 @@ class DFIO:
 
     def _create_storage(self, file_path: str = None, day_index: int = 0) -> pd.HDFStore:
         return pd.HDFStore(self._check_path(file_path, day_index), "w")
-
-    def export_features_per_day(self, save_plot: str = None) -> dict[str, int]:
-        """Returns a dictionary with the number of features per day.
-
-        Args:
-            save_plot (str): path where to save the plot with the number of features per days.
-            Defaults to None.
-        """
-        dates = list(self._features_per_day.keys())
-        num_features = list(self._features_per_day.values())
-
-        plt.plot(dates, num_features)
-        plt.xlabel("day")
-        plt.ylabel("num_sensors")
-
-        if save_plot:
-            plt.savefig(self._check_path(save_plot))
-
-        return self._features_per_day
 
     def save(self, df: pd.DataFrame, file_path: str = None, day_index: int = 0) -> None:
         """Saves the dataframe in an HDF5 file and frees memory.
