@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 from S3Prep.data import S3
 from S3Prep.data.utils import logger, get_sensor_uuid_to_name
-from S3Prep.modules import BasePreProcessor
+from S3Prep.modules import BasePreProcessor, EntryPoint
 
 
 class DFIO:
@@ -29,8 +29,6 @@ class DFIO:
         self._limit_headers = limit_headers
         self._last_header = None
 
-        self._intermediate_modules = []
-        self._final_modules = []
         self._features_per_day = {}
 
     def _check_path(self, file_path: str, day_index: int = 0) -> str:
@@ -89,18 +87,6 @@ class DFIO:
     def _create_storage(self, file_path: str = None, day_index: int = 0) -> pd.HDFStore:
         return pd.HDFStore(self._check_path(file_path, day_index), "w")
 
-    def _apply_modules(self, modules: List[BasePreProcessor],
-                       df: pd.DataFrame) -> List[pd.DataFrame]:
-        processed = [df]
-        for module in modules:
-            pointer = len(processed)
-            for i in range(pointer):
-                processed += module(processed[i])
-
-            # remove old dataframes
-            processed = processed[pointer:]
-        return processed
-
     def export_features_per_day(self, save_plot: str = None) -> dict[str, int]:
         """Returns a dictionary with the number of features per day.
 
@@ -130,14 +116,9 @@ class DFIO:
         """
         assert df is not None, "No dataframe to save"
         if not df.empty:
-            processed = self._apply_modules(self._final_modules, df)
-
-            for df in processed:
-                if df.empty:
-                    continue
-                store = self._create_storage(file_path, day_index)
-                store.put("data", df, format="table", append=False)
-                store.close()
+            store = self._create_storage(file_path, day_index)
+            store.put("data", df, format="table", append=False)
+            store.close()
 
     def download(self, file_path: str = None, modules: List[BasePreProcessor] = None) -> None:
         """Downloads the dataframe from a S3 stream and downloads the dataframe as file.
@@ -149,8 +130,6 @@ class DFIO:
         """
         # organize modules
         modules = modules if modules else []
-        self._intermediate_modules = [m for m in modules if m.intermediate_run]
-        self._final_modules = [m for m in modules if not m.intermediate_run]
 
         # iterate over all streams and append their content to the dataframe
         num_streams = len(self._s3)
@@ -168,7 +147,7 @@ class DFIO:
             # also check if the header is consistent with the stream's one
             # if not, save the progress so far and continue on a fresh dataframe instance
             logger.debug("Streaming day %s", self._s3.day(i))
-            position, headers, do_merge = self._check_header(stream)
+            position, headers, drop_headers = self._check_header(stream)
             stream.seek(position)
 
             # read all values from the incoming sensor data
@@ -184,20 +163,34 @@ class DFIO:
 
             # append the data to the dataframe
             data = {key: val for (key, val) in zip(headers, values.T)}
-            raw_df = pd.DataFrame(data)
-            if len(raw_df.columns.values) == 0:
-                self._features_per_day[self._s3.day(i)] = len(raw_df.columns.values)
+            df = pd.DataFrame(data)
 
-            # only select valid columns if inner merge
-            if do_merge:
-                raw_df = raw_df[headers]
+            # run the modules which require non-processed data
+            # as result, df might be a list
+            meta = {"date": self._s3.day(i), "machine": self._s3.machine_uuid}
+            for module in modules:
+                df = module(df, EntryPoint.ON_DOWNLOAD_FINISHED, metadata=meta)
 
-            # rename uuid to sensor name
-            names = {id: self._sensor_names[id] for id in list(raw_df.columns.values)}
-            raw_df.rename(columns = names, inplace = True)
-            logger.debug("Headers: %s", str(list(raw_df.columns.values)))
+            dfs = [df] if isinstance(df, pd.DataFrame) else df
+            for df in dfs:
+                # only select valid columns if inner merge
+                if drop_headers:
+                    df = df[headers]
 
-            # apply pre-processing
-            processed = self._apply_modules(self._intermediate_modules, raw_df)
-            for df in processed:
-                self.save(df, file_path, i)
+                # rename uuid to sensor name
+                names = {id: self._sensor_names[id] for id in list(df.columns.values)}
+                df.rename(columns = names, inplace = True)
+                logger.debug("Headers: %s", str(list(df.columns.values)))
+
+                # apply pre-processing, might result in a list of dataframes
+                for module in modules:
+                    df = module(df, EntryPoint.ON_PROCESSING_STARTED, metadata=meta)
+                dfs = [df] if isinstance(df, pd.DataFrame) else df
+
+                for df in dfs:
+                    self.save(df, file_path, i)
+
+        # execute modules which require to be executed after processing
+        # hence, there is no dataframe to process
+        for module in modules:
+            module(None, EntryPoint.ON_PROCESSING_FINISHED)

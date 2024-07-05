@@ -1,8 +1,9 @@
 """This module removes rows from the dataframe if the machine is off."""
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 from pandas import DataFrame
 import numpy as np
 from . import BasePreProcessor
+from S3Prep.modules.module import logger
 
 
 class SplitByMachineOff(BasePreProcessor):
@@ -28,10 +29,13 @@ class SplitByMachineOff(BasePreProcessor):
         end_idx = np.argmax(running < 1)
         return df.iloc[:end_idx], df.iloc[end_idx:]
 
-    def process_df(self, df: DataFrame) -> List[DataFrame]:
+    def on_processing_started(self, df: DataFrame, metadata: Dict = None) -> List[DataFrame]:
+        logger.debug("Processing ON_PROCESSING_STARTED in %s", self.__class__.__name__)
+
         df_splits = []
         to_split = df.copy()
         trimmed = to_split
+
         while not trimmed.empty:
             trimmed = self._trim_off(to_split)
             trimmed, to_split = self._split_off(trimmed)
@@ -39,4 +43,6 @@ class SplitByMachineOff(BasePreProcessor):
                 df_splits.append(trimmed)
 
         df_splits.append(to_split)
+
+        logger.debug("Splited DataFrame into %s DataFrame(s)", len(df_splits))
         return df_splits

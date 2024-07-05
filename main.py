@@ -8,7 +8,8 @@ from S3Prep.data import S3, DFIO
 
 if __name__ == "__main__":
     parser = MyCLIArgumentParser(preps=[InterpolatePreProcessor,
-                                        SplitByMachineOff, OutlierPreProcessor,
+                                        SplitByMachineOff,
+                                        OutlierPreProcessor,
                                         Report])
     prep_modules = parser.get_pre_processors()
 

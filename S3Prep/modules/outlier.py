@@ -1,7 +1,9 @@
 """This module removes outliers from the dataframe."""
+from typing import Dict
 from pandas import DataFrame
 import numpy as np
 from . import BasePreProcessor
+from S3Prep.modules.module import logger
 
 
 class OutlierPreProcessor(BasePreProcessor):
@@ -24,7 +26,10 @@ class OutlierPreProcessor(BasePreProcessor):
         # execute after all df are gathered
         self._intermediate_run = False
 
-    def process_df(self, df: DataFrame) -> DataFrame:
+    def on_processing_started(self, df: DataFrame, metadata: Dict = None) -> DataFrame:
+        logger.debug("Processing ON_PROCESSING_STARTED in %s", self.__class__.__name__)
+        original_len = df.shape[0]
+
         # Calculate the interquartile range (IQR)
         q1 = df.quantile(self._lower)
         q3 = df.quantile(self._upper)
@@ -39,4 +44,7 @@ class OutlierPreProcessor(BasePreProcessor):
         # Remove the outliers from your DataFrame
         df = df.dropna(how="any")
 
+        removed_len = original_len - df.shape[0]
+        logger.debug("Outlier detection removed %d of the DataFrame",
+                     round(removed_len / original_len * 100, 2))
         return df
