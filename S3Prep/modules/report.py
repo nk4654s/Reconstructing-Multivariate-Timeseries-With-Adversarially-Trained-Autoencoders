@@ -94,11 +94,12 @@ class Report(BasePreProcessor):
         logger.debug("Processing ON_PROCESSING_STARTED in %s", self.__class__.__name__)
 
         # Calculate correlation matrix
-        corr_matrix = abs(df.corr().dropna(how="all").dropna(how="all", axis="columns"))
+        corr_matrix = abs(df.corr(method="spearman").fillna(0))
         if self._sum_correlation_matrix is None:
             self._sum_correlation_matrix = corr_matrix
         else:
-            self._sum_correlation_matrix += corr_matrix
+            headers = self._sum_correlation_matrix.columns.values
+            self._sum_correlation_matrix += corr_matrix[headers]
 
         # save the length of the dataset
         day = metadata.get("date", None)
@@ -142,7 +143,7 @@ class Report(BasePreProcessor):
         ax.set_xlabel("Day")
         ax.set_ylabel("# of features")
 
-        x_locs = np.arange(0, len(days), min(len(days) // 2, 5))
+        x_locs = np.arange(0, len(days), max(len(days) // 2, len(days) // 50))
         x_labels = [days[i] for i in x_locs]
         ax.set_xticks(x_locs)
         ax.set_xticklabels(x_labels)
@@ -158,15 +159,25 @@ class Report(BasePreProcessor):
         ax.set_xlabel("File (latest to newest)")
         ax.set_ylabel("# of Recordings")
 
-        x_locs = np.arange(0, len(days), min(len(days) // 2, 5))
+        x_locs = np.arange(0, len(days), max(len(days) // 2, len(days) // 50))
         x_labels = [days[i] for i in x_locs]
         ax.set_xticks(x_locs)
         ax.set_xticklabels(x_labels)
 
         plt.savefig(self._check_file_path("recordings_per_file.png"))
 
-        # plot the average of the correlation matrix
+        # plot the average of the correlation matrix, clean 0-only rows and cols
         corr_matrix = self._sum_correlation_matrix / len(days)
+        idx, jdx = [], []
+        for i in range(len(corr_matrix)):
+            if sum(corr_matrix.iloc[i]) != 0:
+                idx.append(i)
+        for j in corr_matrix.columns.values:
+            if sum(corr_matrix[j]) != 0:
+                jdx.append(j)
+
+        corr_matrix = corr_matrix.iloc[idx]
+        corr_matrix = corr_matrix[jdx]
 
         fig, ax = plt.subplots(figsize=(12, 12))
         im = ax.imshow(corr_matrix, cmap='coolwarm', interpolation='nearest')
