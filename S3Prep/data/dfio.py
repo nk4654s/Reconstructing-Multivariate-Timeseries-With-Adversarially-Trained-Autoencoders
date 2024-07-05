@@ -5,7 +5,6 @@ from typing import List, TextIO, Tuple
 import pandas as pd
 import numpy as np
 from tqdm import trange
-import matplotlib.pyplot as plt
 
 from S3Prep.data import S3
 from S3Prep.data.utils import logger, get_sensor_uuid_to_name
@@ -146,7 +145,7 @@ class DFIO:
 
             # run the modules which require non-processed data
             # as result, df might be a list
-            meta = {"date": self._s3.day(i), "machine": self._s3.machine_uuid}
+            meta = {"date": self._s3.day(i).strftime("%Y-%m-%d"), "machine": self._s3.machine_uuid}
             for module in modules:
                 df = module(df, EntryPoint.ON_DOWNLOAD_FINISHED, metadata=meta)
 

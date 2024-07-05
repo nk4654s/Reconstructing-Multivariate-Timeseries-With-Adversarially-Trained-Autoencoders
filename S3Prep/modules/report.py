@@ -23,6 +23,7 @@ class Report(BasePreProcessor):
 
         self._folder = folder
         self._features_per_day = {}
+        self._meta = {}
 
         self._sum_correlation_matrix = None
 
@@ -40,9 +41,11 @@ class Report(BasePreProcessor):
         return temp_path
 
     def _highest_correlated_features(self, df: DataFrame) -> Tuple[str, str]:
+        # get the feature with the highest (avg) correlation
         corr_idx = np.argmax(df.mean(axis=0))
         corr_name = df.columns.values[corr_idx]
 
+        # get the highest correlated matching feature
         corr_vec = df[corr_name]
         corr_vec.iloc[corr_idx] = 0
 
@@ -50,6 +53,7 @@ class Report(BasePreProcessor):
         return corr_name, corr_max
 
     def _lowest_correlated_features(self, df: DataFrame) -> str:
+        # get the feature with the lowest (avg) correlation
         corr_idx = np.argmin(df.mean(axis=0))
         corr_name = df.columns.values[corr_idx]
 
@@ -107,10 +111,32 @@ class Report(BasePreProcessor):
         else:
             self._sum_correlation_matrix += corr_matrix
 
+        # save the length of the dataset
+        day = metadata.get("date", None)
+        if not day:
+            logger.warning("No date found in metadata, plot 'feature_per_day.png' might be wrong.")
+            return df
+
+        # find the next empty key for the current date
+        meta = self._meta.get("files", {})
+        num = 0
+        date = meta.get(day, None)
+        while date is not None:
+            num += 1
+            date = meta.get(day + f"_{num}", None)
+        date = day + f"_{num}" if num > 0 else day
+
+        meta[date] = df.shape[0]
+        self._meta["files"] = meta
+        total = self._meta.get("total", 0)
+        total += df.shape[0]
+        self._meta["total"] = total
+
         return df
 
     def on_processing_finished(self, metadata: Dict) -> DataFrame | List[DataFrame]:
         logger.debug("Processing ON_PROCESSING_FINISHED in %s", self.__class__.__name__)
+
         # save the plot of num_features per day, from data gathered before
         num_features = list(self._features_per_day.values())
         days = list(self._features_per_day.keys())
@@ -124,10 +150,20 @@ class Report(BasePreProcessor):
 
         plt.savefig(self._check_file_path("features_per_day.png"))
 
+        # plot the dataset length per file downloaded
+        num_samples = list(self._meta["files"].values())
+
+        fig, ax = plt.subplots(figsize=(8, 6))
+        ax.set_title("Number of Samples per File")
+        ax.plot(num_samples)
+        ax.set_xlabel("File (latest to newest)")
+        ax.set_ylabel("# of Samples")
+
+        plt.savefig(self._check_file_path("samples_per_file.png"))
+
         # plot the average of the correlation matrix
         corr_matrix = self._sum_correlation_matrix / len(days)
 
-        # Create a figure and axis
         fig, ax = plt.subplots(figsize=(12, 12))
         im = ax.imshow(corr_matrix, cmap='coolwarm', interpolation='nearest')
 
@@ -150,3 +186,7 @@ class Report(BasePreProcessor):
         meta = {"highest_correlated": [corr_a, corr_b], "most_uncorrelated": uncorr}
         with open(self._check_file_path("correlated_sensors.json"), "w", encoding="UTF-8") as f:
             json.dump(meta, f, indent=2)
+
+        # save the length of each dataset file and the total dataset length
+        with open(self._check_file_path("metadata.json"), "w", encoding="UTF-8") as f:
+            json.dump(self._meta, f, indent=2)
