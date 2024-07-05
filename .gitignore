@@ -12,4 +12,4 @@ __pycache__/
 # ignore playground
 playground.ipynb
 .vscode/launch.json
-dataset/
+dataset*

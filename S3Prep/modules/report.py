@@ -7,6 +7,7 @@ from pandas import DataFrame
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 from . import BasePreProcessor
 from S3Prep.modules.module import logger
 
@@ -22,7 +23,6 @@ class Report(BasePreProcessor):
         super().__init__()
 
         self._folder = folder
-        self._features_per_day = {}
         self._meta = {}
 
         self._sum_correlation_matrix = None
@@ -90,17 +90,6 @@ class Report(BasePreProcessor):
 
         plt.savefig(self._check_file_path("boxplot_" + path))
 
-    def on_download_finished(self, df: DataFrame, metadata: Dict) -> DataFrame | List[DataFrame]:
-        logger.debug("Processing ON_DOWNLOAD_FINISHED in %s", self.__class__.__name__)
-        # save num_features per day for future plotting
-        day = metadata.get("date", None)
-        if not day:
-            logger.warning("No date found in metadata, plot 'feature_per_day.png' might be wrong.")
-            return df
-
-        self._features_per_day[day] = len(df.columns.values)
-        return df
-
     def on_processing_started(self, df: DataFrame, metadata: Dict) -> DataFrame | List[DataFrame]:
         logger.debug("Processing ON_PROCESSING_STARTED in %s", self.__class__.__name__)
 
@@ -119,15 +108,20 @@ class Report(BasePreProcessor):
 
         # find the next empty key for the current date
         if df.shape[0] > 0:
-            meta = self._meta.get("files", {})
+            meta = self._meta.get("files", [])
             num = 0
-            date = meta.get(day, None)
-            while date is not None:
+            date = day
+            while len(meta) > 0 and meta[-1]["day"] == date:
                 num += 1
-                date = meta.get(day + f"_{num}", None)
-            date = day + f"_{num}" if num > 0 else day
+                date = day + f"_{num}"
 
-            meta[date] = df.shape[0]
+            meta.append(
+                {
+                    "day": date,
+                    "recordings": df.shape[0],
+                    "features": len(df.columns.values)
+                }
+            )
             self._meta["files"] = meta
             total = self._meta.get("total", 0)
             total += df.shape[0]
@@ -139,28 +133,37 @@ class Report(BasePreProcessor):
         logger.debug("Processing ON_PROCESSING_FINISHED in %s", self.__class__.__name__)
 
         # save the plot of num_features per day, from data gathered before
-        num_features = list(self._features_per_day.values())
-        days = list(self._features_per_day.keys())
+        num_features = [x["features"] for x in self._meta["files"]]
+        days = [x["day"] for x in self._meta["files"]]
 
         fig, ax = plt.subplots(figsize=(8, 6))
         ax.set_title("Number of Features per Day")
         ax.plot(days, num_features)
         ax.set_xlabel("Day")
         ax.set_ylabel("# of features")
-        plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+        x_locs = np.arange(0, len(days), min(len(days) // 2, 5))
+        x_labels = [days[i] for i in x_locs]
+        ax.set_xticks(x_locs)
+        ax.set_xticklabels(x_labels)
 
         plt.savefig(self._check_file_path("features_per_day.png"))
 
         # plot the dataset length per file downloaded
-        num_samples = list(self._meta["files"].values())
+        num_recordings = [x["recordings"] for x in self._meta["files"]]
 
         fig, ax = plt.subplots(figsize=(8, 6))
-        ax.set_title("Number of Samples per File")
-        ax.plot(num_samples)
+        ax.set_title("Number of Recordings per File")
+        ax.plot(days, num_recordings)
         ax.set_xlabel("File (latest to newest)")
-        ax.set_ylabel("# of Samples")
+        ax.set_ylabel("# of Recordings")
 
-        plt.savefig(self._check_file_path("samples_per_file.png"))
+        x_locs = np.arange(0, len(days), min(len(days) // 2, 5))
+        x_labels = [days[i] for i in x_locs]
+        ax.set_xticks(x_locs)
+        ax.set_xticklabels(x_labels)
+
+        plt.savefig(self._check_file_path("recordings_per_file.png"))
 
         # plot the average of the correlation matrix
         corr_matrix = self._sum_correlation_matrix / len(days)
@@ -185,7 +188,7 @@ class Report(BasePreProcessor):
         uncorr = self._lowest_correlated_features(corr_matrix)
 
         meta = {"highest_correlated": [corr_a, corr_b], "most_uncorrelated": uncorr}
-        with open(self._check_file_path("correlated_sensors.json"), "w", encoding="UTF-8") as f:
+        with open(self._check_file_path("correlated_sensors.json"), "w", encoding="iso-8859-15") as f:
             json.dump(meta, f, indent=2)
 
         # save the length of each dataset file and the total dataset length
