@@ -5,6 +5,7 @@ from typing import List, TextIO, Tuple
 import pandas as pd
 import numpy as np
 from tqdm import trange
+import matplotlib.pyplot as plt
 
 from S3Prep.data import S3
 from S3Prep.data.utils import logger, get_sensor_uuid_to_name
@@ -30,6 +31,7 @@ class DFIO:
 
         self._intermediate_modules = []
         self._final_modules = []
+        self._features_per_day = {}
 
     def _check_path(self, file_path: str, day_index: int = 0) -> str:
         """Check the file path to ensure it is valid
@@ -42,7 +44,7 @@ class DFIO:
         if not file_path:
             file_path = f"{self._s3.machine_uuid}_{day}.h5"
         else:
-            file_path = file_path.replace(".h5", f"_{day}.h5")
+            file_path = file_path.replace(".", f"_{day}.")
 
         # check if the folder for the dataframes exist
         if "/" in file_path:
@@ -98,6 +100,25 @@ class DFIO:
             # remove old dataframes
             processed = processed[pointer:]
         return processed
+
+    def export_features_per_day(self, save_plot: str = None) -> dict[str, int]:
+        """Returns a dictionary with the number of features per day.
+
+        Args:
+            save_plot (str): path where to save the plot with the number of features per days.
+            Defaults to None.
+        """
+        dates = list(self._features_per_day.keys())
+        num_features = list(self._features_per_day.values())
+
+        plt.plot(dates, num_features)
+        plt.xlabel("day")
+        plt.ylabel("num_sensors")
+
+        if save_plot:
+            plt.savefig(self._check_path(save_plot))
+
+        return self._features_per_day
 
     def save(self, df: pd.DataFrame, file_path: str = None, day_index: int = 0) -> None:
         """Saves the dataframe in an HDF5 file and frees memory.
@@ -165,7 +186,7 @@ class DFIO:
             data = {key: val for (key, val) in zip(headers, values.T)}
             raw_df = pd.DataFrame(data)
             if len(raw_df.columns.values) == 0:
-                continue
+                self._features_per_day[self._s3.day(i)] = len(raw_df.columns.values)
 
             # only select valid columns if inner merge
             if do_merge:

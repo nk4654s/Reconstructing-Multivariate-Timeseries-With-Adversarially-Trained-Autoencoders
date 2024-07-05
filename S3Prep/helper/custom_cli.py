@@ -27,6 +27,10 @@ class MyCLIArgumentParser(CLIArgumentParser):
                           default=".",
                           help="File path to save the dataframe. Format: [path/to/file.h5]"
                          )
+        self.add_argument("--feature-per-day",
+                          type=str,
+                          default=None,
+                          help="Path to store graph of features per day. Default: None")
         self.add_argument("--limit-headers",
                           action="store_true",
                           default=False,
