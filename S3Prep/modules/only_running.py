@@ -27,6 +27,11 @@ class SplitByMachineOff(BasePreProcessor):
     def _split_off(self, df: DataFrame) -> Tuple[DataFrame]:
         running = df[self._column_key].to_numpy()
         end_idx = np.argmax(running < 1)
+
+        # if the end index is 0, return two empty dataset.
+        if end_idx == 0:
+            return df.iloc[:end_idx], df.iloc[:end_idx]
+
         return df.iloc[:end_idx], df.iloc[end_idx:]
 
     def on_processing_started(self, df: DataFrame, metadata: Dict = None) -> List[DataFrame]:
@@ -42,7 +47,12 @@ class SplitByMachineOff(BasePreProcessor):
             if not trimmed.empty:
                 df_splits.append(trimmed)
 
-        df_splits.append(to_split)
+        if not to_split.empty:
+            df_splits.append(to_split)
+
+        if len(df_splits) == 0:
+            logger.info("Dataset included machine off data only. Nothing to do.")
+            return []
 
         logger.debug("Splited DataFrame into %s DataFrame(s)", len(df_splits))
         return df_splits

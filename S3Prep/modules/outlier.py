@@ -29,6 +29,8 @@ class OutlierPreProcessor(BasePreProcessor):
     def on_processing_started(self, df: DataFrame, metadata: Dict = None) -> DataFrame:
         logger.debug("Processing ON_PROCESSING_STARTED in %s", self.__class__.__name__)
         original_len = df.shape[0]
+        if df.shape[0] == 0:
+            return df
 
         # Calculate the interquartile range (IQR)
         q1 = df.quantile(self._lower)
