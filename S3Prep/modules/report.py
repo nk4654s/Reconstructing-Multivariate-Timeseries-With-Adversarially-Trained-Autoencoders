@@ -22,7 +22,8 @@ class Report(BasePreProcessor):
         if not os.path.exists(self._folder):
             os.makedirs(self._folder)
 
-        temp_path = self._folder + os.path.sep + file_path
+        file_path = self._folder + os.path.sep + file_path
+        temp_path = file_path
         num = 1
         while os.path.exists(temp_path):
             temp_path = file_path.replace(".", f"_{num}.")
