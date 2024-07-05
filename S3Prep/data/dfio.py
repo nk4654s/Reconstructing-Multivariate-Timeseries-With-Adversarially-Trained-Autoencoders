@@ -157,7 +157,7 @@ class DFIO:
                     df = df[headers]
 
                 # rename uuid to sensor name
-                names = {id: self._sensor_names[id] for id in list(df.columns.values)}
+                names = {id: self._sensor_names.get(id, id) for id in list(df.columns.values)}
                 df.rename(columns = names, inplace = True)
                 logger.debug("Headers: %s", str(list(df.columns.values)))
 
