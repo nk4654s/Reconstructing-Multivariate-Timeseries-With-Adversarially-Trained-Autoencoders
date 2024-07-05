@@ -29,7 +29,7 @@ class SplitByMachineOff(BasePreProcessor):
         end_idx = np.argmax(running < 1)
 
         # if the end index is 0, return two empty dataset.
-        if end_idx == 0:
+        if end_idx == 0 and running[0] == 0:
             return df.iloc[:end_idx], df.iloc[:end_idx]
 
         return df.iloc[:end_idx], df.iloc[end_idx:]
