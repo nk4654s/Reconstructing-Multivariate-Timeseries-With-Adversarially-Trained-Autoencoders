@@ -118,19 +118,20 @@ class Report(BasePreProcessor):
             return df
 
         # find the next empty key for the current date
-        meta = self._meta.get("files", {})
-        num = 0
-        date = meta.get(day, None)
-        while date is not None:
-            num += 1
-            date = meta.get(day + f"_{num}", None)
-        date = day + f"_{num}" if num > 0 else day
+        if df.shape[0] > 0:
+            meta = self._meta.get("files", {})
+            num = 0
+            date = meta.get(day, None)
+            while date is not None:
+                num += 1
+                date = meta.get(day + f"_{num}", None)
+            date = day + f"_{num}" if num > 0 else day
 
-        meta[date] = df.shape[0]
-        self._meta["files"] = meta
-        total = self._meta.get("total", 0)
-        total += df.shape[0]
-        self._meta["total"] = total
+            meta[date] = df.shape[0]
+            self._meta["files"] = meta
+            total = self._meta.get("total", 0)
+            total += df.shape[0]
+            self._meta["total"] = total
 
         return df
 
