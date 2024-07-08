@@ -2,6 +2,7 @@
 import json
 import random
 import os
+import re
 from typing import Dict
 from S3Prep.modules.normalizer.minmax_thread import MinMaxFileThread
 from S3Prep.modules.normalizer.standard_thread import StandardizeFileThread
@@ -56,18 +57,27 @@ class Normalize(BasePreProcessor):
 
         return new_json
 
+    def _get_file_prefix(self, path: str) -> str:
+        for f in os.listdir(path):
+            if os.path.isfile(path + "/" + f):
+                return re.sub(r"(_\d{4}-\d{2}-\d{2}.*\.h5)", "", f)
+
+        return None
+
     def on_processing_finished(self, metadata: Dict) -> None:
         # split the dataset into train, val, test sets
         report_folder = metadata["data_path"] + "/report"
         metadata = self._split_dataset(report_folder)
 
         # fit the min max scaler on the train dataset
-        files = [os.path.join("dataset", f"test_{f['day']}.h5") for f in metadata["train"]]
+        root_path = "/".join(report_folder.split("/")[:-1])
+        prefix = self._get_file_prefix(path=root_path)
+        files = [os.path.join(root_path, f"{prefix}_{f['day']}.h5") for f in metadata["train"]]
         scaler_a, scaler_b = self._fit(files, self._num_thread)
 
         # transform all datasets
         for dataset in ["train", "val", "test"]:
-            files = [os.path.join("dataset", f"test_{f['day']}.h5") for f in metadata[dataset]]
+            files = [os.path.join(root_path, f"{prefix}_{f['day']}.h5") for f in metadata[dataset]]
             self._transform(files, scaler_a, scaler_b, self._num_thread)
 
         # add the normalizer info's to the metadata
