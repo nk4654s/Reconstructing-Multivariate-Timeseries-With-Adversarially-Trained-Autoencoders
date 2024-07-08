@@ -2,12 +2,13 @@
 
 from datetime import date
 from S3Prep.helper import MyCLIArgumentParser
-from S3Prep.modules import InterpolatePreProcessor, SplitByMachineOff, OutlierPreProcessor, Report, HomogeneousTimeSteps
+from S3Prep.modules import InterpolatePreProcessor, SplitByMachineOff, OutlierPreProcessor, Report, HomogeneousTimeSteps, RemoveColumns
 from S3Prep.data import S3, DFIO
 
 
 if __name__ == "__main__":
     parser = MyCLIArgumentParser(preps=[HomogeneousTimeSteps,
+                                        RemoveColumns,
                                         InterpolatePreProcessor,
                                         SplitByMachineOff,
                                         OutlierPreProcessor,
