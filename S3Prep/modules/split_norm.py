@@ -3,7 +3,8 @@ import json
 import random
 import os
 from typing import Dict
-from S3Prep.helper.minmax_thread import MinMaxFileThread
+from S3Prep.modules.normalizer.minmax_thread import MinMaxFileThread
+from S3Prep.modules.normalizer.standard_thread import StandardizeFileThread
 from S3Prep.modules import BasePreProcessor
 
 
@@ -13,12 +14,20 @@ class Normalize(BasePreProcessor):
     column to normalize the dataset. A split into train/val/test dataset is required.
     """
 
-    METHODS = ["minmax", "zscore"]
+    METHODS = ["normalize", "standardize"]
 
-    def __init__(self, method: str = "minmax", train_split: float = 0.7,
+    def __init__(self, method: str = "normalize", train_split: float = 0.7,
                  val_split: float = 0.2, shuffle: bool = False,
                  threads: int = 6) -> None:
+        assert method in Normalize.METHODS, "Invalid normalization method provided."
         self._method = method
+        if self._method == Normalize.METHODS[0]:
+            self._fit = MinMaxFileThread.fit_on_files
+            self._transform = MinMaxFileThread.transform_on_files
+        else:
+            self._fit = StandardizeFileThread.fit_on_files
+            self._transform = StandardizeFileThread.transform_on_files
+
         self._shuffle = shuffle
         self._train_split = train_split
         self._val_split = val_split
@@ -54,16 +63,18 @@ class Normalize(BasePreProcessor):
 
         # fit the min max scaler on the train dataset
         files = [os.path.join("dataset", f"test_{f['day']}.h5") for f in metadata["train"]]
-        train_min, train_max = MinMaxFileThread.fit_on_files(files, self._num_thread)
+        scaler_a, scaler_b = self._fit(files, self._num_thread)
 
         # transform all datasets
         for dataset in ["train", "val", "test"]:
             files = [os.path.join("dataset", f"test_{f['day']}.h5") for f in metadata[dataset]]
-            MinMaxFileThread.transform_on_files(files, train_min, train_max, self._num_thread)
+            self._transform(files, scaler_a, scaler_b, self._num_thread)
 
         # add the normalizer info's to the metadata
         metadata["norm"] = {
-            "min": train_min.to_dict(), "max": train_max.to_dict()
+            "scaler_a": scaler_a.to_dict(),
+            "scaler_b": scaler_b.to_dict(),
+            "method": self._method
         }
 
         # save the new dataset metadata
