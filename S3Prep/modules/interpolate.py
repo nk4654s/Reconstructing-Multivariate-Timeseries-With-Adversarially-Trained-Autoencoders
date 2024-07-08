@@ -35,4 +35,4 @@ class InterpolatePreProcessor(BasePreProcessor):
         elif self._method in InterpolatePreProcessor.METHODS:
             df.interpolate(method=self._method, inplace=True)
 
-        return df
+        return df.dropna(how="any")
