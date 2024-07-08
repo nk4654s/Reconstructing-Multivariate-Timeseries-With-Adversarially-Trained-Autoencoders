@@ -169,12 +169,10 @@ class Report(BasePreProcessor):
         # plot the average of the correlation matrix, clean 0-only rows and cols
         corr_matrix = self._sum_correlation_matrix / len(days)
         idx, jdx = [], []
-        for i in range(len(corr_matrix)):
-            if sum(corr_matrix.iloc[i]) != 0:
-                idx.append(i)
-        for j in corr_matrix.columns.values:
+        for i, j in enumerate(corr_matrix.columns.values):
             if sum(corr_matrix[j]) != 0:
                 jdx.append(j)
+                idx.append(i)
 
         corr_matrix = corr_matrix.iloc[idx]
         corr_matrix = corr_matrix[jdx]
