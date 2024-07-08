@@ -106,8 +106,12 @@ class DFIO:
             machines uuid will be used as file name. Defaults to None.
             modules (List[BasePreProcessor]): List of modules to be used. Defaults to None.
         """
-        # organize modules
+        # organize modules and build metadata as information for modules
         modules = modules if modules else []
+        metadata = {
+            "data_path": os.path.dirname(file_path),
+            "preprocessors": [module.__class__.__name__ for module in modules],
+        }
 
         # iterate over all streams and append their content to the dataframe
         num_streams = len(self._s3)
@@ -171,4 +175,4 @@ class DFIO:
         # execute modules which require to be executed after processing
         # hence, there is no dataframe to process
         for module in modules:
-            module(None, EntryPoint.ON_PROCESSING_FINISHED)
+            module(metadata=metadata, entry_point=EntryPoint.ON_PROCESSING_FINISHED)
