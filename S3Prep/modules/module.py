@@ -1,4 +1,5 @@
 """This module defines the interface for a pre-processor module."""
+
 import logging
 from enum import Enum
 from typing import Callable, List, Dict
@@ -10,17 +11,19 @@ logging.basicConfig(filename="s3prep.log", encoding="utf-8", level=logging.DEBUG
 
 
 class EntryPoint(Enum):
-    """The entry point enum.
-    """
-    ON_DOWNLOAD_FINISHED = 'on download finished'
-    ON_PROCESSING_STARTED = 'on processing started'
-    ON_PROCESSING_FINISHED = 'on processing finished'
+    """The entry point enum."""
+
+    ON_DOWNLOAD_FINISHED = "on download finished"
+    ON_PROCESSING_STARTED = "on processing started"
+    ON_PROCESSING_FINISHED = "on processing finished"
 
 
 class BasePreProcessor(object):
-    """The base pre-processor class.
-    """
-    def on_download_finished(self, df: DataFrame, metadata: Dict) -> DataFrame | List[DataFrame]:
+    """The base pre-processor class."""
+
+    def on_download_finished(
+        self, df: DataFrame, metadata: Dict
+    ) -> DataFrame | List[DataFrame]:
         """Executes the pre-processor on download finished.
 
         Args:
@@ -32,7 +35,9 @@ class BasePreProcessor(object):
         """
         return df
 
-    def on_processing_started(self, df: DataFrame, metadata: Dict) -> DataFrame | List[DataFrame]:
+    def on_processing_started(
+        self, df: DataFrame, metadata: Dict
+    ) -> DataFrame | List[DataFrame]:
         """Executes the pre-processor before downloading a dataframe.
 
         Args:
@@ -52,8 +57,9 @@ class BasePreProcessor(object):
         """
         return None
 
-    def _process(self, df: DataFrame, func: Callable,
-                 metadata: Dict) -> DataFrame | List[DataFrame]:
+    def _process(
+        self, df: DataFrame, func: Callable, metadata: Dict
+    ) -> DataFrame | List[DataFrame]:
         if df is None:
             func(metadata)
             return None
@@ -72,8 +78,12 @@ class BasePreProcessor(object):
         processed = processed[pointer:]
         return processed
 
-    def __call__(self, df: DataFrame, entry_point: EntryPoint,
-                 metadata: Dict = None) -> List[DataFrame]:
+    def __call__(
+        self,
+        df: DataFrame = None,
+        entry_point: EntryPoint = EntryPoint.ON_PROCESSING_FINISHED,
+        metadata: Dict = None,
+    ) -> List[DataFrame]:
         if entry_point == EntryPoint.ON_DOWNLOAD_FINISHED:
             df = self._process(df, self.on_download_finished, metadata)
 
