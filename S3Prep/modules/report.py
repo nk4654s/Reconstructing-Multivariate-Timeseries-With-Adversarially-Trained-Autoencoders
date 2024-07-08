@@ -1,4 +1,5 @@
 """This module logs some report about a downloaded dataset."""
+
 import os
 from typing import Dict, List, Tuple
 import json
@@ -12,13 +13,14 @@ from . import BasePreProcessor
 from S3Prep.modules.module import logger
 
 
-rcParams.update({'figure.autolayout': True})
+rcParams.update({"figure.autolayout": True})
 
 
 class Report(BasePreProcessor):
     """This class logs some report about a downloaded
     dataframe.
     """
+
     def __init__(self, folder: str = "report"):
         super().__init__()
 
@@ -59,8 +61,9 @@ class Report(BasePreProcessor):
 
         return corr_name
 
-    def _visualize_series(self, df: DataFrame, col_name: str, avg_window_size: int = 30,
-                          path: str = None) -> None:
+    def _visualize_series(
+        self, df: DataFrame, col_name: str, avg_window_size: int = 30, path: str = None
+    ) -> None:
         # Get the column series
         series = df[col_name]
 
@@ -70,10 +73,14 @@ class Report(BasePreProcessor):
         trendline = series.expanding(min_periods=rolling_window).mean()
 
         _, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(series.to_numpy(), label='Original')
-        ax.plot(rolling_avg.to_numpy(), label=f"Rolling Average (window={rolling_window})")
-        ax.plot(trendline.to_numpy(), label='Trendline')
-        ax.set_title(f"Rolling Average and Trendline: {col_name} (window={rolling_window})")
+        ax.plot(series.to_numpy(), label="Original")
+        ax.plot(
+            rolling_avg.to_numpy(), label=f"Rolling Average (window={rolling_window})"
+        )
+        ax.plot(trendline.to_numpy(), label="Trendline")
+        ax.set_title(
+            f"Rolling Average and Trendline: {col_name} (window={rolling_window})"
+        )
         ax.set_xlabel("Index")
         ax.set_ylabel(col_name)
         ax.grid(True)
@@ -91,11 +98,19 @@ class Report(BasePreProcessor):
         plt.savefig(self._check_file_path("boxplot_" + path))
 
     def _visualize_avg_corr(self, cmat: DataFrame, path: str = None) -> None:
-        y = np.mean(cmat, axis=0)
-        x = cmat.columns.values
-        yerr = np.std(cmat, axis=0)
+        cmat = cmat.copy().fillna(0)
+        vals = zip(cmat.columns.values, np.mean(cmat, axis=0), np.std(cmat, axis=0))
+        vals = sorted(list(vals), key=lambda x: (x[1], x[2], x[0]), reverse=True)
 
-        fig, ax = plt.subplots(figsize=(12, 6))
+        y, x, yerr = [], [], []
+        for _x, _y, _yerr in vals:
+            if _y == 0.0:
+                continue
+            y.append(_y)
+            x.append(_x)
+            yerr.append(_yerr)
+
+        _, ax = plt.subplots(figsize=(12, 6))
         ax.bar(x, y)
         ax.errorbar(x, y, yerr=yerr, fmt=".")
 
@@ -103,14 +118,14 @@ class Report(BasePreProcessor):
         ax.set_xlabel("Feature")
         ax.set_ylabel("Correlation (Avg.)")
 
-        plt.setp(ax.get_xticklabels(), rotation=90, ha='right')
+        plt.setp(ax.get_xticklabels(), rotation=90, ha="right")
         plt.savefig(self._check_file_path(path))
 
     def _visualize_corr_matrix(self, cmat: DataFrame, path: str = None) -> None:
         fig, ax = plt.subplots(figsize=(12, 12))
-        im = ax.imshow(cmat, cmap='coolwarm', interpolation='nearest')
+        im = ax.imshow(cmat, cmap="coolwarm", interpolation="nearest")
 
-        ax.set_title('Correlation Matrix')
+        ax.set_title("Correlation Matrix")
         ax.set_xticks(range(len(cmat.columns.values)))
         ax.set_xticklabels(cmat.columns.values)
         ax.set_yticks(range(len(cmat.columns.values)))
@@ -144,7 +159,9 @@ class Report(BasePreProcessor):
         corr_matrix[eye == 1] = 1
         return corr_matrix
 
-    def on_processing_started(self, df: DataFrame, metadata: Dict) -> DataFrame | List[DataFrame]:
+    def on_processing_started(
+        self, df: DataFrame, metadata: Dict
+    ) -> DataFrame | List[DataFrame]:
         logger.debug("Processing ON_PROCESSING_STARTED in %s", self.__class__.__name__)
 
         # Calculate correlation matrix
@@ -158,7 +175,9 @@ class Report(BasePreProcessor):
         # save the length of the dataset
         day = metadata.get("date", None)
         if not day:
-            logger.warning("No date found in metadata, plot 'feature_per_day.png' might be wrong.")
+            logger.warning(
+                "No date found in metadata, plot 'feature_per_day.png' might be wrong."
+            )
             return df
 
         # find the next empty key for the current date
@@ -174,7 +193,7 @@ class Report(BasePreProcessor):
                 {
                     "day": date,
                     "recordings": df.shape[0],
-                    "features": len(df.columns.values)
+                    "features": len(df.columns.values),
                 }
             )
             self._meta["files"] = meta
@@ -230,7 +249,11 @@ class Report(BasePreProcessor):
         uncorr = self._lowest_correlated_features(corr_matrix)
 
         meta = {"highest_correlated": [corr_a, corr_b], "most_uncorrelated": uncorr}
-        with open(self._check_file_path("correlated_sensors.json"), "w", encoding="iso-8859-15") as f:
+        with open(
+            self._check_file_path("correlated_sensors.json"),
+            "w",
+            encoding="iso-8859-15",
+        ) as f:
             json.dump(meta, f, indent=2)
 
         # save the length of each dataset file and the total dataset length
