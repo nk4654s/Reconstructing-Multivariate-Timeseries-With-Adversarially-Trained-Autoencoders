@@ -110,7 +110,7 @@ class Report(BasePreProcessor):
             x.append(_x)
             yerr.append(_yerr)
 
-        _, ax = plt.subplots(figsize=(12, 6))
+        _, ax = plt.subplots(figsize=(12, 8))
         ax.bar(x, y)
         ax.errorbar(x, y, yerr=yerr, fmt=".")
 
