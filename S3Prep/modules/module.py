@@ -81,6 +81,6 @@ class BasePreProcessor(object):
             df = self._process(df, self.on_processing_started, metadata)
 
         elif entry_point == EntryPoint.ON_PROCESSING_FINISHED:
-            df = self._process(df, self.on_processing_finished, metadata)
+            self.on_processing_finished(metadata)
 
         return [df] if isinstance(df, DataFrame) else df
