@@ -62,7 +62,7 @@ class DFIO:
         if self._last_header is not None:
             # check if the dataframe's heaeder matches the stream's header
             header_str = stream.readline()
-            incoming = header_str.rstrip("\n").split("\t")[1:]
+            incoming = header_str.rstrip("\n").split("\t")
             if incoming == self._last_header:
                 return len(header_str), self._last_header, False
 
@@ -71,7 +71,7 @@ class DFIO:
         else:
             # get the header from stream and create a new dataframe
             header_str = stream.readline()
-            incoming = header_str.rstrip("\n").split("\t")[1:]
+            incoming = header_str.rstrip("\n").split("\t")
 
         self._last_header = incoming
         return len(header_str), incoming, False
@@ -134,7 +134,7 @@ class DFIO:
                 # extract and format the row
                 row = [
                     self._safe_convert_float(s)
-                    for s in line.strip("\n").split("\t")[1:]
+                    for s in line.strip("\n").split("\t")
                 ]
                 values.append(row)
             values = np.array(values)
