@@ -90,6 +90,60 @@ class Report(BasePreProcessor):
 
         plt.savefig(self._check_file_path("boxplot_" + path))
 
+    def _visualize_avg_corr(self, cmat: DataFrame, path: str = None) -> None:
+        y = np.mean(cmat, axis=0)
+        x = cmat.columns.values
+        yerr = np.std(cmat, axis=0)
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.bar(x, y)
+        ax.errorbar(x, y, yerr=yerr, fmt=".")
+
+        ax.set_title("Average Correlation")
+        ax.set_xlabel("Feature")
+        ax.set_ylabel("Correlation (Avg.)")
+
+        plt.setp(ax.get_xticklabels(), rotation=90, ha='right')
+        plt.savefig(self._check_file_path(path))
+
+    def _visualize_corr_matrix(self, cmat: DataFrame, path: str = None) -> None:
+        fig, ax = plt.subplots(figsize=(12, 12))
+        im = ax.imshow(cmat, cmap='coolwarm', interpolation='nearest')
+
+        ax.set_title('Correlation Matrix')
+        ax.set_xticks(range(len(cmat.columns.values)))
+        ax.set_xticklabels(cmat.columns.values)
+        ax.set_yticks(range(len(cmat.columns.values)))
+        ax.set_yticklabels(cmat.columns.values)
+
+        plt.setp(ax.get_xticklabels(), rotation=90, ha="right", rotation_mode="anchor")
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        fig.colorbar(im, cax=cax)
+        plt.savefig(self._check_file_path(path))
+
+    def _clean_corr_matrix(self, counts: int) -> DataFrame:
+        # remove the self-correlations
+        corr_matrix = self._sum_correlation_matrix / counts
+        eye = np.eye(corr_matrix.shape[0], corr_matrix.shape[0])
+        corr_matrix[eye == 1] = 0
+
+        # only include rows/cols which have some correlation, a perfect 0
+        # means, that the previous correlation matrix were empty
+        idx, jdx = [], []
+        for i, j in enumerate(corr_matrix.columns.values):
+            if sum(corr_matrix[j]) != 0:
+                jdx.append(j)
+                idx.append(i)
+
+        corr_matrix = corr_matrix.iloc[idx]
+        corr_matrix = corr_matrix[jdx]
+
+        # add the self-correlation again
+        eye = np.eye(corr_matrix.shape[0], corr_matrix.shape[1])
+        corr_matrix[eye == 1] = 1
+        return corr_matrix
+
     def on_processing_started(self, df: DataFrame, metadata: Dict) -> DataFrame | List[DataFrame]:
         logger.debug("Processing ON_PROCESSING_STARTED in %s", self.__class__.__name__)
 
@@ -167,30 +221,9 @@ class Report(BasePreProcessor):
         plt.savefig(self._check_file_path("recordings_per_file.png"))
 
         # plot the average of the correlation matrix, clean 0-only rows and cols
-        corr_matrix = self._sum_correlation_matrix / len(days)
-        idx, jdx = [], []
-        for i, j in enumerate(corr_matrix.columns.values):
-            if sum(corr_matrix[j]) != 0:
-                jdx.append(j)
-                idx.append(i)
-
-        corr_matrix = corr_matrix.iloc[idx]
-        corr_matrix = corr_matrix[jdx]
-
-        fig, ax = plt.subplots(figsize=(12, 12))
-        im = ax.imshow(corr_matrix, cmap='coolwarm', interpolation='nearest')
-
-        ax.set_title('Correlation Matrix')
-        ax.set_xticks(range(len(corr_matrix.columns.values)))
-        ax.set_xticklabels(corr_matrix.columns.values)
-        ax.set_yticks(range(len(corr_matrix.columns.values)))
-        ax.set_yticklabels(corr_matrix.columns.values)
-
-        plt.setp(ax.get_xticklabels(), rotation=90, ha="right", rotation_mode="anchor")
-        divider = make_axes_locatable(ax)
-        cax = divider.append_axes("right", size="5%", pad=0.05)
-        fig.colorbar(im, cax=cax)
-        plt.savefig(self._check_file_path("correlation_matrix.png"))
+        corr_matrix = self._clean_corr_matrix(len(days))
+        self._visualize_corr_matrix(corr_matrix, "correlation_matrix.png")
+        self._visualize_avg_corr(corr_matrix, "avg_feature_correlation.png")
 
         # save the best correlated sensor names
         corr_a, corr_b = self._highest_correlated_features(corr_matrix)
