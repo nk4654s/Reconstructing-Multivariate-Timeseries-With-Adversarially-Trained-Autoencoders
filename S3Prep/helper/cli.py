@@ -1,5 +1,6 @@
 """This module handles arguments and generation of those for pre-processing modules."""
 import inspect
+import re
 from argparse import ArgumentParser, Namespace, Action
 from typing import List
 
@@ -30,8 +31,8 @@ class CLIArgumentParser(ArgumentParser):
         # store all pre-processor instances and instantiate their arguments
         self._preps = preps if isinstance(preps, list) else [preps]
         for prep in self._preps:
-            prefix = prep.__name__.lower()
-            prefix = prefix if len(prefix) < 7 else prefix[:7]
+            prefix = re.findall("[A-Z][^A-Z]*", prep.__name__)[0]
+            prefix = prefix.lower()
 
             # add arguments from pre-processor
             signature = inspect.signature(prep.__init__).parameters
@@ -39,8 +40,9 @@ class CLIArgumentParser(ArgumentParser):
                 if attr == "self":
                     continue
 
+                attr_arg = attr.replace("_", "-")
                 self.add_argument(
-                    f"--{prefix}-{attr}",
+                    f"--{prefix}-{attr_arg}",
                     type=signature[attr].annotation,
                     default=signature[attr].default,
                     action=GroupedAction,
