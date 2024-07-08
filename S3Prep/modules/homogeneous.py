@@ -24,5 +24,5 @@ class HomogeneousTimeSteps(BasePreProcessor):
         new_index = Index(np.arange(range_start, range_end, 1), name=self._index_key)
 
         # reindex the dataframe, inserted rows will be filled with NaNs
-        df = df.reindex(new_index)
+        df = df.set_index(self._index_key).reindex(new_index).reset_index()
         return df
