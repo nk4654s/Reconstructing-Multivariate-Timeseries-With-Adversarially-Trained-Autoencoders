@@ -52,24 +52,34 @@ class DFIO:
 
         return temp_path
 
-    def _check_header(self, stream: TextIO) -> Tuple[int, dict, bool]:
+    def _check_header(self, stream: TextIO) -> Tuple[int, dict, List]:
         header_str = None
         if self._last_header is not None:
-            # check if the dataframe's heaeder matches the stream's header
+            logger.debug("Checking header: %s", self._last_header)
+            # check if the dataframe's header matches the stream's header
             header_str = stream.readline()
             incoming = header_str.rstrip("\n").split("\t")
             if incoming == self._last_header:
-                return len(header_str), self._last_header, False
+                return len(header_str), self._last_header, []
 
+            # if the dataframe' header does not match the stream's, then we need to
+            # remove the headers which are unknown so far (drop_headers)
             if self._limit_headers:
-                return len(header_str), self._last_header, True
+                assert len(self._last_header) < len(incoming)
+                drop_headers = list(set(incoming) - set(self._last_header))
+                logger.debug("Removing %s headers total", len(drop_headers))
+                assert len(incoming) - len(drop_headers) == len(self._last_header)
+                return len(header_str), incoming, drop_headers
+
+            return len(header_str), incoming, []
         else:
             # get the header from stream and create a new dataframe
             header_str = stream.readline()
             incoming = header_str.rstrip("\n").split("\t")
 
+        logger.debug("Set initial header")
         self._last_header = incoming
-        return len(header_str), incoming, False
+        return len(header_str), incoming, []
 
     def _safe_convert_float(self, value: str) -> float:
         if value == "":
@@ -93,7 +103,9 @@ class DFIO:
             store.put("data", df, format="table", append=False)
             store.close()
 
-    def download(self, dir_name: str = "dataset", modules: List[BasePreProcessor] = None) -> None:
+    def download(
+        self, dir_name: str = "dataset", modules: List[BasePreProcessor] = None
+    ) -> None:
         """Downloads the dataframe from a S3 stream and downloads the dataframe as file.
 
         Args:
@@ -126,14 +138,16 @@ class DFIO:
             logger.debug("Streaming day %s", self._s3.day(i))
             position, headers, drop_headers = self._check_header(stream)
             stream.seek(position)
+            logger.debug("Jump to stream position %s", position)
 
             # read all values from the incoming sensor data
             values = []
-            for line in stream.readlines():
+            lines = stream.readlines()
+            logger.debug("Streaming lines %s", len(lines))
+            for line in lines:
                 # extract and format the row
                 row = [
-                    self._safe_convert_float(s)
-                    for s in line.strip("\n").split("\t")
+                    self._safe_convert_float(s) for s in line.strip("\n").split("\t")
                 ]
                 values.append(row)
             values = np.array(values)
@@ -141,10 +155,15 @@ class DFIO:
             # append the data to the dataframe
             data = {key: val for (key, val) in zip(headers, values.T)}
             df = pd.DataFrame(data)
+            if df.empty:
+                continue
 
             # run the modules which require non-processed data
             # as result, df might be a list
-            meta = {"date": self._s3.day(i).strftime("%Y-%m-%d"), "machine": self._s3.machine_uuid}
+            meta = {
+                "date": self._s3.day(i).strftime("%Y-%m-%d"),
+                "machine": self._s3.machine_uuid,
+            }
             for module in modules:
                 df = module(df, EntryPoint.ON_DOWNLOAD_FINISHED, metadata=meta)
 
@@ -152,11 +171,16 @@ class DFIO:
             for df in dfs:
                 # only select valid columns if inner merge
                 if drop_headers:
-                    df = df[headers]
+                    logger.debug("Current headers: %s", df.columns.values)
+                    logger.debug("Drop headers: %s", drop_headers)
+                    df = df.drop(drop_headers, axis=1)
+                    logger.debug("Changed headers to %s", df.columns.values)
 
                 # rename uuid to sensor name
-                names = {id: self._sensor_names.get(id, id) for id in list(df.columns.values)}
-                df.rename(columns = names, inplace = True)
+                names = {
+                    id: self._sensor_names.get(id, id) for id in list(df.columns.values)
+                }
+                df.rename(columns=names, inplace=True)
                 logger.debug("Headers: %s", str(list(df.columns.values)))
 
                 # apply pre-processing, might result in a list of dataframes
