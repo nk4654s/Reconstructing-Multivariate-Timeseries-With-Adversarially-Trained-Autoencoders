@@ -28,24 +28,19 @@ class DFIO:
         self._limit_headers = limit_headers
         self._last_header = None
 
-    def _check_path(self, file_path: str, day_index: int = 0) -> str:
+    def _check_path(self, dir_name: str, day_index: int = 0) -> str:
         """Check the file path to ensure it is valid
 
         Args:
-            file_path (str): The file path to check
+            dir_name (str): The file path to check
         """
         # set default file path to machine uuid
         day = self._s3.day(day_index).strftime("%Y-%m-%d")
-        if not file_path:
-            file_path = f"{self._s3.machine_uuid}_{day}.h5"
-        else:
-            file_path = file_path.replace(".", f"_{day}.")
+        file_path = os.path.join(dir_name, f"{self._s3.machine_uuid}_{day}.h5")
 
         # check if the folder for the dataframes exist
-        if "/" in file_path:
-            folder_path = "/".join(file_path.split("/")[:-1])
-            if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
-                os.makedirs(folder_path)
+        if not os.path.exists(dir_name) or not os.path.isdir(dir_name):
+            os.makedirs(dir_name)
 
         # add increasing number to file path
         num = 1
@@ -81,35 +76,35 @@ class DFIO:
             return np.nan
         return float(value)
 
-    def _create_storage(self, file_path: str = None, day_index: int = 0) -> pd.HDFStore:
-        return pd.HDFStore(self._check_path(file_path, day_index), "w")
+    def _create_storage(self, dir_name: str = None, day_index: int = 0) -> pd.HDFStore:
+        return pd.HDFStore(self._check_path(dir_name, day_index), "w")
 
-    def save(self, df: pd.DataFrame, file_path: str = None, day_index: int = 0) -> None:
+    def save(self, df: pd.DataFrame, dir_name: str = None, day_index: int = 0) -> None:
         """Saves the dataframe in an HDF5 file and frees memory.
 
         Args:
             df (pd.DataFrame): dataframe to be saved
-            file_path (str): path of the HDF5 file where to save
+            dir_name (str): Path of the HDF5 file where to save
             day_index (int): index of the day to be saved
         """
         assert df is not None, "No dataframe to save"
         if not df.empty:
-            store = self._create_storage(file_path, day_index)
+            store = self._create_storage(dir_name, day_index)
             store.put("data", df, format="table", append=False)
             store.close()
 
-    def download(self, file_path: str = None, modules: List[BasePreProcessor] = None) -> None:
+    def download(self, dir_name: str = "dataset", modules: List[BasePreProcessor] = None) -> None:
         """Downloads the dataframe from a S3 stream and downloads the dataframe as file.
 
         Args:
-            file_path (str): Path of the HDF5 file to be saved. If not provided, the
-            machines uuid will be used as file name. Defaults to None.
+            dir_name (str): Path of the HDF5 file to be saved. If not provided, the current
+            folder will be used. Defaults to "dataset".
             modules (List[BasePreProcessor]): List of modules to be used. Defaults to None.
         """
         # organize modules and build metadata as information for modules
         modules = modules if modules else []
         metadata = {
-            "data_path": os.path.dirname(file_path),
+            "data_path": dir_name,
             "preprocessors": [module.__class__.__name__ for module in modules],
         }
 
@@ -170,7 +165,7 @@ class DFIO:
                 dfs = [df] if isinstance(df, pd.DataFrame) else df
 
                 for df in dfs:
-                    self.save(df, file_path, i)
+                    self.save(df, dir_name, i)
 
         # execute modules which require to be executed after processing
         # hence, there is no dataframe to process

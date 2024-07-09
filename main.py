@@ -24,4 +24,4 @@ if __name__ == "__main__":
 
     s3 = S3(machine_uuid, interval)
     dfio = DFIO(s3, limit_headers=parser.args.limit_headers)
-    dfio.download(parser.args.file, modules=prep_modules)
+    dfio.download(parser.args.folder, modules=prep_modules)
