@@ -2,6 +2,7 @@ from typing import Dict, List
 
 from pandas import DataFrame
 from S3Prep.modules import BasePreProcessor
+from S3Prep.modules.module import logger
 
 
 class RemoveColumns(BasePreProcessor):
@@ -11,5 +12,7 @@ class RemoveColumns(BasePreProcessor):
         self._columns = columns_to_remove
 
     def on_processing_started(self, df: DataFrame, metadata: Dict) -> DataFrame | List[DataFrame]:
+        old_len = df.shape[1]
         df = df.drop(columns=self._columns)
+        logger.debug("RemoveColumns: Removed %s columns", old_len - df.shape[1])
         return df

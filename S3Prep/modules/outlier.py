@@ -46,7 +46,7 @@ class OutlierPreProcessor(BasePreProcessor):
         # Remove the outliers from your DataFrame
         df = df.dropna(how="any")
 
-        removed_len = df.shape[0]
+        removed_len = df.shape[0] - original_len
         logger.debug("Outlier detection removed %d%% of the DataFrame",
                      round(removed_len / original_len * 100, 3))
         return df
