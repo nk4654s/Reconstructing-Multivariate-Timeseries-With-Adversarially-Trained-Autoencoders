@@ -1,14 +1,19 @@
 """This module handles pandas dataframe input/outut for s3 streams"""
 
 import os
-from typing import List, TextIO, Tuple
+from typing import List, TextIO
 import pandas as pd
 import numpy as np
 from tqdm import trange
 
 from S3Prep.data import S3
-from S3Prep.data.utils import logger, get_sensor_uuid_to_name
+from S3Prep.data.header import Header
+from S3Prep.helper import Meta, Metadata
+from S3Prep.helper import get_sensor_uuid_to_name, get_file, to_float, get_logger
 from S3Prep.modules import BasePreProcessor, EntryPoint
+
+# create logger object
+logger = get_logger(__name__)
 
 
 class DFIO:
@@ -23,71 +28,58 @@ class DFIO:
             incoming dataframe. Defaults to False.
         """
         self._s3 = s3
+        self._meta = Metadata()
         self._sensor_names = get_sensor_uuid_to_name(self._s3.machine_uuid)
 
         self._limit_headers = limit_headers
-        self._last_header = None
+        self._header: Header = None
 
-    def _check_path(self, dir_name: str, day_index: int = 0) -> str:
-        """Check the file path to ensure it is valid
+    def parse_header(self, line: str) -> Header:
+        """This method parses a line into a header and checks for validity. If
+        there is a change in number of header.values, this method will define a
+        relative complement of the previous header and the new header. This set 
+        of values will be dropped from the DataFrame.
 
         Args:
-            dir_name (str): The file path to check
+            line (str): The line to parse into a header.
+        
+        Returns:
+            Header: The parsed header.
         """
-        # set default file path to machine uuid
-        day = self._s3.day(day_index).strftime("%Y-%m-%d")
-        file_path = os.path.join(dir_name, f"{self._s3.machine_uuid}_{day}.h5")
+        # build the header instance
+        incoming = Header()
+        incoming.values = line.rstrip("\n").split("\t")
 
-        # check if the folder for the dataframes exist
-        if not os.path.exists(dir_name) or not os.path.isdir(dir_name):
-            os.makedirs(dir_name)
+        # if no header is registered so far, just use the latest income
+        if self._header is None:
+            logger.debug("Set initial header with %s values", incoming.length)
+            self._header = incoming
+            return self._header
 
-        # add increasing number to file path
-        num = 1
-        temp_path = file_path
-        while os.path.exists(temp_path):
-            parts = file_path.split(".")
-            temp_path = f"{parts[0]}_{num}.{parts[-1]}"
-            num += 1
+        # if the incoming header is longer than the previous one, drop the
+        # values which are unknown or missing in the previous one and
+        # return it
+        if incoming.values == self._header.values:
+            logger.debug("No change in header, returning previous one.")
+            return self._header
 
-        return temp_path
+        # calculate the headers to remove
+        assert (self._header.length < incoming.length), \
+            "Header length mismatch. Incoming header length is smaller than known header length."
 
-    def _check_header(self, stream: TextIO) -> Tuple[int, dict, List]:
-        header_str = None
-        if self._last_header is not None:
-            logger.debug("Checking header: %s", self._last_header)
-            # check if the dataframe's header matches the stream's header
-            header_str = stream.readline()
-            incoming = header_str.rstrip("\n").split("\t")
-            if incoming == self._last_header:
-                return len(header_str), self._last_header, []
-
-            # if the dataframe' header does not match the stream's, then we need to
-            # remove the headers which are unknown so far (drop_headers)
-            if self._limit_headers:
-                assert len(self._last_header) < len(incoming)
-                drop_headers = list(set(incoming) - set(self._last_header))
-                logger.debug("Removing %s headers total", len(drop_headers))
-                assert len(incoming) - len(drop_headers) == len(self._last_header)
-                return len(header_str), incoming, drop_headers
-
-            return len(header_str), incoming, []
-        else:
-            # get the header from stream and create a new dataframe
-            header_str = stream.readline()
-            incoming = header_str.rstrip("\n").split("\t")
-
-        logger.debug("Set initial header")
-        self._last_header = incoming
-        return len(header_str), incoming, []
-
-    def _safe_convert_float(self, value: str) -> float:
-        if value == "":
-            return np.nan
-        return float(value)
+        incoming.relative_complement(self._header, fail_safe=True)
+        logger.debug("Header length mismatch. Removing %s values.", len(incoming.drop))
+        return incoming
 
     def _create_storage(self, dir_name: str = None, day_index: int = 0) -> pd.HDFStore:
-        return pd.HDFStore(self._check_path(dir_name, day_index), "w")
+        # get a valid file path based on the machine's UUID, the day_index and
+        # increasing postfix-numbers (optional)
+        day = self._s3.day(day_index).strftime("%Y-%m-%d")
+        file_name = self._s3.machine_uuid + ".h5"
+        file_name = get_file(os.path.join(dir_name, file_name), postfix=day)
+        logger.debug("Saving DF to %s", file_name)
+
+        return pd.HDFStore(file_name, "w")
 
     def save(self, df: pd.DataFrame, dir_name: str = None, day_index: int = 0) -> None:
         """Saves the dataframe in an HDF5 file and frees memory.
@@ -103,6 +95,42 @@ class DFIO:
             store.put("data", df, format="table", append=False)
             store.close()
 
+    def parse_stream(self, stream: TextIO = "dataset", day_index: int = 0) -> pd.DataFrame:
+        """Downloads the dataframe from a S3 stream and puts it into a pandas DataFrame.
+
+        Args:
+            stream (TextIO): Stream to be read.
+            day_index (int): index of the day to be saved
+        
+        Returns:
+            df (pd.DataFrame): Pandas DataFrame containing the data from the stream
+        """
+        # check if the dataframe is empty and set it up accordingly
+        # also check if the header is consistent with the stream's one
+        # if not, save the progress so far and continue on a fresh dataframe instance
+        values = []
+        lines = stream.readlines()
+        if len(lines) <= 1:
+            return None
+        logger.info("Streaming day %s", self._s3.day(day_index))
+        logger.info("Streaming lines %s", len(lines))
+
+        # read all values from the incoming sensor data
+        for i, line in enumerate(lines):
+            if i == 0:
+                header = self.parse_header(line)
+                continue
+
+            # extract and format the row
+            columns = line.strip("\n").split("\t")
+            row = [to_float(s) for s in columns]
+            values.append(row)
+
+        values = np.array(values)
+        data = {key: val for (key, val) in zip(header.values, values.T)}
+
+        return pd.DataFrame(data)
+
     def download(
         self, dir_name: str = "dataset", modules: List[BasePreProcessor] = None
     ) -> None:
@@ -115,83 +143,40 @@ class DFIO:
         """
         # organize modules and build metadata as information for modules
         modules = modules if modules else []
-        metadata = {
-            "data_path": dir_name,
-            "preprocessors": [module.__class__.__name__ for module in modules],
-        }
+        self._meta.put([module.__class__.__name__ for module in modules], Meta.MODULES)
+        self._meta.put(dir_name, Meta.PATH)
+        self._meta.put(self._s3.machine_uuid, Meta.MACHINE_UUID)
 
         # iterate over all streams and append their content to the dataframe
-        num_streams = len(self._s3)
-        pbar = trange(
-            num_streams,
-            desc=f"Fetching TSV daily data for machine {self._s3.machine_uuid}",
-        )
-        for i in pbar:
+        desc = f"Fetching TSV daily data for machine {self._s3.machine_uuid}"
+        for i in trange(len(self._s3), desc=desc):
             # get the stream, skip if the stream could not be opened
             stream = self._s3[i]
             if stream is None:
                 continue
 
-            # check if the dataframe is empty and set it up accordingly
-            # also check if the header is consistent with the stream's one
-            # if not, save the progress so far and continue on a fresh dataframe instance
-            logger.debug("Streaming day %s", self._s3.day(i))
-            position, headers, drop_headers = self._check_header(stream)
-            stream.seek(position)
-            logger.debug("Jump to stream position %s", position)
-
-            # read all values from the incoming sensor data
-            values = []
-            lines = stream.readlines()
-            logger.debug("Streaming lines %s", len(lines))
-            for line in lines:
-                # extract and format the row
-                row = [
-                    self._safe_convert_float(s) for s in line.strip("\n").split("\t")
-                ]
-                values.append(row)
-            values = np.array(values)
-
-            # append the data to the dataframe
-            data = {key: val for (key, val) in zip(headers, values.T)}
-            df = pd.DataFrame(data)
-            if df.empty:
+            # download the TSV file from the S3 bucket and parse it into a DataFrame
+            df = self.parse_stream(stream, day_index=i)
+            if df is None:
                 continue
 
             # run the modules which require non-processed data
             # as result, df might be a list
-            meta = {
-                "date": self._s3.day(i).strftime("%Y-%m-%d"),
-                "machine": self._s3.machine_uuid,
-            }
+            logger.info("Processing data using %s modules.", len(modules))
+            self._meta.put(self._s3.day(i).strftime("%Y-%m-%d"), Meta.DAY)
             for module in modules:
-                df = module(df, EntryPoint.ON_DOWNLOAD_FINISHED, metadata=meta)
+                df = module(df, EntryPoint.ON_DOWNLOAD_FINISHED, metadata=self._meta)
 
+            # some modules might return a list of DataFrames, save each of those
             dfs = [df] if isinstance(df, pd.DataFrame) else df
+            logger.info("Single TSV download resultet in %s file(s).", len(dfs))
             for df in dfs:
-                # only select valid columns if inner merge
-                if drop_headers:
-                    logger.debug("Current headers: %s", df.columns.values)
-                    logger.debug("Drop headers: %s", drop_headers)
-                    df = df.drop(drop_headers, axis=1)
-                    logger.debug("Changed headers to %s", df.columns.values)
-
-                # rename uuid to sensor name
-                names = {
-                    id: self._sensor_names.get(id, id) for id in list(df.columns.values)
-                }
-                df.rename(columns=names, inplace=True)
-                logger.debug("Headers: %s", str(list(df.columns.values)))
-
-                # apply pre-processing, might result in a list of dataframes
-                for module in modules:
-                    df = module(df, EntryPoint.ON_PROCESSING_STARTED, metadata=meta)
-                dfs = [df] if isinstance(df, pd.DataFrame) else df
-
-                for df in dfs:
-                    self.save(df, dir_name, i)
+                self.save(df, dir_name, i)
 
         # execute modules which require to be executed after processing
         # hence, there is no dataframe to process
         for module in modules:
-            module(metadata=metadata, entry_point=EntryPoint.ON_PROCESSING_FINISHED)
+            module(metadata=self._meta, entry_point=EntryPoint.ON_PROCESSING_FINISHED)
+
+        self._meta.save(dir_name)
+        logger.info("Finished downloading and processing.")

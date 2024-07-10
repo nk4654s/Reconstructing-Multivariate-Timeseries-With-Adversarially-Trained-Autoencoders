@@ -1,13 +1,66 @@
 """This module contains utilities for handling downloaded data from the s3 bucket."""
-
-import logging
+import os
 from typing import Tuple, List
 from datetime import datetime, date, timedelta
 import requests
+import numpy as np
 
-# create logger object
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename="s3prep.log", encoding="utf-8", level=logging.DEBUG)
+
+def get_file(file_path: str, create_dirs: bool = True, overwrite: bool = False,
+             postfix: str = None) -> str:
+    """This function checks if a file_path is valid and creates directories if required.
+    In case the file_path already exists, the file name receives an increasing postfix.
+    
+    Args:
+        file_path (str): The file path of the file to be downloaded
+        create_dirs (bool, optional): Whether directories should be created if
+        required. Defaults to True.
+        overwrite (bool, optional): Whether existing files should be
+        overwritten. Defaults to False.
+        post_fix (str, optional): The postfix to be added (does not replace the 
+        increasing postfix-number)
+    """
+    assert file_path.count(".") == 1, "File requires an extension (format: <file-name>.<extension>)"
+    # create folder of file if required
+    folder_path = os.path.dirname(file_path)
+    folder_exists = os.path.exists(folder_path)
+    if create_dirs and not folder_exists:
+        os.makedirs(folder_path)
+
+    # create file name: add postfix, increase postfix-number (optional)
+    file_name_parts = os.path.basename(file_path).split(".")
+    file_name = file_name_parts[0]
+    file_extension = file_name_parts[-1]
+    postfix = f"_{postfix}" if postfix else ""
+    name_postfix = f"{file_name}{postfix}.{file_extension}"
+
+    # do not check if the file exists in case of overwrite
+    if overwrite:
+        return os.path.join(folder_path, name_postfix)
+
+    # check if file exists and increase postfix-number until it does not exist anymore
+    num = 1
+    while os.path.exists(os.path.join(folder_path, name_postfix)):
+        name_postfix = f"{file_name}{postfix}_{num}.{file_extension}"
+        num += 1
+
+    return os.path.join(folder_path, name_postfix)
+
+
+def to_float(value: str) -> float:
+    """Safe converts a string value into a float value. If the value cannot be converted, it
+    is returned as NaN.
+    
+    Args:
+        value (str): The value that should be converted into a float.
+    
+    Returns:
+        float: The converted float value or NaN if the conversion failed.
+    """
+    try:
+        return float(value)
+    except ValueError as _:
+        return np.nan
 
 
 def get_sensor_uuid_to_name(machine_uuid: str) -> dict:
@@ -30,8 +83,7 @@ def get_sensor_uuid_to_name(machine_uuid: str) -> dict:
     try:
         response = requests.request("POST", url, data=payload, headers=headers,
                                     timeout=30)
-    except requests.Timeout as e:
-        logger.warning("Request to %s timed out: %s", url, e)
+    except requests.Timeout as _:
         return None
 
     sensor_list = response.json()["data"]["machine"]["getMachine"]["sensors"]

@@ -1,10 +1,12 @@
 """This module removes rows from the dataframe if the machine is off."""
 
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 from pandas import DataFrame
 import numpy as np
-from . import BasePreProcessor
-from S3Prep.modules.module import logger
+from S3Prep.modules import BasePreProcessor
+from S3Prep.helper import Metadata, get_logger
+
+logger = get_logger(__name__)
 
 
 class MachineStateSplit(BasePreProcessor):
@@ -47,11 +49,8 @@ class MachineStateSplit(BasePreProcessor):
 
         return df.iloc[:end_idx], df.iloc[end_idx:]
 
-    def on_processing_started(
-        self, df: DataFrame, metadata: Dict = None
-    ) -> List[DataFrame]:
-        logger.debug("Processing ON_PROCESSING_STARTED in %s", self.__class__.__name__)
-
+    def on_download_finished(self, df: DataFrame, _: Metadata = None) \
+        -> List[DataFrame]:
         df_splits = []
         to_split = df.copy()
         trimmed = to_split

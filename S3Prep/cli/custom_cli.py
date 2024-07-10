@@ -1,7 +1,7 @@
 """A custom cli interface for simplifying things."""
 from typing import List
-from S3Prep.helper.cli import CLIArgumentParser
-from S3Prep.modules.module import BasePreProcessor
+from S3Prep.cli import CLIArgumentParser
+from S3Prep.modules import BasePreProcessor
 
 
 class MyCLIArgumentParser(CLIArgumentParser):

@@ -1,18 +1,17 @@
 """This module logs some report about a downloaded dataset."""
-
-import os
-from typing import Dict, List, Tuple
-import json
+from typing import  List, Tuple
+import logging
 import numpy as np
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from . import BasePreProcessor
-from S3Prep.modules.module import logger
+from S3Prep.modules import BasePreProcessor
+from S3Prep.helper import Metadata, Meta, get_file, get_logger
 
-
+# create logger object
+logger = get_logger(__name__)
 rcParams.update({"figure.autolayout": True})
 
 
@@ -25,22 +24,10 @@ class Report(BasePreProcessor):
         super().__init__()
 
         self._folder = folder
-        self._meta = {}
+        self._file_register = []
+        self._total_recordings = 0
 
         self._sum_correlation_matrix = None
-
-    def _check_file_path(self, file_path: str) -> str:
-        if not os.path.exists(self._folder):
-            os.makedirs(self._folder)
-
-        file_path = self._folder + os.path.sep + file_path
-        temp_path = file_path
-        num = 1
-        while os.path.exists(temp_path):
-            temp_path = file_path.replace(".", f"_{num}.")
-            num += 1
-
-        return temp_path
 
     def _highest_correlated_features(self, df: DataFrame) -> Tuple[str, str]:
         # get the feature with the highest (avg) correlation
@@ -85,7 +72,7 @@ class Report(BasePreProcessor):
         ax.set_ylabel(col_name)
         ax.grid(True)
         plt.legend()
-        plt.savefig(self._check_file_path("trend_" + path))
+        plt.savefig(get_file(f"{self._folder}/trend_{path}"))
 
         # 2. Boxplot graph
         _, ax = plt.subplots(figsize=(10, 6))
@@ -95,7 +82,7 @@ class Report(BasePreProcessor):
         ax.set_ylabel(col_name)
         ax.grid(True)
 
-        plt.savefig(self._check_file_path("boxplot_" + path))
+        plt.savefig(get_file(f"{self._folder}/boxplot_{path}"))
 
     def _visualize_avg_corr(self, cmat: DataFrame, path: str = None) -> None:
         cmat = cmat.copy().fillna(0)
@@ -119,7 +106,7 @@ class Report(BasePreProcessor):
         ax.set_ylabel("Correlation (Avg.)")
 
         plt.setp(ax.get_xticklabels(), rotation=90, ha="right")
-        plt.savefig(self._check_file_path(path))
+        plt.savefig(get_file(f"{self._folder}/{path}"))
 
     def _visualize_corr_matrix(self, cmat: DataFrame, path: str = None) -> None:
         fig, ax = plt.subplots(figsize=(12, 12))
@@ -135,7 +122,7 @@ class Report(BasePreProcessor):
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         fig.colorbar(im, cax=cax)
-        plt.savefig(self._check_file_path(path))
+        plt.savefig(get_file(f"{self._folder}/{path}"))
 
     def _clean_corr_matrix(self, counts: int) -> DataFrame:
         # remove the self-correlations
@@ -159,11 +146,9 @@ class Report(BasePreProcessor):
         corr_matrix[eye == 1] = 1
         return corr_matrix
 
-    def on_processing_started(
-        self, df: DataFrame, metadata: Dict
+    def on_download_finished(
+        self, df: DataFrame, metadata: Metadata
     ) -> DataFrame | List[DataFrame]:
-        logger.debug("Processing ON_PROCESSING_STARTED in %s", self.__class__.__name__)
-
         # Calculate correlation matrix
         corr_matrix = abs(df.corr(method="spearman").fillna(0))
         if self._sum_correlation_matrix is None:
@@ -173,7 +158,7 @@ class Report(BasePreProcessor):
             self._sum_correlation_matrix += corr_matrix[headers]
 
         # save the length of the dataset
-        day = metadata.get("date", None)
+        day = metadata[Meta.DAY]
         if not day:
             logger.warning(
                 "No date found in metadata, plot 'feature_per_day.png' might be wrong."
@@ -182,35 +167,34 @@ class Report(BasePreProcessor):
 
         # find the next empty key for the current date
         if df.shape[0] > 0:
-            meta = self._meta.get("files", [])
+            # make sure that the day-key has the increasing postfix-number according to the
+            # DataFrame's file name
             num = 0
             date = day
-            while len(meta) > 0 and meta[-1]["day"] == date:
+            while len(self._file_register) > 0 and self._file_register[-1]["day"] == date:
                 num += 1
                 date = day + f"_{num}"
 
-            meta.append(
+            # add the current DataFrame to the file register
+            self._file_register.append(
                 {
                     "day": date,
                     "recordings": df.shape[0],
                     "features": len(df.columns.values),
                 }
             )
-            self._meta["files"] = meta
-            total = self._meta.get("total", 0)
-            total += df.shape[0]
-            self._meta["total"] = total
+
+            self._total_recordings += df.shape[0]
 
         return df
 
-    def on_processing_finished(self, metadata: Dict) -> DataFrame | List[DataFrame]:
-        logger.debug("Processing ON_PROCESSING_FINISHED in %s", self.__class__.__name__)
-
+    def on_processing_finished(self, metadata: Metadata) -> DataFrame | List[DataFrame]:
         # save the plot of num_features per day, from data gathered before
-        num_features = [x["features"] for x in self._meta["files"]]
-        days = [x["day"] for x in self._meta["files"]]
+        num_features = [x["features"] for x in self._file_register]
+        days = [x["day"] for x in self._file_register]
+        logging.debug("Logging feature per day on %s days", len(days))
 
-        fig, ax = plt.subplots(figsize=(8, 6))
+        _, ax = plt.subplots(figsize=(8, 6))
         ax.set_title("Number of Features per Day")
         ax.plot(days, num_features)
         ax.set_xlabel("Day")
@@ -218,15 +202,17 @@ class Report(BasePreProcessor):
 
         x_locs = np.arange(0, len(days), max(len(days) // 2, len(days) // 50))
         x_labels = [days[i] for i in x_locs]
+        logging.debug("Reduced number of labels to %s", len(x_labels))
         ax.set_xticks(x_locs)
         ax.set_xticklabels(x_labels)
 
-        plt.savefig(self._check_file_path("features_per_day.png"))
+        plt.savefig(get_file(f"{self._folder}/features_per_day.png"))
 
         # plot the dataset length per file downloaded
-        num_recordings = [x["recordings"] for x in self._meta["files"]]
+        num_recordings = [x["recordings"] for x in self._file_register]
+        logger.debug("Plot the number of recordings per file (files: %s)", len(num_recordings))
 
-        fig, ax = plt.subplots(figsize=(8, 6))
+        _, ax = plt.subplots(figsize=(8, 6))
         ax.set_title("Number of Recordings per File")
         ax.plot(days, num_recordings)
         ax.set_xlabel("File (latest to newest)")
@@ -234,10 +220,11 @@ class Report(BasePreProcessor):
 
         x_locs = np.arange(0, len(days), max(len(days) // 2, len(days) // 50))
         x_labels = [days[i] for i in x_locs]
+        logging.debug("Reduced number of labels to %s", len(x_labels))
         ax.set_xticks(x_locs)
         ax.set_xticklabels(x_labels)
 
-        plt.savefig(self._check_file_path("recordings_per_file.png"))
+        plt.savefig(get_file(f"{self._folder}/recordings_per_file.png"))
 
         # plot the average of the correlation matrix, clean 0-only rows and cols
         corr_matrix = self._clean_corr_matrix(len(days))
@@ -247,15 +234,13 @@ class Report(BasePreProcessor):
         # save the best correlated sensor names
         corr_a, corr_b = self._highest_correlated_features(corr_matrix)
         uncorr = self._lowest_correlated_features(corr_matrix)
+        coi = {"highest_correlated": [corr_a, corr_b], "most_uncorrelated": uncorr}
 
-        meta = {"highest_correlated": [corr_a, corr_b], "most_uncorrelated": uncorr}
-        with open(
-            self._check_file_path("correlated_sensors.json"),
-            "w",
-            encoding="iso-8859-15",
-        ) as f:
-            json.dump(meta, f, indent=2)
+        # update the metadata
+        metadata.put(self._file_register, Meta.FILES)
+        metadata.put(self._total_recordings, Meta.TOTAL_RECORDINGS)
+        metadata.put(coi, Meta.CORRELATION_OF_INTEREST)
+        metadata.drop(Meta.DAY)
 
-        # save the length of each dataset file and the total dataset length
-        with open(self._check_file_path("metadata.json"), "w", encoding="UTF-8") as f:
-            json.dump(self._meta, f, indent=2)
+        logger.debug("Report: Saving metadata info to %s", metadata[Meta.PATH])
+        metadata.save(metadata[Meta.PATH])

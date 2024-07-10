@@ -1,9 +1,10 @@
 """This module removes outliers from the dataframe."""
-from typing import Dict
 from pandas import DataFrame
 import numpy as np
-from . import BasePreProcessor
-from S3Prep.modules.module import logger
+from S3Prep.modules import BasePreProcessor
+from S3Prep.helper import Metadata, get_logger
+
+logger = get_logger(__name__)
 
 
 class OutlierPreProcessor(BasePreProcessor):
@@ -26,8 +27,7 @@ class OutlierPreProcessor(BasePreProcessor):
         # execute after all df are gathered
         self._intermediate_run = False
 
-    def on_processing_started(self, df: DataFrame, metadata: Dict = None) -> DataFrame:
-        logger.debug("Processing ON_PROCESSING_STARTED in %s", self.__class__.__name__)
+    def on_download_finished(self, df: DataFrame, _: Metadata = None) -> DataFrame:
         original_len = df.shape[0]
         if df.shape[0] == 0:
             return df

@@ -1,12 +1,17 @@
 """This module normalizes a dataset and splits it into train, val, test dataset."""
-import json
+import logging
 import random
 import os
 import re
 from typing import Dict
+from S3Prep.helper import Metadata
 from S3Prep.modules.normalizer.minmax_thread import MinMaxFileThread
 from S3Prep.modules.normalizer.standard_thread import StandardizeFileThread
 from S3Prep.modules import BasePreProcessor
+from S3Prep.helper import Meta, get_logger
+
+# create logger object
+logger = get_logger(__name__)
 
 
 class Normalize(BasePreProcessor):
@@ -34,28 +39,29 @@ class Normalize(BasePreProcessor):
         self._val_split = val_split
         self._num_thread = threads
 
-    def _split_dataset(self, path: str) -> Dict:
-        # split dataset
-        with open(f"{path}/metadata.json", "r", encoding="utf-8") as f:
-            metadata = json.load(f)
-
-        train_len = int(len(metadata["files"]) * self._train_split)
-        val_len = int(len(metadata["files"]) * self._val_split)
+    def _split_dataset(self, metadata: Metadata) -> Dict:
+        train_len = int(len(metadata[Meta.FILES]) * self._train_split)
+        val_len = int(len(metadata[Meta.FILES]) * self._val_split)
 
         # shuffle the file_path arrays
         if self._shuffle:
-            random.shuffle(metadata["files"])
+            random.shuffle(metadata[Meta.FILES])
 
-        # save the new dataset metadata
-        new_json = {
-            "train": [m for m in metadata["files"][:train_len]],
-            "val": [m for m in metadata["files"][train_len:train_len + val_len]],
-            "test": [m for m in metadata["files"][train_len + val_len:]]
-        }
-        del metadata["files"]
-        new_json = new_json | metadata
+        # split the file paths into train/val
+        metadata.put([], Meta.TRAIN_FILES)
+        metadata.put([], Meta.VALIDATION_FILES)
+        metadata.put([], Meta.TEST_FILES)
 
-        return new_json
+        for i in range(len(metadata[Meta.FILES])):
+            if i < train_len:
+                metadata[Meta.TRAIN_FILES].append(metadata[Meta.FILES][i])
+            elif i <= (train_len + val_len - 1):
+                metadata[Meta.VALIDATION_FILES].append(metadata[Meta.FILES][i])
+            else:
+                metadata[Meta.TEST_FILES].append(metadata[Meta.FILES][i])
+
+        # drop the old files array
+        metadata.drop(Meta.FILES)
 
     def _get_file_prefix(self, path: str) -> str:
         for f in os.listdir(path):
@@ -64,29 +70,30 @@ class Normalize(BasePreProcessor):
 
         return None
 
-    def on_processing_finished(self, metadata: Dict) -> None:
+    def on_processing_finished(self, metadata: Metadata) -> None:
         # split the dataset into train, val, test sets
-        report_folder = metadata["data_path"] + "/report"
-        metadata = self._split_dataset(report_folder)
+        self._split_dataset(metadata)
+        logging.debug("Splitted dataset into 'Train', 'Validation', and 'Test' sets.")
 
         # fit the min max scaler on the train dataset
-        root_path = "/".join(report_folder.split("/")[:-1])
-        prefix = self._get_file_prefix(path=root_path)
-        files = [os.path.join(root_path, f"{prefix}_{f['day']}.h5") for f in metadata["train"]]
+        path = metadata[Meta.PATH]
+        prefix = self._get_file_prefix(path=path)
+        files = [os.path.join(path, f"{prefix}_{f['day']}.h5") for f in metadata[Meta.TRAIN_FILES]]
         scaler_a, scaler_b = self._fit(files, self._num_thread)
+        logging.debug("Fitted '%s' on 'Train'", self._method)
 
         # transform all datasets
-        for dataset in ["train", "val", "test"]:
-            files = [os.path.join(root_path, f"{prefix}_{f['day']}.h5") for f in metadata[dataset]]
+        for dataset in [Meta.TRAIN_FILES, Meta.VALIDATION_FILES, Meta.TEST_FILES]:
+            files = [os.path.join(path, f"{prefix}_{f['day']}.h5") for f in metadata[dataset]]
             self._transform(files, scaler_a, scaler_b, self._num_thread)
+            logging.debug("Transformed on %s using '%s'", dataset.name, self._method)
 
         # add the normalizer info's to the metadata
-        metadata["norm"] = {
-            "scaler_a": scaler_a.to_dict(),
-            "scaler_b": scaler_b.to_dict(),
-            "method": self._method
-        }
+        metadata.put({
+            Meta.NORM_VAL_A.name: scaler_a.to_dict(),
+            Meta.NORM_VAL_B.name: scaler_b.to_dict(),
+            Meta.NORM_METHOD.name: self._method
+        }, Meta.NORMALIZER)
 
         # save the new dataset metadata
-        with open(f"{report_folder}/metadata.json", "w", encoding="utf-8") as f:
-            json.dump(metadata, f, indent=2)
+        metadata.save(path)

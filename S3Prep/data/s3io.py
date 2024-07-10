@@ -2,6 +2,7 @@
 
 import os
 import gzip
+import logging
 from datetime import date
 from typing import Tuple, Union, TextIO
 from io import BytesIO
@@ -9,7 +10,10 @@ from uuid import UUID
 
 import boto3
 
-from S3Prep.data.utils import get_day_list, logger
+from S3Prep.helper import get_day_list, get_logger
+
+# create logger object
+logger = get_logger(__name__)
 
 
 class S3:
