@@ -1,0 +1,1 @@
+python -m unittest discover -s S3Prep/tests -p 'test_*.py'
