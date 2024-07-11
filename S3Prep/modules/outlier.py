@@ -1,10 +1,19 @@
 """This module removes outliers from the dataframe."""
 from pandas import DataFrame
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+
 from S3Prep.modules import BasePreProcessor
-from S3Prep.helper import Metadata, get_logger
+from S3Prep.helper import Meta, Metadata, get_logger
 
 logger = get_logger(__name__)
+rcParams.update({"figure.autolayout": True})
+
+GRAPH_FILE_NAME = "outliers_statistics.png"
+GRAPH_TITLE = "Outliers Removed Per Day (%)"
+GRAPH_XLABEL = "Date"
+GRAPH_YLABEL = "% Outliers Removed"
 
 
 class OutlierPreProcessor(BasePreProcessor):
@@ -24,10 +33,10 @@ class OutlierPreProcessor(BasePreProcessor):
         self._upper = upper_quantile
         self._threshold = threshold
 
-        # execute after all df are gathered
-        self._intermediate_run = False
+        # collect statistics
+        self._stats = {}
 
-    def on_download_finished(self, df: DataFrame, _: Metadata = None) -> DataFrame:
+    def on_download_finished(self, df: DataFrame, metadata: Metadata = None) -> DataFrame:
         original_len = df.shape[0]
         if df.shape[0] == 0:
             return df
@@ -46,7 +55,35 @@ class OutlierPreProcessor(BasePreProcessor):
         # Remove the outliers from your DataFrame
         df = df.dropna(how="any")
 
-        removed_len = df.shape[0] - original_len
+        removed_len = original_len - df.shape[0]
+        removed_perc = round(removed_len / original_len * 100, 3)
         logger.debug("Outlier detection removed %d%% of the DataFrame",
-                     round(removed_len / original_len * 100, 3))
+                     removed_perc)
+
+        # add outlier statistics to metadata
+        self._stats[metadata[Meta.DAY]] = removed_perc
         return df
+
+    def on_processing_finished(self, metadata: Metadata) -> None:
+        days = list(self._stats.keys())
+        vals = list(self._stats.values())
+
+        # generate graph
+        _, ax = plt.subplots(figsize=(8, 6))
+        ax.set_title(GRAPH_TITLE)
+        ax.plot(days, vals)
+        ax.set_xlabel(GRAPH_XLABEL)
+        ax.set_ylabel(GRAPH_YLABEL)
+
+        # limit label ticks
+        x_locs = np.arange(0, len(days), max(len(days) // 2, len(days) // 50))
+        x_labels = [days[i] for i in x_locs]
+        ax.set_xticks(x_locs)
+        ax.set_xticklabels(x_labels)
+
+        # add graph to metadata
+        if metadata.has(Meta.ADDITIONAL_REPORT_GRAPHS):
+            container = metadata[Meta.ADDITIONAL_REPORT_GRAPHS]
+            container.append((ax, GRAPH_FILE_NAME))
+        else:
+            metadata.put([(ax, GRAPH_FILE_NAME)], Meta.ADDITIONAL_REPORT_GRAPHS)
