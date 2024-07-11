@@ -94,6 +94,3 @@ class Normalize(BasePreProcessor):
             Meta.NORM_VAL_B.name: scaler_b.to_dict(),
             Meta.NORM_METHOD.name: self._method
         }, Meta.NORMALIZER)
-
-        # save the new dataset metadata
-        metadata.save(path)

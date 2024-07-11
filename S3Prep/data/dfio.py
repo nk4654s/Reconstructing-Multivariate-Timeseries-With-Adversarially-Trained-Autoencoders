@@ -178,5 +178,9 @@ class DFIO:
         for module in modules:
             module(metadata=self._meta, entry_point=EntryPoint.ON_PROCESSING_FINISHED)
 
+        # make sure to drop (optional) graphs created by other modules
+        self._meta.drop(Meta.ADDITIONAL_REPORT_GRAPHS)
+
+        logger.debug("Report: Saving metadata info to %s", dir_name)
         self._meta.save(dir_name)
         logger.info("Finished downloading and processing.")

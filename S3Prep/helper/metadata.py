@@ -28,6 +28,7 @@ class Meta(Enum):
     NORM_METHOD = "normalizer_method"
     NORM_VAL_A = "normalizer_val_a"
     NORM_VAL_B = "normalizer_val_b"
+    ADDITIONAL_REPORT_GRAPHS = "additional_report_graphs"
 
 class Metadata:
     """This class holds the metadata of a dataset.
@@ -50,7 +51,21 @@ class Metadata:
         Args:
             meta_key (Meta): Key to drop from dict _values.
         """
-        del self._values[meta_key.name]
+        if self.has(meta_key):
+            del self._values[meta_key.name]
+
+    def has(self, meta_key: Meta) -> bool:
+        """Checks if there exists an entry for key meta_key in
+        dict _values.
+
+        Args:
+            meta_key (Meta): Key to check for in dict _values.
+        
+        Returns:
+            bool: True if there exists an entry for key meta_key,
+            False otherwise.
+        """
+        return meta_key.name in self._values.keys()
 
     def __getitem__(self, meta_key: Meta) -> Any:
         """Returns the value of a key in dict _values.

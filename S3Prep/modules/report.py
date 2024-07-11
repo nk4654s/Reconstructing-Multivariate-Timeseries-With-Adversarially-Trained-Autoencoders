@@ -1,6 +1,7 @@
 """This module logs some report about a downloaded dataset."""
 from typing import  List, Tuple
 import logging
+import os
 import numpy as np
 from pandas import DataFrame
 import matplotlib.pyplot as plt
@@ -20,10 +21,11 @@ class Report(BasePreProcessor):
     dataframe.
     """
 
-    def __init__(self, folder: str = "report"):
+    def __init__(self, sub_folder: str = "report"):
         super().__init__()
 
-        self._folder = folder
+        self._sub_folder = sub_folder
+        self._folder = None
         self._file_register = []
         self._total_recordings = 0
 
@@ -149,6 +151,10 @@ class Report(BasePreProcessor):
     def on_download_finished(
         self, df: DataFrame, metadata: Metadata
     ) -> DataFrame | List[DataFrame]:
+        # define the output folder
+        if not self._folder:
+            self._folder = os.path.join(metadata[Meta.PATH], self._sub_folder)
+
         # Calculate correlation matrix
         corr_matrix = abs(df.corr(method="spearman").fillna(0))
         if self._sum_correlation_matrix is None:
@@ -226,6 +232,12 @@ class Report(BasePreProcessor):
 
         plt.savefig(get_file(f"{self._folder}/recordings_per_file.png"))
 
+        # plot the outlier removed statistics if available
+        if metadata.has(Meta.ADDITIONAL_REPORT_GRAPHS):
+            graphs = metadata[Meta.ADDITIONAL_REPORT_GRAPHS]
+            for ax, file_name in graphs:
+                ax.figure.savefig(os.path.join(self._folder, file_name))
+
         # plot the average of the correlation matrix, clean 0-only rows and cols
         corr_matrix = self._clean_corr_matrix(len(days))
         self._visualize_corr_matrix(corr_matrix, "correlation_matrix.png")
@@ -240,7 +252,6 @@ class Report(BasePreProcessor):
         metadata.put(self._file_register, Meta.FILES)
         metadata.put(self._total_recordings, Meta.TOTAL_RECORDINGS)
         metadata.put(coi, Meta.CORRELATION_OF_INTEREST)
-        metadata.drop(Meta.DAY)
 
-        logger.debug("Report: Saving metadata info to %s", metadata[Meta.PATH])
-        metadata.save(metadata[Meta.PATH])
+        metadata.drop(Meta.DAY)
+        metadata.drop(Meta.ADDITIONAL_REPORT_GRAPHS)
