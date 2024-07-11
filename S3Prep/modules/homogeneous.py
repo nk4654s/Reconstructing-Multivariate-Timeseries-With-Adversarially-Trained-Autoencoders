@@ -22,7 +22,7 @@ class HomogeneousTimeSteps(BasePreProcessor):
         """
         self._index_key = index_key
 
-    def on_processing_started(self, df: DataFrame, _: Metadata) \
+    def on_download_finished(self, df: DataFrame, _: Metadata) \
         -> DataFrame | List[DataFrame]:
         # get time start and end
         range_start = df[self._index_key].iloc[0]

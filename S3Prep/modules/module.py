@@ -12,7 +12,6 @@ class EntryPoint(Enum):
     """The entry point enum."""
 
     ON_DOWNLOAD_FINISHED = "on download finished"
-    ON_PROCESSING_STARTED = "on processing started"
     ON_PROCESSING_FINISHED = "on processing finished"
 
 
@@ -33,22 +32,10 @@ class BasePreProcessor(object):
         """
         return df
 
-    def on_processing_started(
-        self, df: DataFrame, metadata: Metadata
-    ) -> DataFrame | List[DataFrame]:
-        """Executes the pre-processor before downloading a dataframe.
-
-        Args:
-            df (pd.DataFrame): The dataframe to be processed
-            metadata (Metadata): The metadata dictionary
-
-        Returns:
-            The processed dataframe or a list of dataframes
-        """
-        return df
-
     def on_processing_finished(self, metadata: Metadata) -> None:
-        """Executes the pre-processor after all dataframes were downloaded and processed.
+        """Executes the pre-processor after all dataframes were downloaded
+        and processed. Useful for modules which require the whole dataset
+        to be available.
 
         Args:
             metadata (Metadata): The metadata dictionary
@@ -84,9 +71,6 @@ class BasePreProcessor(object):
     ) -> List[DataFrame]:
         if entry_point == EntryPoint.ON_DOWNLOAD_FINISHED:
             df = self._process(df, self.on_download_finished, metadata)
-
-        elif entry_point == EntryPoint.ON_PROCESSING_STARTED:
-            df = self._process(df, self.on_processing_started, metadata)
 
         elif entry_point == EntryPoint.ON_PROCESSING_FINISHED:
             self.on_processing_finished(metadata)
