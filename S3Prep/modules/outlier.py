@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
 from S3Prep.modules import BasePreProcessor
-from S3Prep.helper import Meta, Metadata, get_logger
+from S3Prep.helper import Meta, Metadata, get_logger, simple_graph
 
 logger = get_logger(__name__)
 rcParams.update({"figure.autolayout": True})
@@ -69,21 +69,7 @@ class OutlierPreProcessor(BasePreProcessor):
         vals = list(self._stats.values())
 
         # generate graph
-        _, ax = plt.subplots(figsize=(8, 6))
-        ax.set_title(GRAPH_TITLE)
-        ax.plot(days, vals)
-        ax.set_xlabel(GRAPH_XLABEL)
-        ax.set_ylabel(GRAPH_YLABEL)
-
-        # limit label ticks
-        x_locs = np.arange(0, len(days), max(len(days) // 2, len(days) // 50))
-        x_labels = [days[i] for i in x_locs]
-        ax.set_xticks(x_locs)
-        ax.set_xticklabels(x_labels)
+        ax = simple_graph(days, vals)(GRAPH_TITLE, GRAPH_XLABEL, GRAPH_YLABEL)
 
         # add graph to metadata
-        if metadata.has(Meta.ADDITIONAL_REPORT_GRAPHS):
-            container = metadata[Meta.ADDITIONAL_REPORT_GRAPHS]
-            container.append((ax, GRAPH_FILE_NAME))
-        else:
-            metadata.put([(ax, GRAPH_FILE_NAME)], Meta.ADDITIONAL_REPORT_GRAPHS)
+        metadata.put_list((ax, GRAPH_FILE_NAME), Meta.ADDITIONAL_REPORT_GRAPHS)

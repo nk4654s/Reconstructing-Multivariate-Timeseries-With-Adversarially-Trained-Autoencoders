@@ -45,6 +45,17 @@ class Metadata:
         """
         self._values[meta_key.name] = value
 
+    def put_list(self, value: Any, meta_key: Meta) -> None:
+        """Puts the value into a list container under the key meta_key.
+
+        Args:
+            value (Any): Value that should be put into a list under key meta_key.
+            meta_key (Meta): Key to put the value in.
+        """
+        container = self[meta_key.name] if self.has(meta_key) else []
+        container.append(value)
+        self.put(container, meta_key)
+
     def drop(self, meta_key: Meta) -> None:
         """Drops the key meta_key from dict _values.
 
