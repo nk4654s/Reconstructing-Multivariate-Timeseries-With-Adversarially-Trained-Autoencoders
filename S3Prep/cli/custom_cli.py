@@ -33,3 +33,7 @@ class MyCLIArgumentParser(CLIArgumentParser):
                           help="Limits the headers matching the headers of the first " + \
                             "incomming dataframe."
                          )
+        self.add_argument("--overwrite",
+                          action="store_true",
+                          default=False,
+                          help="Overwrites the specified folder if existing.")
