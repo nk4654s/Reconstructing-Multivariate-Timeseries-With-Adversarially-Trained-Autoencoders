@@ -52,7 +52,7 @@ class Metadata:
             value (Any): Value that should be put into a list under key meta_key.
             meta_key (Meta): Key to put the value in.
         """
-        container = self[meta_key.name] if self.has(meta_key) else []
+        container = self[meta_key] if self.has(meta_key) else []
         container.append(value)
         self.put(container, meta_key)
 
