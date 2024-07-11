@@ -1,9 +1,13 @@
 """This module contains utilities for handling downloaded data from the s3 bucket."""
 import os
-from typing import Tuple, List
+from typing import Callable, Tuple, List
 from datetime import datetime, date, timedelta
 import requests
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+
+rcParams.update({"figure.autolayout": True})
 
 
 def get_file(file_path: str, create_dirs: bool = True, overwrite: bool = False,
@@ -61,6 +65,33 @@ def to_float(value: str) -> float:
         return float(value)
     except ValueError as _:
         return np.nan
+
+
+def simple_graph(data_x: List[str], data_y: List[float]) -> Callable:
+    """Creates a simple graph from the given data points.
+    
+    Args:
+        data_x (List[str]): The x-axis values for each data point
+        data_y (List[float]): The y-axis values for each data point
+    
+    Returns:
+        Callable: A callable that can be used to build the graph.
+    """
+    def graph(title: str, xlabel: str = "None", ylabel: str = "None"):
+        _, ax = plt.subplots(figsize=(8, 6))
+        ax.set_title(title)
+        ax.plot(data_x, data_y)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+
+        # limit label ticks
+        x_locs = np.arange(0, len(data_x), max(len(data_x) // 2, len(data_x) // 50))
+        x_labels = [data_x[i] for i in x_locs]
+        ax.set_xticks(x_locs)
+        ax.set_xticklabels(x_labels)
+        return ax
+
+    return graph
 
 
 def get_sensor_uuid_to_name(machine_uuid: str) -> dict:
