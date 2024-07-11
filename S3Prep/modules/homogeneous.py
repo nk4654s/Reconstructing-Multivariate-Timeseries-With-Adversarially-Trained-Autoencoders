@@ -4,11 +4,25 @@ distribution across the dataset."""
 from typing import List
 from pandas import DataFrame, Index
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+
 from S3Prep.data.header import Header
-from S3Prep.helper import Metadata, get_logger
+from S3Prep.helper import Meta, Metadata, get_logger, simple_graph
 from S3Prep.modules import BasePreProcessor
 
 logger = get_logger(__name__)
+rcParams.update({"figure.autolayout": True})
+
+GRAPH_HTS_TITLE = "Time Steps Addded (%)"
+GRAPH_HTS_XLABEL = "Date"
+GRAPH_HTS_YLABEL = "Time Steps Added (%)"
+GRAPH_HTS_FILE_NAME = "homogeneous_timesteps.png"
+
+GRAPH_HC_TITLE = "Columns Removed"
+GRAPH_HC_XLABEL = "Date"
+GRAPH_HC_YLABEL = "# Removed"
+GRAPH_HC_FILE_NAME = "homogeneous_columns.png"
 
 
 class HomogeneousTimeSteps(BasePreProcessor):
@@ -21,8 +35,9 @@ class HomogeneousTimeSteps(BasePreProcessor):
             index_key (str): Column name of index. Defaults to "ts".
         """
         self._index_key = index_key
+        self._stats = {}
 
-    def on_download_finished(self, df: DataFrame, _: Metadata) \
+    def on_download_finished(self, df: DataFrame, metadata: Metadata) \
         -> DataFrame | List[DataFrame]:
         # get time start and end
         range_start = df[self._index_key].iloc[0]
@@ -39,7 +54,19 @@ class HomogeneousTimeSteps(BasePreProcessor):
             old_len,
             df.shape[0],
         )
+
+        self._stats[metadata[Meta.DAY]] = round((df.shape[0] - old_len) / df.shape[0] * 100, 3)
         return df
+
+    def on_processing_finished(self, metadata: Metadata) -> None:
+        days = list(self._stats.keys())
+        vals = list(self._stats.values())
+
+        # generate graph
+        ax = simple_graph(days, vals)(GRAPH_HTS_TITLE, GRAPH_HTS_XLABEL, GRAPH_HTS_YLABEL)
+
+        # add graph to metadata
+        metadata.put_list((ax, GRAPH_HTS_FILE_NAME), Meta.ADDITIONAL_REPORT_GRAPHS)
 
 
 class HomogeneousColumns(BasePreProcessor):
@@ -48,9 +75,11 @@ class HomogeneousColumns(BasePreProcessor):
     def __init__(self, enable: bool = True):
         self._header: Header = None
         self._enable = enable
+        self._stats = {}
 
-    def on_download_finished(self, df: DataFrame, _: Metadata) \
+    def on_download_finished(self, df: DataFrame, metadata: Metadata) \
           -> DataFrame | List[DataFrame]:
+        self._stats[metadata[Meta.DAY]] = 0
         if not self._enable:
             return df
 
@@ -77,4 +106,16 @@ class HomogeneousColumns(BasePreProcessor):
         if incoming.drop:
             df.drop(columns=incoming.drop, axis=1, inplace=True)
             logger.debug("Removed %s columns", len(incoming.drop))
+
+        self._stats[metadata[Meta.DAY]] = len(incoming.drop)
         return df
+
+    def on_processing_finished(self, metadata: Metadata) -> None:
+        days = list(self._stats.keys())
+        vals = list(self._stats.values())
+
+        # generate graph
+        ax = simple_graph(days, vals)(GRAPH_HC_TITLE, GRAPH_HC_XLABEL, GRAPH_HC_YLABEL)
+
+        # add graph to metadata
+        metadata.put_list((ax, GRAPH_HC_FILE_NAME), Meta.ADDITIONAL_REPORT_GRAPHS)
