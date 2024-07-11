@@ -4,9 +4,14 @@ from typing import List, Tuple
 from pandas import DataFrame
 import numpy as np
 from S3Prep.modules import BasePreProcessor
-from S3Prep.helper import Metadata, get_logger
+from S3Prep.helper import Meta, Metadata, get_logger, simple_graph
 
 logger = get_logger(__name__)
+
+GRAPH_FILE_NAME = "split_statistics.png"
+GRAPH_TITLE = "Data Splits Per Day"
+GRAPH_XLABEL = "Date"
+GRAPH_YLABEL = "# Splits"
 
 
 class MachineStateSplit(BasePreProcessor):
@@ -25,6 +30,7 @@ class MachineStateSplit(BasePreProcessor):
         """
         self._column_key = on_key
         self._state = keep_state
+        self._stats = {}
 
     def _trim(self, df: DataFrame) -> DataFrame:
         running = df[self._column_key].to_numpy()
@@ -49,7 +55,7 @@ class MachineStateSplit(BasePreProcessor):
 
         return df.iloc[:end_idx], df.iloc[end_idx:]
 
-    def on_download_finished(self, df: DataFrame, _: Metadata = None) \
+    def on_download_finished(self, df: DataFrame, metadata: Metadata = None) \
         -> List[DataFrame]:
         df_splits = []
         to_split = df.copy()
@@ -71,4 +77,15 @@ class MachineStateSplit(BasePreProcessor):
             return []
 
         logger.debug("Splited DataFrame into %s DataFrame(s)", len(df_splits))
+        self._stats[metadata[Meta.DAY]] = len(df_splits)
         return df_splits
+
+    def on_processing_finished(self, metadata: Metadata) -> None:
+        days = list(self._stats.keys())
+        vals = list(self._stats.values())
+
+        # generate graph
+        ax = simple_graph(days, vals)(GRAPH_TITLE, GRAPH_XLABEL, GRAPH_YLABEL)
+
+        # add graph to metadata
+        metadata.put_list((ax, GRAPH_FILE_NAME), Meta.ADDITIONAL_REPORT_GRAPHS)

@@ -1,14 +1,11 @@
 """This module removes outliers from the dataframe."""
 from pandas import DataFrame
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import rcParams
 
 from S3Prep.modules import BasePreProcessor
 from S3Prep.helper import Meta, Metadata, get_logger, simple_graph
 
 logger = get_logger(__name__)
-rcParams.update({"figure.autolayout": True})
 
 GRAPH_FILE_NAME = "outliers_statistics.png"
 GRAPH_TITLE = "Outliers Removed Per Day (%)"

@@ -4,15 +4,12 @@ distribution across the dataset."""
 from typing import List
 from pandas import DataFrame, Index
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import rcParams
 
 from S3Prep.data.header import Header
 from S3Prep.helper import Meta, Metadata, get_logger, simple_graph
 from S3Prep.modules import BasePreProcessor
 
 logger = get_logger(__name__)
-rcParams.update({"figure.autolayout": True})
 
 GRAPH_HTS_TITLE = "Time Steps Addded (%)"
 GRAPH_HTS_XLABEL = "Date"
