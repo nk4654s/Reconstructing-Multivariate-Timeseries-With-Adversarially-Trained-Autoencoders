@@ -2,18 +2,23 @@
 
 import os
 import gzip
-import logging
 from datetime import date
 from typing import Tuple, Union, TextIO
 from io import BytesIO
 from uuid import UUID
-
+from enum import Enum
 import boto3
 
 from S3Prep.helper import get_day_list, get_logger
 
 # create logger object
 logger = get_logger(__name__)
+
+
+class BucketType(Enum):
+    """This enum contains the bucket types."""
+    MEASUREMENTS = "xplore-measurements"
+    REPORTS = "xplore-reports"
 
 
 class S3:
@@ -32,7 +37,7 @@ class S3:
             interval (tuple): A tuple of two dates. The first one is the start
             date and the second one is the end date.
         """
-        self._bucket = os.getenv("S3_BUCKET", "xplore-measurements")
+        self._bucket = None
         self._client = boto3.client("s3")
 
         self._machine_uuid = machine_uuid
@@ -40,6 +45,14 @@ class S3:
         self._days = get_day_list((self._start, self._end))
 
         assert self._start < self._end, "Start date must be before end date"
+
+    def set_bucket(self, bucket: BucketType) -> None:
+        """Sets the bucket to be used for downloads.
+
+        Args:
+            bucket (BucketType): The bucket to be used for downloads.
+        """
+        self._bucket = os.getenv("S3_BUCKET", bucket.value)
 
     @property
     def machine_uuid(self) -> str:

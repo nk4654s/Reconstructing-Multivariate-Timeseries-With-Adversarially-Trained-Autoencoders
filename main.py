@@ -13,7 +13,7 @@ from S3Prep.modules import (
     RenameColumns,
     Normalize,
 )
-from S3Prep.data import S3, DFIO
+from S3Prep.data import S3, DFIO, BucketType
 
 
 if __name__ == "__main__":
@@ -36,6 +36,7 @@ if __name__ == "__main__":
         date.fromisoformat(parser.args.interval[-1]),
     )
     s3 = S3(machine_uuid, interval)
+    s3.set_bucket(BucketType.MEASUREMENTS)
 
     # clean up?
     if parser.args.overwrite:
