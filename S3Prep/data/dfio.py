@@ -19,20 +19,18 @@ logger = get_logger(__name__)
 class DFIO:
     """This class handles pandas dataframe input/outut for s3 streams."""
 
-    def __init__(self, s3: S3, limit_headers: bool = False) -> None:
+    def __init__(self, s3: S3) -> None:
         """Sets the s3 object to this class for iteration over streams.
 
         Args:
             s3 (S3): The s3 class.
-            limit_headers (bool): Limits headers to those of the first
-            incoming dataframe. Defaults to False.
         """
         self._s3 = s3
         self._meta = Metadata()
         self._sensor_names = get_sensor_uuid_to_name(self._s3.machine_uuid)
 
-        self._limit_headers = limit_headers
         self._header: Header = None
+        self._store = None
 
     def parse_header(self, line: str) -> Header:
         """This method parses a line into a header and checks for validity. If

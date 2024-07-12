@@ -38,6 +38,7 @@ class S3:
             date and the second one is the end date.
         """
         self._bucket = None
+        self._bucket_type = None
         self._client = boto3.client("s3")
 
         self._machine_uuid = machine_uuid
@@ -53,6 +54,13 @@ class S3:
             bucket (BucketType): The bucket to be used for downloads.
         """
         self._bucket = os.getenv("S3_BUCKET", bucket.value)
+        self._bucket_type = bucket
+
+    @property
+    def bucket_type(self) -> BucketType:
+        """The bucket type of the bucket to be used for downloads.
+        """
+        return self._bucket_type
 
     @property
     def machine_uuid(self) -> str:

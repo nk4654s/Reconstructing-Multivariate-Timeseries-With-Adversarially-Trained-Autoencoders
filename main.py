@@ -1,4 +1,5 @@
 """The main module handles program execution and parameter modification."""
+import os
 import shutil
 from datetime import date
 from S3Prep.cli import MyCLIArgumentParser
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     s3.set_bucket(BucketType.MEASUREMENTS)
 
     # clean up?
-    if parser.args.overwrite:
+    if parser.args.overwrite and os.path.exists(parser.args.folder):
         shutil.rmtree(parser.args.folder)
 
     # download and process data

@@ -27,12 +27,6 @@ class MyCLIArgumentParser(CLIArgumentParser):
                           default=".",
                           help="Folder path to save the dataframes. Format: [path/to/folder]"
                          )
-        self.add_argument("--limit-headers",
-                          action="store_true",
-                          default=False,
-                          help="Limits the headers matching the headers of the first " + \
-                            "incomming dataframe."
-                         )
         self.add_argument("--overwrite",
                           action="store_true",
                           default=False,
