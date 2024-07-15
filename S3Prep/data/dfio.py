@@ -69,7 +69,11 @@ class DFIO:
         logger.debug("Header length mismatch. Removing %s values.", len(incoming.drop))
         return incoming
 
-    def _create_storage(self, dir_name: str = None, day_index: int = 0) -> pd.HDFStore:
+    def _create_storage(self, dir_name: str = None, day_index: int = 0) -> None:
+        # close a store if there was one opened
+        if self._store:
+            self._store.close()
+
         # get a valid file path based on the machine's UUID, the day_index and
         # increasing postfix-numbers (optional)
         day = self._s3.day(day_index).strftime("%Y-%m-%d")
@@ -77,9 +81,9 @@ class DFIO:
         file_name = get_file(os.path.join(dir_name, file_name), postfix=day)
         logger.debug("Saving DF to %s", file_name)
 
-        return pd.HDFStore(file_name, "w")
+        self._store = pd.HDFStore(file_name, "w")
 
-    def save(self, df: pd.DataFrame, dir_name: str = None, day_index: int = 0) -> None:
+    def save(self, df: pd.DataFrame) -> None:
         """Saves the dataframe in an HDF5 file and frees memory.
 
         Args:
@@ -88,10 +92,9 @@ class DFIO:
             day_index (int): index of the day to be saved
         """
         assert df is not None, "No dataframe to save"
+        assert self._store is not None, "No HDF store opened."
         if not df.empty:
-            store = self._create_storage(dir_name, day_index)
-            store.put("data", df, format="table", append=False)
-            store.close()
+            self._store.put("data", df, format="table", append=True)
 
     def parse_stream(self, stream: TextIO = "dataset", day_index: int = 0) -> pd.DataFrame:
         """Downloads the dataframe from a S3 stream and puts it into a pandas DataFrame.
@@ -145,6 +148,9 @@ class DFIO:
         self._meta.put(dir_name, Meta.PATH)
         self._meta.put(self._s3.machine_uuid, Meta.MACHINE_UUID)
 
+        # keep track of machine state changes, store a DF after the state changed
+        self._meta.put(True, Meta.MACHINE_STATE_CHANGE)
+
         # iterate over all streams and append their content to the dataframe
         desc = f"Fetching TSV daily data for machine {self._s3.machine_uuid}"
         for i in trange(len(self._s3), desc=desc):
@@ -168,8 +174,16 @@ class DFIO:
             # some modules might return a list of DataFrames, save each of those
             dfs = [df] if isinstance(df, pd.DataFrame) else df
             logger.info("Single TSV download resultet in %s file(s).", len(dfs))
-            for df in dfs:
-                self.save(df, dir_name, i)
+
+            # save the processed dataframes
+            for j, df in enumerate(dfs):
+                # check if a new storage needs to be created, only after a machine state
+                # change
+                if j > 0 or self._meta[Meta.MACHINE_STATE_CHANGE]:
+                    self._create_storage(dir_name, i)
+                self.save(df)
+            self._meta.put(False, Meta.MACHINE_STATE_CHANGE)
+        self._store.close()
 
         # execute modules which require to be executed after processing
         # hence, there is no dataframe to process

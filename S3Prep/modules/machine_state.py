@@ -78,6 +78,11 @@ class MachineStateSplit(BasePreProcessor):
 
         logger.debug("Splited DataFrame into %s DataFrame(s)", len(df_splits))
         self._stats[metadata[Meta.DAY]] = len(df_splits)
+
+        # inform any handler, that the machine state did not change if there is a single
+        # dataframe in the splits array with the same length as the original
+        state_change = not(len(df_splits) == 1 and df_splits[0].shape == df.shape)
+        metadata.put(state_change, Meta.MACHINE_STATE_CHANGE)
         return df_splits
 
     def on_processing_finished(self, metadata: Metadata) -> None:

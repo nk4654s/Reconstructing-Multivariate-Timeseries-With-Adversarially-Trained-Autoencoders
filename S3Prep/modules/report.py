@@ -29,6 +29,7 @@ class Report(BasePreProcessor):
         self._file_register = []
         self._total_recordings = 0
 
+        self._counts = 0
         self._sum_correlation_matrix = None
 
     def _highest_correlated_features(self, df: DataFrame) -> Tuple[str, str]:
@@ -126,9 +127,9 @@ class Report(BasePreProcessor):
         fig.colorbar(im, cax=cax)
         plt.savefig(get_file(f"{self._folder}/{path}"))
 
-    def _clean_corr_matrix(self, counts: int) -> DataFrame:
+    def _clean_corr_matrix(self) -> DataFrame:
         # remove the self-correlations
-        corr_matrix = self._sum_correlation_matrix / counts
+        corr_matrix = self._sum_correlation_matrix / self._counts
         eye = np.eye(corr_matrix.shape[0], corr_matrix.shape[0])
         corr_matrix[eye == 1] = 0
 
@@ -182,15 +183,19 @@ class Report(BasePreProcessor):
                 date = day + f"_{num}"
 
             # add the current DataFrame to the file register
-            self._file_register.append(
-                {
-                    "day": date,
-                    "recordings": df.shape[0],
-                    "features": len(df.columns.values),
-                }
-            )
+            if metadata[Meta.MACHINE_STATE_CHANGE]:
+                self._file_register.append(
+                    {
+                        "day": date,
+                        "recordings": df.shape[0],
+                        "features": len(df.columns.values),
+                    }
+                )
+            else:
+                self._file_register[-1]["recordings"] += df.shape[0]
 
             self._total_recordings += df.shape[0]
+            self._counts += 1
 
         return df
 
@@ -239,7 +244,7 @@ class Report(BasePreProcessor):
                 ax.figure.savefig(os.path.join(self._folder, file_name))
 
         # plot the average of the correlation matrix, clean 0-only rows and cols
-        corr_matrix = self._clean_corr_matrix(len(days))
+        corr_matrix = self._clean_corr_matrix()
         self._visualize_corr_matrix(corr_matrix, "correlation_matrix.png")
         self._visualize_avg_corr(corr_matrix, "avg_feature_correlation.png")
 

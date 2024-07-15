@@ -15,6 +15,6 @@ class RemoveColumns(BasePreProcessor):
 
     def on_download_finished(self, df: DataFrame, _: Metadata) -> DataFrame | List[DataFrame]:
         old_len = df.shape[1]
-        df = df.drop(columns=self._columns)
+        df = df.drop(columns=self._columns, errors="ignore")
         logger.debug("Removed %s columns", old_len - df.shape[1])
         return df

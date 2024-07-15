@@ -45,7 +45,7 @@ class HomogeneousTimeSteps(BasePreProcessor):
 
         # reindex the dataframe, inserted rows will be filled with NaNs
         old_len = df.shape[0]
-        df = df.set_index(self._index_key).reindex(new_index).reset_index()
+        df = df.set_index(self._index_key).reindex(new_index).reset_index(self._index_key)
         logger.debug(
             "Reindexed dataframe increased size %s to %s",
             old_len,
@@ -85,9 +85,11 @@ class HomogeneousColumns(BasePreProcessor):
 
         # initial dataframe is always homogeneous
         if self._header is None:
-            logger.debug("Initial headers: %s", incoming.length)
+            logger.debug("Initial headers: %s", incoming.values)
             self._header = incoming
             return df
+
+        logger.debug("Using headers %s", self._header.values)
 
         # initial and current dataframe are homogeneous
         if self._header.length == incoming.length:

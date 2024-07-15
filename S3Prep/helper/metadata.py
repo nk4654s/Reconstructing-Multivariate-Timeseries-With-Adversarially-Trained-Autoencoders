@@ -29,6 +29,7 @@ class Meta(Enum):
     NORM_VAL_A = "normalizer_val_a"
     NORM_VAL_B = "normalizer_val_b"
     ADDITIONAL_REPORT_GRAPHS = "additional_report_graphs"
+    MACHINE_STATE_CHANGE = "machine_state_change"
 
 class Metadata:
     """This class holds the metadata of a dataset.
