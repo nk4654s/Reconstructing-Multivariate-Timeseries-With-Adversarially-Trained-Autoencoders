@@ -1,33 +1,64 @@
 """This module contains the FileWorkerPool"""
-from typing import List
-from S3Prep.diskio import FileWorkerThread, FileWorkerCallable
+from typing import List, Dict
+from S3Prep.helper import Metadata
+from .callable import FileWorkerCallable, CallableDependency
+from .worker import FileWorkerThread
+from .context import FileWorkerContext
 
 
 class FileWorkerPool:
     """This class manages a list of FileWorkerThread objects.
     """
-    def __init__(self) -> None:
-        self._workers: List[FileWorkerThread] = []
+    def __init__(self, context: FileWorkerContext, metadata: Metadata) -> None:
+        self._modules = []
+        self._workers: Dict[str, List[FileWorkerThread]] = {}
+        self._metadata = metadata
+        self._context = context
 
-    def register_worker(self, worker: FileWorkerThread):
+    def register_worker(self, worker: FileWorkerThread, module: FileWorkerCallable):
         """The method registers a new worker to the pool of workers
         """
-        assert worker not in self._workers
-        self._workers.append(worker)
+        workers = self._workers.get(module.__class__.__name__, [])
+        if len(workers) == 0:
+            self._modules.append(module)
 
-    def start_processing(self, modules: List[FileWorkerCallable]) -> None:
+        worker.set_module(module)
+        workers.append(worker)
+        self._workers[module.__class__.__name__] = workers
+
+    def ensure_module_dependency(self, modules: List[FileWorkerCallable]) -> None:
+        """The method ensures the dependencies of the modules.
+
+        Args:
+            modules (List[FileWorkerCallable]): The list of modules to ensure the dependencies
+        """
+        all_modules = {m.__class__.__name__: (i, m) for i, m in enumerate(modules)}
+        for name, (i, module) in all_modules.items():
+            dependencies = module.get_dependencies()
+            for module_name, mode in dependencies.items():
+                assert module_name in all_modules.keys(), f"{module_name} should exist"
+                if mode == CallableDependency.IMMEDIATELY_AFTER:
+                    j, _ = all_modules[module_name]
+                    assert i + 1 == j, f"{module_name} should come after {name}"
+
+                elif mode == CallableDependency.IMMEDIATELY_BEFORE:
+                    j, _ = all_modules[module_name]
+                    assert i - 1 == j, f"{name} should come before {module_name}"
+
+    def start_processing(self) -> Metadata:
         """The method starts processing all files of the dataset using the
         registered workers. All workers wait until all files are processed,
         before applying the next module.
-
-        Args:
-            modules (List[FileWorkerCallable]): a list of callable objects that
-            will be applied to each file.
         """
-        for m in modules:
-            for w in self._workers:
-                w.set_module(m)
+        for module in self._modules:
+            module_name = module.__class__.__name__
+            for w in self._workers[module_name]:
                 w.start()
 
-            for w in self._workers:
+            w_results = []
+            for w in self._workers[module_name]:
                 w.join()
+                w_results += w.get_result()
+
+            module.finish(self._context, self._metadata)
+        return self._metadata

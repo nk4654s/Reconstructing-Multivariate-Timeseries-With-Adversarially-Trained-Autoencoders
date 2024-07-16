@@ -1,19 +1,45 @@
-from typing import Any
+from enum import Enum
+from typing import Any, Dict
+from S3Prep.helper import Metadata
+from .context import FileWorkerContext
 
-from S3Prep.helper.metadata import Metadata
+
+class CallableDependency(Enum):
+    IMMEDIATELY_AFTER = "immediately_after"
+    IMMEDIATELY_BEFORE = "immediately_before"
+    EXISTS = "exists"
 
 
 class FileWorkerCallable:
     """The FileWorkerCallable defines the task, which the
     FileWorkerThread should execute.
     """
-    def run(self, file_path: str, metadata: Metadata) -> Any:
+    def get_dependencies(self) -> Dict[str, CallableDependency]:
+        """This method should return a list of dependencies for this callable instance.
+        
+        Returns:
+            List[str]: A list of dependencies for this callable instance.
+        """
+        return []
+
+    def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
+        """This method will be executed on last and should be used to do some clean-up.
+
+        Args:
+            context (FileWorkerContext): A context object, which contains
+            information passed between modules.
+            metadata (Metadata): A Metadata object containing information about
+            the dataset.
+        """
+        raise NotImplementedError
+
+    def run(self, file_path: str, context: FileWorkerContext) -> Any:
         """This method will be executed by the FileWorkerThread.
 
         Args:
             file_path (str): The file path as string.
-            metadata (Metadata): The metadata object, which contains
-            information about the whole dataset.
+            context (FileWorkerContext): A context object, which contains
+            information passed between modules.
         
         Returns:
             Any result of the file processing task. Can be `None`.

@@ -21,7 +21,7 @@ class CLIArgumentParser(ArgumentParser):
     """This class handles argument parsing and generation for pre-processing modules.
     """
     def __init__(
-        self, preps: List[BasePreProcessor] | BasePreProcessor, *args, **kwargs
+        self, modules: List[BasePreProcessor] | BasePreProcessor, *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
 
@@ -29,7 +29,7 @@ class CLIArgumentParser(ArgumentParser):
         self.prepare_arguments()
 
         # store all pre-processor instances and instantiate their arguments
-        self._preps = preps if isinstance(preps, list) else [preps]
+        self._preps = modules if isinstance(modules, list) else [modules]
         for prep in self._preps:
             prefix = re.findall("[A-Z][^A-Z]*", prep.__name__)[0]
             prefix = prefix.lower()

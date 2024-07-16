@@ -1,8 +1,12 @@
 """This module contains the FileWorkerFactory."""
 import os
 import math
-from S3Prep.diskio import FileWorkerThread, FileWorkerPool
-from S3Prep.helper import Metadata, Meta, get_logger
+from typing import List
+from S3Prep.helper import get_logger, Meta, Metadata
+from .pool import FileWorkerPool
+from .worker import FileWorkerThread
+from .context import FileWorkerContext
+from .callable import FileWorkerCallable
 
 # create logger object
 logger = get_logger(__name__)
@@ -17,13 +21,14 @@ class FileWorkerFactory:
             base_dir (str): The base directory of the dataset.
             num_workers (int): The number of workers to be created.
         """
+        self._context = FileWorkerContext()
         self._metadata = Metadata()
         self._metadata.load(base_dir)
 
         self._num_workers = num_workers
-        self._pool = FileWorkerPool()
+        self._pool = FileWorkerPool(self._context, self._metadata)
 
-    def initialize_workers(self) -> FileWorkerPool:
+    def initialize_workers(self, modules: List[FileWorkerCallable]) -> FileWorkerPool:
         """The method initializes the workers in the pool and provides a list of files
         to process to each worker.
 
@@ -43,9 +48,10 @@ class FileWorkerFactory:
         s = max(math.ceil(n / self._num_workers), 1) # e.g. threads=4 -> s=25
         logger.debug("One worker processes %d files", s)
         logger.debug("Using %d workers", self._num_workers)
-        for i in range(0, n, s): # i=0, i=25, i=75, ...
-            logger.debug("Adding files %s to worker %d", files[i:i + s], i)
-            worker = FileWorkerThread(files[i:i + s], self._metadata)
-            self._pool.register_worker(worker)
+        for m in modules:
+            for i in range(0, n, s): # i=0, i=25, i=75, ...
+                logger.debug("Adding files %s to worker %d", files[i:i + s], i)
+                worker = FileWorkerThread(files[i:i + s], self._context)
+                self._pool.register_worker(worker, m)
 
         return self._pool

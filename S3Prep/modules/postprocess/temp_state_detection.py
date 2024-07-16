@@ -1,21 +1,27 @@
-"""This module normalizes a dataset and splits it into train, val, test dataset."""
-import math
-import os
+"""This module contains the TemperatureStateDetection."""
+
 from typing import List, Callable
 import numpy as np
 import pandas as pd
 from scipy.fftpack import rfft, irfft, fftfreq
-from S3Prep.modules import BasePreProcessor
-from S3Prep.helper import Meta, Metadata, get_logger, FileWorkerCallable, FileWorkerThread
 
-# create logger object
-logger = get_logger(__name__)
+from S3Prep.diskio import FileWorkerCallable
+from S3Prep.helper.metadata import Metadata
 
-class CoolingDetectionCallable(FileWorkerCallable):
+
+class TemperatureStateDetection(FileWorkerCallable):
     """This callable detects the machine on idle state and registers it
     as separate column.
     """
-    def __init__(self, cols: List[str] = []) -> None:
+
+    def __init__(
+        self,
+        detection_list: List[str] = [
+            "SaugtemperaturZweiteStufeTETIT74341 (°C)",
+            "Motorlager (°C)",
+            "KühlwassertemperaturnachKühlerTETIT74422 (°C)",
+        ],
+    ) -> None:
         """Initializes this object.
 
         Args:
@@ -24,8 +30,13 @@ class CoolingDetectionCallable(FileWorkerCallable):
         """
         super().__init__()
 
-        self._names = ["KühlungAn", "KühlungAus", "KühlungAnVerlauf", "KühlungAusVerlauf"]
-        self._list = cols
+        self._names = [
+            "KühlungAn",
+            "KühlungAus",
+            "KühlungAnVerlauf",
+            "KühlungAusVerlauf",
+        ]
+        self._list = detection_list
 
     @staticmethod
     def remove_frequencies(data, cut_off: float = 0.001) -> np.array:
@@ -34,7 +45,7 @@ class CoolingDetectionCallable(FileWorkerCallable):
 
         Args:
             cut_off (float): The cut off frequency to remove.
-        
+
         Returns:
             np.array: The transformed data.
         """
@@ -43,11 +54,11 @@ class CoolingDetectionCallable(FileWorkerCallable):
 
         # Number of samplepoints
         f_signal = rfft(y)
-        w = fftfreq(y.size, d=x[1]-x[0])
+        w = fftfreq(y.size, d=x[1] - x[0])
 
         # filter all frequencies above 0.001
         cut_f_signal = f_signal.copy()
-        cut_f_signal[(w>cut_off)] = 0
+        cut_f_signal[(w > cut_off)] = 0
         cut_signal = irfft(cut_f_signal)
         return cut_signal
 
@@ -93,8 +104,9 @@ class CoolingDetectionCallable(FileWorkerCallable):
         return execute
 
     @staticmethod
-    def get_split_points(inter: Callable, data: np.array, deriv: int,
-                         region_size: int = 3 * 60 * 60) -> np.array:
+    def get_split_points(
+        inter: Callable, data: np.array, deriv: int, region_size: int = 3 * 60 * 60
+    ) -> np.array:
         """Splits the input data by using the second derivative of the interpolation.
         The splits are taken at the steepest ascent and descent of the interpolation
         model.
@@ -104,18 +116,20 @@ class CoolingDetectionCallable(FileWorkerCallable):
             data (np.ndarray): The input data.
             deriv (int): The derivative of the interpolation function.
             region_size (int): The size of the region to be considered for each
-        
+
         Returns:
             np.ndarray: The split points.
         """
         # get critical points of f' by finding roots of f''
-        roots = np.array(np.round(np.roots(inter(data, deriv, coeff=True))), dtype=np.uint)
+        roots = np.array(
+            np.round(np.roots(inter(data, deriv, coeff=True))), dtype=np.uint
+        )
         x = np.linspace(0, int(len(data)) - 1, int(len(data)), dtype=np.uint)
         split_points = []
         for root in roots:
             # get a region around the root
-            start_idx = int(root if root-region_size < 0 else root-region_size)
-            end_idx = int(root if root+region_size >= len(x) else root+region_size)
+            start_idx = int(root if root - region_size < 0 else root - region_size)
+            end_idx = int(root if root + region_size >= len(x) else root + region_size)
 
             x_1 = np.array([_ for _ in range(start_idx, end_idx, 1)])
             y_1 = data[x_1]
@@ -154,7 +168,7 @@ class CoolingDetectionCallable(FileWorkerCallable):
                 segments.append((split_points[i + 1], split_points[i]))
         return segments
 
-    def run(self, file_path: str) -> None:
+    def run(self, file_path: str, metadata: Metadata) -> None:
         # read the file as dataframe, read key 'data'
         store = pd.HDFStore(file_path, mode="r")
         df = store["data"]
@@ -169,19 +183,23 @@ class CoolingDetectionCallable(FileWorkerCallable):
         state_points = []
         trans_points = []
         for i in range(len(self._list)):
-            inter = CoolingDetectionCallable.interpolate_polynomial(x, data[x, i], estimated_deg)
-            points, _ = CoolingDetectionCallable.get_split_points(inter, data[:, i], 2,
-                                                               region_size=1 * 60 * 60)
+            inter = TemperatureStateDetection.interpolate_polynomial(
+                x, data[x, i], estimated_deg
+            )
+            points, _ = TemperatureStateDetection.get_split_points(
+                inter, data[:, i], 2, region_size=1 * 60 * 60
+            )
             state_points.append(points)
-            points, _ = CoolingDetectionCallable.get_split_points(inter, data[:, i], 1,
-                                                               region_size=1 * 60 * 60)
+            points, _ = TemperatureStateDetection.get_split_points(
+                inter, data[:, i], 1, region_size=1 * 60 * 60
+            )
             trans_points.append(points)
 
         state_points = np.mean(np.array(state_points), axis=0, dtype=np.uint)
         trans_points = np.mean(np.array(trans_points), axis=0, dtype=np.uint)
 
         # create segments with data from the split points
-        segments_idx = CoolingDetectionCallable.get_segments(state_points, inter)
+        segments_idx = TemperatureStateDetection.get_segments(state_points, inter)
         state = np.ones(data.shape[0])
         for i, segment in enumerate(segments_idx):
             start, end = segment
@@ -190,7 +208,7 @@ class CoolingDetectionCallable(FileWorkerCallable):
         df[self._names[0]] = state
         df[self._names[1]] = abs(state - 1)
 
-        segments_idx = CoolingDetectionCallable.get_segments(trans_points, inter)
+        segments_idx = TemperatureStateDetection.get_segments(trans_points, inter)
         trans = np.ones(data.shape[0])
         for i, segment in enumerate(segments_idx):
             start, end = segment
@@ -203,42 +221,3 @@ class CoolingDetectionCallable(FileWorkerCallable):
         updated = pd.HDFStore(file_path, mode="w")
         updated.put("data", df, format="table")
         updated.close()
-
-
-class CoolingStatus(BasePreProcessor):
-    """This module adds cooling states to the dataset, as the temperatures show iregular
-    behaviour from time to time. This might be due to enabling/disabling the active
-    cooling of a compressor.
-    """
-    def __init__(self, detection_list: List[str] = ["SaugtemperaturZweiteStufeTETIT74341 (°C)",
-                                                    "Motorlager (°C)",
-                                                    "KühlwassertemperaturnachKühlerTETIT74422 (°C)"],
-                 num_threads: int = 6) -> None:
-        self._num_threads = num_threads
-        self._detection_list = detection_list
-        self._callable = CoolingDetectionCallable(cols=detection_list)
-
-    def on_processing_finished(self, metadata: Metadata) -> None:
-        # get all DataFrame files
-        path = metadata[Meta.PATH]
-        files = []
-        for f in os.listdir(path):
-            if os.path.isdir(os.path.join(path, f)):
-                continue
-            files.append(os.path.join(path, f))
-
-        # divide list of files into chunks and give one chunk to each worker
-        n = len(files) # e.g. 100
-        s = max(math.ceil(n / self._num_threads), 1) # e.g. threads=4 -> s=25
-        logger.debug("One worker processes %d files", s)
-        logger.debug("Using %d workers", self._num_threads)
-        logger.debug("Workers try to detect status based on %s", self._detection_list)
-        worker = []
-        for i in range(0, n, s): # i=0, i=25, i=75, ...
-            logger.debug("Adding files %s to worker %d", files[i:i + s], i)
-            worker.append(FileWorkerThread(files[i:i + s], self._callable))
-            worker[-1].start()
-
-        # wait for all workers to have finished
-        for w in worker:
-            w.join()

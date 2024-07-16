@@ -55,8 +55,7 @@ class MachineStateSplit(BasePreProcessor):
 
         return df.iloc[:end_idx], df.iloc[end_idx:]
 
-    def on_download_finished(self, df: DataFrame, metadata: Metadata = None) \
-        -> List[DataFrame]:
+    def _split_algorithm(self, df: DataFrame) -> List[DataFrame]:
         df_splits = []
         to_split = df.copy()
         trimmed = to_split
@@ -69,6 +68,12 @@ class MachineStateSplit(BasePreProcessor):
 
         if not to_split.empty:
             df_splits.append(to_split)
+
+        return df_splits
+
+    def on_download_finished(self, df: DataFrame, metadata: Metadata = None) \
+        -> List[DataFrame]:
+        df_splits = self._split_algorithm(df)
 
         if len(df_splits) == 0:
             logger.info(

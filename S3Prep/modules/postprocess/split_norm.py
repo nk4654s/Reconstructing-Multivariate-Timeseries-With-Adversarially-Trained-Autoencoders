@@ -5,8 +5,8 @@ import os
 import re
 from typing import Dict
 from S3Prep.helper import Metadata
-from S3Prep.modules.normalizer.minmax_thread import MinMaxFileThread
-from S3Prep.modules.normalizer.standard_thread import StandardizeFileThread
+from S3Prep.modules.postprocess.normalizer.minmax_thread import MinMaxFileThread
+from S3Prep.modules.postprocess.normalizer.standard_thread import StandardizeFileThread
 from S3Prep.modules import BasePreProcessor
 from S3Prep.helper import Meta, get_logger
 

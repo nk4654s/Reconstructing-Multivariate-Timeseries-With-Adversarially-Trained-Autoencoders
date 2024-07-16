@@ -2,23 +2,23 @@
 import threading
 from typing import Any, List
 
-from S3Prep.diskio import FileWorkerCallable
-from S3Prep.helper import Metadata
+from .callable import FileWorkerCallable
+from .context import FileWorkerContext
 
 
 class FileWorkerThread(threading.Thread):
     """The FileWorkerThread enables processing multiple files simultaneosly.
     """
-    def __init__(self, files: List[str], metadata: Metadata) -> None:
+    def __init__(self, files: List[str], context: FileWorkerContext) -> None:
         """Initializes a Worker object.
 
         Args:
             files (List[str]): Files to be worked on.
-            metadata (Metadata): Metadata to be used by the callable.
+            context (FileWorkerContext): FileWorkerContext to be used by the callable.
         """
         super().__init__()
         self._files = files
-        self._metadata = metadata
+        self._context = context
 
         self._module = None
         self._result = {}
@@ -43,6 +43,6 @@ class FileWorkerThread(threading.Thread):
         # process the files using the current module
         self._result = []
         for f in self._files:
-            res = self._module.run(f, self._metadata)
+            res = self._module.run(f, self._context)
             if res:
                 self._result.append(res)

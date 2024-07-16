@@ -1,14 +1,14 @@
-"""A custom cli interface for simplifying things."""
+"""This module contains the PreProcessCLI"""
 from typing import List
 from S3Prep.cli import CLIArgumentParser
 from S3Prep.modules import BasePreProcessor
 
 
-class MyCLIArgumentParser(CLIArgumentParser):
+class PreProcessCLI(CLIArgumentParser):
     """This custom class expands the CLIArgumentParser class.
     """
-    def __init__(self, preps: List[BasePreProcessor] | BasePreProcessor, *args, **kwargs):
-        super().__init__(preps, *args, **kwargs)
+    def __init__(self, modules: List[BasePreProcessor] | BasePreProcessor, *args, **kwargs):
+        super().__init__(modules, *args, **kwargs)
 
     def prepare_arguments(self):
         self.add_argument(

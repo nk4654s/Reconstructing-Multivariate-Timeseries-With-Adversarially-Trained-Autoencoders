@@ -1,35 +1,25 @@
-"""The main module handles program execution and parameter modification."""
+"""This module downloads and pre-processes a dataset from a given S3 bucket."""
+
 import os
 import shutil
 from datetime import date
-from S3Prep.cli import MyCLIArgumentParser
-from S3Prep.modules import (
-    InterpolatePreProcessor,
-    MachineStateSplit,
-    OutlierPreProcessor,
-    Report,
-    HomogeneousTimeSteps,
-    HomogeneousColumns,
-    RemoveColumns,
-    RenameColumns,
-    CoolingStatus,
-    Normalize,
-)
+from S3Prep.cli import PreProcessCLI
+from S3Prep.modules.preprocess import *
 from S3Prep.data import S3, DFIO, BucketType
 
+# define modules to be applied here
+modules = [
+    HomogeneousTimeSteps,
+    HomogeneousColumns,
+    RenameColumns,
+    InterpolatePreProcessor,
+    MachineStateSplit,
+    Report,
+]
 
 if __name__ == "__main__":
-    parser = MyCLIArgumentParser(
-        preps=[
-            HomogeneousTimeSteps, HomogeneousColumns,
-            RenameColumns,# RemoveColumns,
-            InterpolatePreProcessor, MachineStateSplit,
-            #OutlierPreProcessor,
-            Report, CoolingStatus, Normalize,
-        ]
-    )
-
     # initialize the pre-processing modules
+    parser = PreProcessCLI(modules)
     prep_modules = parser.get_modules()
 
     # define the s3 data source
