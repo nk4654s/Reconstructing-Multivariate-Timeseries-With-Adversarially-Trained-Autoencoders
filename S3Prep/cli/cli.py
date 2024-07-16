@@ -53,7 +53,7 @@ class CLIArgumentParser(ArgumentParser):
         # parse arguments to have the namespace ready
         self._args = self.parse_args()
 
-    def get_pre_processors(self) -> List[BasePreProcessor]:
+    def get_modules(self) -> List[BasePreProcessor]:
         """The method instatiates the pre-processor classes.
         """
         # initiate the pre-processors

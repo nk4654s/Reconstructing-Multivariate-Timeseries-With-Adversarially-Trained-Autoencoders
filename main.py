@@ -30,7 +30,7 @@ if __name__ == "__main__":
     )
 
     # initialize the pre-processing modules
-    prep_modules = parser.get_pre_processors()
+    prep_modules = parser.get_modules()
 
     # define the s3 data source
     machine_uuid = parser.args.machine_uuid
