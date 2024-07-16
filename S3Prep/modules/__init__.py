@@ -7,3 +7,4 @@ from S3Prep.modules.homogeneous import HomogeneousTimeSteps, HomogeneousColumns
 from S3Prep.modules.remove import RemoveColumns
 from S3Prep.modules.split_norm import Normalize
 from S3Prep.modules.rename import RenameColumns
+from S3Prep.modules.cooling_states import CoolingStatus

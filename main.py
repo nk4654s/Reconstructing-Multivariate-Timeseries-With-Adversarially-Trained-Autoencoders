@@ -12,6 +12,7 @@ from S3Prep.modules import (
     HomogeneousColumns,
     RemoveColumns,
     RenameColumns,
+    CoolingStatus,
     Normalize,
 )
 from S3Prep.data import S3, DFIO, BucketType
@@ -21,9 +22,10 @@ if __name__ == "__main__":
     parser = MyCLIArgumentParser(
         preps=[
             HomogeneousTimeSteps, HomogeneousColumns,
-            RenameColumns, RemoveColumns,
+            RenameColumns,# RemoveColumns,
             InterpolatePreProcessor, MachineStateSplit,
-            OutlierPreProcessor, Report, Normalize,
+            #OutlierPreProcessor,
+            Report, CoolingStatus, Normalize,
         ]
     )
 
@@ -44,5 +46,5 @@ if __name__ == "__main__":
         shutil.rmtree(parser.args.folder)
 
     # download and process data
-    dfio = DFIO(s3, limit_headers=parser.args.limit_headers)
+    dfio = DFIO(s3)
     dfio.download(parser.args.folder, modules=prep_modules)

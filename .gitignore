@@ -10,7 +10,7 @@ __pycache__/
 *.h5
 *.png
 
-# ignore playground
-playground.ipynb
+# ignore playgrounds
+*.ipynb
 .vscode/launch.json
 dataset*
