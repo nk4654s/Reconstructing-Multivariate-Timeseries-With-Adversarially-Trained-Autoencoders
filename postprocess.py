@@ -2,10 +2,11 @@
 from S3Prep.cli import PostProcessingCLI
 from S3Prep.diskio import FileWorkerFactory, FileWorkerPool
 from S3Prep.helper import Metadata
-from S3Prep.modules.postprocess import TrainNormalize, ApplyNormalize
+from S3Prep.modules.postprocess import TrainNormalize, ApplyNormalize, WeatherDataset
 
 # define module classes to be available here
 module_classes = [
+    WeatherDataset,
     TrainNormalize,
     ApplyNormalize
 ]

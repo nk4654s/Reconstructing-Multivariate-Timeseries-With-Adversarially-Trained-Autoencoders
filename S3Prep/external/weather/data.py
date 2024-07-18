@@ -66,28 +66,38 @@ class WeatherData:
                         data[h] = row
                 
                 data["ts"] = data.pop("MESS_DATUM")
-                data["AussenTemperatur (°C)"] = data.pop("TT_10")
+                data["Aussentemperatur (°C)"] = data.pop("TT_10")
                 df = pd.DataFrame(data)
                 df.set_index("ts", inplace = True)
+                df.columns.name = "ts"
 
         return df
 
-    def get_data_by_id(self, id: str) -> pd.DataFrame:
+    def get_data_by_id(self, id: str, start: str, end: str) -> pd.DataFrame:
         """Extracts weather data from a zip file and returns it as pandas dataframe.
 
         Args:
             id (str): ID of the weather station
+            start (str): Start year of the data to extract
+            end (str): End year of the data to extract
 
         Returns:
             pd.DataFrame: Pandas dataframe containing weather data.
         """
+        start = datetime.strptime(start, "%Y%m%d")
+        end = datetime.strptime(end, "%Y%m%d")
+
         df = pd.DataFrame()
         for link in self._sub_links:
             if link.split("_")[2] != id:
                 continue
 
-            new_df = self._extract_to_dataframe(BASE_URL + link, id)
-            df = pd.concat([df, new_df])
-            df.interpolate(method="linear", inplace=True)
+            start_date = datetime.strptime(link.split("_")[3], "%Y%m%d")
+            end_date = datetime.strptime(link.split("_")[4], "%Y%m%d")
+            if end > start_date:
+                if start <= start_date or start <= end_date:
+                    new_df = self._extract_to_dataframe(BASE_URL + link, id)
+                    df = pd.concat([df, new_df])
+                    df.interpolate(method="linear", inplace=True)
             
         return df
