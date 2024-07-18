@@ -1,4 +1,5 @@
 """This module contains the FileWorkerThread."""
+import os
 import threading
 from typing import Any, List
 
@@ -43,6 +44,9 @@ class FileWorkerThread(threading.Thread):
         # process the files using the current module
         self._result = []
         for f in self._files:
+            if not os.path.exists(f):
+                print(f"\tSkip {f}, does not exist.")
+                continue
             res = self._module.run(f, self._context)
             if res:
                 self._result.append(res)

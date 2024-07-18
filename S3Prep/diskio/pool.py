@@ -1,5 +1,6 @@
 """This module contains the FileWorkerPool"""
 from typing import List, Dict
+from tqdm import tqdm
 from S3Prep.helper import Metadata
 from .callable import FileWorkerCallable, CallableDependency
 from .worker import FileWorkerThread
@@ -34,8 +35,13 @@ class FileWorkerPool:
         """
         all_modules = {m.__class__.__name__: (i, m) for i, m in enumerate(modules)}
         for name, (i, module) in all_modules.items():
+            # get dependencies of modules
             dependencies = module.get_dependencies()
+
+            # check registered dependencies
             for module_name, mode in dependencies.items():
+
+                # check that dependecies is registered as a module
                 assert module_name in all_modules.keys(), f"{module_name} should exist"
                 if mode == CallableDependency.IMMEDIATELY_AFTER:
                     j, _ = all_modules[module_name]
@@ -44,13 +50,17 @@ class FileWorkerPool:
                 elif mode == CallableDependency.IMMEDIATELY_BEFORE:
                     j, _ = all_modules[module_name]
                     assert i - 1 == j, f"{name} should come before {module_name}"
+                
+                elif mode == CallableDependency.NOT_BEFORE:
+                    j, _ = all_modules[module_name]
+                    assert i < j, f"{module_name} should come after {name}"
 
     def start_processing(self) -> Metadata:
         """The method starts processing all files of the dataset using the
         registered workers. All workers wait until all files are processed,
         before applying the next module.
         """
-        for module in self._modules:
+        for module in tqdm(self._modules):
             module_name = module.__class__.__name__
             for w in self._workers[module_name]:
                 w.start()
