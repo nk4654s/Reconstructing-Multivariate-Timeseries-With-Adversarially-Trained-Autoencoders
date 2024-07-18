@@ -109,27 +109,25 @@ class DFIO:
         # check if the dataframe is empty and set it up accordingly
         # also check if the header is consistent with the stream's one
         # if not, save the progress so far and continue on a fresh dataframe instance
-        values = []
         lines = stream.readlines()
         if len(lines) <= 1:
             return None
         logger.info("Streaming day %s", self._s3.day(day_index))
         logger.info("Streaming lines %s", len(lines))
 
-        # read all values from the incoming sensor data
-        for i, line in enumerate(lines):
-            if i == 0:
-                header = self.parse_header(line)
-                continue
+        header = self.parse_header(lines.pop(0))
 
+        # read all values from the incoming sensor data
+        values = []
+        for i, line in enumerate(lines):
             # extract and format the row
-            columns = line.strip("\n").split("\t")
-            row = [to_float(s) for s in columns]
+            row = line.strip("\n").split("\t")
+            # row = [to_float(s) for s in columns]
+            row = pd.to_numeric(row, errors='coerce')
             values.append(row)
 
         values = np.array(values)
         data = {key: val for (key, val) in zip(header.values, values.T)}
-
         return pd.DataFrame(data)
 
     def download(
