@@ -26,6 +26,7 @@ class TrainNormalize(FileWorkerCallable):
         return {ApplyNormalize.__name__: CallableDependency.IMMEDIATELY_AFTER}
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
+        print("trainnorm:", file_path)
         # Load the file into a pandas DataFrame
         df = pd.read_hdf(file_path, key="data")
 
@@ -50,6 +51,7 @@ class ApplyNormalize(FileWorkerCallable):
         return {TrainNormalize.__name__: CallableDependency.IMMEDIATELY_BEFORE}
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
+        print("applynorm:", file_path)
         a, b = context.get(TrainNormalize.__name__)
         df = pd.read_hdf(file_path, key="data")
 

@@ -179,7 +179,7 @@ class DFIO:
             for j, df in enumerate(dfs):
                 # check if a new storage needs to be created, only after a machine state
                 # change
-                if j > 0 or self._meta[Meta.MACHINE_STATE_CHANGE]:
+                if i == 0 or (j > 0 or self._meta[Meta.MACHINE_STATE_CHANGE]):
                     self._create_storage(dir_name, i)
                 self.save(df)
             self._meta.put(False, Meta.MACHINE_STATE_CHANGE)

@@ -20,7 +20,7 @@ class FileWorkerCallable:
         Returns:
             List[str]: A list of dependencies for this callable instance.
         """
-        return []
+        return {}
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         """This method will be executed on last and should be used to do some clean-up.

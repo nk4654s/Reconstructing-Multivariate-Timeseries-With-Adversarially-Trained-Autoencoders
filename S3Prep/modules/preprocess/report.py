@@ -183,7 +183,7 @@ class Report(BasePreProcessor):
                 date = day + f"_{num}"
 
             # add the current DataFrame to the file register
-            if metadata[Meta.MACHINE_STATE_CHANGE]:
+            if metadata[Meta.MACHINE_STATE_CHANGE] or len(self._file_register) == 0:
                 self._file_register.append(
                     {
                         "day": date,
