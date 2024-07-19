@@ -2,6 +2,7 @@
 
 import os
 from typing import List, TextIO
+from multiprocessing import Pool
 import pandas as pd
 import numpy as np
 from tqdm import trange
@@ -9,7 +10,7 @@ from tqdm import trange
 from S3Prep.data import S3
 from S3Prep.data.header import Header
 from S3Prep.helper import Meta, Metadata
-from S3Prep.helper import get_sensor_uuid_to_name, get_file, to_float, get_logger
+from S3Prep.helper import get_sensor_uuid_to_name, get_file, get_logger, line_str_to_array
 from S3Prep.modules import BasePreProcessor, EntryPoint
 
 # create logger object
@@ -31,6 +32,7 @@ class DFIO:
 
         self._header: Header = None
         self._store = None
+        self._pool = Pool(12)
 
     def parse_header(self, line: str) -> Header:
         """This method parses a line into a header and checks for validity. If
@@ -118,14 +120,7 @@ class DFIO:
         header = self.parse_header(lines.pop(0))
 
         # read all values from the incoming sensor data
-        values = []
-        for i, line in enumerate(lines):
-            # extract and format the row
-            row = line.strip("\n").split("\t")
-            # row = [to_float(s) for s in columns]
-            row = pd.to_numeric(row, errors='coerce')
-            values.append(row)
-
+        values = self._pool.map(line_str_to_array, lines)
         values = np.array(values)
         data = {key: val for (key, val) in zip(header.values, values.T)}
         return pd.DataFrame(data)

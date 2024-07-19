@@ -2,6 +2,7 @@
 import os
 from typing import Callable, Tuple, List
 from datetime import datetime, date, timedelta
+import pandas as pd
 import requests
 import numpy as np
 import matplotlib.pyplot as plt
@@ -49,6 +50,20 @@ def get_file(file_path: str, create_dirs: bool = True, overwrite: bool = False,
         num += 1
 
     return os.path.join(folder_path, name_postfix)
+
+
+def line_str_to_array(line: str) -> np.array:
+    """Multiprocesses a line-str, splits into a list and converts to float.
+
+    Args:
+        line (str): The string to convert.
+    
+    Returns:
+        np.array: The converted float32 array.
+    """
+    row = line.strip("\n").split("\t")
+    row = pd.to_numeric(row, errors='coerce')
+    return row
 
 
 def to_float(value: str) -> float:
