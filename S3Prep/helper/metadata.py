@@ -25,6 +25,7 @@ class Meta(Enum):
     TOTAL_RECORDINGS = "total_recordings"
     CORRELATION_OF_INTEREST = "correlation_of_interest"
     NORMALIZER = "normalizer"
+    NORM_KEYS = "normalizer_keys"
     NORM_METHOD = "normalizer_method"
     NORM_VAL_A = "normalizer_val_a"
     NORM_VAL_B = "normalizer_val_b"

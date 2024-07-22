@@ -5,7 +5,7 @@ import pandas as pd
 from S3Prep.helper import Meta, Metadata
 from S3Prep.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
 from S3Prep.external.weather import WeatherData, WeatherStations, Geo
-from S3Prep.modules.postprocess.normalize import TrainNormalize
+from S3Prep.modules.postprocess.normalize import NormalizeFit
 
 mutex = Lock()
 
@@ -32,7 +32,7 @@ class WeatherDataset(FileWorkerCallable):
         self._removed_files = []
 
     def get_dependencies(self) -> List[str]:
-        return {TrainNormalize.__name__: CallableDependency.NOT_BEFORE}
+        return {NormalizeFit.__name__: CallableDependency.NOT_BEFORE}
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
         print("weather:", file_path)

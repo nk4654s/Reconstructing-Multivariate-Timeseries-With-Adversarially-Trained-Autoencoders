@@ -8,6 +8,11 @@ class FileWorkerContext:
     def put(self, key: str, value: Any) -> None:
         self._content[key] = value
 
+    def append_list(self, key: str, value: Any) -> None:
+        l = self._content.get(key, [])
+        l.append(value)
+        self._content[key] = l
+
     def get(self, key: str) -> Any:
         return self._content.get(key, None)
 
