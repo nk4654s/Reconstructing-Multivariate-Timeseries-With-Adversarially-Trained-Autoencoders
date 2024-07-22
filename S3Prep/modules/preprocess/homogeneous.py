@@ -25,13 +25,16 @@ GRAPH_HC_FILE_NAME = "homogeneous_columns.png"
 class HomogeneousTimeSteps(BasePreProcessor):
     """Ensures homogeneous time steps. Requires index column to be timestamps."""
 
-    def __init__(self, index_key: str = "ts"):
+    def __init__(self, index_key: str = "ts", interpolate: str = "linear"):
         """Initializes the pre-processing module.
 
         Args:
             index_key (str): Column name of index. Defaults to "ts".
+            interpolate (str): Interpolate inserted rows with provided method. None
+            means no interpolation. Defaults to 'linear'.
         """
         self._index_key = index_key
+        self._interpolate = interpolate
         self._stats = {}
 
     def on_download_finished(self, df: DataFrame, metadata: Metadata) \
@@ -51,6 +54,10 @@ class HomogeneousTimeSteps(BasePreProcessor):
             old_len,
             df.shape[0],
         )
+
+        # interpolate added rows
+        if self._interpolate:
+            df.interpolate(method=self._interpolate, inplace=True)
 
         self._stats[metadata[Meta.DAY]] = round((df.shape[0] - old_len) / df.shape[0] * 100, 3)
         return df

@@ -9,10 +9,10 @@ from S3Prep.data import S3, DFIO, BucketType
 
 # define modules to be applied here
 modules = [
-    HomogeneousTimeSteps,
     HomogeneousColumns,
     RenameColumns,
     InterpolatePreProcessor,
+    HomogeneousTimeSteps,
     MachineStateSplit,
     Report,
 ]
