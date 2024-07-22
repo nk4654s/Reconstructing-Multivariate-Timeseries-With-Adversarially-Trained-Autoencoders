@@ -39,6 +39,7 @@ class WeatherDataset(FileWorkerCallable):
 
         # keep track of files removed
         self._removed_files = []
+        self._lengths_files = {}
 
     def get_dependencies(self) -> List[str]:
         return {NormalizeFit.__name__: CallableDependency.NOT_BEFORE}
@@ -54,9 +55,11 @@ class WeatherDataset(FileWorkerCallable):
             ]
             kwargs = {"station_id": self._station_id, "start": min(files), "end": max(files)}
 
+            # Store the WeatherDataset for all threads
             if WeatherDataset.DF is None:
                 WeatherDataset.DF = self._weather.get_data_by_id(**kwargs)
 
+        # get the weather data fro the time span of the loaded DataFrame
         df = pd.read_hdf(file_path, key="data")
         min_ts = df["ts"].min()
         max_ts = df["ts"].max()
@@ -71,11 +74,13 @@ class WeatherDataset(FileWorkerCallable):
             df.interpolate(method=self._interpolate, inplace=True)
 
         df.to_hdf(file_path, key="data", format="table", mode="w")
+        day = file_path.split("_", maxsplit=1)[-1][:-3]
         if df.empty:
             print("\tRemoving empty file", file_path)
-            day = file_path.split("_")[1]
             self._removed_files.append(day)
             os.remove(file_path)
+        else:
+            self._lengths_files[day] = len(df)
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         new_files = []
@@ -84,7 +89,9 @@ class WeatherDataset(FileWorkerCallable):
             if day in self._removed_files:
                 continue
 
-            new_files.append(f)
+            if day in self._lengths_files.keys():
+                f["recordings"] = self._lengths_files[day]
+                new_files.append(f)
 
         metadata.drop(Meta.FILES)
         metadata.put(new_files, Meta.FILES)
