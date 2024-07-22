@@ -1,3 +1,4 @@
+"""This module replaces the sensor UUID with a human readable text."""
 from typing import List
 from pandas import DataFrame
 from S3Prep.helper import Metadata, Meta, get_sensor_uuid_to_name, get_logger
@@ -7,11 +8,17 @@ logger = get_logger(__name__)
 
 
 class RenameColumns(BasePreProcessor):
+    """
+    A pre-processing step for renaming columns in a dataset. This class provides
+    methods and attributes for renaming columns based on specific rules or
+    configurations.
+    """
     def __init__(self) -> None:
         self._sensor_names = None
 
-    def on_download_finished(self, df: DataFrame, metadata: Metadata) \
-        -> DataFrame | List[DataFrame]:
+    def on_download_finished(
+        self, df: DataFrame, metadata: Metadata
+    ) -> DataFrame | List[DataFrame]:
         if self._sensor_names is None:
             # initial call of this module, download uuid -> name dictionary
             uuid = metadata[Meta.MACHINE_UUID]

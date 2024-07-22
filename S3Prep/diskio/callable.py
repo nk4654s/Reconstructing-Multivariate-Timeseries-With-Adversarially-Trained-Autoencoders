@@ -1,3 +1,4 @@
+"""Contains the base class for a post-processing module."""
 from enum import Enum
 from typing import Any, Dict
 from S3Prep.helper import Metadata
@@ -5,6 +6,11 @@ from .context import FileWorkerContext
 
 
 class CallableDependency(Enum):
+    """Represents dependencies for callable objects.
+    
+    This enum represents different types of dependencies between
+    callable objects.
+    """
     IMMEDIATELY_AFTER = "immediately_after"
     IMMEDIATELY_BEFORE = "immediately_before"
     EXISTS = "exists"
@@ -15,9 +21,10 @@ class FileWorkerCallable:
     """The FileWorkerCallable defines the task, which the
     FileWorkerThread should execute.
     """
+
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         """This method should return a list of dependencies for this callable instance.
-        
+
         Returns:
             List[str]: A list of dependencies for this callable instance.
         """
@@ -41,7 +48,7 @@ class FileWorkerCallable:
             file_path (str): The file path as string.
             context (FileWorkerContext): A context object, which contains
             information passed between modules.
-        
+
         Returns:
             Any result of the file processing task. Can be `None`.
         """

@@ -17,13 +17,14 @@ logger = get_logger(__name__)
 
 class BucketType(Enum):
     """This enum contains the bucket types."""
+
     MEASUREMENTS = "xplore-measurements"
     REPORTS = "xplore-reports"
 
 
 class S3:
-    """This class opens S3 streams to download machine sensor data.
-     """
+    """This class opens S3 streams to download machine sensor data."""
+
     def __init__(
         self,
         machine_uuid: str | UUID,
@@ -58,14 +59,12 @@ class S3:
 
     @property
     def bucket_type(self) -> BucketType:
-        """The bucket type of the bucket to be used for downloads.
-        """
+        """The bucket type of the bucket to be used for downloads."""
         return self._bucket_type
 
     @property
     def machine_uuid(self) -> str:
-        """The machines uuid.
-        """
+        """The machines uuid."""
         return self._machine_uuid
 
     def set_machine(self, machine_uuid: str | UUID) -> None:

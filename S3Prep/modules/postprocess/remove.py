@@ -8,12 +8,16 @@ logger = get_logger(__name__)
 
 
 class RemoveColumns(BasePreProcessor):
-    """This module removes specified columns from the dataframe
-    """
+    """This module removes specified columns from the dataframe"""
+
     def __init__(self, columns_to_remove: List[str] = ["ts"]) -> None:
         self._columns = columns_to_remove
+        # TODO: Uses the old parent class, should implement FileWorker
+        raise NotImplementedError
 
-    def on_download_finished(self, df: DataFrame, _: Metadata) -> DataFrame | List[DataFrame]:
+    def on_download_finished(
+        self, df: DataFrame, _: Metadata
+    ) -> DataFrame | List[DataFrame]:
         old_len = df.shape[1]
         df = df.drop(columns=self._columns, errors="ignore")
         logger.debug("Removed %s columns", old_len - df.shape[1])

@@ -30,6 +30,7 @@ class BasePreProcessor(object):
         Returns:
             The processed dataframe or a list of dataframes
         """
+        assert metadata
         return df
 
     def on_processing_finished(self, metadata: Metadata) -> None:
@@ -40,6 +41,7 @@ class BasePreProcessor(object):
         Args:
             metadata (Metadata): The metadata dictionary
         """
+        assert metadata
         return None
 
     def _process(

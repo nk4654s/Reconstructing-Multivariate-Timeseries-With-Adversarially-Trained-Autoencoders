@@ -1,5 +1,6 @@
 """This module contains the header class"""
 
+
 class Header:
     """This class defines the header of a file."""
 

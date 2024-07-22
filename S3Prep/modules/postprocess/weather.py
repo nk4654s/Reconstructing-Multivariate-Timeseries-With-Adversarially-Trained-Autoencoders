@@ -2,7 +2,7 @@ import os
 from threading import Lock
 from typing import Any, List
 import pandas as pd
-from S3Prep.helper import Meta, Metadata
+from S3Prep.helper import Meta, Metadata, get_machine_location
 from S3Prep.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
 from S3Prep.external.weather import WeatherData, WeatherStations, Geo
 from S3Prep.modules.postprocess.normalize import NormalizeFit
@@ -11,13 +11,22 @@ mutex = Lock()
 
 
 class WeatherDataset(FileWorkerCallable):
+    """
+    Represents a weather dataset for file worker operations. This class provides
+    methods and attributes for working with weather data in the context of
+    file worker operations.
+    """
     DF = None
-    def __init__(self, normalize: bool = False, merge: str = "inner", interpolate: str = None) -> None:
+
+    def __init__(
+        self, normalize: bool = False, merge: str = "inner", interpolate: str = None
+    ) -> None:
         self._normalize = normalize
         self._merge = merge
         self._interpolate = interpolate
 
-        # TODO: find automatically
+        # FIXME: fallback when machine UUID is not found
+        # get_machine_location(machine_uuid)
         # define the location of the compressor
         duelmen = Geo(51.84964389310662, 7.323914205159883)
 
@@ -40,19 +49,17 @@ class WeatherDataset(FileWorkerCallable):
             metadata = Metadata()
             metadata.load(os.path.dirname(file_path))
 
-            files = [_["day"].replace("-", "").split("_")[0] for _ in metadata[Meta.FILES]]
-            kwargs = {
-                "id": self._station_id,
-                "start": min(files),
-                "end": max(files)
-            }
+            files = [
+                _["day"].replace("-", "").split("_")[0] for _ in metadata[Meta.FILES]
+            ]
+            kwargs = {"station_id": self._station_id, "start": min(files), "end": max(files)}
 
             if WeatherDataset.DF is None:
                 WeatherDataset.DF = self._weather.get_data_by_id(**kwargs)
 
         df = pd.read_hdf(file_path, key="data")
         min_ts = df["ts"].min()
-        max_ts  = df["ts"].max()
+        max_ts = df["ts"].max()
         temp_df = WeatherDataset.DF[WeatherDataset.DF.index >= min_ts].copy()
         temp_df = temp_df[temp_df.index <= max_ts]
 
@@ -71,14 +78,13 @@ class WeatherDataset(FileWorkerCallable):
             os.remove(file_path)
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
-        files = metadata[Meta.FILES]
         new_files = []
         for f in metadata[Meta.FILES]:
             day = f["day"]
             if day in self._removed_files:
                 continue
-            
+
             new_files.append(f)
-        
+
         metadata.drop(Meta.FILES)
         metadata.put(new_files, Meta.FILES)

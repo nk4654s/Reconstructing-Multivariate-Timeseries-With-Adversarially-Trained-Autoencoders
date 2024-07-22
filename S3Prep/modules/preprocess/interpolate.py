@@ -1,4 +1,5 @@
 """This module pre-processes a dataframe and insters values to NAN."""
+
 from pandas import DataFrame
 from S3Prep.modules import BasePreProcessor
 from S3Prep.helper import Metadata, get_logger
@@ -17,10 +18,14 @@ class InterpolatePreProcessor(BasePreProcessor):
         - "cubic",
         - "polynomial".
     """
+
     METHODS = ["ffill", "bfill", "linear", "quadratic", "cubic", "polynomial"]
+
     def __init__(self, method: str = "ffill"):
         super().__init__()
-        assert method in InterpolatePreProcessor.METHODS, f"{method} is not a valid method."
+        assert (
+            method in InterpolatePreProcessor.METHODS
+        ), f"{method} is not a valid method."
         self._method = method
 
     def on_download_finished(self, df: DataFrame, _: Metadata = None) -> DataFrame:

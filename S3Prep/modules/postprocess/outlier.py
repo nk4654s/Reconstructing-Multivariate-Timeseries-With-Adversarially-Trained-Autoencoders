@@ -1,4 +1,5 @@
 """This module removes outliers from the dataframe."""
+
 from pandas import DataFrame
 import numpy as np
 
@@ -15,8 +16,13 @@ GRAPH_YLABEL = "% Outliers Removed"
 
 class OutlierPreProcessor(BasePreProcessor):
     """This class removes outliers from the dataset using IQR-distance from Median."""
-    def __init__(self, lower_quantile: float =0.02, upper_quantile: float = 0.98,
-                 threshold: float = 1.5):
+
+    def __init__(
+        self,
+        lower_quantile: float = 0.02,
+        upper_quantile: float = 0.98,
+        threshold: float = 1.5,
+    ):
         """The constructor of the class. This will be automatically executed by
         the CLIArgumentParser.
 
@@ -33,7 +39,9 @@ class OutlierPreProcessor(BasePreProcessor):
         # collect statistics
         self._stats = {}
 
-    def on_download_finished(self, df: DataFrame, metadata: Metadata = None) -> DataFrame:
+    def on_download_finished(
+        self, df: DataFrame, metadata: Metadata = None
+    ) -> DataFrame:
         original_len = df.shape[0]
         if df.shape[0] == 0:
             return df
@@ -54,8 +62,7 @@ class OutlierPreProcessor(BasePreProcessor):
 
         removed_len = original_len - df.shape[0]
         removed_perc = round(removed_len / original_len * 100, 3)
-        logger.debug("Outlier detection removed %d%% of the DataFrame",
-                     removed_perc)
+        logger.debug("Outlier detection removed %d%% of the DataFrame", removed_perc)
 
         # add outlier statistics to metadata
         self._stats[metadata[Meta.DAY]] = removed_perc

@@ -71,8 +71,9 @@ class MachineStateSplit(BasePreProcessor):
 
         return df_splits
 
-    def on_download_finished(self, df: DataFrame, metadata: Metadata = None) \
-        -> List[DataFrame]:
+    def on_download_finished(
+        self, df: DataFrame, metadata: Metadata = None
+    ) -> List[DataFrame]:
         df_splits = self._split_algorithm(df)
 
         if len(df_splits) == 0:
@@ -86,7 +87,7 @@ class MachineStateSplit(BasePreProcessor):
 
         # inform any handler, that the machine state did not change if there is a single
         # dataframe in the splits array with the same length as the original
-        state_change = not(len(df_splits) == 1 and df_splits[0].shape == df.shape)
+        state_change = not (len(df_splits) == 1 and df_splits[0].shape == df.shape)
         metadata.put(state_change, Meta.MACHINE_STATE_CHANGE)
         return df_splits
 

@@ -37,8 +37,9 @@ class HomogeneousTimeSteps(BasePreProcessor):
         self._interpolate = interpolate
         self._stats = {}
 
-    def on_download_finished(self, df: DataFrame, metadata: Metadata) \
-        -> DataFrame | List[DataFrame]:
+    def on_download_finished(
+        self, df: DataFrame, metadata: Metadata
+    ) -> DataFrame | List[DataFrame]:
         # get time start and end
         range_start = df[self._index_key].iloc[0]
         range_end = df[self._index_key].iloc[-1]
@@ -48,7 +49,11 @@ class HomogeneousTimeSteps(BasePreProcessor):
 
         # reindex the dataframe, inserted rows will be filled with NaNs
         old_len = df.shape[0]
-        df = df.set_index(self._index_key).reindex(new_index).reset_index(self._index_key)
+        df = (
+            df.set_index(self._index_key)
+            .reindex(new_index)
+            .reset_index(self._index_key)
+        )
         logger.debug(
             "Reindexed dataframe increased size %s to %s",
             old_len,
@@ -59,7 +64,9 @@ class HomogeneousTimeSteps(BasePreProcessor):
         if self._interpolate:
             df.interpolate(method=self._interpolate, inplace=True)
 
-        self._stats[metadata[Meta.DAY]] = round((df.shape[0] - old_len) / df.shape[0] * 100, 3)
+        self._stats[metadata[Meta.DAY]] = round(
+            (df.shape[0] - old_len) / df.shape[0] * 100, 3
+        )
         return df
 
     def on_processing_finished(self, metadata: Metadata) -> None:
@@ -67,7 +74,9 @@ class HomogeneousTimeSteps(BasePreProcessor):
         vals = list(self._stats.values())
 
         # generate graph
-        ax = simple_graph(days, vals)(GRAPH_HTS_TITLE, GRAPH_HTS_XLABEL, GRAPH_HTS_YLABEL)
+        ax = simple_graph(days, vals)(
+            GRAPH_HTS_TITLE, GRAPH_HTS_XLABEL, GRAPH_HTS_YLABEL
+        )
 
         # add graph to metadata
         metadata.put_list((ax, GRAPH_HTS_FILE_NAME), Meta.ADDITIONAL_REPORT_GRAPHS)
@@ -81,8 +90,9 @@ class HomogeneousColumns(BasePreProcessor):
         self._enable = enable
         self._stats = {}
 
-    def on_download_finished(self, df: DataFrame, metadata: Metadata) \
-          -> DataFrame | List[DataFrame]:
+    def on_download_finished(
+        self, df: DataFrame, metadata: Metadata
+    ) -> DataFrame | List[DataFrame]:
         self._stats[metadata[Meta.DAY]] = 0
         if not self._enable:
             return df

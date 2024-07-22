@@ -12,6 +12,11 @@ module_classes = [
 ]
 
 def main():
+    """
+    The main entry point for post-processing operations. This function
+    initializes the custom CLIArgumentParser with the module classes and
+    handles command-line interface (CLI) arguments.
+    """
     # initialize custom CLIArgumentParser
     parser = PostProcessingCLI(module_classes)
     modules = parser.get_modules()

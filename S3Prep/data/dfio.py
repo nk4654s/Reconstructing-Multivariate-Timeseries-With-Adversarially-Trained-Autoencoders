@@ -10,7 +10,12 @@ from tqdm import trange
 from S3Prep.data import S3
 from S3Prep.data.header import Header
 from S3Prep.helper import Meta, Metadata
-from S3Prep.helper import get_sensor_uuid_to_name, get_file, get_logger, line_str_to_array
+from S3Prep.helper import (
+    get_sensor_uuid_to_name,
+    get_file,
+    get_logger,
+    line_str_to_array,
+)
 from S3Prep.modules import BasePreProcessor, EntryPoint
 
 # create logger object
@@ -37,12 +42,12 @@ class DFIO:
     def parse_header(self, line: str) -> Header:
         """This method parses a line into a header and checks for validity. If
         there is a change in number of header.values, this method will define a
-        relative complement of the previous header and the new header. This set 
+        relative complement of the previous header and the new header. This set
         of values will be dropped from the DataFrame.
 
         Args:
             line (str): The line to parse into a header.
-        
+
         Returns:
             Header: The parsed header.
         """
@@ -64,8 +69,9 @@ class DFIO:
             return self._header
 
         # calculate the headers to remove
-        assert (self._header.length < incoming.length), \
-            "Header length mismatch. Incoming header length is smaller than known header length."
+        assert (
+            self._header.length < incoming.length
+        ), "Header length mismatch. Incoming header length is smaller than known header length."
 
         incoming.relative_complement(self._header, fail_safe=True)
         logger.debug("Header length mismatch. Removing %s values.", len(incoming.drop))
@@ -98,13 +104,15 @@ class DFIO:
         if not df.empty:
             self._store.put("data", df, format="table", append=True)
 
-    def parse_stream(self, stream: TextIO = "dataset", day_index: int = 0) -> pd.DataFrame:
+    def parse_stream(
+        self, stream: TextIO = "dataset", day_index: int = 0
+    ) -> pd.DataFrame:
         """Downloads the dataframe from a S3 stream and puts it into a pandas DataFrame.
 
         Args:
             stream (TextIO): Stream to be read.
             day_index (int): index of the day to be saved
-        
+
         Returns:
             df (pd.DataFrame): Pandas DataFrame containing the data from the stream
         """

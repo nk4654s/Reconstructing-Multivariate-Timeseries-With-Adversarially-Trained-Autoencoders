@@ -1,4 +1,5 @@
 """This module handles arguments and generation of those for pre-processing modules."""
+
 import inspect
 import re
 from argparse import ArgumentParser, Namespace, Action
@@ -8,8 +9,8 @@ from S3Prep.modules import BasePreProcessor
 
 
 class GroupedAction(Action):
-    """This class groups arguments into a single namespace.
-    """
+    """This class groups arguments into a single namespace."""
+
     def __call__(self, parser, namespace, values, option_string=None):
         group, dest = self.dest.split(".", 2)
         groupspace = getattr(namespace, group, Namespace())
@@ -18,8 +19,8 @@ class GroupedAction(Action):
 
 
 class CLIArgumentParser(ArgumentParser):
-    """This class handles argument parsing and generation for pre-processing modules.
-    """
+    """This class handles argument parsing and generation for pre-processing modules."""
+
     def __init__(
         self, modules: List[BasePreProcessor] | BasePreProcessor, *args, **kwargs
     ):
@@ -54,8 +55,7 @@ class CLIArgumentParser(ArgumentParser):
         self._args = self.parse_args()
 
     def get_modules(self) -> List[BasePreProcessor]:
-        """The method instatiates the pre-processor classes.
-        """
+        """The method instatiates the pre-processor classes."""
         # initiate the pre-processors
         modules = []
         for prep in self._preps:
@@ -80,14 +80,13 @@ class CLIArgumentParser(ArgumentParser):
         return modules
 
     def prepare_arguments(self):
-        """Adds the arguments to the parser, before creating the namespace. Overwrite this 
-        function in your sub-class and add `self.add_argument` calls for each argument you 
+        """Adds the arguments to the parser, before creating the namespace. Overwrite this
+        function in your sub-class and add `self.add_argument` calls for each argument you
         want to add.
         """
         return
 
     @property
     def args(self):
-        """Returns the parsed arguments as a Namespace.
-        """
+        """Returns the parsed arguments as a Namespace."""
         return self._args

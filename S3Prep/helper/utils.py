@@ -1,4 +1,5 @@
 """This module contains utilities for handling downloaded data from the s3 bucket."""
+
 import os
 from typing import Callable, Tuple, List
 from datetime import datetime, date, timedelta
@@ -11,21 +12,27 @@ from matplotlib import rcParams
 rcParams.update({"figure.autolayout": True})
 
 
-def get_file(file_path: str, create_dirs: bool = True, overwrite: bool = False,
-             postfix: str = None) -> str:
+def get_file(
+    file_path: str,
+    create_dirs: bool = True,
+    overwrite: bool = False,
+    postfix: str = None,
+) -> str:
     """This function checks if a file_path is valid and creates directories if required.
     In case the file_path already exists, the file name receives an increasing postfix.
-    
+
     Args:
         file_path (str): The file path of the file to be downloaded
         create_dirs (bool, optional): Whether directories should be created if
         required. Defaults to True.
         overwrite (bool, optional): Whether existing files should be
         overwritten. Defaults to False.
-        post_fix (str, optional): The postfix to be added (does not replace the 
+        post_fix (str, optional): The postfix to be added (does not replace the
         increasing postfix-number)
     """
-    assert file_path.count(".") == 1, "File requires an extension (format: <file-name>.<extension>)"
+    assert (
+        file_path.count(".") == 1
+    ), "File requires an extension (format: <file-name>.<extension>)"
     # create folder of file if required
     folder_path = os.path.dirname(file_path)
     folder_exists = os.path.exists(folder_path)
@@ -57,22 +64,22 @@ def line_str_to_array(line: str) -> np.array:
 
     Args:
         line (str): The string to convert.
-    
+
     Returns:
         np.array: The converted float32 array.
     """
     row = line.strip("\n").split("\t")
-    row = pd.to_numeric(row, errors='coerce')
+    row = pd.to_numeric(row, errors="coerce")
     return row
 
 
 def to_float(value: str) -> float:
     """Safe converts a string value into a float value. If the value cannot be converted, it
     is returned as NaN.
-    
+
     Args:
         value (str): The value that should be converted into a float.
-    
+
     Returns:
         float: The converted float value or NaN if the conversion failed.
     """
@@ -84,14 +91,15 @@ def to_float(value: str) -> float:
 
 def simple_graph(data_x: List[str], data_y: List[float]) -> Callable:
     """Creates a simple graph from the given data points.
-    
+
     Args:
         data_x (List[str]): The x-axis values for each data point
         data_y (List[float]): The y-axis values for each data point
-    
+
     Returns:
         Callable: A callable that can be used to build the graph.
     """
+
     def graph(title: str, xlabel: str = "None", ylabel: str = "None"):
         _, ax = plt.subplots(figsize=(8, 6))
         ax.set_title(title)
@@ -109,26 +117,65 @@ def simple_graph(data_x: List[str], data_y: List[float]) -> Callable:
     return graph
 
 
-def get_sensor_uuid_to_name(machine_uuid: str) -> dict:
-    """This function returns a dictionary of sensor uuids to sensor names.
+def get_machine_location(machine_uuid: str) -> Tuple[float, float]:
+    """This function returns the latitude and logintude of a machine.
+
+    Args:
+        machine_uuid (str): The machine's UUID from which the position is
+        requested.
+
+    Returns:
+        Tuple[float, float]: Latitude and longitude.
     """
     url = "https://dev.graphql.api.xplore.ac/"
-
-    payload = '{"query":"query getMachine {\n  machine {\n    getMachine' + \
-        f'(machineId: \\\"{machine_uuid}\\\") ' + \
-            '{\n      name\n \t\t\tsensors { properties\n\t\t\t\tid\n\t\t\t\tname\n' + \
-                '\t\t\t\ttype\n\t\t\t\tkind {\n\t\t\t\t\tis_plc\n\t\t\t\t\tis_hidden\n\t' + \
-                    '\t\t\t\tis_virtual\n\t\t\t\t\tis_setpoint\n\t\t\t\t\tis_plc_alarm\n\t' + \
-                        '\t\t\t\tis_high_frequency\n\t\t\t\t\tis_infrastructure\n\t\t\t\t}' + \
-                            '\n\t\t\t}\n    }\n  }\n}","operationName":"getMachine"}'
+    payload = (
+        '"query": "query getMachine '
+        + '{\n\tmachine {\n\t\tgetMachine(machineId: \\"'
+        + machine_uuid
+        + '\\") {\n'
+        + "\t\t\txrn\n\t\t\tname\n\t\t\tmission {\n\t\t\t\tlocation {\n"
+        + '\t\t\t\t\tlat\n\t\t\t\t\tlng\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}"'
+        + ',"operationName":"getMachine"}'
+    )
     headers = {
         "Content-Type": "application/json",
-        "Authorization": "eyJhbGciOiIiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJ" + \
-            "jN2VlN2ZmNi03ZTQ3LTRmMGItYWIxMy0xYjM5NWE1NjZlNmIifQ.",
+        "Authorization": "eyJhbGciOiIiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJ"
+        + "jN2VlN2ZmNi03ZTQ3LTRmMGItYWIxMy0xYjM5NWE1NjZlNmIifQ.",
+    }
+    print(payload)
+    try:
+        response = requests.request(
+            "POST", url, data=payload, headers=headers, timeout=30
+        )
+    except requests.Timeout as _:
+        return None
+
+    coords = response.json()["data"]["machine"]["getMachine"]["mission"]["locataion"]
+    return (coords["lat"], coords["lng"])
+
+
+def get_sensor_uuid_to_name(machine_uuid: str) -> dict:
+    """This function returns a dictionary of sensor uuids to sensor names."""
+    url = "https://dev.graphql.api.xplore.ac/"
+    payload = (
+        '{"query":"query getMachine {\n  machine {\n    getMachine'
+        + f'(machineId: \\"{machine_uuid}\\") '
+        + "{\n      name\n \t\t\tsensors { properties\n\t\t\t\tid\n\t\t\t\tname\n"
+        + "\t\t\t\ttype\n\t\t\t\tkind {\n\t\t\t\t\tis_plc\n\t\t\t\t\tis_hidden\n\t"
+        + "\t\t\t\tis_virtual\n\t\t\t\t\tis_setpoint\n\t\t\t\t\tis_plc_alarm\n\t"
+        + "\t\t\t\tis_high_frequency\n\t\t\t\t\tis_infrastructure\n\t\t\t\t}"
+        + '\n\t\t\t}\n    }\n  }\n}","operationName":"getMachine"}'
+    )
+    print(payload)
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "eyJhbGciOiIiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJ"
+        + "jN2VlN2ZmNi03ZTQ3LTRmMGItYWIxMy0xYjM5NWE1NjZlNmIifQ.",
     }
     try:
-        response = requests.request("POST", url, data=payload, headers=headers,
-                                    timeout=30)
+        response = requests.request(
+            "POST", url, data=payload, headers=headers, timeout=30
+        )
     except requests.Timeout as _:
         return None
 

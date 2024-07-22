@@ -1,5 +1,6 @@
 """This module logs some report about a downloaded dataset."""
-from typing import  List, Tuple
+
+from typing import List, Tuple
 import logging
 import os
 import numpy as np
@@ -178,7 +179,9 @@ class Report(BasePreProcessor):
             # DataFrame's file name
             num = 0
             date = day
-            while len(self._file_register) > 0 and self._file_register[-1]["day"] == date:
+            while (
+                len(self._file_register) > 0 and self._file_register[-1]["day"] == date
+            ):
                 num += 1
                 date = day + f"_{num}"
 
@@ -221,7 +224,9 @@ class Report(BasePreProcessor):
 
         # plot the dataset length per file downloaded
         num_recordings = [x["recordings"] for x in self._file_register]
-        logger.debug("Plot the number of recordings per file (files: %s)", len(num_recordings))
+        logger.debug(
+            "Plot the number of recordings per file (files: %s)", len(num_recordings)
+        )
 
         _, ax = plt.subplots(figsize=(8, 6))
         ax.set_title("Number of Recordings per File")

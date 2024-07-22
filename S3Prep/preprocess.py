@@ -18,6 +18,11 @@ modules = [
 ]
 
 def main():
+    """
+    The main entry point for pre-processing operations. This function
+    initializes the custom CLIArgumentParser with the module classes and
+    handles command-line interface (CLI) arguments.
+    """
     # initialize the pre-processing modules
     parser = PreProcessCLI(modules)
     prep_modules = parser.get_modules()
