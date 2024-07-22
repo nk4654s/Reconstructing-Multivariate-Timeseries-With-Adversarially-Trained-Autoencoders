@@ -11,7 +11,7 @@ module_classes = [
     NormalizeTransform
 ]
 
-if __name__ == "__main__":
+def main():
     # initialize custom CLIArgumentParser
     parser = PostProcessingCLI(module_classes)
     modules = parser.get_modules()
@@ -24,3 +24,6 @@ if __name__ == "__main__":
     pool.ensure_module_dependency(modules)
     metadata: Metadata = pool.start_processing()
     metadata.save(parser.args.folder)
+
+if __name__ == "__main__":
+    main()

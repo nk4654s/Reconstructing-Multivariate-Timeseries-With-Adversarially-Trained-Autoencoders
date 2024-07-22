@@ -17,7 +17,7 @@ modules = [
     Report,
 ]
 
-if __name__ == "__main__":
+def main():
     # initialize the pre-processing modules
     parser = PreProcessCLI(modules)
     prep_modules = parser.get_modules()
@@ -38,3 +38,6 @@ if __name__ == "__main__":
     # download and process data
     dfio = DFIO(s3)
     dfio.download(parser.args.folder, modules=prep_modules)
+
+if __name__ == "__main__":
+    main()

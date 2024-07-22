@@ -4,6 +4,8 @@
 
 # ignore python cache and log files
 *.log
+*.egg-info
+requirements.txt
 __pycache__/
 
 # ignore dataset filde
