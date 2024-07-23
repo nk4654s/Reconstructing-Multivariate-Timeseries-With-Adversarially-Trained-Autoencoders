@@ -1,24 +1,24 @@
-from typing import List
+from typing import Any, List
 
-from pandas import DataFrame
-from S3Prep.modules import BasePreProcessor
-from S3Prep.helper import Metadata, get_logger
+import pandas as pd
+from S3Prep.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
+from S3Prep.helper import Metadata
+from S3Prep.modules.postprocess.normalize import NormalizeFit
 
-logger = get_logger(__name__)
 
-
-class RemoveColumns(BasePreProcessor):
+class RemoveColumns(FileWorkerCallable):
     """This module removes specified columns from the dataframe"""
+    def __init__(self, columns: str = "") -> None:
+        self._columns = columns.split(" ")
 
-    def __init__(self, columns_to_remove: List[str] = ["ts"]) -> None:
-        self._columns = columns_to_remove
-        # TODO: Uses the old parent class, should implement FileWorker
-        raise NotImplementedError
+    def get_dependencies(self) -> List[str]:
+        return {NormalizeFit.__name__: CallableDependency.NOT_BEFORE}
 
-    def on_download_finished(
-        self, df: DataFrame, _: Metadata
-    ) -> DataFrame | List[DataFrame]:
-        old_len = df.shape[1]
+    def run(self, file_path: str, context: FileWorkerContext) -> Any:
+        print("remove_col: " + file_path)
+        df = pd.read_hdf(file_path, key="data")
         df = df.drop(columns=self._columns, errors="ignore")
-        logger.debug("Removed %s columns", old_len - df.shape[1])
-        return df
+        df.to_hdf(file_path, key="data", format="table", mode="w")
+
+    def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
+        pass
