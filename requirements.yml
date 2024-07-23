@@ -1,0 +1,22 @@
+name: comprisk
+channels:
+    - pytorch
+    - conda-forge 
+dependencies:
+    - python
+    - scikit-learn
+    - numpy<2.0
+    - scipy
+    - pandas
+    - matplotlib
+    - tqdm
+    - pyyaml
+    - ipython
+    - pytorch
+    - lightning
+    - torchvision
+    - tensorboard
+    - mlflow
+    - setuptools
+    - pip:
+        - "--editable=git+https://github.com/neaxplore/xplore-ai-s3prep"
