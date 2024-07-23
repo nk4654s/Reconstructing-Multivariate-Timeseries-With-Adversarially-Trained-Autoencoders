@@ -95,17 +95,10 @@ class Dataset(torch.utils.data.Dataset):
         return x_1, x_2, y
 
 
-def collate_fn(batch):
-    return {
-        "sensors": torch.tensor(np.array([x[0] for x in batch])),
-        "weather": torch.tensor(np.array([x[1] for x in batch])),
-        "targets": torch.tensor(np.array([x[2] for x in batch])),
-    }
-
-
 if __name__ == "__main__":
     from tqdm import tqdm
     from torch.utils.data import DataLoader
+    from S3Prep.pytorch.utils import collate_fn
 
     # end of file one: index=22121
 
