@@ -15,4 +15,4 @@ __pycache__/
 # ignore playgrounds
 *.ipynb
 .vscode/launch.json
-dataset*
+dataset-*/
