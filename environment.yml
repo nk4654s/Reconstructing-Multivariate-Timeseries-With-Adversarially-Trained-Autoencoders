@@ -1,4 +1,8 @@
 name: s3prep
+channels:
+  - pytorch
+  - conda-forge
+  - default
 dependencies:
   - python=3.12
   - pandas
@@ -9,3 +13,4 @@ dependencies:
   - scipy
   - matplotlib
   - requests
+  - pytorch
