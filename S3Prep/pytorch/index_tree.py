@@ -142,7 +142,7 @@ class IndexTree:
             return self._recursive_search(index, root.smaller)
 
         # Node too small
-        if index >= root.index + root.size:
+        if index + self._win >= root.index + root.size:
             return self._recursive_search(index, root.bigger)
 
         # Node contains index
