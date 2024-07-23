@@ -33,13 +33,12 @@ class Dataset(torch.utils.data.Dataset):
         path: str,
         input_sequence: int,
         output_sequence: int,
+        skip: int = 1,
         chache_size: int = None,
     ) -> None:
         self._metadata = Metadata()
         self._metadata.load(path)
-        self._tree = IndexTree(
-            self._metadata, window_size=input_sequence + output_sequence
-        )
+        self._skip = skip
 
         self._num_input = input_sequence
         self._num_output = output_sequence
@@ -47,8 +46,10 @@ class Dataset(torch.utils.data.Dataset):
 
         self._id = self._metadata[Meta.MACHINE_UUID]
         self._base_dir = path
-        self._df = pd.read_hdf(f"{path}/full.h5", key="norm", mode="r")
-        self._cache = DataFrameCache(chache_size, self._num_input + self._num_output)
+
+        data = {"window_size": input_sequence + output_sequence, "skip": skip}
+        self._cache = DataFrameCache(chache_size, **data)
+        self._tree = IndexTree(self._metadata, **data)
 
     @property
     def shape(self) -> Tuple[int, int, int]:
@@ -103,10 +104,14 @@ if __name__ == "__main__":
     # end of file one: index=22121
 
     DAY = 24 * 60 * 60
-    dataset = Dataset("dataset-2021-22", DAY, DAY // 4, chache_size=None)
-    # for _ in tqdm(dataset):
-    #     pass
+    dataset = Dataset("dataset-2021-22", DAY, DAY // 4, chache_size=None, skip=4)
+    # 6410840
+    # 2106962
+    for _ in tqdm(dataset):
+        pass
 
-    loader = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=1, collate_fn=collate_fn)
+    loader = DataLoader(
+        dataset, batch_size=32, shuffle=True, num_workers=1, collate_fn=collate_fn
+    )
     for _ in tqdm(loader):
         pass

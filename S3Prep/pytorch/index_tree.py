@@ -2,7 +2,9 @@
 to the sampling index."""
 from typing import Dict, List, Tuple
 
-from S3Prep.helper import Meta, Metadata
+from S3Prep.helper import Meta, Metadata, get_logger
+
+logger = get_logger(__name__)
 
 
 class Node:
@@ -73,10 +75,13 @@ class IndexTree:
     Args:
         metadata (Metadata): The metadata object that contains information about the recordings.
         window_size (int): The size of the window used to calculate cumulative recordings.
+        skip (int): The number of timestamps to skip. Defaults to 1 (do not skip any timestamps).
     """
-    def __init__(self, metadata: Metadata, window_size: int = 1) -> None:
+    def __init__(self, metadata: Metadata, window_size: int = 1, skip: int = 1) -> None:
         self._root: Node = None
         self._win = window_size
+        self._skip = skip
+        logger.debug("Skip rows: %s", skip)
 
         self._size = 0
         self._build_tree(metadata[Meta.FILES])
@@ -103,17 +108,29 @@ class IndexTree:
         cum_weights = 0
         weights = []
 
+        # log some stats
+        samples_dropped = 0
+        samples_included = 0
+
         for node in node_list:
             # create a new node
-            node = Node(node["day"], cum_weights, node["recordings"])
+            node_size = node["recordings"] // self._skip
+            node = Node(node["day"], cum_weights, node_size)
 
             # skip dataframes which are smaller than the window size
-            if node.size < self._win:
+            if node_size < self._win:
+                samples_dropped += node_size
                 continue
 
             # count the tree's size (substract window size)
-            cum_weights += node.size - self._win
+            samples_included += node_size
+            cum_weights += node_size - self._win
             weights.append(node)
+
+        logger.debug("Cumulative size after building Index Tree: %s", samples_included)
+        logger.debug("Dropped samples from Index Tree: %s", samples_dropped)
+        logger.debug("Total samples (with skip=%s): %s", self._skip,
+                     samples_dropped + samples_included)
 
         self._size = cum_weights
         return weights

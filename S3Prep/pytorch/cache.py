@@ -12,22 +12,18 @@ class DataFrameCache:
     A cache for storing and retrieving pandas DataFrames. This class is designed to efficiently
     store and retrieve dataframes from memory. The cache has a limited capacity which defaults
     to #32 Bit frames, but this can be adjusted when initializing the cache.
-    """
-    def __init__(self, num_frames: int = None, window_size: int = 1) -> None:
-        """
-        Initializes a DataFrame cache.
 
-        Args:
-            num_frames (int): The maximum number of dataframes to store in memory.
-                If not provided, defaults to 2^31 - 1, which is the maximum value for a 32-bit
-                signed integer.
-            window_size (int): The window size of one sample. Defaults to 1.
-        
-        Returns:
-            None
-        """
+    Args:
+        num_frames (int): The maximum number of dataframes to store in memory.
+            If not provided, defaults to 2^31 - 1, which is the maximum value for a 32-bit
+            signed integer.
+        window_size (int): The window size of one sample. Defaults to 1.
+        skip (int): The number of samples to skip between each sample. Defaults to 1.
+    """
+    def __init__(self, num_frames: int = None, window_size: int = 1, skip: int = 1) -> None:
         self._num_frames = 2**31 - 1 if num_frames is None else num_frames
         self._window_size = window_size
+        self._skip = skip
         self._loaded = {}
         self._samples_read = {}
         self._add_history = []
@@ -59,8 +55,8 @@ class DataFrameCache:
         # load and register a new dataframe
         if data is None:
             df = pd.read_hdf(path, key=key, mode="r")
-            weather = df[WEATHER_KEYS].to_numpy()
-            sensors = df.drop(WEATHER_KEYS, axis=1).to_numpy()
+            weather = df[WEATHER_KEYS].to_numpy()[::self._skip]
+            sensors = df.drop(WEATHER_KEYS, axis=1).to_numpy()[::self._skip]
 
             self._register(path, (sensors, weather))
         else:
