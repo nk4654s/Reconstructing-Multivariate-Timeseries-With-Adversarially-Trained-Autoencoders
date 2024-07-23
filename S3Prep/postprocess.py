@@ -2,13 +2,15 @@
 from S3Prep.cli import PostProcessingCLI
 from S3Prep.diskio import FileWorkerFactory, FileWorkerPool
 from S3Prep.helper import Metadata
-from S3Prep.modules.postprocess import NormalizeFit, NormalizeTransform, WeatherDataset
+from S3Prep.modules.postprocess import NormalizeFit, NormalizeTransform, WeatherDataset, MonoFile, RemoveColumns
 
 # define module classes to be available here
 module_classes = [
     WeatherDataset,
+    RemoveColumns,
     NormalizeFit,
-    NormalizeTransform
+    NormalizeTransform,
+    MonoFile
 ]
 
 def main():

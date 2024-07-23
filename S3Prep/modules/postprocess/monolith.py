@@ -1,0 +1,77 @@
+import os
+from threading import Lock
+from typing import Any, Callable
+import pandas as pd
+from S3Prep.helper import Meta, Metadata
+from S3Prep.diskio import FileWorkerCallable, FileWorkerContext
+
+mutex = Lock()
+
+class ThreadSafeStore:
+    """
+    Thread safe store for the HDF5 file.
+    """
+    def __init__(self, key: str = "data") -> None:
+        self._store: pd.HDFStore = None
+        self._key = key
+
+    def is_open(self) -> bool:
+        """Returns True if the HDFStore is open."""
+        if not self._store:
+            return False
+
+        return self._store.is_open
+
+    def close(self) -> None:
+        """Closes the HDF5 file."""
+        assert self.is_open()
+        with mutex:
+            self._store.close()
+            self._store = None
+
+    def new(self, path) -> None:
+        """Opens a new HDF5 file for writing.
+
+        Args:
+            path (str): Path to the HDF5 file.
+        """
+        with mutex:
+            if self._store is None:
+                self._store = pd.HDFStore(path, mode="w")
+                print("Created Store...")
+
+    def add_dataframe(self, df: pd.DataFrame) -> None:
+        """Adds a dataframe to the HDF5 store.
+        
+        Args:
+            df (pd.DataFrame): Dataframe to add to the HDF5 store.
+        """
+        #assert self.is_open()
+        with mutex:
+            self._store.put(self._key, df, format="table", append=True)
+
+
+
+class MonoFile(FileWorkerCallable):
+    """
+    Represents a weather dataset for file worker operations. This class provides
+    methods and attributes for working with weather data in the context of
+    file worker operations.
+    """
+
+    def __init__(self, file_name: str = "full") -> None:
+        self._name = file_name
+        self._store = ThreadSafeStore(key="norm")
+
+    def run(self, file_path: str, context: FileWorkerContext) -> Any:
+        print("monolith:", file_path)
+        df = pd.read_hdf(file_path, key="norm")
+        df = df.set_index("ts").reset_index()
+
+        base_dir = os.path.dirname(file_path)
+        self._store.new(f"{base_dir}/{self._name}.h5")
+        self._store.add_dataframe(df)
+
+    def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
+        pass
+        # self._store.close()
