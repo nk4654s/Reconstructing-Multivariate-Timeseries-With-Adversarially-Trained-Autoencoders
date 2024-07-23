@@ -79,6 +79,7 @@ class WeatherDataset(FileWorkerCallable):
         # available every ten minutes
         df = df.merge(temp_df, how=self._merge, on=["ts"])
         if self._interpolate:
+            df.interpolate(method="linear", inplace=True)
             df.bfill(inplace=True)
             df.ffill(inplace=True)
             # df.interpolate(
