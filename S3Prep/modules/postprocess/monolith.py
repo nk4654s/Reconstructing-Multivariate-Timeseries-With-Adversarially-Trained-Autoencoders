@@ -14,6 +14,7 @@ class ThreadSafeStore:
     def __init__(self, key: str = "data") -> None:
         self._store: pd.HDFStore = None
         self._key = key
+        self._path = None
 
     def is_open(self) -> bool:
         """Returns True if the HDFStore is open."""
@@ -37,6 +38,7 @@ class ThreadSafeStore:
         """
         with mutex:
             if self._store is None:
+                self._path = path
                 self._store = pd.HDFStore(path, mode="w")
                 print("Created Store...")
 
@@ -50,6 +52,17 @@ class ThreadSafeStore:
         with mutex:
             self._store.put(self._key, df, format="table", append=True)
 
+    def finish(self) -> None:
+        """Resets the index `ts` and closes the store.
+        """
+        with mutex:
+            if self._store is not None:
+                self._store.close()
+                self._store = None
+
+                df = pd.read_hdf(self._path, key=self._key)
+                df = df.set_index("ts").reset_index()
+                df.to_hdf(self._path, key=self._key, mode="w", format="table")
 
 
 class MonoFile(FileWorkerCallable):
@@ -73,5 +86,4 @@ class MonoFile(FileWorkerCallable):
         self._store.add_dataframe(df)
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
-        pass
-        # self._store.close()
+        self._store.finish()
