@@ -11,7 +11,7 @@ class PostProcessingCLI(CLIArgumentParser):
     def __init__(
         self, modules: List[BasePreProcessor] | BasePreProcessor, *args, **kwargs
     ):
-        super(PostProcessingCLI).__init__(modules, *args, **kwargs)
+        super().__init__(modules, *args, **kwargs)
 
     def prepare_arguments(self):
         self.add_argument(

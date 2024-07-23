@@ -8,7 +8,7 @@ class PreProcessCLI(CLIArgumentParser):
     """This custom class expands the CLIArgumentParser class.
     """
     def __init__(self, modules: List[BasePreProcessor] | BasePreProcessor, *args, **kwargs):
-        super(PreProcessCLI).__init__(modules, *args, **kwargs)
+        super().__init__(modules, *args, **kwargs)
 
     def prepare_arguments(self):
         self.add_argument(
