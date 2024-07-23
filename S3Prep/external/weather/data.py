@@ -83,9 +83,7 @@ class WeatherData:
 
                 data["ts"] = data.pop("MESS_DATUM")
                 data["Aussentemperatur (°C)"] = data.pop("TT_10")
-                df = pd.DataFrame(data)
-                df.set_index("ts", inplace=True)
-                df.columns.name = "ts"
+                df = pd.DataFrame(data, dtype=np.float32)
 
         return df
 
