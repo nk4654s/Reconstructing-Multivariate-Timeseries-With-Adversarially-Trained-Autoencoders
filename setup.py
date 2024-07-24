@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 # get package version
 VERSION = ""
-with open(os.path.join("S3Prep", "version.txt"), "r", encoding="UTF-8") as file:
+with open(os.path.join("Dataflux", "version.txt"), "r", encoding="UTF-8") as file:
     VERSION = file.read().strip()
 
 # get readme content
@@ -35,17 +35,17 @@ setup(
     description="Dataset download and pre-processing application.",
     install_requirements=requirements,
     keywords="Dataset,Pre-Processing,Amazon S3,S3",
-    name="S3Prep",
+    name="Dataflux",
     entry_points={
         "console_scripts": [
-            "s3preprocess=S3Prep.preprocess:main",
-            "s3postprocess=S3Prep.postprocess:main",
+            "Datafluxrocess=Dataflux.preprocess:main",
+            "s3postprocess=Dataflux.postprocess:main",
         ]
     },
     packages=find_packages(include=[
-        "S3Prep", "S3Prep.*"
+        "Dataflux", "Dataflux.*"
     ]),
-    package_dir={"S3Prep": "S3Prep"},
+    package_dir={"Dataflux": "Dataflux"},
     include_package_data=True,
     url="https://github.com/neaxplore/xplore-ai-s3prep",
     version=VERSION,
