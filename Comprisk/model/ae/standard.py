@@ -1,7 +1,6 @@
 """This module implements a base AutoEncoder class."""
-from typing import Dict
+from typing import Any, Dict
 import torch
-from torch import nn
 
 from Comprisk.model import BaseModel
 from Comprisk.model.ae.encoder import Encoder
@@ -12,26 +11,45 @@ class AutoEncoder(BaseModel):
     """
     A simple autoencoder class.
 
-        Args:
-            encoder_kwargs (Dict): The encoder hyper-parameters.
-            decoder_kwargs (Dict): The decoder hyper-parameters.
-            weather_bypass (bool): Whether to bypass the weather data directly to the decoder.
-            kwargs (Dict): Keyword arguments to pass to the base model class.
+    Args:
+        encoder_kwargs (Dict): The encoder hyper-parameters.
+        decoder_kwargs (Dict): The decoder hyper-parameters.
+        weather_bypass (bool): Whether to bypass the weather data directly to the decoder.
+        kwargs (Dict): Keyword arguments to pass to the base model class.
     """
 
     def __init__(
         self,
         encoder_kwargs: Dict,
-        decoder_kwargs: nn.Module,
+        decoder_kwargs: Dict,
+        num_filters: int = None,
+        kernel_size: int = None,
+        dropout_prob: float = None,
         weather_bypass: bool = False,
         kwargs: Dict = None,
     ):
         kwargs = kwargs if kwargs is not None else {}
         super().__init__(**kwargs)
 
+        self._encoder_kwargs = encoder_kwargs
+        self._decoder_kwargs = decoder_kwargs
+
+        # overwrite args
+        self._overwrite_args("num_filters", num_filters)
+        self._overwrite_args("kernel_size", kernel_size)
+        self._overwrite_args("dropout", dropout_prob)
+
+        # build encoder/decoder
         self._bypass = weather_bypass
         self._encoder = Encoder(**encoder_kwargs)
+
+        decoder_kwargs["latent_size"] = self._encoder.latent_size
         self._decoder = Decoder(**decoder_kwargs)
+
+    def _overwrite_args(self, key: str, value: Any) -> None:
+        if value is not None:
+            self._encoder_kwargs[key] = value
+            self._decoder_kwargs[key] = value
 
     def forward(self, inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
         """
@@ -53,7 +71,7 @@ class AutoEncoder(BaseModel):
             encoded = torch.cat([encoded, inputs["weather"]], dim=-1)
 
         decoded = self._decoder(encoded)
-        return decoded
+        return self._activation(decoded)
 
     def encode(self, inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
         """

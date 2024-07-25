@@ -7,7 +7,11 @@ import torch
 from torch.optim.lr_scheduler import ExponentialLR
 
 from Dataflux.helper import get_logger
-from Comprisk.helper import get_loss_by_name, get_optimizer_by_name
+from Comprisk.helper import (
+    get_loss_by_name,
+    get_optimizer_by_name,
+    get_activation_from_string,
+)
 
 logger = get_logger(__name__)
 
@@ -21,11 +25,18 @@ class BaseModel(L.LightningModule):
         lr (float, optional): Initial learning rate. Defaults to 1e-3.
     """
 
-    def __init__(self, loss: str = "MSELoss", optimizer: str = "Adam", lr: float = 1e-3) -> None:
+    def __init__(
+        self,
+        loss: str = "MSELoss",
+        activation: str = "relu",
+        optimizer: str = "Adam",
+        lr: float = 1e-3,
+    ) -> None:
         super().__init__()
 
         self._loss_name = loss
         self._loss = get_loss_by_name(loss)
+        self._activation = get_activation_from_string(activation)
         self._optim = optimizer
         self._lr_scheduler = ExponentialLR
         self._lr_decay = 0.99
@@ -66,7 +77,9 @@ class BaseModel(L.LightningModule):
         # init optimizer if it's a string
         if isinstance(self._optim, str):
             logger.debug("Initialize optimizer: %s", self._optim)
-            self._optim = get_optimizer_by_name(self._optim)(self.parameters(), lr=self.lr)
+            self._optim = get_optimizer_by_name(self._optim)(
+                self.parameters(), lr=self.lr
+            )
             self._lr_scheduler = self._lr_scheduler(self._optim, gamma=0.99)
         return [self._optim], [{"scheduler": self._lr_scheduler, "interval": "epoch"}]
 
@@ -76,7 +89,7 @@ class BaseModel(L.LightningModule):
         employs a Monte Carlo Dropout (MCD) approach, which involves randomly disabling
         neurons in the network during prediction. The output of the network is then
         averaged over multiple runs with different to output a more stable prediction.
-        
+
         Args:
             batch (torch.Tensor): A tensor containing the input data.
 
@@ -87,7 +100,9 @@ class BaseModel(L.LightningModule):
         self._dropout.train()
 
         # take average of MC-iterations
-        pred = [self._dropout(self(batch)).unsqueeze(0) for _ in range(self._mc_iteration)]
+        pred = [
+            self._dropout(self(batch)).unsqueeze(0) for _ in range(self._mc_iteration)
+        ]
         pred = torch.vstack(pred).mean(dim=0)
         return pred
 

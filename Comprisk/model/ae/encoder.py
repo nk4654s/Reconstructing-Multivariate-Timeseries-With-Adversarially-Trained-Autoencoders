@@ -1,4 +1,5 @@
 """Simple Encoder model."""
+
 import torch
 from torch import nn, F
 
@@ -17,33 +18,34 @@ class Encoder(nn.Module):
     def __init__(
         self,
         num_features: int = 10,
-        num_samples: int = 10000,
         kernel_size: int = 3,
-        num_filters: int = 64,
+        num_filters: int = 32,
         dropout_prob: float = 0.2,
     ):
         super(Encoder, self).__init__()
 
         self._num_features = num_features
-        self._num_samples = num_samples
         self._kernel_size = kernel_size
         self._num_filters = num_filters
         self._dropout_prob = dropout_prob
 
-        # window shape (H, W, D): (num_samples, num_features, 1)
-        self._conv_1 = nn.Conv2d(
-            in_channels=1,
-            out_channels=self._num_filters,
-            kernel_size=(self._kernel_size, self._num_samples),
-            stride=None,
-            padding="same",
+        self.conv1 = nn.Conv1d(
+            self._num_features,
+            self._num_filters,
+            kernel_size=self._kernel_size,
+            stride=1,
+        )
+        self._size = self._num_filters * (self._num_features - self._kernel_size + 1)
+        self.dropout1 = nn.Dropout(p=self._dropout_prob)
+        self.fc1 = nn.Linear(
+            self._size,
+            self._size // 2
         )
 
-        self._dropout_1 = nn.Dropout(p=self._dropout_prob)
-        self._linear_1 = nn.Linear(
-            self._num_filters * (self._num_features - self._kernel_size + 1),
-            128
-        )
+    @property
+    def latent_size(self) -> int:
+        """Returns the size of the latent vector."""
+        return self._size // 2
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -55,10 +57,13 @@ class Encoder(nn.Module):
         Returns:
             torch.Tensor: The encoded output.
         """
+        # batch, sequence, features
         x = self._conv_1(x)
         x = F.relu(x)
-        x = torch.max_pool1d(x, kernel_size=2)
+
         x = self._dropout_1(x)
-        x = x.view(-1, 128)
+        x = torch.flatten(x, start_dim=1)
+
+        # batch, convolutional features
         x = self._linear_1(x)
         return x
