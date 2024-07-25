@@ -160,7 +160,7 @@ class NormalizeTransform(FileWorkerCallable):
         elif method == NormalizeFit.METHODS[1]:
             normed = (df - a).div(b).fillna(0)
 
-        normed.to_hdf(file_path, key="norm")
+        normed.astype(np.float32).to_hdf(file_path, key="norm")
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         a, b = self._get_single_norm_params(context)
