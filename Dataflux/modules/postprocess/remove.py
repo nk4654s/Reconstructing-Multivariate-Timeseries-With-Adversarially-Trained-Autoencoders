@@ -2,15 +2,18 @@ from typing import Any, List
 
 import pandas as pd
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
-from Dataflux.helper import Metadata, Meta
+from Dataflux.helper import Metadata, Meta, get_logger
 from Dataflux.modules.postprocess.normalize import NormalizeFit
+
+logger = get_logger(__name__)
 
 
 class RemoveColumns(FileWorkerCallable):
     """This module removes specified columns from the dataframe"""
     def __init__(self, columns: str = "") -> None:
-        self._columns = columns.split(" ")
+        self._columns = columns.replace("\"", "").split(" ")
         self._num_columns = 0
+        logger.debug("RemoveColumns will remove %s", self._columns)
 
     def get_dependencies(self) -> List[str]:
         return {NormalizeFit.__name__: CallableDependency.NOT_BEFORE}
