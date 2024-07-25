@@ -45,6 +45,11 @@ class BaseModel(L.LightningModule):
         self._dropout = torch.nn.Dropout()
         self._mc_iteration = 10
 
+    @property
+    def target(self) -> str:
+        """The target name of inputs to predict."""
+        return "targets"
+
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError
 
@@ -53,23 +58,20 @@ class BaseModel(L.LightningModule):
         self.log("epoch/lr", self._lr_scheduler.get_last_lr()[-1])
 
     def training_step(self, batch: torch.Tensor, **kwargs) -> torch.Tensor:
-        x, y = batch
-        y_hat = self(x)
-        loss = self._loss(y_hat, y)
+        y_hat = self(batch)
+        loss = self._loss(y_hat, batch[self.target])
         self.log(f"train/{self._loss_name}", loss)
         return loss
 
     def test_step(self, batch: torch.Tensor, **kwargs) -> torch.Tensor:
-        x, y = batch
-        y_hat = self(x)
-        loss = self._loss(y_hat, y)
+        y_hat = self(batch)
+        loss = self._loss(y_hat, batch[self.target])
         self.log(f"test/{self._loss_name}", loss)
         return loss
 
     def validation_step(self, batch: torch.Tensor, **kwargs) -> torch.Tensor:
-        x, y = batch
-        y_hat = self(x)
-        loss = self._loss(y_hat, y)
+        y_hat = self(batch)
+        loss = self._loss(y_hat, batch[self.target])
         self.log(f"validate/{self._loss_name}", loss)
         return loss
 

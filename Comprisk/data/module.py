@@ -5,7 +5,8 @@ import lightning as L
 from lightning.pytorch.utilities.combined_loader import CombinedLoader
 from torch.utils.data import DataLoader
 
-from Dataflux.pytorch import Dataset, RandomBatchSampler as RBS
+from Dataflux.pytorch import Dataset, collate_fn
+from Dataflux.pytorch import RandomBatchSampler as RBS
 
 
 class DataModule(L.LightningDataModule):
@@ -57,13 +58,24 @@ class DataModule(L.LightningDataModule):
 
     def train_dataloader(self) -> CombinedLoader:
         return DataLoader(
-            self._dataset, batch_sampler=self._train, **self._loader_kwargs
+            self._dataset,
+            batch_sampler=self._train,
+            collate_fn=collate_fn,
+            **self._loader_kwargs
         )
 
     def val_dataloader(self) -> CombinedLoader:
-        return DataLoader(self._dataset, batch_sampler=self._val, **self._loader_kwargs)
+        return DataLoader(
+            self._dataset,
+            batch_sampler=self._val,
+            collate_fn=collate_fn,
+            **self._loader_kwargs
+        )
 
     def test_dataloader(self) -> CombinedLoader:
         return DataLoader(
-            self._dataset, batch_sampler=self._test, **self._loader_kwargs
+            self._dataset,
+            batch_sampler=self._test,
+            collate_fn=collate_fn,
+            **self._loader_kwargs
         )

@@ -18,26 +18,24 @@ model:
   class_path: Comprisk.model.ae.AutoEncoder
   init_args:
     # encoder/decoder parameters
-    num_filters: 32
+    num_filters: 64
     dropout_prob: 0.2
     kernel_size: 5
-    # encoder parameters
-    encoder_kwargs:
-      num_features: 31
     # gerneral parameters
     weather_bypass: False
-    activation: sigmoid
-    loss: MSELoss
-    optimizer: Adam
-    lr: 0.001
+    base:
+      # tanh for standardized dataset, sigmoid for normalized dataset
+      activation: tanh
+      loss: MSELoss
+      optimizer: Adam
+      lr: 0.001
 data:
   # configure dataset to load
   data_kwargs:
     path: ../Dataflux/dataset-2021-22
-    input_sequence:
-    output_sequence:
+    input_sequence: 1_000
+    output_sequence: 1_000
     skip: 2
-    cache_size: None
   # configure how to sample from the dataset
   sampler_kwargs:
     batch_size: 32
@@ -47,4 +45,5 @@ data:
   # configure the workers sampling the dataset
   loader_kwargs:
     num_workers: 2
+    persistent_workers: True
     pin_memory: true

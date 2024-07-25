@@ -6,21 +6,19 @@ from torch import nn
 
 class Decoder(nn.Module):
     """
-    A basic decoder network using a Fully Connected Neural Network (FCNN).
+    A basic decoder network using a Convolutional network.
 
     Args:
-        num_features (int): The number of features in the input data. Defaults to 10.
         latent_size (int): The size of the latent vector. Defaults to None.
-        output_size (int): The size of the output data. Defaults to None.
-
-    Attributes:
-        latent_size (int): The size of the latent vector.
-        output_size (int): The size of the output data.
+        kernel_size (int): The size of the convolutional kernels. Defaults to 3.
+        num_filters (int): The number of convolutional filters. Defaults to 32.
+        dropout_prob (float): The probability of dropout in the model. Defaults to 0.5.
     """
 
     def __init__(
         self,
-        latent_size: int = None,
+        num_features: int,
+        latent_size: int,
         kernel_size: int = 3,
         num_filters: int = 32,
         dropout_prob: float = 0.2,
@@ -40,8 +38,8 @@ class Decoder(nn.Module):
         self._dropout_1 = nn.Dropout(p=self._dropout_prob)
         self._conv_transpose_1 = nn.ConvTranspose1d(
             in_channels=self._num_filters,
-            out_channels=1,
-            kernel_size=(self._kernel_size, self.latent_size),
+            out_channels=num_features,
+            kernel_size=self._kernel_size,
             stride=1
         )
 
@@ -60,6 +58,8 @@ class Decoder(nn.Module):
         x = self._dropout_1(x)
         x = torch.relu(x)
 
-        # batch, sequence, features
+        # swap sequence and features
+        x = torch.swapaxes(x, 1, 2)
         x = self._conv_transpose_1(x)
+        x = torch.swapaxes(x, 1, 2)
         return x

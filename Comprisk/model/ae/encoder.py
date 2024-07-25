@@ -1,7 +1,7 @@
 """Simple Encoder model."""
 
 import torch
-from torch import nn, F
+from torch import nn
 
 
 class Encoder(nn.Module):
@@ -29,23 +29,23 @@ class Encoder(nn.Module):
         self._num_filters = num_filters
         self._dropout_prob = dropout_prob
 
-        self.conv1 = nn.Conv1d(
+        self._conv_1 = nn.Conv1d(
             self._num_features,
             self._num_filters,
             kernel_size=self._kernel_size,
             stride=1,
         )
         self._size = self._num_filters * (self._num_features - self._kernel_size + 1)
-        self.dropout1 = nn.Dropout(p=self._dropout_prob)
-        self.fc1 = nn.Linear(
-            self._size,
-            self._size // 2
+        self._dropout_1 = nn.Dropout(p=self._dropout_prob)
+        self._linear_1 = nn.Linear(
+            self._num_filters,
+            self._num_filters // 2
         )
 
     @property
     def latent_size(self) -> int:
         """Returns the size of the latent vector."""
-        return self._size // 2
+        return self._num_filters // 2
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -57,12 +57,15 @@ class Encoder(nn.Module):
         Returns:
             torch.Tensor: The encoded output.
         """
-        # batch, sequence, features
+        # swap sequence and features
+        x = torch.swapaxes(x, 1, 2)
+
         x = self._conv_1(x)
-        x = F.relu(x)
+        x = torch.relu(x)
 
         x = self._dropout_1(x)
-        x = torch.flatten(x, start_dim=1)
+        #x = torch.flatten(x, start_dim=1)
+        x = torch.swapaxes(x, 1, 2)
 
         # batch, convolutional features
         x = self._linear_1(x)
