@@ -32,7 +32,7 @@ class RandomBatchSampler(Sampler):
         self._test = 1 - (train_size + validation_size)
 
         self._data_length = data_length
-        self._indicies = np.random.permutation(len(self._data_length)).tolist()
+        self._indicies = np.random.permutation(self._data_length).tolist()
         self._mode_indicies = self._indicies[0 : int(self._data_length * self._train)]
 
         self._batch_size = batch_size
