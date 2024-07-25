@@ -1,5 +1,10 @@
 # exclude packages
 src/*
+__pycache__/
 
 # exclude logs
-lightning-logs/
+lightning_logs/
+logfile
+
+# exclude extensions
+.VSCodeCounter/

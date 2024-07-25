@@ -13,6 +13,7 @@ dependencies:
     - pyyaml
     - ipython
     - pytorch
+    - pytables
     - lightning
     - torchvision
     - tensorboard
