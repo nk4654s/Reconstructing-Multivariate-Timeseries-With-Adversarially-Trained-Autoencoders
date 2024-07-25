@@ -1,0 +1,5 @@
+# exclude packages
+src/*
+
+# exclude logs
+lightning-logs/

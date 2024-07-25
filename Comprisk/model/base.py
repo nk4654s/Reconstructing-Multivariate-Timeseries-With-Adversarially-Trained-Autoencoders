@@ -6,9 +6,8 @@ import lightning as L
 import torch
 from torch.optim.lr_scheduler import ExponentialLR
 
-from Dataflux.utils import get_logger
-
-from Comprisk.utils import get_loss_by_name, get_optimizer_by_name
+from Dataflux.helper import get_logger
+from Comprisk.helper import get_loss_by_name, get_optimizer_by_name
 
 logger = get_logger(__name__)
 

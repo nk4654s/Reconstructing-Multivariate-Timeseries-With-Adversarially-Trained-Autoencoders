@@ -3,7 +3,7 @@ from lightning.pytorch.cli import LightningArgumentParser, LightningCLI
 from lightning.pytorch.tuner.tuning import Tuner
 from lightning.pytorch.callbacks import ModelCheckpoint
 
-from Dataflux.utils import get_logger
+from Dataflux.helper import get_logger
 
 logger = get_logger(__name__)
 

@@ -1,6 +1,6 @@
 """Train a model using a CLI or provide the hyperparameters directly to the CLI."""
 from lightning.pytorch.loggers import TensorBoardLogger
-from Datafluc.utils import get_logger
+from Dataflux.helper import get_logger
 
 # simple demo classes for your convenience
 from Comprisk.model import BaseModel
@@ -11,6 +11,10 @@ logger = get_logger(__name__)
 
 
 def cli_main():
+    """
+    The main entry point for the Comprisk CLI. This function initializes the
+    CompriskCLI object and sets up the command-line interface.
+    """
     logger.debug("Starting CompriskCLI")
     cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
 
