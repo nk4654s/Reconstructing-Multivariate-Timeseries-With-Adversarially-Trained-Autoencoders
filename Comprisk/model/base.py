@@ -16,12 +16,12 @@ class BaseModel(L.LightningModule):
     """BaseModel class of any neural network predicting time series.
 
     Args:
-        (lightning.LightningModule): LightningModule.
+        loss (str, optional): Loss function to use. Defaults to "MSELoss".
+        optimizer (str, optional): Optimizer to use. Defaults to "Adam".
+        lr (float, optional): Initial learning rate. Defaults to 1e-3.
     """
 
     def __init__(self, loss: str = "MSELoss", optimizer: str = "Adam", lr: float = 1e-3) -> None:
-        """Initializes the TensorBoard logger and checks for available GPU(s).
-        """
         super().__init__()
 
         self._loss_name = loss
@@ -70,7 +70,19 @@ class BaseModel(L.LightningModule):
             self._lr_scheduler = self._lr_scheduler(self._optim, gamma=0.99)
         return [self._optim], [{"scheduler": self._lr_scheduler, "interval": "epoch"}]
 
-    def predict_step(self, batch: torch.Tensor, **kwargs) -> torch.Tensor:
+    def predict_step(self, batch: torch.Tensor) -> torch.Tensor:
+        """
+        This method is used to make predictions on a batch of data during inference. It
+        employs a Monte Carlo Dropout (MCD) approach, which involves randomly disabling
+        neurons in the network during prediction. The output of the network is then
+        averaged over multiple runs with different to output a more stable prediction.
+        
+        Args:
+            batch (torch.Tensor): A tensor containing the input data.
+
+        Returns:
+            torch.Tensor: The predicted output for the given batch, averaged over multiple MCD runs.
+        """
         # enable Monte Carlo Dropout
         self._dropout.train()
 
@@ -81,7 +93,8 @@ class BaseModel(L.LightningModule):
 
     def predict(self, x: torch.tensor, as_array: bool = False) -> List:
         """This method only predicts future steps based on the given curve described by
-        the datapoints X.
+        the datapoints `x`. Each step will be predicted using `self.predict_step(x)` which
+        employs Monte Carlo Dropout.
 
         Args:
             x (torch.tensor): The datapoints.
