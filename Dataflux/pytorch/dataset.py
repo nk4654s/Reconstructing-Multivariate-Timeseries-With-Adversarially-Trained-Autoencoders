@@ -1,6 +1,6 @@
 """This module contains the Dataset class, required to train a NN."""
 
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 import numpy as np
 import torch
 import pandas as pd
@@ -58,6 +58,19 @@ class Dataset(torch.utils.data.Dataset):
         `input_window_size`, `number_of_features`.
         """
         return (len(self._tree), self._num_input, self._num_features)
+
+    def get_num_features(self) -> Dict[str, int]:
+        """Outputs the number of features for a given feature type.
+
+        Returns:
+            Dict[str, int]: The number of features given the type.
+        """
+        x1, x2, y = self[0]
+        return {
+            "sensors": x1.shape[-1],
+            "weather": x2.shape[-1],
+            "targets": y.shape[-1]
+        }
 
     def scale_back(self, data: List | np.ndarray | pd.DataFrame) -> pd.DataFrame:
         """Method scales back the given data using the normalizer of the dataset.
