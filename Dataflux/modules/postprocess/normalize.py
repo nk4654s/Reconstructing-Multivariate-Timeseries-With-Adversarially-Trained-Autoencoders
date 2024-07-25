@@ -2,9 +2,10 @@ from threading import Lock
 from typing import Any, List, Tuple
 import numpy as np
 import pandas as pd
-from Dataflux.helper import Meta, Metadata
+from Dataflux.helper import Meta, Metadata, get_logger
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
 
+logger = get_logger(__name__)
 mutex = Lock()
 
 
@@ -72,7 +73,7 @@ class NormalizeFit(FileWorkerCallable):
         print("trainnorm:", file_path)
         # Load the file into a pandas DataFrame
         df = pd.read_hdf(file_path, key="data")
-        df.sort_values(by=list(df.columns), inplace=True)
+        df = df.reindex(sorted(df.columns), axis=1)
         self._header = df.columns.values
 
         # Calculate minimum and maximum per column
@@ -83,8 +84,8 @@ class NormalizeFit(FileWorkerCallable):
 
         # Calculate mean and std per columns
         elif self._method == NormalizeFit.METHODS[1]:
-            df_mean = df.to_numpy().mean(axis=0) * len(df)
-            df_std = df.to_numpy().std(axis=0) * len(df)
+            df_mean = df.to_numpy().mean(axis=0)
+            df_std = df.to_numpy().std(axis=0)
             self._counter.append(len(df))
             self._fit_standard(df_mean, df_std)
 
@@ -94,12 +95,24 @@ class NormalizeFit(FileWorkerCallable):
             context.put(ContextParam.METHOD, self._method)
             context.put(ContextParam.HEADER, self._header)
             if self._method == NormalizeFit.METHODS[0]:
+                logger.debug("Normalize with MinMax and min=%s; max=%s", self._a, self._b)
                 context.append_list(ContextParam.VALUES, (self._a, self._b))
 
             # Calculate mean and std per file
             elif self._method == NormalizeFit.METHODS[1]:
-                a = np.array(self._a).sum(axis=0) / np.array(sum(self._counter))
-                b = np.array(self._b).sum(axis=0) / np.array(sum(self._counter))
+                logger.debug("Normalize with STD, counted %s values per file", self._counter)
+                a = np.array(self._a)
+                b = np.array(self._b)
+
+                factors = np.array(self._counter) / sum(np.array(self._counter))
+                factors = np.repeat([factors], a.shape[1], axis=0)
+                factors = np.swapaxes(factors, 0, 1)
+
+                a = (a * factors).sum(axis=0)
+                b = (b * factors).sum(axis=0)
+
+                logger.debug("Normalize with STD and mean=%s", a)
+                logger.debug("Normalize with STD and std=%s", b)
                 context.append_list(ContextParam.VALUES, (a, b))
 
 
@@ -111,8 +124,8 @@ class NormalizeTransform(FileWorkerCallable):
     It assumes that the `NormalizeFit` class has been run beforehand, and the
     `FileWorkerContext` contains values needed to normalize a dataframe.
     """
-    def __init__(self, ignore_column: str = "ts") -> None:
-        self._c = ignore_column
+    def __init__(self, kwargs) -> None:
+        pass
 
     def get_dependencies(self) -> List[str]:
         return {NormalizeFit.__name__: CallableDependency.IMMEDIATELY_BEFORE}
@@ -140,15 +153,14 @@ class NormalizeTransform(FileWorkerCallable):
         a, b = self._get_single_norm_params(context)
         method = context.get(ContextParam.METHOD)
         df = pd.read_hdf(file_path, key="data")
-        df.sort_values(by=list(df.columns), inplace=True)
+        df = df.reindex(sorted(df.columns), axis=1)
 
         if method == NormalizeFit.METHODS[0]:
             normed = (df - a).div(b - a).fillna(0)
         elif method == NormalizeFit.METHODS[1]:
             normed = (df - a).div(b).fillna(0)
 
-        df.T[df.columns.values != self._c] = normed.T[df.columns.values != self._c]
-        df.to_hdf(file_path, key="norm")
+        normed.to_hdf(file_path, key="norm")
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         a, b = self._get_single_norm_params(context)
