@@ -19,4 +19,4 @@ dependencies:
     - mlflow
     - setuptools
     - pip:
-        - "--editable=git+https://github.com/neaxplore/xplore-ai-s3prep"
+        - "--editable=git+https://github.com/neaxplore/xplore-ai-s3prep#egg=Dataflux"
