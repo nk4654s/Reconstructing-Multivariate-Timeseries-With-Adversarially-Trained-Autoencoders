@@ -13,7 +13,7 @@ def get_logger(name: str, level: int = logging.DEBUG):
     # set up the logger
     name = name.split(".", maxsplit=1)[0]
     logger = logging.getLogger(name)
-    logging.basicConfig(filename="s3prep.log", encoding="utf-8", level=logging.DEBUG)
+    logging.basicConfig(filename="logfile", encoding="utf-8", level=logging.DEBUG)
 
     # disable all other loggers
     logger_list = [logging.getLogger(name) for name in logging.root.manager.loggerDict]

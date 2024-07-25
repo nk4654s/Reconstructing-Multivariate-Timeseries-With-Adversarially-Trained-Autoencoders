@@ -23,7 +23,7 @@ class Dataset(torch.utils.data.Dataset):
         folder `metadata` containing the `info.json` file.
         input_sequence (int): The number of time steps for the input sequence.
         output_sequence (int): The number of time steps for the output sequence.
-        chache_size (int, optional): The size of the cache. Defaults to None.
+        cache_size (int, optional): The size of the cache. Defaults to None.
 
     Returns:
         None
@@ -35,7 +35,7 @@ class Dataset(torch.utils.data.Dataset):
         input_sequence: int,
         output_sequence: int,
         skip: int = 1,
-        chache_size: int = None,
+        cache_size: int = None,
     ) -> None:
         self._metadata = Metadata()
         self._metadata.load(path)
@@ -49,7 +49,7 @@ class Dataset(torch.utils.data.Dataset):
         self._base_dir = path
 
         data = {"window_size": input_sequence + output_sequence, "skip": skip}
-        self._cache = DataFrameCache(chache_size, **data)
+        self._cache = DataFrameCache(cache_size, **data)
         self._tree = IndexTree(self._metadata, **data)
 
     @property
@@ -101,18 +101,18 @@ if __name__ == "__main__":
     from tqdm import tqdm
     from torch.utils.data import DataLoader
     from Dataflux.pytorch.utils import collate_fn
+    from Dataflux.pytorch.sampler import RandomBatchSampler
 
     # end of file one: index=22121
 
     DAY = 24 * 60 * 60
-    dataset = Dataset("dataset-2021-22", DAY, DAY // 4, chache_size=None, skip=4)
-    # 6410840
-    # 2106962
+    dataset = Dataset("dataset-2021-22", DAY, DAY // 4, cache_size=None, skip=4)
     for _ in tqdm(dataset):
         pass
 
+    batch_sampler = RandomBatchSampler(len(dataset), batch_size=32)
     loader = DataLoader(
-        dataset, batch_size=32, shuffle=True, num_workers=1, collate_fn=collate_fn
+        dataset, batch_sampler=batch_sampler, collate_fn=collate_fn
     )
     for _ in tqdm(loader):
         pass

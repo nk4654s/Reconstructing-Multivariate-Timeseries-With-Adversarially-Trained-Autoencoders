@@ -3,7 +3,7 @@
 .VSCodeCounter
 
 # ignore python cache and log files
-*.log
+logfile
 *.egg-info
 requirements.txt
 __pycache__/
