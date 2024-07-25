@@ -19,7 +19,8 @@ class Dataset(torch.utils.data.Dataset):
     during training. The target value `y` only includes future sensor data, excluding weather data.
 
     Args:
-        path (str): The path to the HDF5 file containing the data.
+        path (str): The path to the root folder of the dataset. The dataset folder requires a sub
+        folder `metadata` containing the `info.json` file.
         input_sequence (int): The number of time steps for the input sequence.
         output_sequence (int): The number of time steps for the output sequence.
         chache_size (int, optional): The size of the cache. Defaults to None.
