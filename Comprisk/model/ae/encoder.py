@@ -19,6 +19,7 @@ class Encoder(nn.Module):
         self,
         num_features: int = 10,
         kernel_size: int = 3,
+        stride: int = 1,
         num_filters: int = 32,
         dropout_prob: float = 0.2,
     ):
@@ -27,13 +28,14 @@ class Encoder(nn.Module):
         self._num_features = num_features
         self._kernel_size = kernel_size
         self._num_filters = num_filters
+        self._stride = stride
         self._dropout_prob = dropout_prob
 
         self._conv_1 = nn.Conv1d(
             self._num_features,
             self._num_filters,
             kernel_size=self._kernel_size,
-            stride=1,
+            stride=self._stride,
         )
         self._size = self._num_filters * (self._num_features - self._kernel_size + 1)
         self._dropout_1 = nn.Dropout(p=self._dropout_prob)

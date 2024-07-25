@@ -20,6 +20,7 @@ class Decoder(nn.Module):
         num_features: int,
         latent_size: int,
         kernel_size: int = 3,
+        stride: int = 1,
         num_filters: int = 32,
         dropout_prob: float = 0.2,
     ):
@@ -28,6 +29,7 @@ class Decoder(nn.Module):
         self._latent_size = latent_size
         self._kernel_size = kernel_size
         self._num_filters = num_filters
+        self._stride = stride
         self._dropout_prob = dropout_prob
 
         # batch, latent size
@@ -40,7 +42,7 @@ class Decoder(nn.Module):
             in_channels=self._num_filters,
             out_channels=num_features,
             kernel_size=self._kernel_size,
-            stride=1
+            stride=self._stride
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

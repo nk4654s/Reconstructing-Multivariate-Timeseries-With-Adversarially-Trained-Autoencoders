@@ -3,9 +3,13 @@
 from typing import Any, Dict
 import torch
 
+from Dataflux.helper import get_logger
+
 from Comprisk.model import BaseModel
 from Comprisk.model.ae.encoder import Encoder
 from Comprisk.model.ae.decoder import Decoder
+
+logger = get_logger(__name__)
 
 
 class AutoEncoder(BaseModel):
@@ -25,6 +29,7 @@ class AutoEncoder(BaseModel):
         decoder_kwargs: Dict = None,
         num_filters: int = None,
         kernel_size: int = None,
+        stride: int = None,
         dropout_prob: float = None,
         weather_bypass: bool = False,
         base: Dict = None,
@@ -38,6 +43,7 @@ class AutoEncoder(BaseModel):
         # overwrite args
         self._overwrite_args("num_filters", num_filters)
         self._overwrite_args("kernel_size", kernel_size)
+        self._overwrite_args("stride", stride)
         self._overwrite_args("dropout_prob", dropout_prob)
 
         # build encoder/decoder
@@ -46,11 +52,13 @@ class AutoEncoder(BaseModel):
         self._decoder = None
 
     def init(self) -> None:
+        logger.debug("Init encoder and decoder")
         encoder_input = self._num_features["sensors"]
         if not self._bypass:
             encoder_input += self._num_features["weather"]
 
         self._encoder = Encoder(num_features=encoder_input, **self._encoder_kwargs)
+        logger.debug("Latent space size is: %s", self._encoder.latent_size)
         self._decoder = Decoder(
             num_features=self._num_features["targets"],
             latent_size=self._encoder.latent_size,
