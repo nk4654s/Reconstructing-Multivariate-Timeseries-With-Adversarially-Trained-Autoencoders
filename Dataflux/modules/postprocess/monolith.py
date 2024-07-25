@@ -72,11 +72,15 @@ class MonoFile(FileWorkerCallable):
     file worker operations.
     """
 
-    def __init__(self, file_name: str = "full") -> None:
+    def __init__(self, file_name: str = "full", enable: bool = True) -> None:
         self._name = file_name
         self._store = ThreadSafeStore(key="norm")
+        self._enable = enable
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
+        if self._enable is not True or self._enable != "True":
+            return None
+
         print("monolith:", file_path)
         df = pd.read_hdf(file_path, key="norm")
         df = df.set_index("ts").reset_index()
@@ -86,4 +90,6 @@ class MonoFile(FileWorkerCallable):
         self._store.add_dataframe(df)
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
+        if self._enable is not True or self._enable != "True":
+            return None
         self._store.finish()
