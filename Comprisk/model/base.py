@@ -1,6 +1,6 @@
 """This module contains the base model."""
 
-from typing import List
+from typing import List, Dict
 
 import lightning as L
 import torch
@@ -42,6 +42,7 @@ class BaseModel(L.LightningModule):
         self._lr_decay = 0.99
         self.lr = lr
 
+        self._num_features = None
         self._dropout = torch.nn.Dropout()
         self._mc_iteration = 10
 
@@ -49,6 +50,17 @@ class BaseModel(L.LightningModule):
     def target(self) -> str:
         """The target name of inputs to predict."""
         return "targets"
+
+    def init(self) -> None:
+        raise NotImplementedError
+
+    def set_num_features(self, num_features: Dict[str, int]) -> None:
+        """Sets the number of features to the model class, as this might be required.
+        
+        Args:
+            num_features (Dict): Feature name with number of values.
+        """
+        self._num_features = num_features
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError

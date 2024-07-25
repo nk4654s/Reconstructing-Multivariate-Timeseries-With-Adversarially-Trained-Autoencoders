@@ -42,9 +42,17 @@ class AutoEncoder(BaseModel):
 
         # build encoder/decoder
         self._bypass = weather_bypass
-        self._encoder = Encoder(num_features=30, **self._encoder_kwargs)
+        self._encoder = None
+        self._decoder = None
+
+    def init(self) -> None:
+        encoder_input = self._num_features["sensors"]
+        if not self._bypass:
+            encoder_input += self._num_features["weather"]
+
+        self._encoder = Encoder(num_features=encoder_input, **self._encoder_kwargs)
         self._decoder = Decoder(
-            num_features=29,
+            num_features=self._num_features["targets"],
             latent_size=self._encoder.latent_size,
             **self._decoder_kwargs
         )

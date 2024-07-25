@@ -35,6 +35,10 @@ class DataModule(L.LightningDataModule):
         self._val = None
         self._test = None
 
+    @property
+    def dataset(self) -> Dataset:
+        return self._dataset
+
     def _free_memory(self) -> None:
         self._train = None
         self._val = None
