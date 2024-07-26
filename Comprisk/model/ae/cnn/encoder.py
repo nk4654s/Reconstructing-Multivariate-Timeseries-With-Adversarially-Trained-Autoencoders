@@ -106,13 +106,13 @@ class CompleteEncoder(nn.Module):
         self._cnn_2 = nn.Conv1d(
             in_channels=num_filters,
             out_channels=1,
-            kernel_size=kernel_size,
-            stride=stride,
+            kernel_size=kernel_size // stride,
+            stride=1,
             padding=0
         )
 
         size_1 = ((num_samples - kernel_size) / stride) + 1
-        self._latent = ((size_1 - kernel_size) / stride) + 1
+        self._latent = int(((size_1 - (kernel_size // stride)) / 1) + 1)
 
     @property
     def latent_size(self) -> int:

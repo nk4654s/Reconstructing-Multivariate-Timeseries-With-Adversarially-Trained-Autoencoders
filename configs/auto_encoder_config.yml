@@ -7,12 +7,15 @@ trainer:
         monitor: validate/MSELoss
         min_delta: 0.0001
         patience: 5
+    - class_path: lightning.pytorch.callbacks.ModelSummary
+      init_args:
+        max_depth: 1
   # define training configuration
   precision: 32
-  max_epochs: 50
+  max_epochs: 1
   gradient_clip_val: 1.0
   profiler: "simple"
-  log_every_n_steps: 5
+  log_every_n_steps: 1
 # configure model hyper-parameter
 model:
   class_path: Comprisk.model.ae.cnn.AutoEncoder
@@ -20,9 +23,10 @@ model:
     # encoder/decoder parameters
     num_filters: 32
     dropout_prob: 0.2
-    kernel_size: 155
-    stride: 1
-    mode: sequence
+    kernel_size: 200
+    stride: 20
+    # complete or sequence
+    mode: complete
     # gerneral parameters
     base:
       weather_bypass: False

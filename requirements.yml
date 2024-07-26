@@ -20,4 +20,5 @@ dependencies:
     - mlflow
     - setuptools
     - pip:
+        - torchsummary
         - "--editable=git+https://github.com/neaxplore/xplore-ai-s3prep#egg=Dataflux"

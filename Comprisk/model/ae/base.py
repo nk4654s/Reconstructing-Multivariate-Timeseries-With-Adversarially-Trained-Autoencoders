@@ -2,6 +2,7 @@
 
 from typing import Dict
 import torch
+from torchsummary import summary
 
 from Dataflux.helper import get_logger
 
@@ -41,6 +42,13 @@ class AutoEncoderBase(BaseModel):
         """Initialize the model."""
         self._encoder = self.init_encoder()
         self._decoder = self.init_decoder()
+        summary(
+            torch.nn.Sequential(self._encoder, self._decoder),
+            input_size=(
+                self._meta.num_input_sequence,
+                self._meta.num_features_sensors + self._meta.num_features_weather,
+            ),
+        )
 
     def init_encoder(self) -> torch.nn.Module:
         """Override this method in a child class to build the encoder.

@@ -90,8 +90,8 @@ class CompleteDecoder(nn.Module):
         self._conv_trans_1 = nn.ConvTranspose1d(
             in_channels=1,
             out_channels=self._num_filters,
-            kernel_size=self._kernel_size,
-            stride=self._stride,
+            kernel_size=self._kernel_size // stride,
+            stride=1,
             padding=0
         )
 
