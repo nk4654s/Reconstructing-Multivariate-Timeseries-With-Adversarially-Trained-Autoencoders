@@ -5,7 +5,8 @@ import numpy as np
 import torch
 import pandas as pd
 
-from Dataflux.helper import Metadata, Meta
+from Dataflux.pytorch.metadata import MetadataFactory, MetadataTypes, Metadata
+from Dataflux.helper import Meta, Metadata as FileMetadata
 from Dataflux.pytorch.index_tree import IndexTree
 from Dataflux.pytorch.cache import DataFrameCache
 
@@ -37,7 +38,7 @@ class Dataset(torch.utils.data.Dataset):
         skip: int = 1,
         cache_size: int = None,
     ) -> None:
-        self._metadata = Metadata()
+        self._metadata = FileMetadata()
         self._metadata.load(path)
         self._skip = skip
 
@@ -52,6 +53,16 @@ class Dataset(torch.utils.data.Dataset):
         self._cache = DataFrameCache(cache_size, **data)
         self._tree = IndexTree(self._metadata, **data)
 
+        # build metadata describing the dataset's configuration
+        self._meta_factory = MetadataFactory()
+        self._meta_factory.set(MetadataTypes.IN_SEQUENCE, self._num_input)
+        self._meta_factory.set(MetadataTypes.OUT_SEQUENCE, self._num_output)
+
+        sensors, weather, tragets = self[0]
+        self._meta_factory.set(MetadataTypes.SENSOR, sensors.shape[-1])
+        self._meta_factory.set(MetadataTypes.WEATHER, weather.shape[-1])
+        self._meta_factory.set(MetadataTypes.TARGET, tragets.shape[-1])
+
     @property
     def shape(self) -> Tuple[int, int, int]:
         """Outputs the shape of this dataset as `number_of_samples`,
@@ -59,18 +70,13 @@ class Dataset(torch.utils.data.Dataset):
         """
         return (len(self._tree), self._num_input, self._num_features)
 
-    def get_num_features(self) -> Dict[str, int]:
-        """Outputs the number of features for a given feature type.
+    def get_meta(self) -> Metadata:
+        """Outputs the metadata of the dataset.
 
         Returns:
-            Dict[str, int]: The number of features given the type.
+            Metadata: The metadata of the dataset.
         """
-        x1, x2, y = self[0]
-        return {
-            "sensors": x1.shape[-1],
-            "weather": x2.shape[-1],
-            "targets": y.shape[-1]
-        }
+        return self._meta_factory.build()
 
     def scale_back(self, data: List | np.ndarray | pd.DataFrame) -> pd.DataFrame:
         """Method scales back the given data using the normalizer of the dataset.
