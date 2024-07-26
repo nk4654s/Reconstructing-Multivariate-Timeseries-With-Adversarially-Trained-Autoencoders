@@ -7,7 +7,7 @@ lightning_logs/
 logfile
 
 # exclude temporary checkpoints
-.lr_rate*
+*.ckpt
 
 # exclude extensions
 .VSCodeCounter/

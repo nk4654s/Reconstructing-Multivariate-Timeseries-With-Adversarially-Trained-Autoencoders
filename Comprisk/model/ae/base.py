@@ -1,74 +1,53 @@
 """This module implements a base AutoEncoder class."""
 
-from typing import Any, Dict
+from typing import Dict
 import torch
 
 from Dataflux.helper import get_logger
 
 from Comprisk.model import BaseModel
-from Comprisk.model.ae.encoder import Encoder
-from Comprisk.model.ae.decoder import Decoder
 
 logger = get_logger(__name__)
 
 
-class AutoEncoder(BaseModel):
+class AutoEncoderBase(BaseModel):
     """
-    A simple autoencoder class.
+    The auto encoder base class implements the forward and predict methods, as well as initializer
+    function to define the encoder/decoder.
 
     Args:
-        encoder_kwargs (Dict): The encoder hyper-parameters.
-        decoder_kwargs (Dict): The decoder hyper-parameters.
         weather_bypass (bool): Whether to bypass the weather data directly to the decoder.
         kwargs (Dict): Keyword arguments to pass to the base model class.
     """
 
     def __init__(
         self,
-        encoder_kwargs: Dict = None,
-        decoder_kwargs: Dict = None,
-        num_filters: int = None,
-        kernel_size: int = None,
-        stride: int = None,
-        dropout_prob: float = None,
         weather_bypass: bool = False,
         base: Dict = None,
     ):
         base = {} if base is None else base
         super().__init__(**base)
 
-        self._encoder_kwargs = {} if encoder_kwargs is None else encoder_kwargs
-        self._decoder_kwargs = {} if decoder_kwargs is None else decoder_kwargs
-
-        # overwrite args
-        self._overwrite_args("num_filters", num_filters)
-        self._overwrite_args("kernel_size", kernel_size)
-        self._overwrite_args("stride", stride)
-        self._overwrite_args("dropout_prob", dropout_prob)
-
         # build encoder/decoder
         self._bypass = weather_bypass
-        self._encoder = None
-        self._decoder = None
+        self._encoder = self.init_encoder()
+        self._decoder = self.init_decoder()
 
-    def init(self) -> None:
-        logger.debug("Init encoder and decoder")
-        encoder_input = self._num_features["sensors"]
-        if not self._bypass:
-            encoder_input += self._num_features["weather"]
+    def init_encoder(self) -> torch.nn.Module:
+        """Override this method in a child class to build the encoder.
 
-        self._encoder = Encoder(num_features=encoder_input, **self._encoder_kwargs)
-        logger.debug("Latent space size is: %s", self._encoder.latent_size)
-        self._decoder = Decoder(
-            num_features=self._num_features["targets"],
-            latent_size=self._encoder.latent_size,
-            **self._decoder_kwargs
-        )
+        Returns:
+            torch.nn.Module: The encoder model.
+        """
+        raise NotImplementedError
 
-    def _overwrite_args(self, key: str, value: Any) -> None:
-        if value is not None:
-            self._encoder_kwargs[key] = value
-            self._decoder_kwargs[key] = value
+    def init_decoder(self) -> torch.nn.Module:
+        """Override this method in a child class to build the decoder.
+
+        Returns:
+            torch.nn.Module: The decoder model.
+        """
+        raise NotImplementedError
 
     @property
     def target(self) -> str:

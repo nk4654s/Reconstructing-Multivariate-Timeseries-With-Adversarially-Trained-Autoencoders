@@ -15,13 +15,13 @@ trainer:
   log_every_n_steps: 5
 # configure model hyper-parameter
 model:
-  class_path: Comprisk.model.ae.AutoEncoder
+  class_path: Comprisk.model.ae.cnn.AutoEncoder
   init_args:
     # encoder/decoder parameters
     num_filters: 32
     dropout_prob: 0.2
     kernel_size: 155
-    stride: 25
+    stride: 1
     # gerneral parameters
     weather_bypass: False
     base:
@@ -41,7 +41,7 @@ data:
   sampler_kwargs:
     batch_size: 128
     shuffle: True
-    train_size: 0.7
+    train_size: 0.1
     validation_size: 0.2
   # configure the workers sampling the dataset
   loader_kwargs:
