@@ -16,23 +16,27 @@ class AutoEncoderBase(BaseModel):
     function to define the encoder/decoder.
 
     Args:
-        weather_bypass (bool): Whether to bypass the weather data directly to the decoder.
-        kwargs (Dict): Keyword arguments to pass to the base model class.
+        kwargs (Dict): Keyword arguments to pass to the base model class. Can contain
+        `weather_bypass (bool)`, which is class-sepcific to bypass the weather data directly
+        to the decoder. Defaults to False.
     """
 
     def __init__(
         self,
-        weather_bypass: bool = False,
         base: Dict = None,
     ):
         base = {} if base is None else base
+        weather_bypass = base.get("weather_bypass", False)
+        if "weather_bypass" in base.keys():
+            del base["weather_bypass"]
+
         super().__init__(**base)
 
         # build encoder/decoder
         self._bypass = weather_bypass
         self._encoder = None
         self._decoder = None
-    
+
     def init(self) -> None:
         """Initialize the model."""
         self._encoder = self.init_encoder()

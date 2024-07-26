@@ -22,11 +22,12 @@ model:
     dropout_prob: 0.2
     kernel_size: 155
     stride: 1
+    mode: sequence
     # gerneral parameters
-    weather_bypass: False
     base:
+      weather_bypass: False
       # tanh for standardized dataset, sigmoid for normalized dataset
-      activation: tanh
+      activation: sigmoid
       loss: MSELoss
       optimizer: Adam
       lr: 0.001

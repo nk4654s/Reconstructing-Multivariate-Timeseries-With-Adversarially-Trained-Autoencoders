@@ -6,6 +6,7 @@ import lightning as L
 import torch
 from torch.optim.lr_scheduler import ExponentialLR
 
+from Dataflux.pytorch import Metadata
 from Dataflux.helper import get_logger
 from Comprisk.helper import (
     get_loss_by_name,
@@ -52,15 +53,22 @@ class BaseModel(L.LightningModule):
         return "targets"
 
     def init(self) -> None:
+        """
+        Initializes the model.
+        
+        Raises:
+            NotImplementedError: This method must be implemented by subclasses.
+        """
         raise NotImplementedError
 
-    def set_num_features(self, num_features: Dict[str, int]) -> None:
-        """Sets the number of features to the model class, as this might be required.
-        
-        Args:
-            num_features (Dict): Feature name with number of values.
+    def set_meta(self, meta: Metadata) -> None:
         """
-        self._num_features = num_features
+        Sets the metadata for this model.
+
+        Args:
+            meta (Metadata): The metadata to be used.
+        """
+        self._meta = meta
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError
