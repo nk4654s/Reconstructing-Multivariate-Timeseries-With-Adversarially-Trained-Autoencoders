@@ -8,7 +8,7 @@ conda env create -f environment.yml
 Wait for the environment to be set up. Then, activate it with:
 
 ```
-conda activate s3prep
+conda activate dataflux
 ```
 
 To build and link the library, run:
@@ -17,18 +17,18 @@ To build and link the library, run:
 pip install -e .
 ```
 
-> Note: The last output line should contain `Successfully installed S3Prep-1.0`.
+> Note: The last output line should contain `Successfully installed Dataflux-1.0`.
 
 # Usage
-The application consits of two main scripts `s3preprocess` and `s3postprocess`. As the amount of processing modules and the configuration of those might change, run
+The application consits of two main scripts `flux-pre` and `flux-post`. As the amount of processing modules and the configuration of those might change, run
 ```
-<s3preprocess | s3postprocess> --help
+<flux-pre | flux-post> --help
 ```
-to get more information. In general, the `s3preprocess` downloads a dataset from the Amazon S3 bucket, runs some preprocessing and stores the files on the local disk. Afterward, the `s3postprocess` can be used to further process the data (e.g. normalize the dataset).
+to get more information. In general, the `flux-pre` downloads a dataset from the Amazon S3 bucket, runs some preprocessing and stores the files on the local disk. Afterward, the `flux-post` can be used to further process the data (e.g. normalize the dataset).
 
 # Modules
 ## Preprocessing
-The preprocessing module's code is located under `S3Prep/modules/preprocess`. Adding a new module can be achieved, by simply inheriting the base class from `S3Prep/modules/preprocess/module.py` and publishing the class to the package in `S3Prep/modules/preprocess/__init__.py`. Finally, import the created module in `S3Prep/preprocess.py` and add the class name to `modules = []` at the start of the file.
+The preprocessing module's code is located under `Dataflux/modules/preprocess`. Adding a new module can be achieved, by simply inheriting the base class from `Dataflux/modules/preprocess/module.py` and publishing the class to the package in `Dataflux/modules/preprocess/__init__.py`. Finally, import the created module in `Dataflux/preprocess.py` and add the class name to `modules = []` at the start of the file.
 
 Available modules are:
 - Homogeneous columns and rows
@@ -38,7 +38,7 @@ Available modules are:
 - Create a report to analyze the dataset
 
 ## Postprocessing
-Similar to preprocessing, the code is located under `S3Prep/modules/postprocess` but a new module is added to `S3Prep/postprocess.py` instead. Also, the postprocess modules are build to run on multiple threads enabling faster postprocessing.
+Similar to preprocessing, the code is located under `Dataflux/modules/postprocess` but a new module is added to `Dataflux/postprocess.py` instead. Also, the postprocess modules are build to run on multiple threads enabling faster postprocessing.
 
 Available modules are:
 - Normalization (MinMax, Standardize)

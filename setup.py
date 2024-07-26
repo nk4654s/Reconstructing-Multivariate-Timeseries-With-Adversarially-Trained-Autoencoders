@@ -38,8 +38,8 @@ setup(
     name="Dataflux",
     entry_points={
         "console_scripts": [
-            "Datafluxrocess=Dataflux.preprocess:main",
-            "s3postprocess=Dataflux.postprocess:main",
+            "flux-pre=Dataflux.preprocess:main",
+            "flux-post=Dataflux.postprocess:main",
         ]
     },
     packages=find_packages(include=[
