@@ -30,6 +30,11 @@ class AutoEncoderBase(BaseModel):
 
         # build encoder/decoder
         self._bypass = weather_bypass
+        self._encoder = None
+        self._decoder = None
+    
+    def init(self) -> None:
+        """Initialize the model."""
         self._encoder = self.init_encoder()
         self._decoder = self.init_decoder()
 

@@ -35,14 +35,13 @@ class AutoEncoder(AutoEncoderBase):
         base: Dict = None,
     ):
         base = {} if base is None else base
+        super().__init__(**base)
 
         # overwrite args
         self._overwrite_args("num_filters", num_filters)
         self._overwrite_args("kernel_size", kernel_size)
         self._overwrite_args("stride", stride)
         self._overwrite_args("dropout_prob", dropout_prob)
-
-        super().__init__(**base)
 
         self._encoder_kwargs = {} if encoder_kwargs is None else encoder_kwargs
         self._decoder_kwargs = {} if decoder_kwargs is None else decoder_kwargs
