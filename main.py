@@ -25,9 +25,8 @@ def cli_main():
 
     # run methods before fit
     logger.debug("CompriskCLI prepare training.")
-    cli.model.set_meta(cli.datamodule.dataset.get_meta())
-    cli.model.init()
-
+    # FIXME: post init using dataset metadata
+    cli.prepare()
     cli.before_fit()
 
     # train
