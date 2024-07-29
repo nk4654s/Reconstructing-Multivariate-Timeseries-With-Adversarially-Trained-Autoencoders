@@ -172,8 +172,8 @@ class NormalizeTransform(FileWorkerCallable):
 
         data = {
             Meta.NORM_METHOD.name: method,
-            Meta.NORM_KEYS.name: list(header),
-            Meta.NORM_VAL_A.name: list(a),
-            Meta.NORM_VAL_B.name: list(b),
+            Meta.NORM_KEYS.name: [str(_) for _ in header],
+            Meta.NORM_VAL_A.name: [float(_) for _ in a],
+            Meta.NORM_VAL_B.name: [float(_) for _ in b],
         }
         metadata.put(data, Meta.NORMALIZER)
