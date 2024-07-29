@@ -1,6 +1,6 @@
 """This module contains the base model."""
 
-from typing import List, Dict
+from typing import List
 
 import lightning as L
 import torch
@@ -22,30 +22,39 @@ class BaseModel(L.LightningModule):
 
     Args:
         loss (str, optional): Loss function to use. Defaults to "MSELoss".
+        activation (str, optional): Activation function to use. Defaults to "sigmoid"
         optimizer (str, optional): Optimizer to use. Defaults to "Adam".
         lr (float, optional): Initial learning rate. Defaults to 1e-3.
+        lr_decay (float, optional): Learning rate dacying factor. Defaults to 0.99.
+        monte_carlo (int, optional): Number of Monte-Carlo iterations, higher will be
+        slower but more stable. Defaults to 10.
     """
 
     def __init__(
         self,
         loss: str = "MSELoss",
-        activation: str = "relu",
+        activation: str = "sigmoid",
         optimizer: str = "Adam",
         lr: float = 1e-3,
+        lr_decay: float = 0.99,
+        monte_carlo: int = 10,
     ) -> None:
         super().__init__()
 
+        self._meta = None
+
+        # define training hyperparameters
         self._loss_name = loss
         self._loss = get_loss_by_name(loss)
         self._activation = get_activation_from_string(activation)
         self._optim = optimizer
         self._lr_scheduler = ExponentialLR
-        self._lr_decay = 0.99
+        self._lr_decay = lr_decay
         self.lr = lr
 
-        self._num_features = None
+        # define stable predict-step parameters
         self._dropout = torch.nn.Dropout()
-        self._mc_iteration = 10
+        self._mc_iteration = monte_carlo
 
     @property
     def target(self) -> str:
@@ -53,17 +62,16 @@ class BaseModel(L.LightningModule):
         return "targets"
 
     def init(self) -> None:
+        """Use this method, if the model requires post-initialization steps
+        before running the `trainer.fit()` function. If the model requires
+        information about the dataset, use `self.set_meta()`.
         """
-        Initializes the model.
-        
-        Raises:
-            NotImplementedError: This method must be implemented by subclasses.
-        """
-        raise NotImplementedError
+        return None
 
     def set_meta(self, meta: Metadata) -> None:
-        """
-        Sets the metadata for this model.
+        """Pass metadata from a dataset to the model, which holds information
+        required to initialize the model's layers. To get the dataset's
+        metadata: `dataset.get_meta()`.
 
         Args:
             meta (Metadata): The metadata to be used.

@@ -14,15 +14,22 @@ class DataModule(L.LightningDataModule):
     A PyTorch Lightning DataModule for loading and processing data.
 
     Args:
-        data_kwargs (Dict): Keyword arguments for initializing the dataset.
-        loader_kwargs (Dict): Keyword arguments for initializing the data loader.
-        batch_size (int, optional): The size of each mini-batch. Defaults to 64.
+        data_kwargs (Dict): Keyword arguments for initializing the dataset. Find
+        `Dataset` in `Dataflux.pytorch` to get more details about the intialization
+        parameters.
+        loader_kwargs (Dict): Keyword arguments for initializing the data loader. Find
+        `DataLoader` in `torch.utils.data` to get more details about the initialization
+        parameters.
+        sampler_kwargs (Dict): Keyword arguments for initializing the sampler. Find
+        `RandomBatchSampler` in `Dataflux.pytorch` to get more details about the initialization
+        parameters.
     """
 
     def __init__(
         self, data_kwargs: Dict, loader_kwargs: Dict, sampler_kwargs: Dict
     ) -> None:
         super().__init__()
+        # FIXME: Not pretty to have dictionary which contain args to init object within this class
 
         self._loader_kwargs = loader_kwargs
         self._sampler_kwargs = sampler_kwargs
@@ -37,6 +44,11 @@ class DataModule(L.LightningDataModule):
 
     @property
     def dataset(self) -> Dataset:
+        """Returns the loaded dataset of this data module.
+
+        Returns:
+            Dataset: the loaded dataset.
+        """
         return self._dataset
 
     def _free_memory(self) -> None:

@@ -11,3 +11,4 @@ logfile
 
 # exclude extensions
 .VSCodeCounter/
+.DS_Store

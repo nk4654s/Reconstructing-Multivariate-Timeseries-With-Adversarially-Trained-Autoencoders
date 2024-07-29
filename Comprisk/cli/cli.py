@@ -25,44 +25,6 @@ class CompriskCLI(LightningCLI):
     Args:
         LightningCLI (LightningCLI): The base class.
     """
-
-    def __init__(
-        self,
-        model_class: (
-            type[LightningModule] | Callable[..., LightningModule] | None
-        ) = None,
-        datamodule_class: (
-            type[LightningDataModule] | Callable[..., LightningDataModule] | None
-        ) = None,
-        save_config_callback: type[SaveConfigCallback] | None = ...,
-        save_config_kwargs: Dict[str, Any] | None = None,
-        trainer_class: type[Trainer] | Callable[..., Trainer] = ...,
-        trainer_defaults: Dict[str, Any] | None = None,
-        seed_everything_default: bool | int = True,
-        parser_kwargs: Dict[str, Any] | Dict[str, Dict[str, Any]] | None = None,
-        subclass_mode_model: bool = False,
-        subclass_mode_data: bool = False,
-        args: List[str] | Dict[str, Any] | Namespace | None = None,
-        run: bool = True,
-        auto_configure_optimizers: bool = True,
-    ) -> None:
-        super().__init__(
-            model_class,
-            datamodule_class,
-            save_config_callback,
-            save_config_kwargs,
-            trainer_class,
-            trainer_defaults,
-            seed_everything_default,
-            parser_kwargs,
-            subclass_mode_model,
-            subclass_mode_data,
-            args,
-            run,
-            auto_configure_optimizers,
-        )
-        self._preparation_done = False
-
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--find-lr", default=False, action="store_true")
         parser.add_argument("--find-batch-size", default=False, action="store_true")
@@ -73,14 +35,11 @@ class CompriskCLI(LightningCLI):
         `model.set_meta()`. Then, the `model.init()` is called to finalize the model
         initialization.
         """
-        assert not self._preparation_done, "Model already prepared."
-        self._preparation_done = True
         self.model.set_meta(self.datamodule.dataset.get_meta())
         self.model.init()
 
     def before_fit(self):
         """Method executes before fit automatically."""
-        assert self._preparation_done, "Model is not prepared. Run `self.prepare()`"
         tuner = Tuner(self.trainer)
         # find best batch size
         if self.config.find_batch_size:
