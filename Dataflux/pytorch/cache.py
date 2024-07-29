@@ -1,6 +1,6 @@
 """This module contains the DataFrameCache class, for faster and memory optimized
 DataFrame loading."""
-from typing import Tuple
+from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
@@ -27,6 +27,7 @@ class DataFrameCache:
         self._loaded = {}
         self._samples_read = {}
         self._add_history = []
+        self._column_names = None
 
     def _register(self, key: str, matrix: np.array) -> None:
         self._loaded[key] = matrix
@@ -38,6 +39,12 @@ class DataFrameCache:
             # if the cache is full, remove the dataframes with the highest read count
             # those are less likeley to be used again
             del self._loaded[self._add_history.pop(0)]
+
+    @property
+    def columns(self) -> List[str]:
+        """The column names of the dataframe (sorted) as list of strings.
+        """
+        return self._column_names
 
     def get(self, path: str, key: str = "norm") -> Tuple[np.array, np.array]:
         """
@@ -54,7 +61,13 @@ class DataFrameCache:
 
         # load and register a new dataframe
         if data is None:
+            # read dataframe and sort columns by name for consistency
             df = pd.read_hdf(path, key=key, mode="r")
+            df = df.reindex(sorted(df.columns), axis=1)
+            if self._column_names is None:
+                self._column_names = list(df.columns.values)
+
+            # get every nth value for weather and sensor data
             weather = df[WEATHER_KEYS].to_numpy()[::self._skip]
             sensors = df.drop(WEATHER_KEYS, axis=1).to_numpy()[::self._skip]
 

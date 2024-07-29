@@ -1,6 +1,6 @@
 """This module contains the Dataset class, required to train a NN."""
 
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 import numpy as np
 import torch
 import pandas as pd
@@ -59,6 +59,7 @@ class Dataset(torch.utils.data.Dataset):
         self._meta_factory.set(MetadataTypes.OUT_SEQUENCE, self._num_output)
 
         sensors, weather, tragets = self[0]
+        self._meta_factory.set(MetadataTypes.NAMES, self._cache.columns)
         self._meta_factory.set(MetadataTypes.SENSOR, sensors.shape[-1])
         self._meta_factory.set(MetadataTypes.WEATHER, weather.shape[-1])
         self._meta_factory.set(MetadataTypes.TARGET, tragets.shape[-1])
