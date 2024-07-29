@@ -1,3 +1,4 @@
+"""This module handles showing and saving graphs of a dataframe."""
 import math
 from typing import List
 import matplotlib.pyplot as plt
@@ -14,6 +15,19 @@ def show_dataframe(
     save: str = None,
     show: bool = False,
 ):
+    """Shows and/or saves the visualization of one or multiple pandas DataFrames. In total, 9
+    concurrent DataFrames can be visualized in one figure.
+
+    Args:
+        sensors (str | List[str]): The name of the sensor or a list of sensor names to be
+            visualized.
+        df (pd.DataFrame | List[pd.DataFrame]): The pandas DataFrame or a list of pandas
+            DataFrames to be visualized.
+        names (List[str]): The name of each DataFrame to be visualized.
+        grid_size (int): The number of DataFrames per row in the visualization figure.
+        save (str): The path where the visualization should be saved.
+        show (bool): Whether to show the visualization or not.
+    """
     # configure graph
     df = [df] if isinstance(df, pd.DataFrame) else df
     names = [f"DF{_}" for _ in range(len(df))] if names is None else names
@@ -49,7 +63,7 @@ def show_dataframe(
     )
 
     if save:
-        plt.savefig("test.png", bbox_inches="tight")
+        plt.savefig(save, bbox_inches="tight")
 
     if show:
         plt.show()
