@@ -1,18 +1,22 @@
 """Load a model using a CLI."""
-
-from lightning.pytorch.loggers import TensorBoardLogger
+import os
+import torch
 import pandas as pd
+from tqdm import tqdm
 
 # simple demo classes for your convenience
 from Dataflux.pytorch import Metadata
 from Dataflux.visualization import show_dataframe
 from Dataflux.helper import get_logger
 
+from Comprisk.helper import get_config_folder, get_checkpoints
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
 
 logger = get_logger(__name__)
+
+# TODO: 4. get model's device and move inputs accordingly
 
 
 def cli_main():
@@ -23,44 +27,35 @@ def cli_main():
     logger.debug("Starting CompriskCLI")
     cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
 
-    # set up the logger
-    logger.debug("Defining TensorBoard logger for %s", cli.model.__class__.__name__)
-    tb_logger = TensorBoardLogger("lightning_logs", name=cli.model.__class__.__name__)
-    cli.trainer.logger = tb_logger
-
-    # run methods before fit
-    logger.debug("CompriskCLI prepare model for inference.")
-    model_class = cli.model.__class__
-
-    # predict on test dataset
-    logger.debug("Load the model from file")
-    model = model_class.load_from_checkpoint("lightning_logs/AutoEncoder/version_2/epoch=1-step=11412.ckpt")
-    model.eval()
+    base_path = get_config_folder(cli)
+    checkpoints = get_checkpoints(cli)
 
     # 1. get dataset configuration: start, end, step size (size of input window)
+    model = cli.model.__class__.load_from_checkpoint(checkpoints[-1])
     dataset = cli.datamodule.dataset
     meta: Metadata = dataset.get_meta()
 
     # 2. iterate over dataset, with shuffle deactivated
-    predicted = []
-    inputs = []
-    for i in range(0, len(dataset), meta.num_input_sequence):
+    predicted = {key: [] for key in meta.column_names_sensor}
+    inputs = {key: [] for key in meta.column_names_sensor}
+    for i in tqdm(range(0, len(dataset), meta.num_input_sequence)):
         sensors, weather, _ = dataset[i]
-        inputs.append(sensors)
+
+        sensors = torch.tensor(sensors, device="mps")
+        sensors = torch.unsqueeze(sensors, dim=0)
+        weather = torch.tensor(weather, device="mps")
+        weather = torch.unsqueeze(weather, dim=0)
 
         # 3. pass sample into model, store prediction in list/numpy/dataframe
-        target = model.predict_step({"sensors": sensors, "weather": weather})
-        predicted.append(target)
+        target = model.predict({"sensors": sensors, "weather": weather}, as_array=True)[0]
+
+        for i, key in enumerate(meta.column_names_sensor):
+            predicted[key] += list(target[:, i])
+            inputs[key] += list(sensors.cpu().numpy()[0, :, i])
 
     # 4. finalize dataframe, give columns names matching input dataframe column names
-    df_predicted = {}
-    df_inputs = {}
-    for i, name in enumerate(meta.column_names):
-        df_predicted[name] = [_[i] for _ in predicted]
-        df_inputs[name] = [_[i] for _ in inputs]
-
-    df_predicted = pd.DataFrame(df_predicted)
-    df_inputs = pd.DataFrame(df_inputs)
+    predicted = pd.DataFrame(predicted)
+    inputs = pd.DataFrame(inputs)
 
     # 5. visualize
     sensors = [
@@ -75,7 +70,13 @@ def cli_main():
         "EndtemperaturErsteStufeTETIT74334 (°C)",
         "EndtemperaturZweiteStufeTETIT74371 (°C)",
     ]
-    show_dataframe(sensors, [df_predicted, df_inputs], grid_size=3, save="prediction.png")
+    show_dataframe(
+        sensors,
+        [predicted, inputs],
+        ["Prediction", "Target"],
+        grid_size=5,
+        save=os.path.join(base_path, "prediction.png"),
+    )
 
 
 if __name__ == "__main__":

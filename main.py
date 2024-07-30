@@ -1,8 +1,10 @@
 """Train a model using a CLI or provide the hyperparameters directly to the CLI."""
+import os
+import shutil
 from lightning.pytorch.loggers import TensorBoardLogger
 from Dataflux.helper import get_logger
 
-# simple demo classes for your convenience
+from Comprisk.helper import get_config_path
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
@@ -23,10 +25,12 @@ def cli_main():
     tb_logger = TensorBoardLogger("lightning_logs", name=cli.model.__class__.__name__)
     cli.trainer.logger = tb_logger
 
+    # copy config to tb_logger.logdir
+    os.makedirs(tb_logger.log_dir)
+    shutil.copyfile(get_config_path(cli), os.path.join(tb_logger.log_dir, "config.yml"))
+
     # run methods before fit
     logger.debug("CompriskCLI prepare training.")
-    # FIXME: post init using dataset metadata
-    cli.prepare()
     cli.before_fit()
 
     # train
