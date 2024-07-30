@@ -14,28 +14,54 @@ class DataModule(L.LightningDataModule):
     A PyTorch Lightning DataModule for loading and processing data.
 
     Args:
-        data_kwargs (Dict): Keyword arguments for initializing the dataset. Find
-        `Dataset` in `Dataflux.pytorch` to get more details about the intialization
-        parameters.
-        loader_kwargs (Dict): Keyword arguments for initializing the data loader. Find
-        `DataLoader` in `torch.utils.data` to get more details about the initialization
-        parameters.
-        sampler_kwargs (Dict): Keyword arguments for initializing the sampler. Find
-        `RandomBatchSampler` in `Dataflux.pytorch` to get more details about the initialization
-        parameters.
+        path (str): Path to the dataset folder.
+        input_sequence (int): Sequence length of the input sequence.
+        output_sequence (int): Sequence length of the output sequence.
+        skip (int): Skip every n-th sample in the dataset.
+        batch_size (int): Batch size of the model's input.
+        shuffle (bool): Whether to shuffle the dataset or not.
+        train_size (float): Percentage of the dataset to be used for training.
+        validation_size (float): Percentage of the dataset to be used for validation.
+        num_workers (int): Number of workers to use in data loading.
+        persist (bool): Whether to persist the dataset or not.
+        pin_memory (bool): Whether to pin memory or not in data loading.
     """
 
     def __init__(
-        self, data_kwargs: Dict, loader_kwargs: Dict, sampler_kwargs: Dict
+        self,
+        path: str = None,
+        input_sequence: int = 1,
+        output_sequence: int = 1,
+        skip: int = 1,
+        batch_size: int = 1,
+        shuffle: bool = True,
+        train_size: float = 0.7,
+        validation_size: float = 0.2,
+        num_workers: int = 1,
+        persistent_workers: bool = True,
+        pin_memory: bool = True,
     ) -> None:
         super().__init__()
-        # FIXME: Not pretty to have dictionary which contain args to init object within this class
+        self._loader_kwargs = {
+            "num_workers": num_workers,
+            "persistent_workers": persistent_workers,
+            "pin_memory": pin_memory,
+        }
 
-        self._loader_kwargs = loader_kwargs
-        self._sampler_kwargs = sampler_kwargs
-        self._data_kwargs = data_kwargs
+        self._sampler_kwargs = {
+            "batch_size": batch_size,
+            "shuffle": shuffle,
+            "train_size": train_size,
+            "validation_size": validation_size,
+        }
 
-        self._dataset = Dataset(**data_kwargs)
+        self._dataset = Dataset(
+            path=path,
+            input_sequence=input_sequence,
+            output_sequence=output_sequence,
+            skip=skip,
+        )
+
         self._sampler_kwargs["data_length"] = len(self._dataset)
 
         self._train = None

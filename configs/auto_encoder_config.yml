@@ -7,9 +7,6 @@ trainer:
         monitor: validate/MSELoss
         min_delta: 0.0001
         patience: 5
-    - class_path: lightning.pytorch.callbacks.ModelSummary
-      init_args:
-        max_depth: 1
   # define training configuration
   precision: 32
   max_epochs: 1
@@ -20,36 +17,32 @@ trainer:
 model:
   class_path: Comprisk.model.ae.cnn.AutoEncoder
   init_args:
-    # encoder/decoder parameters
-    num_filters: 32
-    dropout_prob: 0.2
-    kernel_size: 200
-    stride: 20
     # complete or sequence
     mode: complete
+    # encoder/decoder parameters
+    kernel_size: 200
+    num_filters: 32
+    stride: 20
+    dropout_prob: 0.2
+    weather_bypass: false
     # gerneral parameters
     base:
-      weather_bypass: False
-      # tanh for standardized dataset, sigmoid for normalized dataset
       activation: sigmoid
       loss: MSELoss
       optimizer: Adam
       lr: 0.001
 data:
   # configure dataset to load
-  data_kwargs:
-    path: ../Dataflux/dataset-2021-22
-    input_sequence: 1_000
-    output_sequence: 1_000
-    skip: 2
+  path: ../Dataflux/dataset-2021-22
+  input_sequence: 1_000
+  output_sequence: 1_000
+  skip: 2
   # configure how to sample from the dataset
-  sampler_kwargs:
-    batch_size: 128
-    shuffle: True
-    train_size: 0.1
-    validation_size: 0.2
+  batch_size: 512
+  shuffle: true
+  train_size: 0.5
+  validation_size: 0.3
   # configure the workers sampling the dataset
-  loader_kwargs:
-    num_workers: 2
-    persistent_workers: True
-    pin_memory: true
+  num_workers: 4
+  persistent_workers: true
+  pin_memory: true

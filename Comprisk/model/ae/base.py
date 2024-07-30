@@ -2,10 +2,8 @@
 
 from typing import Dict
 import torch
-from torchsummary import summary
 
 from Dataflux.helper import get_logger
-
 from Comprisk.model import BaseModel
 
 logger = get_logger(__name__)
@@ -17,54 +15,22 @@ class AutoEncoderBase(BaseModel):
     function to define the encoder/decoder.
 
     Args:
-        kwargs (Dict): Keyword arguments to pass to the base model class. Can contain
-        `weather_bypass (bool)`, which is class-sepcific to bypass the weather data directly
-        to the decoder. Defaults to False.
+        weather_bypass (bool): Whether to bypass the weather data or not.
+        kwargs (Dict): Keyword arguments to pass to the base model class.
     """
 
     def __init__(
         self,
+        weather_bypass: bool = False,
         base: Dict = None,
-    ):
+    ) -> None:
         base = {} if base is None else base
-        weather_bypass = base.get("weather_bypass", False)
-        if "weather_bypass" in base.keys():
-            del base["weather_bypass"]
-
         super().__init__(**base)
 
         # build encoder/decoder
         self._bypass = weather_bypass
         self._encoder = None
         self._decoder = None
-
-    def init(self) -> None:
-        """Initialize the model."""
-        self._encoder = self.init_encoder()
-        self._decoder = self.init_decoder()
-        summary(
-            torch.nn.Sequential(self._encoder, self._decoder),
-            input_size=(
-                self._meta.num_input_sequence,
-                self._meta.num_features_sensors + self._meta.num_features_weather,
-            ),
-        )
-
-    def init_encoder(self) -> torch.nn.Module:
-        """Override this method in a child class to build the encoder.
-
-        Returns:
-            torch.nn.Module: The encoder model.
-        """
-        raise NotImplementedError
-
-    def init_decoder(self) -> torch.nn.Module:
-        """Override this method in a child class to build the decoder.
-
-        Returns:
-            torch.nn.Module: The decoder model.
-        """
-        raise NotImplementedError
 
     @property
     def target(self) -> str:

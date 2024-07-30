@@ -1,10 +1,10 @@
 """This module implements a base AutoEncoder class."""
 
-from typing import Any, Dict
+from typing import Dict
 import torch
 
+from torchsummary import summary
 from Dataflux.helper import get_logger
-from torch.nn.modules import Module
 
 from Comprisk.model.ae.base import AutoEncoderBase
 from Comprisk.model.ae.cnn.encoder import SequenceEncoder, CompleteEncoder
@@ -26,49 +26,50 @@ class AutoEncoder(AutoEncoderBase):
 
     def __init__(
         self,
-        encoder_kwargs: Dict = None,
-        decoder_kwargs: Dict = None,
-        num_filters: int = None,
+        mode: str = "complete",
+        num_weather: int = None,
+        num_sensors: int = None,
+        num_samples: int = None,
         kernel_size: int = None,
+        num_filters: int = None,
         stride: int = None,
         dropout_prob: float = None,
-        mode: str = "complete",
+        weather_bypass: bool = False,
         base: Dict = None,
     ):
         base = {} if base is None else base
-        super().__init__(base)
-
-        self._encoder_kwargs = {} if encoder_kwargs is None else encoder_kwargs
-        self._decoder_kwargs = {} if decoder_kwargs is None else decoder_kwargs
-
-        # overwrite args
-        self._overwrite_args("num_filters", num_filters)
-        self._overwrite_args("kernel_size", kernel_size)
-        self._overwrite_args("stride", stride)
-        self._overwrite_args("dropout_prob", dropout_prob)
+        super().__init__(weather_bypass=weather_bypass, base=base)
+        self.save_hyperparameters()
 
         logger.debug("Using '%s' auto-encoder", mode)
         self._encoder_class = SequenceEncoder if mode == "sequence" else CompleteEncoder
         self._decoder_class = SequenceDecoder if mode == "sequence" else CompleteDecoder
 
-    def init_encoder(self) -> Module:
-        self._encoder_kwargs["num_features"] = self._meta.num_features_sensors
-        if not self._bypass:
-            self._encoder_kwargs["num_features"] += self._meta.num_features_weather
+        self._encoder = self._encoder_class(**{
+            "num_features": num_weather + num_sensors,
+            "num_samples": num_samples,
+            "kernel_size": kernel_size,
+            "stride": stride,
+            "num_filters": num_filters,
+            "dropout_prob": dropout_prob,
+        })
 
-        self._encoder_kwargs["num_samples"] = self._meta.num_input_sequence
-        return self._encoder_class(**self._encoder_kwargs)
+        self._decoder = self._decoder_class(**{
+            "num_features": num_sensors,
+            "num_samples": self._encoder.latent_size,
+            "kernel_size": kernel_size,
+            "stride": stride,
+            "num_filters": num_filters,
+            "dropout_prob": dropout_prob,
+        })
 
-    def init_decoder(self) -> Module:
-        logger.debug("Latent space size is: %s", self._encoder.latent_size)
-        self._decoder_kwargs["num_features"] = self._meta.num_features_sensors
-        self._decoder_kwargs["num_samples"] = self._encoder.latent_size
-        return self._decoder_class(**self._decoder_kwargs)
-
-    def _overwrite_args(self, key: str, value: Any) -> None:
-        if value is not None:
-            self._encoder_kwargs[key] = value
-            self._decoder_kwargs[key] = value
+        summary(
+            torch.nn.Sequential(self._encoder, self._decoder),
+            input_size=(
+                num_samples,
+                num_weather + num_sensors,
+            ),
+        )
 
     @property
     def target(self) -> str:
