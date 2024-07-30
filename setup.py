@@ -9,7 +9,7 @@ with open(os.path.join("Comprisk", "version.txt"), "r", encoding="UTF-8") as fil
 
 # get readme content
 README = ""
-with open("README", "r", encoding="UTF-8") as file:
+with open("README.md", "r", encoding="UTF-8") as file:
     README = file.read()
 
 # get requirements from conda environment
