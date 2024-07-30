@@ -46,6 +46,12 @@ class DataFrameCache:
         """
         return self._column_names
 
+    @property
+    def columns_sensor(self) -> List[str]:
+        """The column names of the dataframe's sensors (sorted) as list of strings.
+        """
+        return [c for c in self._column_names  if c not in WEATHER_KEYS]
+
     def get(self, path: str, key: str = "norm") -> Tuple[np.array, np.array]:
         """
         Retrieves a DataFrame from the cache.

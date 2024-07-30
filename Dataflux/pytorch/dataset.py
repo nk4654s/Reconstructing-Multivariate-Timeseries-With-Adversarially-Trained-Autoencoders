@@ -60,6 +60,7 @@ class Dataset(torch.utils.data.Dataset):
 
         sensors, weather, tragets = self[0]
         self._meta_factory.set(MetadataTypes.NAMES, self._cache.columns)
+        self._meta_factory.set(MetadataTypes.NAMES_SENSOR, self._cache.columns_sensor)
         self._meta_factory.set(MetadataTypes.SENSOR, sensors.shape[-1])
         self._meta_factory.set(MetadataTypes.WEATHER, weather.shape[-1])
         self._meta_factory.set(MetadataTypes.TARGET, tragets.shape[-1])

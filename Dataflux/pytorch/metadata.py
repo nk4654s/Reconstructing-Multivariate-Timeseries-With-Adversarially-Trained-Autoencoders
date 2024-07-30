@@ -18,6 +18,7 @@ class MetadataTypes(Enum):
     WEATHER = "num_features_weather"
     TARGET = "num_features_targets"
     NAMES = "column_names"
+    NAMES_SENSOR = "column_names_sensors"
     IN_SEQUENCE = "num_input_sequence"
     OUT_SEQUENCE = "num_output_sequence"
 
@@ -40,13 +41,15 @@ class Metadata:
                  num_features_targets: int,
                  num_input_sequence: int,
                  num_output_sequence: int,
-                 column_names: List[str]) -> None:
+                 column_names: List[str],
+                 column_names_sensors: List[str]) -> None:
         self._num_features_sensors = num_features_sensors
         self._num_features_weather = num_features_weather
         self._num_features_targets = num_features_targets
         self._num_input_sequence = num_input_sequence
         self._num_output_sequence = num_output_sequence
         self._column_names = column_names
+        self._column_names_sensors = column_names_sensors
 
     @property
     def column_names(self) -> List[str]:
@@ -56,6 +59,15 @@ class Metadata:
             List[str]: The column names sorted as list of strings.
         """
         return self._column_names
+
+    @property
+    def column_names_sensor(self) -> List[str]:
+        """The column names of the dataset's sensors.
+
+        Returns:
+            List[str]: The column names sorted as list of strings.
+        """
+        return self._column_names_sensors
 
     @property
     def num_features_sensors(self) -> int:
