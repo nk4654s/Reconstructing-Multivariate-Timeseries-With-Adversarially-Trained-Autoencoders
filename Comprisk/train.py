@@ -24,6 +24,7 @@ def cli_main():
     logger.debug("Defining TensorBoard logger for %s", cli.model.__class__.__name__)
     tb_logger = TensorBoardLogger("lightning_logs", name=cli.model.__class__.__name__)
     cli.trainer.logger = tb_logger
+    logger.debug("Using log folder %s", tb_logger.log_dir)
 
     # copy config to tb_logger.logdir
     os.makedirs(tb_logger.log_dir)

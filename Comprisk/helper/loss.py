@@ -1,15 +1,17 @@
 """This module contains various loss functions"""
 from torch import nn
+import torch
 
 
 _loss_register = {
     "MSELoss": nn.MSELoss(),
+    "RMSELoss": lambda y1, y2: torch.sqrt(nn.MSELoss()(y1, y2)),
     "CELoss": nn.CrossEntropyLoss(),
     "L1Loss": nn.L1Loss(),
     "BCELoss": nn.BCELoss(),
     "BCEWithLogitsLoss": nn.BCEWithLogitsLoss(),
     "KLDivLoss": nn.KLDivLoss(),
-    "GaussianNLLLoss": nn.GaussianNLLLoss(),
+    "GaussianNLLLoss": nn.GaussianNLLLoss()
 }
 
 def get_loss_by_name(name: str) -> nn.Module:

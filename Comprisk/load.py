@@ -16,7 +16,12 @@ from Comprisk.cli import CompriskCLI
 
 logger = get_logger(__name__)
 
-# TODO: 4. get model's device and move inputs accordingly
+# TODO: get model's device and move inputs accordingly (expected <1h)
+# FIXME: debug and check if the learning rate finder result is used (expected ~1h)
+# TODO: create docker file which runs the training (expected ~1h)
+# TODO: create cuda enabled conda environment (expected ~1h)
+# TODO: Setup Ubuntu machine for server training with CUDA and docker (expected <1h)
+# TODO: read about bayesian optimization for hyperparameter search with lightning (expected <2h)
 
 
 def cli_main():
@@ -31,7 +36,7 @@ def cli_main():
     checkpoints = get_checkpoints(cli)
 
     # 1. get dataset configuration: start, end, step size (size of input window)
-    model = cli.model.__class__.load_from_checkpoint(checkpoints[-1])
+    model = cli.model.__class__.load_from_checkpoint(os.path.join(base_path, checkpoints[-1]))
     dataset = cli.datamodule.dataset
     meta: Metadata = dataset.get_meta()
 

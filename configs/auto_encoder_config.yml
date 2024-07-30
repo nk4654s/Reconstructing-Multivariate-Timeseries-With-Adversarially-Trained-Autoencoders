@@ -21,13 +21,13 @@ model:
     mode: complete
     # encoder/decoder parameters
     kernel_size: 200
-    num_filters: 32
+    num_filters: 64
     stride: 20
     dropout_prob: 0.2
     weather_bypass: false
     # gerneral parameters
     base:
-      activation: sigmoid
+      activation: tanh
       loss: MSELoss
       optimizer: Adam
       lr: 0.001
@@ -40,8 +40,8 @@ data:
   # configure how to sample from the dataset
   batch_size: 512
   shuffle: true
-  train_size: 0.5
-  validation_size: 0.3
+  train_size: 0.1
+  validation_size: 0.05
   # configure the workers sampling the dataset
   num_workers: 4
   persistent_workers: true

@@ -5,8 +5,6 @@ from typing import List
 import lightning as L
 import torch
 from torch.optim.lr_scheduler import ExponentialLR
-
-from Dataflux.pytorch import Metadata
 from Dataflux.helper import get_logger
 from Comprisk.helper import (
     get_loss_by_name,
@@ -27,7 +25,7 @@ class BaseModel(L.LightningModule):
         lr (float, optional): Initial learning rate. Defaults to 1e-3.
         lr_decay (float, optional): Learning rate dacying factor. Defaults to 0.99.
         monte_carlo (int, optional): Number of Monte-Carlo iterations, higher will be
-        slower but more stable. Defaults to 10.
+        slower but more stable. Defaults to 0 which is disabled.
     """
 
     def __init__(
@@ -37,11 +35,9 @@ class BaseModel(L.LightningModule):
         optimizer: str = "Adam",
         lr: float = 1e-3,
         lr_decay: float = 0.99,
-        monte_carlo: int = 10,
+        monte_carlo: int = 0,
     ) -> None:
         super().__init__()
-
-        self._meta = None
 
         # define training hyperparameters
         self._loss_name = loss
@@ -60,23 +56,6 @@ class BaseModel(L.LightningModule):
     def target(self) -> str:
         """The target name of inputs to predict."""
         return "targets"
-
-    def init(self) -> None:
-        """Use this method, if the model requires post-initialization steps
-        before running the `trainer.fit()` function. If the model requires
-        information about the dataset, use `self.set_meta()`.
-        """
-        return None
-
-    def set_meta(self, meta: Metadata) -> None:
-        """Pass metadata from a dataset to the model, which holds information
-        required to initialize the model's layers. To get the dataset's
-        metadata: `dataset.get_meta()`.
-
-        Args:
-            meta (Metadata): The metadata to be used.
-        """
-        self._meta = meta
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError
@@ -126,15 +105,17 @@ class BaseModel(L.LightningModule):
         Returns:
             torch.Tensor: The predicted output for the given batch, averaged over multiple MCD runs.
         """
-        # enable Monte Carlo Dropout
-        self._dropout.train()
+        if self._mc_iteration > 0:
+            # enable Monte Carlo Dropout
+            self._dropout.train()
 
-        # take average of MC-iterations
-        pred = [
-            self._dropout(self(batch)).unsqueeze(0) for _ in range(self._mc_iteration)
-        ]
-        pred = torch.vstack(pred).mean(dim=0)
-        return pred
+            # take average of MC-iterations
+            pred = [
+                self._dropout(self(batch)).unsqueeze(0) for _ in range(self._mc_iteration)
+            ]
+            pred = torch.vstack(pred).mean(dim=0)
+            return pred
+        return self(batch)
 
     def predict(self, x: torch.tensor, as_array: bool = False) -> List:
         """This method only predicts future steps based on the given curve described by

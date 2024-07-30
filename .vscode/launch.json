@@ -11,7 +11,7 @@
             "program": "load.py",
             "console": "integratedTerminal",
             "args": [
-                "-c", "lightning_logs/AutoEncoder/version_2/config.yaml"
+                "-c", "lightning_logs/AutoEncoder/version_4/config.yml"
             ]
         },
         {

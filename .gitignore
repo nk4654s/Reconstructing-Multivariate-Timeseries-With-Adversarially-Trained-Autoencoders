@@ -1,6 +1,8 @@
 # exclude packages
 src/*
 __pycache__/
+*egg-info/
+requirements.txt
 
 # exclude logs
 lightning_logs/
