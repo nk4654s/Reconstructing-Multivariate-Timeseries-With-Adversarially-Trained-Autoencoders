@@ -104,7 +104,7 @@ class IndexTree:
     def _get_cumulative_size(self, node_list: List[Dict]) -> List[Node]:
         # sort the node_list first, as this hould help building
         # a balanced binary search tree
-        node_list = sorted(node_list, key=lambda _: _["recordings"])
+        node_list = sorted(node_list, key=lambda _: _["day"])
         cum_weights = 0
         weights = []
 
