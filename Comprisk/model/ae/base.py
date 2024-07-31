@@ -1,6 +1,6 @@
 """This module implements a base AutoEncoder class."""
-
 from typing import Dict
+from numpy.core.multiarray import array as array
 import torch
 
 from Dataflux.helper import get_logger

@@ -1,9 +1,10 @@
 """This module implements a base AutoEncoder class."""
 
+from torchinfo import summary as torchsummary
 from typing import Dict
+import numpy as np
 import torch
 
-from torchsummary import summary
 from Dataflux.helper import get_logger
 
 from Comprisk.model.ae.base import AutoEncoderBase
@@ -41,35 +42,46 @@ class AutoEncoder(AutoEncoderBase):
         super().__init__(weather_bypass=weather_bypass, base=base)
         self.save_hyperparameters()
 
+        self._num_weather = num_weather
+        self._num_sensors = num_sensors
+        self._num_samples = num_samples
+
         logger.debug("Using '%s' auto-encoder", mode)
         self._encoder_class = SequenceEncoder if mode == "sequence" else CompleteEncoder
         self._decoder_class = SequenceDecoder if mode == "sequence" else CompleteDecoder
 
-        self._encoder = self._encoder_class(**{
-            "num_features": num_weather + num_sensors,
-            "num_samples": num_samples,
-            "kernel_size": kernel_size,
-            "stride": stride,
-            "num_filters": num_filters,
-            "dropout_prob": dropout_prob,
-        })
-
-        self._decoder = self._decoder_class(**{
-            "num_features": num_sensors,
-            "num_samples": self._encoder.latent_size,
-            "kernel_size": kernel_size,
-            "stride": stride,
-            "num_filters": num_filters,
-            "dropout_prob": dropout_prob,
-        })
-
-        summary(
-            torch.nn.Sequential(self._encoder, self._decoder),
-            input_size=(
-                num_samples,
-                num_weather + num_sensors,
-            ),
+        self._encoder = self._encoder_class(
+            **{
+                "num_features": num_weather + num_sensors,
+                "num_samples": num_samples,
+                "kernel_size": kernel_size,
+                "stride": stride,
+                "num_filters": num_filters,
+                "dropout_prob": dropout_prob,
+            }
         )
+
+        self._decoder = self._decoder_class(
+            **{
+                "num_features": num_sensors,
+                "num_samples": self._encoder.latent_size,
+                "kernel_size": kernel_size,
+                "stride": stride,
+                "num_filters": num_filters,
+                "dropout_prob": dropout_prob,
+            }
+        )
+
+    def summary(self) -> str:
+        input_data = {
+            "sensors": torch.tensor(
+                np.zeros((1, self._num_samples, self._num_sensors), dtype=np.float32)
+            ),
+            "weather": torch.tensor(
+                np.zeros((1, self._num_samples, self._num_weather), dtype=np.float32)
+            ),
+        }
+        return str(torchsummary(self, input_data={"inputs": input_data}))
 
     @property
     def target(self) -> str:

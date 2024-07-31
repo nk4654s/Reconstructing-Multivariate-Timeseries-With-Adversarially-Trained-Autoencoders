@@ -52,6 +52,11 @@ class BaseModel(L.LightningModule):
         self._dropout = torch.nn.Dropout()
         self._mc_iteration = monte_carlo
 
+    def summary(self) -> str:
+        """Returns a summary of the model as string.
+        """
+        raise NotImplementedError
+
     @property
     def target(self) -> str:
         """The target name of inputs to predict."""

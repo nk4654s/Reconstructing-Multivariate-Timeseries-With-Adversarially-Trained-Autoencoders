@@ -38,6 +38,7 @@ setup(
     name="Comprisk",
     entry_points={
         "console_scripts": [
+            "comprisk-summary=Comprisk.summary:cli_main",
             "comprisk-train=Comprisk.train:cli_main",
             "comprisk-load=Comprisk.load:cli_main",
         ]

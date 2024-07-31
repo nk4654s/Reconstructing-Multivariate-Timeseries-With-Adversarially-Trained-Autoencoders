@@ -5,10 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python Debugger: Summary",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "Comprisk/summary.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-c", "configs/auto_encoder_config.yml"
+            ]
+        },
+        {
             "name": "Python Debugger: Load AE",
             "type": "debugpy",
             "request": "launch",
-            "program": "load.py",
+            "program": "Comprisk/load.py",
             "console": "integratedTerminal",
             "args": [
                 "-c", "lightning_logs/AutoEncoder/version_4/config.yml"
@@ -18,7 +28,7 @@
             "name": "Python Debugger: AE",
             "type": "debugpy",
             "request": "launch",
-            "program": "main.py",
+            "program": "Comprisk/main.py",
             "console": "integratedTerminal",
             "args": [
                 "-c",

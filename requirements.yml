@@ -16,10 +16,10 @@ dependencies:
     - pytables
     - lightning
     - torchvision
+    - torchinfo
     - tensorboard
     - mlflow
     - setuptools
     - pip:
         - pdoc
-        - torchsummary
         - "--editable=git+https://github.com/neaxplore/xplore-ai-s3prep#egg=Dataflux"

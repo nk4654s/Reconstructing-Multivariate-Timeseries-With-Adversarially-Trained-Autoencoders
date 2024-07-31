@@ -1,4 +1,5 @@
 """Train a model using a CLI or provide the hyperparameters directly to the CLI."""
+
 import os
 import shutil
 from lightning.pytorch.loggers import TensorBoardLogger
@@ -29,6 +30,12 @@ def cli_main():
     # copy config to tb_logger.logdir
     os.makedirs(tb_logger.log_dir)
     shutil.copyfile(get_config_path(cli), os.path.join(tb_logger.log_dir, "config.yml"))
+
+    # save model summary to log folder
+    with open(
+        os.path.join(tb_logger.log_dir, "summary.txt"), mode="w", encoding="UTF-8"
+    ) as sum_file:
+        sum_file.write(cli.model.summary())
 
     # run methods before fit
     logger.debug("CompriskCLI prepare training.")
