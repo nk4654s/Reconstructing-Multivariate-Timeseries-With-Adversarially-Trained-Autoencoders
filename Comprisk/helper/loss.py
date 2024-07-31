@@ -1,4 +1,4 @@
-"""This module contains various loss functions"""
+"""This module contains various loss functions."""
 from torch import nn
 import torch
 
@@ -18,13 +18,13 @@ def get_loss_by_name(name: str) -> nn.Module:
     """Get loss function by name.
 
     Args:
-        name (str): Name of the loss function to be retrieved
+        name (str): Name of the loss function to be retrieved.
 
     Raises:
-        ValueError: If the loss is unknown
+        ValueError: If the loss is unknown.
         
     Returns:
-        nn.Module: Loss function
+        nn.Module: Loss function.
     """
     if name not in _loss_register:
         raise ValueError(f"Unknown loss {name}")

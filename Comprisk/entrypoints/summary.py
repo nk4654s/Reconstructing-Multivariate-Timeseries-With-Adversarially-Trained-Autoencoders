@@ -1,4 +1,5 @@
-"""Train a model using a CLI or provide the hyperparameters directly to the CLI."""
+"""This module trains a model using a custom CLI. The **Comprisk.cli.CompriskCLI**
+can parse hyperparameters given in the terminal or as `yaml`-file."""
 from Dataflux.helper import get_logger
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule

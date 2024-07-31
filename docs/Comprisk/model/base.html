@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.1">
+<title>Comprisk.model.base API documentation</title>
+<meta name="description" content="This module contains the base model.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>Comprisk.model.base</code></h1>
+</header>
+<section id="section-intro">
+<p>This module contains the base model.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="Comprisk.model.base.BaseModel"><code class="flex name class">
+<span>class <span class="ident">BaseModel</span></span>
+<span>(</span><span>loss: str = 'MSELoss', activation: str = 'sigmoid', optimizer: str = 'Adam', lr: float = 0.001, lr_decay: float = 0.99, monte_carlo: int = 0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>BaseModel class of any neural network predicting time series.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>loss</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Loss function to use. Defaults to "MSELoss".</dd>
+<dt><strong><code>activation</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Activation function to use. Defaults to "sigmoid"</dd>
+<dt><strong><code>optimizer</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Optimizer to use. Defaults to "Adam".</dd>
+<dt><strong><code>lr</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>Initial learning rate. Defaults to 1e-3.</dd>
+<dt><strong><code>lr_decay</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>Learning rate dacying factor. Defaults to 0.99.</dd>
+<dt><strong><code>monte_carlo</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Number of Monte-Carlo iterations, higher will be</dd>
+</dl>
+<p>slower but more stable. Defaults to 0 which is disabled.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class BaseModel(L.LightningModule):
+    &#34;&#34;&#34;BaseModel class of any neural network predicting time series.
+
+    Args:
+        loss (str, optional): Loss function to use. Defaults to &#34;MSELoss&#34;.
+        activation (str, optional): Activation function to use. Defaults to &#34;sigmoid&#34;
+        optimizer (str, optional): Optimizer to use. Defaults to &#34;Adam&#34;.
+        lr (float, optional): Initial learning rate. Defaults to 1e-3.
+        lr_decay (float, optional): Learning rate dacying factor. Defaults to 0.99.
+        monte_carlo (int, optional): Number of Monte-Carlo iterations, higher will be
+        slower but more stable. Defaults to 0 which is disabled.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        loss: str = &#34;MSELoss&#34;,
+        activation: str = &#34;sigmoid&#34;,
+        optimizer: str = &#34;Adam&#34;,
+        lr: float = 1e-3,
+        lr_decay: float = 0.99,
+        monte_carlo: int = 0,
+    ) -&gt; None:
+        super().__init__()
+
+        # define training hyperparameters
+        self._loss_name = loss
+        self._loss = get_loss_by_name(loss)
+        self._activation = get_activation_from_string(activation)
+        self._optim = optimizer
+        self._lr_scheduler = ExponentialLR
+        self._lr_decay = lr_decay
+        self.lr = lr
+
+        # define stable predict-step parameters
+        self._dropout = torch.nn.Dropout()
+        self._mc_iteration = monte_carlo
+
+    def summary(self) -&gt; str:
+        &#34;&#34;&#34;Returns a summary of the model as string.
+        &#34;&#34;&#34;
+        raise NotImplementedError
+
+    @property
+    def target(self) -&gt; str:
+        &#34;&#34;&#34;The target name of inputs to predict.&#34;&#34;&#34;
+        return &#34;targets&#34;
+
+    def forward(self, batch: torch.Tensor) -&gt; torch.Tensor:
+        raise NotImplementedError
+
+    def on_train_epoch_start(self) -&gt; None:
+        super().on_train_epoch_start()
+        self.log(&#34;epoch/lr&#34;, self._lr_scheduler.get_last_lr()[-1])
+
+    def training_step(self, batch: torch.Tensor, **kwargs) -&gt; torch.Tensor:
+        y_hat = self(batch)
+        loss = self._loss(y_hat, batch[self.target])
+        self.log(f&#34;train/{self._loss_name}&#34;, loss)
+        return loss
+
+    def test_step(self, batch: torch.Tensor, **kwargs) -&gt; torch.Tensor:
+        y_hat = self(batch)
+        loss = self._loss(y_hat, batch[self.target])
+        self.log(f&#34;test/{self._loss_name}&#34;, loss)
+        return loss
+
+    def validation_step(self, batch: torch.Tensor, **kwargs) -&gt; torch.Tensor:
+        y_hat = self(batch)
+        loss = self._loss(y_hat, batch[self.target])
+        self.log(f&#34;validate/{self._loss_name}&#34;, loss)
+        return loss
+
+    def configure_optimizers(self) -&gt; torch.optim.Optimizer:
+        # init optimizer if it&#39;s a string
+        if isinstance(self._optim, str):
+            logger.debug(&#34;Initialize optimizer: %s&#34;, self._optim)
+            self._optim = get_optimizer_by_name(self._optim)(
+                self.parameters(), lr=self.lr
+            )
+            self._lr_scheduler = self._lr_scheduler(self._optim, gamma=0.99)
+        return [self._optim], [{&#34;scheduler&#34;: self._lr_scheduler, &#34;interval&#34;: &#34;epoch&#34;}]
+
+    def predict_step(self, batch: torch.Tensor) -&gt; torch.Tensor:
+        &#34;&#34;&#34;
+        This method is used to make predictions on a batch of data during inference. It
+        employs a Monte Carlo Dropout (MCD) approach, which involves randomly disabling
+        neurons in the network during prediction. The output of the network is then
+        averaged over multiple runs with different to output a more stable prediction.
+
+        Args:
+            batch (torch.Tensor): A tensor containing the input data.
+
+        Returns:
+            torch.Tensor: The predicted output for the given batch, averaged over multiple MCD runs.
+        &#34;&#34;&#34;
+        if self._mc_iteration &gt; 0:
+            # enable Monte Carlo Dropout
+            self._dropout.train()
+
+            # take average of MC-iterations
+            pred = [
+                self._dropout(self(batch)).unsqueeze(0) for _ in range(self._mc_iteration)
+            ]
+            pred = torch.vstack(pred).mean(dim=0)
+            return pred
+        return self(batch)
+
+    def predict(self, x: torch.tensor, as_array: bool = False) -&gt; List:
+        &#34;&#34;&#34;This method only predicts future steps based on the given curve described by
+        the datapoints `x`. Each step will be predicted using `self.predict_step(x)` which
+        employs Monte Carlo Dropout.
+
+        Args:
+            x (torch.tensor): The datapoints.
+            as_array (bool, optional): Returns the prediction as np.array. Defaults to False.
+
+        Returns:
+            List: The prediction.
+        &#34;&#34;&#34;
+        with torch.no_grad():
+            out = self.predict_step(x)
+            if as_array:
+                out = out.cpu().numpy()
+
+        return out</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>lightning.pytorch.core.module.LightningModule</li>
+<li>lightning.fabric.utilities.device_dtype_mixin._DeviceDtypeModuleMixin</li>
+<li>lightning.pytorch.core.mixins.hparams_mixin.HyperparametersMixin</li>
+<li>lightning.pytorch.core.hooks.ModelHooks</li>
+<li>lightning.pytorch.core.hooks.DataHooks</li>
+<li>lightning.pytorch.core.hooks.CheckpointHooks</li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="Comprisk.model.ae.base.AutoEncoderBase" href="ae/base.html#Comprisk.model.ae.base.AutoEncoderBase">AutoEncoderBase</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="Comprisk.model.base.BaseModel.target"><code class="name">prop <span class="ident">target</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The target name of inputs to predict.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def target(self) -&gt; str:
+    &#34;&#34;&#34;The target name of inputs to predict.&#34;&#34;&#34;
+    return &#34;targets&#34;</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="Comprisk.model.base.BaseModel.configure_optimizers"><code class="name flex">
+<span>def <span class="ident">configure_optimizers</span></span>(<span>self) ‑> torch.optim.optimizer.Optimizer</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Choose what optimizers and learning-rate schedulers to use in your optimization. Normally you'd need one.
+But in the case of GANs or similar you might have multiple. Optimization with multiple optimizers only works in
+the manual optimization mode.</p>
+<h2 id="return">Return</h2>
+<p>Any of these 6 options.</p>
+<ul>
+<li><strong>Single optimizer</strong>.</li>
+<li><strong>List or Tuple</strong> of optimizers.</li>
+<li><strong>Two lists</strong> - The first list has multiple optimizers, and the second has multiple LR schedulers
+(or multiple <code>lr_scheduler_config</code>).</li>
+<li><strong>Dictionary</strong>, with an <code>"optimizer"</code> key, and (optionally) a <code>"lr_scheduler"</code>
+key whose value is a single LR scheduler or <code>lr_scheduler_config</code>.</li>
+<li><strong>None</strong> - Fit will run without any optimizer.</li>
+</ul>
+<p>The <code>lr_scheduler_config</code> is a dictionary which contains the scheduler and its associated configuration.
+The default configuration is shown below.</p>
+<p>.. code-block:: python</p>
+<pre><code>lr_scheduler_config = {
+    # REQUIRED: The scheduler instance
+    "scheduler": lr_scheduler,
+    # The unit of the scheduler's step size, could also be 'step'.
+    # 'epoch' updates the scheduler on epoch end whereas 'step'
+    # updates it after a optimizer update.
+    "interval": "epoch",
+    # How many epochs/steps should pass between calls to
+    # &lt;code&gt;scheduler.step()&lt;/code&gt;. 1 corresponds to updating the learning
+    # rate after every epoch/step.
+    "frequency": 1,
+    # Metric to to monitor for schedulers like &lt;code&gt;ReduceLROnPlateau&lt;/code&gt;
+    "monitor": "val_loss",
+    # If set to &lt;code&gt;True&lt;/code&gt;, will enforce that the value specified 'monitor'
+    # is available when the scheduler is updated, thus stopping
+    # training if not found. If set to &lt;code&gt;False&lt;/code&gt;, it will only produce a warning
+    "strict": True,
+    # If using the &lt;code&gt;LearningRateMonitor&lt;/code&gt; callback to monitor the
+    # learning rate progress, this keyword can be used to specify
+    # a custom logged name
+    "name": None,
+}
+</code></pre>
+<p>When there are schedulers in which the <code>.step()</code> method is conditioned on a value, such as the
+:class:<code>torch.optim.lr_scheduler.ReduceLROnPlateau</code> scheduler, Lightning requires that the
+<code>lr_scheduler_config</code> contains the keyword <code>"monitor"</code> set to the metric name that the scheduler
+should be conditioned on.</p>
+<div class="admonition testcode">
+<p class="admonition-title">Testcode</p>
+<h1 id="the-reducelronplateau-scheduler-requires-a-monitor">The ReduceLROnPlateau scheduler requires a monitor</h1>
+<p>def configure_optimizers(self):
+optimizer = Adam(&hellip;)
+return {
+"optimizer": optimizer,
+"lr_scheduler": {
+"scheduler": ReduceLROnPlateau(optimizer, &hellip;),
+"monitor": "metric_to_track",
+"frequency": "indicates how often the metric is updated",
+# If "monitor" references validation metrics, then "frequency" should be set to a
+# multiple of "trainer.check_val_every_n_epoch".
+},
+}</p>
+<h1 id="in-the-case-of-two-optimizers-only-one-using-the-reducelronplateau-scheduler">In the case of two optimizers, only one using the ReduceLROnPlateau scheduler</h1>
+<p>def configure_optimizers(self):
+optimizer1 = Adam(&hellip;)
+optimizer2 = SGD(&hellip;)
+scheduler1 = ReduceLROnPlateau(optimizer1, &hellip;)
+scheduler2 = LambdaLR(optimizer2, &hellip;)
+return (
+{
+"optimizer": optimizer1,
+"lr_scheduler": {
+"scheduler": scheduler1,
+"monitor": "metric_to_track",
+},
+},
+{"optimizer": optimizer2, "lr_scheduler": scheduler2},
+)</p>
+</div>
+<p>Metrics can be made available to monitor by simply logging it using
+<code>self.log('metric_to_track', metric_val)</code> in your :class:<code>~lightning.pytorch.core.LightningModule</code>.</p>
+<h2 id="note">Note</h2>
+<p>Some things to know:</p>
+<ul>
+<li>Lightning calls <code>.backward()</code> and <code>.step()</code> automatically in case of automatic optimization.</li>
+<li>If a learning rate scheduler is specified in <code>configure_optimizers()</code> with key
+<code>"interval"</code> (default "epoch") in the scheduler configuration, Lightning will call
+the scheduler's <code>.step()</code> method automatically in case of automatic optimization.</li>
+<li>If you use 16-bit precision (<code>precision=16</code>), Lightning will automatically handle the optimizer.</li>
+<li>If you use :class:<code>torch.optim.LBFGS</code>, Lightning handles the closure function automatically for you.</li>
+<li>If you use multiple optimizers, you will have to switch to 'manual optimization' mode and step them
+yourself.</li>
+<li>If you need to control how often the optimizer steps, override the :meth:<code>optimizer_step</code> hook.</li>
+</ul></div>
+</dd>
+<dt id="Comprisk.model.base.BaseModel.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, batch: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Same as :meth:<code>torch.nn.Module.forward</code>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>*args</code></strong></dt>
+<dd>Whatever you decide to pass into the forward method.</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Keyword arguments are also possible.</dd>
+</dl>
+<h2 id="return">Return</h2>
+<p>Your model's output</p></div>
+</dd>
+<dt id="Comprisk.model.base.BaseModel.on_train_epoch_start"><code class="name flex">
+<span>def <span class="ident">on_train_epoch_start</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Called in the training loop at the very beginning of the epoch.</p></div>
+</dd>
+<dt id="Comprisk.model.base.BaseModel.predict"><code class="name flex">
+<span>def <span class="ident">predict</span></span>(<span>self, x: <built-in method tensor of type object at 0x108fe0d00>, as_array: bool = False) ‑> List</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This method only predicts future steps based on the given curve described by
+the datapoints <code>x</code>. Each step will be predicted using <code>self.predict_step(x)</code> which
+employs Monte Carlo Dropout.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>x</code></strong> :&ensp;<code>torch.tensor</code></dt>
+<dd>The datapoints.</dd>
+<dt><strong><code>as_array</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Returns the prediction as np.array. Defaults to False.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List</code></dt>
+<dd>The prediction.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.model.base.BaseModel.predict_step"><code class="name flex">
+<span>def <span class="ident">predict_step</span></span>(<span>self, batch: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This method is used to make predictions on a batch of data during inference. It
+employs a Monte Carlo Dropout (MCD) approach, which involves randomly disabling
+neurons in the network during prediction. The output of the network is then
+averaged over multiple runs with different to output a more stable prediction.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>batch</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>A tensor containing the input data.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>torch.Tensor</code></dt>
+<dd>The predicted output for the given batch, averaged over multiple MCD runs.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.model.base.BaseModel.summary"><code class="name flex">
+<span>def <span class="ident">summary</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a summary of the model as string.</p></div>
+</dd>
+<dt id="Comprisk.model.base.BaseModel.test_step"><code class="name flex">
+<span>def <span class="ident">test_step</span></span>(<span>self, batch: torch.Tensor, **kwargs) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Operates on a single batch of data from the test set. In this step you'd normally generate examples or
+calculate anything of interest such as accuracy.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>batch</code></strong></dt>
+<dd>The output of your data iterable, normally a :class:<code>~torch.utils.data.DataLoader</code>.</dd>
+<dt><strong><code>batch_idx</code></strong></dt>
+<dd>The index of this batch.</dd>
+<dt><strong><code>dataloader_idx</code></strong></dt>
+<dd>The index of the dataloader that produced this batch.
+(only if multiple dataloaders used)</dd>
+</dl>
+<h2 id="return">Return</h2>
+<ul>
+<li>:class:<code>~torch.Tensor</code> - The loss tensor</li>
+<li><code>dict</code> - A dictionary. Can include any keys, but must include the key <code>'loss'</code>.</li>
+<li><code>None</code> - Skip to the next batch.</li>
+</ul>
+<p>.. code-block:: python</p>
+<pre><code># if you have one test dataloader:
+def test_step(self, batch, batch_idx): ...
+
+
+# if you have multiple test dataloaders:
+def test_step(self, batch, batch_idx, dataloader_idx=0): ...
+</code></pre>
+<p>Examples::</p>
+<pre><code># CASE 1: A single test dataset
+def test_step(self, batch, batch_idx):
+    x, y = batch
+
+    # implement your own
+    out = self(x)
+    loss = self.loss(out, y)
+
+    # log 6 example images
+    # or generated text... or whatever
+    sample_imgs = x[:6]
+    grid = torchvision.utils.make_grid(sample_imgs)
+    self.logger.experiment.add_image('example_images', grid, 0)
+
+    # calculate acc
+    labels_hat = torch.argmax(out, dim=1)
+    test_acc = torch.sum(y == labels_hat).item() / (len(y) * 1.0)
+
+    # log the outputs!
+    self.log_dict({'test_loss': loss, 'test_acc': test_acc})
+</code></pre>
+<p>If you pass in multiple test dataloaders, :meth:<code>test_step</code> will have an additional argument. We recommend
+setting the default value of 0 so that you can quickly switch between single and multiple dataloaders.</p>
+<p>.. code-block:: python</p>
+<pre><code># CASE 2: multiple test dataloaders
+def test_step(self, batch, batch_idx, dataloader_idx=0):
+    # dataloader_idx tells you which dataset this is.
+    ...
+</code></pre>
+<h2 id="note">Note</h2>
+<p>If you don't need to test you don't need to implement this method.</p>
+<h2 id="note_1">Note</h2>
+<p>When the :meth:<code>test_step</code> is called, the model has been put in eval mode and
+PyTorch gradients have been disabled. At the end of the test epoch, the model goes back
+to training mode and gradients are enabled.</p></div>
+</dd>
+<dt id="Comprisk.model.base.BaseModel.training_step"><code class="name flex">
+<span>def <span class="ident">training_step</span></span>(<span>self, batch: torch.Tensor, **kwargs) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Here you compute and return the training loss and some additional metrics for e.g. the progress bar or
+logger.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>batch</code></strong></dt>
+<dd>The output of your data iterable, normally a :class:<code>~torch.utils.data.DataLoader</code>.</dd>
+<dt><strong><code>batch_idx</code></strong></dt>
+<dd>The index of this batch.</dd>
+<dt><strong><code>dataloader_idx</code></strong></dt>
+<dd>The index of the dataloader that produced this batch.
+(only if multiple dataloaders used)</dd>
+</dl>
+<h2 id="return">Return</h2>
+<ul>
+<li>:class:<code>~torch.Tensor</code> - The loss tensor</li>
+<li><code>dict</code> - A dictionary which can include any keys, but must include the key <code>'loss'</code> in the case of
+automatic optimization.</li>
+<li><code>None</code> - In automatic optimization, this will skip to the next batch (but is not supported for
+multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
+the loss is not required.</li>
+</ul>
+<p>In this step you'd normally do the forward pass and calculate the loss for a batch.
+You can also do fancier things like multiple forward passes or something model specific.</p>
+<p>Example::</p>
+<pre><code>def training_step(self, batch, batch_idx):
+    x, y, z = batch
+    out = self.encoder(x)
+    loss = self.loss(out, x)
+    return loss
+</code></pre>
+<p>To use multiple optimizers, you can switch to 'manual optimization' and control their stepping:</p>
+<p>.. code-block:: python</p>
+<pre><code>def __init__(self):
+    super().__init__()
+    self.automatic_optimization = False
+
+
+# Multiple optimizers (e.g.: GANs)
+def training_step(self, batch, batch_idx):
+    opt1, opt2 = self.optimizers()
+
+    # do training_step with encoder
+    ...
+    opt1.step()
+    # do training_step with decoder
+    ...
+    opt2.step()
+</code></pre>
+<h2 id="note">Note</h2>
+<p>When <code>accumulate_grad_batches</code> &gt; 1, the loss returned here will be automatically
+normalized by <code>accumulate_grad_batches</code> internally.</p></div>
+</dd>
+<dt id="Comprisk.model.base.BaseModel.validation_step"><code class="name flex">
+<span>def <span class="ident">validation_step</span></span>(<span>self, batch: torch.Tensor, **kwargs) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Operates on a single batch of data from the validation set. In this step you'd might generate examples or
+calculate anything of interest like accuracy.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>batch</code></strong></dt>
+<dd>The output of your data iterable, normally a :class:<code>~torch.utils.data.DataLoader</code>.</dd>
+<dt><strong><code>batch_idx</code></strong></dt>
+<dd>The index of this batch.</dd>
+<dt><strong><code>dataloader_idx</code></strong></dt>
+<dd>The index of the dataloader that produced this batch.
+(only if multiple dataloaders used)</dd>
+</dl>
+<h2 id="return">Return</h2>
+<ul>
+<li>:class:<code>~torch.Tensor</code> - The loss tensor</li>
+<li><code>dict</code> - A dictionary. Can include any keys, but must include the key <code>'loss'</code>.</li>
+<li><code>None</code> - Skip to the next batch.</li>
+</ul>
+<p>.. code-block:: python</p>
+<pre><code># if you have one val dataloader:
+def validation_step(self, batch, batch_idx): ...
+
+
+# if you have multiple val dataloaders:
+def validation_step(self, batch, batch_idx, dataloader_idx=0): ...
+</code></pre>
+<p>Examples::</p>
+<pre><code># CASE 1: A single validation dataset
+def validation_step(self, batch, batch_idx):
+    x, y = batch
+
+    # implement your own
+    out = self(x)
+    loss = self.loss(out, y)
+
+    # log 6 example images
+    # or generated text... or whatever
+    sample_imgs = x[:6]
+    grid = torchvision.utils.make_grid(sample_imgs)
+    self.logger.experiment.add_image('example_images', grid, 0)
+
+    # calculate acc
+    labels_hat = torch.argmax(out, dim=1)
+    val_acc = torch.sum(y == labels_hat).item() / (len(y) * 1.0)
+
+    # log the outputs!
+    self.log_dict({'val_loss': loss, 'val_acc': val_acc})
+</code></pre>
+<p>If you pass in multiple val dataloaders, :meth:<code>validation_step</code> will have an additional argument. We recommend
+setting the default value of 0 so that you can quickly switch between single and multiple dataloaders.</p>
+<p>.. code-block:: python</p>
+<pre><code># CASE 2: multiple validation dataloaders
+def validation_step(self, batch, batch_idx, dataloader_idx=0):
+    # dataloader_idx tells you which dataset this is.
+    ...
+</code></pre>
+<h2 id="note">Note</h2>
+<p>If you don't need to validate you don't need to implement this method.</p>
+<h2 id="note_1">Note</h2>
+<p>When the :meth:<code>validation_step</code> is called, the model has been put in eval mode
+and PyTorch gradients have been disabled. At the end of validation,
+the model goes back to training mode and gradients are enabled.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="Comprisk.model" href="index.html">Comprisk.model</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="Comprisk.model.base.BaseModel" href="#Comprisk.model.base.BaseModel">BaseModel</a></code></h4>
+<ul class="">
+<li><code><a title="Comprisk.model.base.BaseModel.configure_optimizers" href="#Comprisk.model.base.BaseModel.configure_optimizers">configure_optimizers</a></code></li>
+<li><code><a title="Comprisk.model.base.BaseModel.forward" href="#Comprisk.model.base.BaseModel.forward">forward</a></code></li>
+<li><code><a title="Comprisk.model.base.BaseModel.on_train_epoch_start" href="#Comprisk.model.base.BaseModel.on_train_epoch_start">on_train_epoch_start</a></code></li>
+<li><code><a title="Comprisk.model.base.BaseModel.predict" href="#Comprisk.model.base.BaseModel.predict">predict</a></code></li>
+<li><code><a title="Comprisk.model.base.BaseModel.predict_step" href="#Comprisk.model.base.BaseModel.predict_step">predict_step</a></code></li>
+<li><code><a title="Comprisk.model.base.BaseModel.summary" href="#Comprisk.model.base.BaseModel.summary">summary</a></code></li>
+<li><code><a title="Comprisk.model.base.BaseModel.target" href="#Comprisk.model.base.BaseModel.target">target</a></code></li>
+<li><code><a title="Comprisk.model.base.BaseModel.test_step" href="#Comprisk.model.base.BaseModel.test_step">test_step</a></code></li>
+<li><code><a title="Comprisk.model.base.BaseModel.training_step" href="#Comprisk.model.base.BaseModel.training_step">training_step</a></code></li>
+<li><code><a title="Comprisk.model.base.BaseModel.validation_step" href="#Comprisk.model.base.BaseModel.validation_step">validation_step</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
+</footer>
+</body>
+</html>

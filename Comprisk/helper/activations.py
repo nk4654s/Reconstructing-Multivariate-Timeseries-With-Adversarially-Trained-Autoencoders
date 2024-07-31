@@ -9,10 +9,7 @@ _str_to_activation = {"relu": torch.relu, "sigmoid": torch.sigmoid, "tanh": torc
 
 def get_activation_from_string(activation_str: str) -> Callable:
     """Returns an activation function corresponding to the provided string. Available
-    activation functions are:
-    - relu
-    - sigmoid
-    - tanh
+    activation functions are: `["relu", "sigmoid", "tanh"]`
 
     Args:
         activation_str (str): The name of the activation function.

@@ -1,4 +1,8 @@
-"""Load a model using a CLI."""
+"""This module loads a model using the **Comprisk.cli.CompriskCLI** and
+applys the loaded model on the configured dataset. The prediction will be
+safed next to the model's log folder as graph comparing prediction
+vs. target."""
+
 import os
 import torch
 import pandas as pd
@@ -22,6 +26,7 @@ logger = get_logger(__name__)
 # TODO: create cuda enabled conda environment (expected ~1h)
 # TODO: Setup Ubuntu machine for server training with CUDA and docker (expected <1h)
 # TODO: read about bayesian optimization for hyperparameter search with lightning (expected <2h)
+# TODO: model summary as own entry point (expected <1h)
 
 
 def cli_main():
@@ -36,7 +41,9 @@ def cli_main():
     checkpoints = get_checkpoints(cli)
 
     # 1. get dataset configuration: start, end, step size (size of input window)
-    model = cli.model.__class__.load_from_checkpoint(os.path.join(base_path, checkpoints[-1]))
+    model = cli.model.__class__.load_from_checkpoint(
+        os.path.join(base_path, checkpoints[-1])
+    )
     dataset = cli.datamodule.dataset
     meta: Metadata = dataset.get_meta()
 
@@ -52,7 +59,9 @@ def cli_main():
         weather = torch.unsqueeze(weather, dim=0)
 
         # 3. pass sample into model, store prediction in list/numpy/dataframe
-        target = model.predict({"sensors": sensors, "weather": weather}, as_array=True)[0]
+        target = model.predict({"sensors": sensors, "weather": weather}, as_array=True)[
+            0
+        ]
 
         for i, key in enumerate(meta.column_names_sensor):
             predicted[key] += list(target[:, i])

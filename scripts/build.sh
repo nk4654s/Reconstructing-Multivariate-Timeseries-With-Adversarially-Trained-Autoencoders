@@ -1,17 +1,21 @@
 DATAFLUX_DIR="../Dataflux"
 
-if [ -d "$DIRECTORY" ]; then
-    echo "Build 'Dataflux' pip package."
-    pip install -e ../Dataflux > $PIP_BUILD
+printf "Build 'Dataflux' pip package... "
+if [ -d "$DATAFLUX_DIR" ]; then
+    pip install -e ../Dataflux > /dev/null 2>&1
+    printf "Done.\n"
 else
-    echo "Can not build 'Dataflux'. Make sure to have the code next to this repository."
+    printf "WARNING: Can not build '$DATAFLUX_DIR'. Make sure to have the code next to this repository.\n"
 fi
 
-echo "Update conda environment"
-conda env update -f requrements.yml
+printf "Update conda environment... "
+conda env update -f requrements.yml > /dev/null 2>&1
+printf "Done.\n"
 
-echo "Generate documentation."
-pdoc --html . -o docs
+printf "Generate documentation... "
+pdoc --html . -o docs --force > /dev/null 2>&1
+printf "Done.\n"
 
-echo "Build 'Comprisk' pip package."
-pip install -e . > $PIP_BUILD
+printf "Build 'Comprisk' pip package... "
+pip install -e . > /dev/null 2>&1
+printf "Done.\n"

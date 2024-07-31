@@ -38,9 +38,9 @@ setup(
     name="Comprisk",
     entry_points={
         "console_scripts": [
-            "comprisk-summary=Comprisk.summary:cli_main",
-            "comprisk-train=Comprisk.train:cli_main",
-            "comprisk-load=Comprisk.load:cli_main",
+            "comprisk-summary=Comprisk.entrypoints.summary:cli_main",
+            "comprisk-train=Comprisk.entrypoints.train:cli_main",
+            "comprisk-load=Comprisk.entrypoints.load:cli_main",
         ]
     },
     packages=find_packages(include=[

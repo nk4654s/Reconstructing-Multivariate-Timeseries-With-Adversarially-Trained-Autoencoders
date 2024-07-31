@@ -1,4 +1,4 @@
-"""Train a model using a CLI or provide the hyperparameters directly to the CLI."""
+"""This module creates a model summary and plots it."""
 
 import os
 import shutil

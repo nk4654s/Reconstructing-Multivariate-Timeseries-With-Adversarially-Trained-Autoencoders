@@ -1,4 +1,4 @@
-"""Module loads utilities, e.g. the config manager instance."""
+"""Module loads utilities, e.g. functions to navigate the folder structure."""
 from .loss import get_loss_by_name
 from .optimizer import get_optimizer_by_name
 from .activations import get_activation_from_string

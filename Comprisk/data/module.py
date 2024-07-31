@@ -1,6 +1,9 @@
-"""This module manages multiple datasets and loads them in the required training stages."""
+"""This module manages multiple datasets and loads them in the required
+training stages. Moreover, the module relies on the `Dataflux` package
+which downloads and pre-processes a dataset. Also, the `Dataflux`
+package provides classes and methods to load a processed dataset and
+to sample as efficient as possible."""
 
-from typing import Dict
 import lightning as L
 from lightning.pytorch.utilities.combined_loader import CombinedLoader
 from torch.utils.data import DataLoader
@@ -11,12 +14,16 @@ from Dataflux.pytorch import RandomBatchSampler as RBS
 
 class DataModule(L.LightningDataModule):
     """
-    A PyTorch Lightning DataModule for loading and processing data.
+    A PyTorch Lightning DataModule for loading and processing data. This class
+    uses the `Dataflux.pytorch` module to load a dataset and the `torch.utils.data`
+    DataLoader to sample data using multiple threads.
 
     Args:
-        path (str): Path to the dataset folder.
-        input_sequence (int): Sequence length of the input sequence.
-        output_sequence (int): Sequence length of the output sequence.
+        path (str): Path to the dataset root folder. The folder must contain
+            many `pandas.DataFrames` stored as `HDF5` files next to a sub-folder
+            `metadata` which contains the dataset's information.
+        input_sequence (int): The input sequence length of one sample.
+        output_sequence (int): The output sequence length of one sample.
         skip (int): Skip every n-th sample in the dataset.
         batch_size (int): Batch size of the model's input.
         shuffle (bool): Whether to shuffle the dataset or not.

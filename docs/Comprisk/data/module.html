@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.1">
+<title>Comprisk.data.module API documentation</title>
+<meta name="description" content="This module manages multiple datasets and loads them in the required
+training stages. Moreover, the module relies on the `Dataflux` package
+which …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>Comprisk.data.module</code></h1>
+</header>
+<section id="section-intro">
+<p>This module manages multiple datasets and loads them in the required
+training stages. Moreover, the module relies on the <code>Dataflux</code> package
+which downloads and pre-processes a dataset. Also, the <code>Dataflux</code>
+package provides classes and methods to load a processed dataset and
+to sample as efficient as possible.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="Comprisk.data.module.DataModule"><code class="flex name class">
+<span>class <span class="ident">DataModule</span></span>
+<span>(</span><span>path: str = None, input_sequence: int = 1, output_sequence: int = 1, skip: int = 1, batch_size: int = 1, shuffle: bool = True, train_size: float = 0.7, validation_size: float = 0.2, num_workers: int = 1, persistent_workers: bool = True, pin_memory: bool = True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A PyTorch Lightning DataModule for loading and processing data. This class
+uses the <code>Dataflux.pytorch</code> module to load a dataset and the <code>torch.utils.data</code>
+DataLoader to sample data using multiple threads.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the dataset root folder. The folder must contain
+many <code>pandas.DataFrames</code> stored as <code>HDF5</code> files next to a sub-folder
+<code>metadata</code> which contains the dataset's information.</dd>
+<dt><strong><code>input_sequence</code></strong> :&ensp;<code>int</code></dt>
+<dd>The input sequence length of one sample.</dd>
+<dt><strong><code>output_sequence</code></strong> :&ensp;<code>int</code></dt>
+<dd>The output sequence length of one sample.</dd>
+<dt><strong><code>skip</code></strong> :&ensp;<code>int</code></dt>
+<dd>Skip every n-th sample in the dataset.</dd>
+<dt><strong><code>batch_size</code></strong> :&ensp;<code>int</code></dt>
+<dd>Batch size of the model's input.</dd>
+<dt><strong><code>shuffle</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to shuffle the dataset or not.</dd>
+<dt><strong><code>train_size</code></strong> :&ensp;<code>float</code></dt>
+<dd>Percentage of the dataset to be used for training.</dd>
+<dt><strong><code>validation_size</code></strong> :&ensp;<code>float</code></dt>
+<dd>Percentage of the dataset to be used for validation.</dd>
+<dt><strong><code>num_workers</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of workers to use in data loading.</dd>
+<dt><strong><code>persist</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to persist the dataset or not.</dd>
+<dt><strong><code>pin_memory</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to pin memory or not in data loading.</dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<p>prepare_data_per_node:
+If True, each LOCAL_RANK=0 will call prepare data.
+Otherwise only NODE_RANK=0, LOCAL_RANK=0 will prepare data.
+allow_zero_length_dataloader_with_multiple_devices:
+If True, dataloader with zero length within local rank is allowed.
+Default value is False.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DataModule(L.LightningDataModule):
+    &#34;&#34;&#34;
+    A PyTorch Lightning DataModule for loading and processing data. This class
+    uses the `Dataflux.pytorch` module to load a dataset and the `torch.utils.data`
+    DataLoader to sample data using multiple threads.
+
+    Args:
+        path (str): Path to the dataset root folder. The folder must contain
+            many `pandas.DataFrames` stored as `HDF5` files next to a sub-folder
+            `metadata` which contains the dataset&#39;s information.
+        input_sequence (int): The input sequence length of one sample.
+        output_sequence (int): The output sequence length of one sample.
+        skip (int): Skip every n-th sample in the dataset.
+        batch_size (int): Batch size of the model&#39;s input.
+        shuffle (bool): Whether to shuffle the dataset or not.
+        train_size (float): Percentage of the dataset to be used for training.
+        validation_size (float): Percentage of the dataset to be used for validation.
+        num_workers (int): Number of workers to use in data loading.
+        persist (bool): Whether to persist the dataset or not.
+        pin_memory (bool): Whether to pin memory or not in data loading.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        path: str = None,
+        input_sequence: int = 1,
+        output_sequence: int = 1,
+        skip: int = 1,
+        batch_size: int = 1,
+        shuffle: bool = True,
+        train_size: float = 0.7,
+        validation_size: float = 0.2,
+        num_workers: int = 1,
+        persistent_workers: bool = True,
+        pin_memory: bool = True,
+    ) -&gt; None:
+        super().__init__()
+        self._loader_kwargs = {
+            &#34;num_workers&#34;: num_workers,
+            &#34;persistent_workers&#34;: persistent_workers,
+            &#34;pin_memory&#34;: pin_memory,
+        }
+
+        self._sampler_kwargs = {
+            &#34;batch_size&#34;: batch_size,
+            &#34;shuffle&#34;: shuffle,
+            &#34;train_size&#34;: train_size,
+            &#34;validation_size&#34;: validation_size,
+        }
+
+        self._dataset = Dataset(
+            path=path,
+            input_sequence=input_sequence,
+            output_sequence=output_sequence,
+            skip=skip,
+        )
+
+        self._sampler_kwargs[&#34;data_length&#34;] = len(self._dataset)
+
+        self._train = None
+        self._val = None
+        self._test = None
+
+    @property
+    def dataset(self) -&gt; Dataset:
+        &#34;&#34;&#34;Returns the loaded dataset of this data module.
+
+        Returns:
+            Dataset: the loaded dataset.
+        &#34;&#34;&#34;
+        return self._dataset
+
+    def _free_memory(self) -&gt; None:
+        self._train = None
+        self._val = None
+        self._test = None
+
+    def setup(self, stage: str) -&gt; None:
+        # assert stage in [&#34;fit&#34;, &#34;test&#34;], &#34;Unsopported stage, supported are [fit, test].&#34;
+        self._free_memory()
+
+        # load the datasets
+        if stage == &#34;fit&#34;:
+            self._train = RBS(**self._sampler_kwargs)
+            self._train.set_mode(RBS.TRAIN)
+
+            self._val = RBS(**self._sampler_kwargs)
+            self._val.set_mode(RBS.VALIDATION)
+
+        if stage == &#34;test&#34;:
+            self._val = RBS(**self._sampler_kwargs)
+            self._val.set_mode(RBS.TEST)
+
+    def train_dataloader(self) -&gt; CombinedLoader:
+        return DataLoader(
+            self._dataset,
+            batch_sampler=self._train,
+            collate_fn=collate_fn,
+            **self._loader_kwargs
+        )
+
+    def val_dataloader(self) -&gt; CombinedLoader:
+        return DataLoader(
+            self._dataset,
+            batch_sampler=self._val,
+            collate_fn=collate_fn,
+            **self._loader_kwargs
+        )
+
+    def test_dataloader(self) -&gt; CombinedLoader:
+        return DataLoader(
+            self._dataset,
+            batch_sampler=self._test,
+            collate_fn=collate_fn,
+            **self._loader_kwargs
+        )</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>lightning.pytorch.core.datamodule.LightningDataModule</li>
+<li>lightning.pytorch.core.hooks.DataHooks</li>
+<li>lightning.pytorch.core.mixins.hparams_mixin.HyperparametersMixin</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="Comprisk.data.module.DataModule.dataset"><code class="name">prop <span class="ident">dataset</span> : Dataflux.pytorch.dataset.Dataset</code></dt>
+<dd>
+<div class="desc"><p>Returns the loaded dataset of this data module.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Dataset</code></dt>
+<dd>the loaded dataset.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dataset(self) -&gt; Dataset:
+    &#34;&#34;&#34;Returns the loaded dataset of this data module.
+
+    Returns:
+        Dataset: the loaded dataset.
+    &#34;&#34;&#34;
+    return self._dataset</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="Comprisk.data.module.DataModule.setup"><code class="name flex">
+<span>def <span class="ident">setup</span></span>(<span>self, stage: str) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Called at the beginning of fit (train + validate), validate, test, or predict. This is a good hook when you
+need to build models dynamically or adjust something about them. This hook is called on every process when
+using DDP.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>stage</code></strong></dt>
+<dd>either <code>'fit'</code>, <code>'validate'</code>, <code>'test'</code>, or <code>'predict'</code></dd>
+</dl>
+<p>Example::</p>
+<pre><code>class LitModel(...):
+    def __init__(self):
+        self.l1 = None
+
+    def prepare_data(self):
+        download_data()
+        tokenize()
+
+        # don't do this
+        self.something = else
+
+    def setup(self, stage):
+        data = load_data(...)
+        self.l1 = nn.Linear(28, data.num_classes)
+</code></pre></div>
+</dd>
+<dt id="Comprisk.data.module.DataModule.test_dataloader"><code class="name flex">
+<span>def <span class="ident">test_dataloader</span></span>(<span>self) ‑> lightning.pytorch.utilities.combined_loader.CombinedLoader</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An iterable or collection of iterables specifying test samples.</p>
+<p>For more information about multiple dataloaders, see this :ref:<code>section &lt;multiple-dataloaders&gt;</code>.</p>
+<p>For data processing use the following pattern:</p>
+<pre><code>- download in :meth:&lt;code&gt;prepare\_data&lt;/code&gt;
+- process and split in :meth:&lt;code&gt;setup&lt;/code&gt;
+</code></pre>
+<p>However, the above are only necessary for distributed processing.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning:&ensp;do not assign state in prepare_data</p>
+</div>
+<ul>
+<li>:meth:<code>~lightning.pytorch.trainer.trainer.Trainer.test</code></li>
+<li>:meth:<code>prepare_data</code></li>
+<li>:meth:<code>setup</code></li>
+</ul>
+<h2 id="note">Note</h2>
+<p>Lightning tries to add the correct sampler for distributed and arbitrary hardware.
+There is no need to set it yourself.</p>
+<h2 id="note_1">Note</h2>
+<p>If you don't need a test dataset and a :meth:<code>test_step</code>, you don't need to implement
+this method.</p></div>
+</dd>
+<dt id="Comprisk.data.module.DataModule.train_dataloader"><code class="name flex">
+<span>def <span class="ident">train_dataloader</span></span>(<span>self) ‑> lightning.pytorch.utilities.combined_loader.CombinedLoader</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An iterable or collection of iterables specifying training samples.</p>
+<p>For more information about multiple dataloaders, see this :ref:<code>section &lt;multiple-dataloaders&gt;</code>.</p>
+<p>The dataloader you return will not be reloaded unless you set
+:paramref:<code>~lightning.pytorch.trainer.trainer.Trainer.reload_dataloaders_every_n_epochs</code> to
+a positive integer.</p>
+<p>For data processing use the following pattern:</p>
+<pre><code>- download in :meth:&lt;code&gt;prepare\_data&lt;/code&gt;
+- process and split in :meth:&lt;code&gt;setup&lt;/code&gt;
+</code></pre>
+<p>However, the above are only necessary for distributed processing.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning:&ensp;do not assign state in prepare_data</p>
+</div>
+<ul>
+<li>:meth:<code>~lightning.pytorch.trainer.trainer.Trainer.fit</code></li>
+<li>:meth:<code>prepare_data</code></li>
+<li>:meth:<code>setup</code></li>
+</ul>
+<h2 id="note">Note</h2>
+<p>Lightning tries to add the correct sampler for distributed and arbitrary hardware.
+There is no need to set it yourself.</p></div>
+</dd>
+<dt id="Comprisk.data.module.DataModule.val_dataloader"><code class="name flex">
+<span>def <span class="ident">val_dataloader</span></span>(<span>self) ‑> lightning.pytorch.utilities.combined_loader.CombinedLoader</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An iterable or collection of iterables specifying validation samples.</p>
+<p>For more information about multiple dataloaders, see this :ref:<code>section &lt;multiple-dataloaders&gt;</code>.</p>
+<p>The dataloader you return will not be reloaded unless you set
+:paramref:<code>~lightning.pytorch.trainer.trainer.Trainer.reload_dataloaders_every_n_epochs</code> to
+a positive integer.</p>
+<p>It's recommended that all data downloads and preparation happen in :meth:<code>prepare_data</code>.</p>
+<ul>
+<li>:meth:<code>~lightning.pytorch.trainer.trainer.Trainer.fit</code></li>
+<li>:meth:<code>~lightning.pytorch.trainer.trainer.Trainer.validate</code></li>
+<li>:meth:<code>prepare_data</code></li>
+<li>:meth:<code>setup</code></li>
+</ul>
+<h2 id="note">Note</h2>
+<p>Lightning tries to add the correct sampler for distributed and arbitrary hardware
+There is no need to set it yourself.</p>
+<h2 id="note_1">Note</h2>
+<p>If you don't need a validation dataset and a :meth:<code>validation_step</code>, you don't need to
+implement this method.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="Comprisk.data" href="index.html">Comprisk.data</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="Comprisk.data.module.DataModule" href="#Comprisk.data.module.DataModule">DataModule</a></code></h4>
+<ul class="">
+<li><code><a title="Comprisk.data.module.DataModule.dataset" href="#Comprisk.data.module.DataModule.dataset">dataset</a></code></li>
+<li><code><a title="Comprisk.data.module.DataModule.setup" href="#Comprisk.data.module.DataModule.setup">setup</a></code></li>
+<li><code><a title="Comprisk.data.module.DataModule.test_dataloader" href="#Comprisk.data.module.DataModule.test_dataloader">test_dataloader</a></code></li>
+<li><code><a title="Comprisk.data.module.DataModule.train_dataloader" href="#Comprisk.data.module.DataModule.train_dataloader">train_dataloader</a></code></li>
+<li><code><a title="Comprisk.data.module.DataModule.val_dataloader" href="#Comprisk.data.module.DataModule.val_dataloader">val_dataloader</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
+</footer>
+</body>
+</html>

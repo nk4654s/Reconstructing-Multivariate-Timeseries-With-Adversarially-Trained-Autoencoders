@@ -7,7 +7,9 @@ def get_config_path(cli) -> str:
     """Extracts the config path from the command line arguments.
 
     Args:
-        cli (CLI): The command line interface.
+        cli (CLI): The command line interface object. To use this method,
+            cli must be called with the argument `-c`. Otherwise, no path
+            will be avialable.
 
     Returns:
         str: The config path from the command line arguments.
@@ -20,7 +22,9 @@ def get_config_folder(cli) -> str:
     """Extracts the config folder from the command line arguments.
 
     Args:
-        cli (CLI): The command line interface.
+        cli (CLI): The command line interface object. To use this method,
+            cli must be called with the argument `-c`. Otherwise, no path
+            will be avialable.
 
     Returns:
         str: The config folder path from the command line arguments.
@@ -35,7 +39,9 @@ def get_checkpoints(cli) -> List[str]:
     arguments.
 
     Args:
-        cli (CLI): The command line interface.
+        cli (CLI): The command line interface object. To use this method,
+            cli must be called with the argument `-c`. Otherwise, no path
+            will be avialable.
 
     Returns:
         List[str]: The list of checkpoint paths, sorted.

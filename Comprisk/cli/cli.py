@@ -1,4 +1,5 @@
-"""This module contains an advanced CLI for training a model."""
+"""This module implements an advanced CLI for training or loading
+a model. Moreover, the module expands the CLI by **lightning.ai**."""
 
 import importlib
 from typing import Any
@@ -19,12 +20,8 @@ logger = get_logger(__name__)
 
 class CompriskCLI(LightningCLI):
     """The CompriskCLI adds methods to the LightningCLI for training a model.
-
-        Before training, the user can set options to:
+    Before training, the user can set options to:
         - find the best `lr_rate` and `batch_size`
-
-    Args:
-        LightningCLI (LightningCLI): The base class.
     """
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:

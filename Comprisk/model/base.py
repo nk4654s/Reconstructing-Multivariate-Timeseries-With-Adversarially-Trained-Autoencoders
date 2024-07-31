@@ -1,4 +1,5 @@
-"""This module contains the base model."""
+"""This module contains the base model implementing widely-used functions. Layers
+of a nerual network are not implemented."""
 
 from typing import List
 
@@ -16,7 +17,10 @@ logger = get_logger(__name__)
 
 
 class BaseModel(L.LightningModule):
-    """BaseModel class of any neural network predicting time series.
+    """BaseModel class of any neural network. The base model implements a learning
+    rate decay using an exponential learning rate scheduler. Also, when predicting
+    using a trained model, the base class uses Monte-Carlo sampling to obtain a
+    more stable prediction.
 
     Args:
         loss (str, optional): Loss function to use. Defaults to "MSELoss".
@@ -25,7 +29,7 @@ class BaseModel(L.LightningModule):
         lr (float, optional): Initial learning rate. Defaults to 1e-3.
         lr_decay (float, optional): Learning rate dacying factor. Defaults to 0.99.
         monte_carlo (int, optional): Number of Monte-Carlo iterations, higher will be
-        slower but more stable. Defaults to 0 which is disabled.
+            slower but more stable. Defaults to 0 which is disabled.
     """
 
     def __init__(
@@ -53,7 +57,12 @@ class BaseModel(L.LightningModule):
         self._mc_iteration = monte_carlo
 
     def summary(self) -> str:
-        """Returns a summary of the model as string.
+        """Returns a summary of the model as string. Requires to be
+        implmenented by a child class to work. This function is just a
+        placeholder, as the base model does not initialize any layers.
+
+        Returns:
+            str: The summary of the model as string.
         """
         raise NotImplementedError
 
@@ -63,6 +72,10 @@ class BaseModel(L.LightningModule):
         return "targets"
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
+        """The forward method defines how the input is passed through the
+        model's layers. This method needs to be overwritten by a child class,
+        as the base model just implements a placeholder.
+        """
         raise NotImplementedError
 
     def on_train_epoch_start(self) -> None:

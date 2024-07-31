@@ -1,4 +1,4 @@
-"""This module handles string to optimizer conversion"""
+"""This module handles string to optimizer conversion."""
 from torch import optim
 from torch.optim.optimizer import Optimizer
 
