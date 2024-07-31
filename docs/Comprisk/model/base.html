@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.1">
 <title>Comprisk.model.base API documentation</title>
-<meta name="description" content="This module contains the base model.">
+<meta name="description" content="This module contains the base model implementing widely-used functions. Layers
+of a nerual network are not implemented.">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -25,7 +26,8 @@ hljs.highlightAll();
 <h1 class="title">Module <code>Comprisk.model.base</code></h1>
 </header>
 <section id="section-intro">
-<p>This module contains the base model.</p>
+<p>This module contains the base model implementing widely-used functions. Layers
+of a nerual network are not implemented.</p>
 </section>
 <section>
 </section>
@@ -41,7 +43,10 @@ hljs.highlightAll();
 <span>(</span><span>loss: str = 'MSELoss', activation: str = 'sigmoid', optimizer: str = 'Adam', lr: float = 0.001, lr_decay: float = 0.99, monte_carlo: int = 0)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>BaseModel class of any neural network predicting time series.</p>
+<div class="desc"><p>BaseModel class of any neural network. The base model implements a learning
+rate decay using an exponential learning rate scheduler. Also, when predicting
+using a trained model, the base class uses Monte-Carlo sampling to obtain a
+more stable prediction.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>loss</code></strong> :&ensp;<code>str</code>, optional</dt>
@@ -55,15 +60,18 @@ hljs.highlightAll();
 <dt><strong><code>lr_decay</code></strong> :&ensp;<code>float</code>, optional</dt>
 <dd>Learning rate dacying factor. Defaults to 0.99.</dd>
 <dt><strong><code>monte_carlo</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>Number of Monte-Carlo iterations, higher will be</dd>
-</dl>
-<p>slower but more stable. Defaults to 0 which is disabled.</p></div>
+<dd>Number of Monte-Carlo iterations, higher will be
+slower but more stable. Defaults to 0 which is disabled.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class BaseModel(L.LightningModule):
-    &#34;&#34;&#34;BaseModel class of any neural network predicting time series.
+    &#34;&#34;&#34;BaseModel class of any neural network. The base model implements a learning
+    rate decay using an exponential learning rate scheduler. Also, when predicting
+    using a trained model, the base class uses Monte-Carlo sampling to obtain a
+    more stable prediction.
 
     Args:
         loss (str, optional): Loss function to use. Defaults to &#34;MSELoss&#34;.
@@ -72,7 +80,7 @@ hljs.highlightAll();
         lr (float, optional): Initial learning rate. Defaults to 1e-3.
         lr_decay (float, optional): Learning rate dacying factor. Defaults to 0.99.
         monte_carlo (int, optional): Number of Monte-Carlo iterations, higher will be
-        slower but more stable. Defaults to 0 which is disabled.
+            slower but more stable. Defaults to 0 which is disabled.
     &#34;&#34;&#34;
 
     def __init__(
@@ -100,7 +108,12 @@ hljs.highlightAll();
         self._mc_iteration = monte_carlo
 
     def summary(self) -&gt; str:
-        &#34;&#34;&#34;Returns a summary of the model as string.
+        &#34;&#34;&#34;Returns a summary of the model as string. Requires to be
+        implmenented by a child class to work. This function is just a
+        placeholder, as the base model does not initialize any layers.
+
+        Returns:
+            str: The summary of the model as string.
         &#34;&#34;&#34;
         raise NotImplementedError
 
@@ -110,6 +123,10 @@ hljs.highlightAll();
         return &#34;targets&#34;
 
     def forward(self, batch: torch.Tensor) -&gt; torch.Tensor:
+        &#34;&#34;&#34;The forward method defines how the input is passed through the
+        model&#39;s layers. This method needs to be overwritten by a child class,
+        as the base model just implements a placeholder.
+        &#34;&#34;&#34;
         raise NotImplementedError
 
     def on_train_epoch_start(self) -&gt; None:
@@ -320,16 +337,9 @@ yourself.</li>
 <span>def <span class="ident">forward</span></span>(<span>self, batch: torch.Tensor) ‑> torch.Tensor</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Same as :meth:<code>torch.nn.Module.forward</code>.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>*args</code></strong></dt>
-<dd>Whatever you decide to pass into the forward method.</dd>
-<dt><strong><code>**kwargs</code></strong></dt>
-<dd>Keyword arguments are also possible.</dd>
-</dl>
-<h2 id="return">Return</h2>
-<p>Your model's output</p></div>
+<div class="desc"><p>The forward method defines how the input is passed through the
+model's layers. This method needs to be overwritten by a child class,
+as the base model just implements a placeholder.</p></div>
 </dd>
 <dt id="Comprisk.model.base.BaseModel.on_train_epoch_start"><code class="name flex">
 <span>def <span class="ident">on_train_epoch_start</span></span>(<span>self) ‑> None</span>
@@ -338,7 +348,7 @@ yourself.</li>
 <div class="desc"><p>Called in the training loop at the very beginning of the epoch.</p></div>
 </dd>
 <dt id="Comprisk.model.base.BaseModel.predict"><code class="name flex">
-<span>def <span class="ident">predict</span></span>(<span>self, x: <built-in method tensor of type object at 0x108fe0d00>, as_array: bool = False) ‑> List</span>
+<span>def <span class="ident">predict</span></span>(<span>self, x: <built-in method tensor of type object at 0x108aa0d00>, as_array: bool = False) ‑> List</span>
 </code></dt>
 <dd>
 <div class="desc"><p>This method only predicts future steps based on the given curve described by
@@ -380,7 +390,14 @@ averaged over multiple runs with different to output a more stable prediction.</
 <span>def <span class="ident">summary</span></span>(<span>self) ‑> str</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns a summary of the model as string.</p></div>
+<div class="desc"><p>Returns a summary of the model as string. Requires to be
+implmenented by a child class to work. This function is just a
+placeholder, as the base model does not initialize any layers.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>The summary of the model as string.</dd>
+</dl></div>
 </dd>
 <dt id="Comprisk.model.base.BaseModel.test_step"><code class="name flex">
 <span>def <span class="ident">test_step</span></span>(<span>self, batch: torch.Tensor, **kwargs) ‑> torch.Tensor</span>
