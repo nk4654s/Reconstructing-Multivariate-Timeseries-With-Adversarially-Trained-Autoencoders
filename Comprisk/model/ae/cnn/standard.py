@@ -69,6 +69,7 @@ class AutoEncoder(AutoEncoderBase):
                 "stride": stride,
                 "num_filters": num_filters,
                 "dropout_prob": dropout_prob,
+                "output_padding": self._encoder.output_padding
             }
         )
 

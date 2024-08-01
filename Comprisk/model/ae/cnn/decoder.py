@@ -1,5 +1,6 @@
 """Simple Decoder model."""
 
+from typing import List
 import torch
 from torch import nn
 
@@ -77,6 +78,7 @@ class CompleteDecoder(nn.Module):
         stride: int = 1,
         num_filters: int = 32,
         dropout_prob: float = 0.2,
+        output_padding: List[int] = None
     ) -> None:
         super(CompleteDecoder, self).__init__()
 
@@ -92,7 +94,8 @@ class CompleteDecoder(nn.Module):
             out_channels=self._num_filters,
             kernel_size=self._kernel_size // stride,
             stride=1,
-            padding=0
+            padding=0,
+            output_padding=output_padding[0]
         )
 
         self._dropout_1 = nn.Dropout(self._dropout_prob)
@@ -102,7 +105,8 @@ class CompleteDecoder(nn.Module):
             out_channels=1,
             kernel_size=(self._kernel_size, self._num_features),
             stride=(self._stride, 1),
-            padding=0
+            padding=0,
+            output_padding=(output_padding[1], 0)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

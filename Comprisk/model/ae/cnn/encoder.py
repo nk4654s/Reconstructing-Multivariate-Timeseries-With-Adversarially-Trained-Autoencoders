@@ -1,5 +1,6 @@
 """Simple Encoder model."""
 
+from typing import List
 import torch
 from torch import nn
 
@@ -111,13 +112,28 @@ class CompleteEncoder(nn.Module):
             padding=0
         )
 
-        size_1 = ((num_samples - kernel_size) / stride) + 1
+        # calculate encoder output sizes
+        size_1 = int(((num_samples - kernel_size) / stride) + 1)
         self._latent = int(((size_1 - (kernel_size // stride)) / 1) + 1)
+
+        # calculate decoder output sizes to find output_padding size
+        revert_1 = (self._latent - 1) * 1 + (kernel_size // stride)
+        out_padding_1 = abs(size_1 - revert_1)
+
+        revert_2 = (revert_1 + out_padding_1 - 1) * stride + kernel_size
+        out_padding_2 = abs(num_samples - revert_2)
+        self._output_padding = [out_padding_1, out_padding_2]
 
     @property
     def latent_size(self) -> int:
         """Returns the size of the latent vector."""
         return self._latent
+
+    @property
+    def output_padding(self) -> List[int]:
+        """Returns the output padding size for each encoder layer, which is
+        required in the decoder to restore to the correct shape."""
+        return self._output_padding
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # change x shape to: batch, 1, sequence, features
