@@ -41,6 +41,7 @@ setup(
             "comprisk-summary=Comprisk.entrypoints.summary:cli_main",
             "comprisk-train=Comprisk.entrypoints.train:cli_main",
             "comprisk-load=Comprisk.entrypoints.load:cli_main",
+            "comprisk-tuner=Comprisk.entrypoints.tuner:cli_main",
         ]
     },
     packages=find_packages(include=[
