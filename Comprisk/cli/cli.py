@@ -29,6 +29,7 @@ class CompriskCLI(LightningCLI):
         parser.add_argument("--find-batch-size", default=False, action="store_true")
         parser.add_argument("--save-every", default=1)
         parser.add_argument("--tuner-config", nargs="?")
+        parser.add_argument("--tuner-trials", type=int, default=25)
 
     def _class_for_name(self, module_name, class_name):
         # load the module, will raise ImportError if module cannot be loaded
