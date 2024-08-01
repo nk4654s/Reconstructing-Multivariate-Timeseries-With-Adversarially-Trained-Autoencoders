@@ -1,6 +1,8 @@
 """This module contains the tuner class based on the `optuna` package to find
 optimal hyper parameters for training."""
 from typing import Any, Dict
+from copy import deepcopy
+import os
 import yaml
 import optuna
 from optuna.trial import Trial
@@ -23,9 +25,10 @@ class Tuner:
         self._original_params = cli.model.hparams
         self._datamodule = cli.datamodule
         self._trainer = cli.trainer
+        self._trainer.early_stopping_callback.monitor = "train/MSELoss"
         self._trainer.logger = False
 
-        self._suggestions = None
+        self._config = None
         self._train_size = None
         self._val_size = None
 
@@ -38,23 +41,26 @@ class Tuner:
             trial (Trial): The trial object managed by `optuna`.
         """
         # define the new hparam suggestion and create the model to test
-        suggestion = self._define_suggestions(trial, self._original_params)
+        suggestion = self._define_suggestions(trial, self._original_params, self._config)
         test_model = self._model.__class__(**suggestion)
 
         self._datamodule.setup(stage="fit", train_size=self._train_size, val_size=self._val_size)
 
         # train the test model and validate it, the resulting loss is used to
         # set a new hparams suggestion
-        self._trainer.fit(
+        trainer = deepcopy(self._trainer)
+        trainer.fit(
             test_model, self._datamodule.train_dataloader(), val_dataloaders=None
         )
-        result = self._trainer.validate(test_model, self._datamodule.val_dataloader())
+        trainer.save_checkpoint(".temp.ckpt")
+        result = trainer.validate(dataloaders=self._datamodule.val_dataloader(),
+                                  ckpt_path=".temp.ckpt")
         loss = result[0]["validate/MSELoss"]
 
         # trial.report(loss, 0)
         return loss
 
-    def _define_suggestions(self, trial: Trial, params: Dict) -> Dict[str, Any]:
+    def _define_suggestions(self, trial: Trial, params: Dict, config: Dict) -> Dict[str, Any]:
         suggestion = {}
         # build the hyper parameters
         for key in params.keys():
@@ -63,13 +69,15 @@ class Tuner:
                 suggestion[key] = 0.0
                 continue
 
+            if isinstance(params[key], dict):
+                suggestion[key] = self._define_suggestions(trial, params[key], config[key])
             # use hyper parameters from the model config, if they will not be tuned
-            if key not in self._suggestions.keys():
+            if key not in config.keys():
                 suggestion[key] = params[key]
                 continue
 
             # get hyper parameter (spaces) from the tuner config
-            value = self._suggestions[key]
+            value = config[key]
             if value["type"] == "int":
                 suggestion[key] = trial.suggest_int(key, value["min"], value["max"])
 
@@ -86,18 +94,18 @@ class Tuner:
             path_to_config (str): The tuner config path.
         """
         with open(path_to_config, "r", encoding="UTF-8") as conf:
-            self._suggestions = yaml.safe_load(conf)
+            self._config = yaml.safe_load(conf)
 
         # get tuner parameters
-        tuner_args = self._suggestions.get("tuner_args", {})
+        tuner_args = self._config.get("tuner_args", {})
         self._train_size = tuner_args.get("train_size_percentage", 1) / 100
         self._val_size = tuner_args.get("val_size_precentage", 0.2) / 100
 
         if tuner_args != {}:
-            del self._suggestions["tuner_args"]
+            del self._config["tuner_args"]
 
         # get hyper parameter search space
-        for key in self._suggestions.keys():
+        for key in self._config.keys():
             assert key in self._model.hparams.keys(), f"Unexpected parameter '{key}'"
 
     def optimize(self, n_trials: int) -> Dict[str, Any]:
@@ -107,7 +115,7 @@ class Tuner:
         Args:
             n_trials (int): The number of search iterations before termination.
         """
-        assert self._suggestions, "Define a config with hparams to tune first."
+        assert self._config, "Define a config with hparams to tune first."
         study = optuna.create_study(
             storage="sqlite:///optuna.sqlite3",
             study_name=self._model.__class__.__name__,
@@ -122,4 +130,5 @@ class Tuner:
 
         # restore the datamodel to the training mode
         self._datamodule.setup(stage="fit")
+        os.remove(".temp.ckpt")
         return study.best_trial.params
