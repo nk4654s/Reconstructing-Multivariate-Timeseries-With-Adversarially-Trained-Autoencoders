@@ -11,8 +11,7 @@ from Comprisk.cli.cli import CompriskCLI
 class Tuner:
     """This class finds the optimal hyper parameters for a model using the `optuna`
     package. This package employs an advanced for of bayesian optimistaion to explore
-    the hyper parameter space. The loaded datamodule heavily limits the samples to train
-    for faster training.
+    the hyper parameter space.
 
     Args:
         cli (CompriskCLI): The comrpisk command line interface object, which contains
@@ -27,12 +26,8 @@ class Tuner:
         self._trainer.logger = False
 
         self._suggestions = None
-
-        # heavily reduce the training/validation samples as the tuner
-        # just tries to find a parameter suggestion. Longer trainings
-        # might result in superior hyperparameters, but the search
-        # will take dramatically longer
-        self._datamodule.setup(stage="fit", train_size=0.01, val_size=0.002)
+        self._train_size = None
+        self._val_size = None
 
     def objective(self, trial: Trial) -> float:
         """The objective function is used by the `self.optimize` method and contains
@@ -45,6 +40,8 @@ class Tuner:
         # define the new hparam suggestion and create the model to test
         suggestion = self._define_suggestions(trial, self._original_params)
         test_model = self._model.__class__(**suggestion)
+
+        self._datamodule.setup(stage="fit", train_size=self._train_size, val_size=self._val_size)
 
         # train the test model and validate it, the resulting loss is used to
         # set a new hparams suggestion
@@ -91,6 +88,15 @@ class Tuner:
         with open(path_to_config, "r", encoding="UTF-8") as conf:
             self._suggestions = yaml.safe_load(conf)
 
+        # get tuner parameters
+        tuner_args = self._suggestions.get("tuner_args", {})
+        self._train_size = tuner_args.get("train_size_percentage", 1) / 100
+        self._val_size = tuner_args.get("val_size_precentage", 0.2) / 100
+
+        if tuner_args != {}:
+            del self._suggestions["tuner_args"]
+
+        # get hyper parameter search space
         for key in self._suggestions.keys():
             assert key in self._model.hparams.keys(), f"Unexpected parameter '{key}'"
 

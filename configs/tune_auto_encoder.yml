@@ -1,3 +1,9 @@
+# configure parameters for the Tuner
+tuner_args:
+  train_size_percentage: 1
+  val_size_percentage: 0.2
+
+# configure hyper parameter search spaces
 kernel_size:
   type: int
   min: 50

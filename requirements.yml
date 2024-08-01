@@ -21,6 +21,7 @@ dependencies:
     - mlflow
     - setuptools
     - optuna
+    - optuna-dashboard
     - pip:
         - pdoc
         - "--editable=git+https://github.com/neaxplore/xplore-ai-s3prep#egg=Dataflux"
