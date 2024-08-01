@@ -4,6 +4,7 @@ which downloads and pre-processes a dataset. Also, the `Dataflux`
 package provides classes and methods to load a processed dataset and
 to sample as efficient as possible."""
 
+from copy import deepcopy
 import lightning as L
 from lightning.pytorch.utilities.combined_loader import CombinedLoader
 from torch.utils.data import DataLoader
@@ -89,20 +90,28 @@ class DataModule(L.LightningDataModule):
         self._val = None
         self._test = None
 
-    def setup(self, stage: str) -> None:
+    def setup(self, stage: str, train_size: float = None, val_size: float = None) -> None:
         # assert stage in ["fit", "test"], "Unsopported stage, supported are [fit, test]."
         self._free_memory()
 
+        # prevent changes to the original kwargs
+        kwargs = deepcopy(self._sampler_kwargs)
+        if train_size:
+            kwargs["train_size"] = train_size
+
+        if val_size:
+            kwargs["validation_size"] = val_size
+
         # load the datasets
         if stage == "fit":
-            self._train = RBS(**self._sampler_kwargs)
+            self._train = RBS(**kwargs)
             self._train.set_mode(RBS.TRAIN)
 
-            self._val = RBS(**self._sampler_kwargs)
+            self._val = RBS(**kwargs)
             self._val.set_mode(RBS.VALIDATION)
 
         if stage == "test":
-            self._val = RBS(**self._sampler_kwargs)
+            self._val = RBS(**kwargs)
             self._val.set_mode(RBS.TEST)
 
     def train_dataloader(self) -> CombinedLoader:

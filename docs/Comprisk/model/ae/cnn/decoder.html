@@ -38,7 +38,7 @@ hljs.highlightAll();
 <dl>
 <dt id="Comprisk.model.ae.cnn.decoder.CompleteDecoder"><code class="flex name class">
 <span>class <span class="ident">CompleteDecoder</span></span>
-<span>(</span><span>num_features: int, num_samples: int, kernel_size: int = 3, stride: int = 1, num_filters: int = 32, dropout_prob: float = 0.2)</span>
+<span>(</span><span>num_features: int, num_samples: int, kernel_size: int = 3, stride: int = 1, num_filters: int = 32, dropout_prob: float = 0.2, output_padding: List[int] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Base class for all neural network modules.</p>
@@ -82,6 +82,7 @@ evaluation mode.
         stride: int = 1,
         num_filters: int = 32,
         dropout_prob: float = 0.2,
+        output_padding: List[int] = None
     ) -&gt; None:
         super(CompleteDecoder, self).__init__()
 
@@ -97,7 +98,8 @@ evaluation mode.
             out_channels=self._num_filters,
             kernel_size=self._kernel_size // stride,
             stride=1,
-            padding=0
+            padding=0,
+            output_padding=output_padding[0]
         )
 
         self._dropout_1 = nn.Dropout(self._dropout_prob)
@@ -107,7 +109,8 @@ evaluation mode.
             out_channels=1,
             kernel_size=(self._kernel_size, self._num_features),
             stride=(self._stride, 1),
-            padding=0
+            padding=0,
+            output_padding=(output_padding[1], 0)
         )
 
     def forward(self, x: torch.Tensor) -&gt; torch.Tensor:

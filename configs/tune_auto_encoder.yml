@@ -1,0 +1,14 @@
+kernel_size:
+  type: int
+  min: 50
+  max: 200
+
+num_filters:
+  type: int
+  min: 16
+  max: 128
+
+stride:
+  type: int
+  min: 3
+  max: 20

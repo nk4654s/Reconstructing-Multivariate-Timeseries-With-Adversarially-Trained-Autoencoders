@@ -165,20 +165,28 @@ Default value is False.</p></div>
         self._val = None
         self._test = None
 
-    def setup(self, stage: str) -&gt; None:
+    def setup(self, stage: str, train_size: float = None, val_size: float = None) -&gt; None:
         # assert stage in [&#34;fit&#34;, &#34;test&#34;], &#34;Unsopported stage, supported are [fit, test].&#34;
         self._free_memory()
 
+        # prevent changes to the original kwargs
+        kwargs = deepcopy(self._sampler_kwargs)
+        if train_size:
+            kwargs[&#34;train_size&#34;] = train_size
+
+        if val_size:
+            kwargs[&#34;validation_size&#34;] = val_size
+
         # load the datasets
         if stage == &#34;fit&#34;:
-            self._train = RBS(**self._sampler_kwargs)
+            self._train = RBS(**kwargs)
             self._train.set_mode(RBS.TRAIN)
 
-            self._val = RBS(**self._sampler_kwargs)
+            self._val = RBS(**kwargs)
             self._val.set_mode(RBS.VALIDATION)
 
         if stage == &#34;test&#34;:
-            self._val = RBS(**self._sampler_kwargs)
+            self._val = RBS(**kwargs)
             self._val.set_mode(RBS.TEST)
 
     def train_dataloader(self) -&gt; CombinedLoader:
@@ -239,7 +247,7 @@ def dataset(self) -&gt; Dataset:
 <h3>Methods</h3>
 <dl>
 <dt id="Comprisk.data.module.DataModule.setup"><code class="name flex">
-<span>def <span class="ident">setup</span></span>(<span>self, stage: str) ‑> None</span>
+<span>def <span class="ident">setup</span></span>(<span>self, stage: str, train_size: float = None, val_size: float = None) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Called at the beginning of fit (train + validate), validate, test, or predict. This is a good hook when you

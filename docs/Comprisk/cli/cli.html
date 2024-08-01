@@ -110,6 +110,7 @@ method. If set to <code>False</code>, the trainer and model classes will be inst
         parser.add_argument(&#34;--find-lr&#34;, default=False, action=&#34;store_true&#34;)
         parser.add_argument(&#34;--find-batch-size&#34;, default=False, action=&#34;store_true&#34;)
         parser.add_argument(&#34;--save-every&#34;, default=1)
+        parser.add_argument(&#34;--tuner-config&#34;, nargs=&#34;?&#34;)
 
     def _class_for_name(self, module_name, class_name):
         # load the module, will raise ImportError if module cannot be loaded

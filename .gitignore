@@ -15,3 +15,6 @@ logfile
 .VSCodeCounter/
 .DS_Store
 playground.ipynb
+
+# exclude optuna database
+*.sqlite3

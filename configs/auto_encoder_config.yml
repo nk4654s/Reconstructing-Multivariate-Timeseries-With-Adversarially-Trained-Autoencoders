@@ -20,9 +20,9 @@ model:
     # complete or sequence
     mode: complete
     # encoder/decoder parameters
-    kernel_size: 200
+    kernel_size: 141
     num_filters: 64
-    stride: 20
+    stride: 9
     dropout_prob: 0.2
     weather_bypass: false
     # gerneral parameters
@@ -38,7 +38,7 @@ data:
   output_sequence: 1_000
   skip: 2
   # configure how to sample from the dataset
-  batch_size: 512
+  batch_size: 128
   shuffle: true
   train_size: 0.1
   validation_size: 0.05

@@ -110,13 +110,28 @@ evaluation mode.
             padding=0
         )
 
-        size_1 = ((num_samples - kernel_size) / stride) + 1
+        # calculate encoder output sizes
+        size_1 = int(((num_samples - kernel_size) / stride) + 1)
         self._latent = int(((size_1 - (kernel_size // stride)) / 1) + 1)
+
+        # calculate decoder output sizes to find output_padding size
+        revert_1 = (self._latent - 1) * 1 + (kernel_size // stride)
+        out_padding_1 = abs(size_1 - revert_1)
+
+        revert_2 = (revert_1 + out_padding_1 - 1) * stride + kernel_size
+        out_padding_2 = abs(num_samples - revert_2)
+        self._output_padding = [out_padding_1, out_padding_2]
 
     @property
     def latent_size(self) -&gt; int:
         &#34;&#34;&#34;Returns the size of the latent vector.&#34;&#34;&#34;
         return self._latent
+
+    @property
+    def output_padding(self) -&gt; List[int]:
+        &#34;&#34;&#34;Returns the output padding size for each encoder layer, which is
+        required in the decoder to restore to the correct shape.&#34;&#34;&#34;
+        return self._output_padding
 
     def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
         # change x shape to: batch, 1, sequence, features
@@ -150,6 +165,21 @@ evaluation mode.
 def latent_size(self) -&gt; int:
     &#34;&#34;&#34;Returns the size of the latent vector.&#34;&#34;&#34;
     return self._latent</code></pre>
+</details>
+</dd>
+<dt id="Comprisk.model.ae.cnn.encoder.CompleteEncoder.output_padding"><code class="name">prop <span class="ident">output_padding</span> : List[int]</code></dt>
+<dd>
+<div class="desc"><p>Returns the output padding size for each encoder layer, which is
+required in the decoder to restore to the correct shape.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def output_padding(self) -&gt; List[int]:
+    &#34;&#34;&#34;Returns the output padding size for each encoder layer, which is
+    required in the decoder to restore to the correct shape.&#34;&#34;&#34;
+    return self._output_padding</code></pre>
 </details>
 </dd>
 </dl>
@@ -323,6 +353,7 @@ def latent_size(self) -&gt; int:
 <ul class="">
 <li><code><a title="Comprisk.model.ae.cnn.encoder.CompleteEncoder.forward" href="#Comprisk.model.ae.cnn.encoder.CompleteEncoder.forward">forward</a></code></li>
 <li><code><a title="Comprisk.model.ae.cnn.encoder.CompleteEncoder.latent_size" href="#Comprisk.model.ae.cnn.encoder.CompleteEncoder.latent_size">latent_size</a></code></li>
+<li><code><a title="Comprisk.model.ae.cnn.encoder.CompleteEncoder.output_padding" href="#Comprisk.model.ae.cnn.encoder.CompleteEncoder.output_padding">output_padding</a></code></li>
 </ul>
 </li>
 <li>

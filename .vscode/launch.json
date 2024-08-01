@@ -8,17 +8,28 @@
             "name": "Python Debugger: Summary",
             "type": "debugpy",
             "request": "launch",
-            "program": "Comprisk/summary.py",
+            "program": "Comprisk/entrypoints/summary.py",
             "console": "integratedTerminal",
             "args": [
                 "-c", "configs/auto_encoder_config.yml"
             ]
         },
         {
+            "name": "Python Debugger: Tuner",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "Comprisk/entrypoints/tuner.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-c", "configs/auto_encoder_config.yml",
+                "--tuner-config", "configs/tune_auto_encoder.yml"
+            ]
+        },
+        {
             "name": "Python Debugger: Load AE",
             "type": "debugpy",
             "request": "launch",
-            "program": "Comprisk/load.py",
+            "program": "Comprisk/entrypoints/load.py",
             "console": "integratedTerminal",
             "args": [
                 "-c", "lightning_logs/AutoEncoder/version_4/config.yml"
@@ -28,7 +39,7 @@
             "name": "Python Debugger: AE",
             "type": "debugpy",
             "request": "launch",
-            "program": "Comprisk/main.py",
+            "program": "Comprisk/entrypoints/train.py",
             "console": "integratedTerminal",
             "args": [
                 "-c",

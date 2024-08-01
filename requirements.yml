@@ -20,6 +20,7 @@ dependencies:
     - tensorboard
     - mlflow
     - setuptools
+    - optuna
     - pip:
         - pdoc
         - "--editable=git+https://github.com/neaxplore/xplore-ai-s3prep#egg=Dataflux"
