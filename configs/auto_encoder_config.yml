@@ -20,9 +20,9 @@ model:
     # complete or sequence
     mode: complete
     # encoder/decoder parameters
-    kernel_size: 141
-    num_filters: 64
-    stride: 9
+    kernel_size: 80
+    num_filters: 96
+    stride: 8
     dropout_prob: 0.2
     weather_bypass: false
     # gerneral parameters
@@ -30,7 +30,7 @@ model:
       activation: tanh
       loss: MSELoss
       optimizer: Adam
-      lr: 0.001
+      lr: 0.0015
 data:
   # configure dataset to load
   path: ../Dataflux/dataset-2021-22
@@ -40,7 +40,7 @@ data:
   # configure how to sample from the dataset
   batch_size: 128
   shuffle: true
-  train_size: 0.1
+  train_size: 0.2
   validation_size: 0.05
   # configure the workers sampling the dataset
   num_workers: 4
