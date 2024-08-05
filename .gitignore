@@ -5,8 +5,10 @@ __pycache__/
 requirements.txt
 
 # exclude logs
-lightning_logs/
+models/
+logs/
 logfile
+Dockerfile
 
 # exclude temporary checkpoints
 *.ckpt

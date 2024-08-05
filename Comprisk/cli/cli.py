@@ -15,7 +15,7 @@ from Dataflux.helper import get_logger
 
 from Comprisk.data import DataModule
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, path="./logs/logfile")
 
 
 class CompriskCLI(LightningCLI):

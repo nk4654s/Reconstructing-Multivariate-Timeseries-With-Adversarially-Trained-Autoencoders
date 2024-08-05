@@ -10,7 +10,7 @@ from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, path="./logs/logfile")
 
 
 def cli_main():
@@ -23,7 +23,7 @@ def cli_main():
 
     # set up the logger
     logger.debug("Defining TensorBoard logger for %s", cli.model.__class__.__name__)
-    tb_logger = TensorBoardLogger("lightning_logs", name=cli.model.__class__.__name__)
+    tb_logger = TensorBoardLogger("models", name=cli.model.__class__.__name__)
     cli.trainer.logger = tb_logger
     logger.debug("Using log folder %s", tb_logger.log_dir)
 

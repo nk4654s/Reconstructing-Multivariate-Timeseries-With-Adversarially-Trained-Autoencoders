@@ -11,7 +11,7 @@ trainer:
   precision: 32
   max_epochs: 1
   gradient_clip_val: 1.0
-  profiler: "simple"
+#  profiler: "simple"
   log_every_n_steps: 1
 # configure model hyper-parameter
 model:
@@ -33,7 +33,7 @@ model:
       lr: 0.0015
 data:
   # configure dataset to load
-  path: ../Dataflux/dataset-2021-22
+  path: /Users/jonas/Dataset/dataset-2021-23
   input_sequence: 1_000
   output_sequence: 1_000
   skip: 2
@@ -43,6 +43,4 @@ data:
   train_size: 0.2
   validation_size: 0.05
   # configure the workers sampling the dataset
-  num_workers: 4
-  persistent_workers: true
-  pin_memory: true
+  num_workers: 1

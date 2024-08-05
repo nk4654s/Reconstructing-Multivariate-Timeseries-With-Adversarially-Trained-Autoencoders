@@ -11,7 +11,7 @@ from Comprisk.model.ae.base import AutoEncoderBase
 from Comprisk.model.ae.cnn.encoder import SequenceEncoder, CompleteEncoder
 from Comprisk.model.ae.cnn.decoder import SequenceDecoder, CompleteDecoder
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, path="./logs/logfile")
 
 
 class AutoEncoder(AutoEncoderBase):

@@ -5,7 +5,7 @@ from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, path="./logs/logfile")
 
 
 def cli_main():

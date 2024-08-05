@@ -6,7 +6,7 @@ import torch
 from Dataflux.helper import get_logger
 from Comprisk.model import BaseModel
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, path="./logs/logfile")
 
 
 class AutoEncoderBase(BaseModel):

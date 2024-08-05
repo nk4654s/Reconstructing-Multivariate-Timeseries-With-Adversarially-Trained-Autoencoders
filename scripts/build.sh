@@ -17,5 +17,5 @@ pdoc --html . -o docs --force > /dev/null 2>&1
 printf "Done.\n"
 
 printf "Build 'Comprisk' pip package... "
-pip install -e . > /dev/null 2>&1
+conda run -n comprisk pip install -e . > /dev/null 2>&1
 printf "Done.\n"

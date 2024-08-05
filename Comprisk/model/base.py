@@ -13,7 +13,7 @@ from Comprisk.helper import (
     get_activation_from_string,
 )
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, path="./logs/logfile")
 
 
 class BaseModel(L.LightningModule):

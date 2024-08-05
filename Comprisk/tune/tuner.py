@@ -116,8 +116,11 @@ class Tuner:
             n_trials (int): The number of search iterations before termination.
         """
         assert self._config, "Define a config with hparams to tune first."
+        if not os.path.exists("logs"):
+            os.makedirs("logs")
+
         study = optuna.create_study(
-            storage="sqlite:///optuna.sqlite3",
+            storage="sqlite:///logs/optuna.sqlite3",
             study_name=self._model.__class__.__name__,
             load_if_exists=True,
             direction="minimize",

@@ -18,15 +18,13 @@ from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, path="./logs/logfile")
 
-# TODO: get model's device and move inputs accordingly (expected <1h)
 # FIXME: debug and check if the learning rate finder result is used (expected ~1h)
-# TODO: create docker file which runs the training (expected ~1h)
 # TODO: create cuda enabled conda environment (expected ~1h)
 # TODO: Setup Ubuntu machine for server training with CUDA and docker (expected <1h)
-# TODO: read about bayesian optimization for hyperparameter search with lightning (expected <2h)
-# TODO: model summary as own entry point (expected <1h)
+
+# TODO: run config with more than 1 dataloader fails in docker
 
 
 def cli_main():
