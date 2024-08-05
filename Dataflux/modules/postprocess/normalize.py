@@ -156,7 +156,7 @@ class NormalizeTransform(FileWorkerCallable):
         df = df.reindex(sorted(df.columns), axis=1)
 
         if method == NormalizeFit.METHODS[0]:
-            normed = (df - a).div(b - a).fillna(0)
+            normed = ((df - a).div(b - a).fillna(0) - 0.5).div(0.5)
         elif method == NormalizeFit.METHODS[1]:
             normed = (df - a).div(b).fillna(0)
 
