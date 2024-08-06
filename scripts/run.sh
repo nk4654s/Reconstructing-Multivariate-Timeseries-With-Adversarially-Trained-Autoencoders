@@ -1,4 +1,4 @@
-set -x -u -u -e -o pipefail
+#set -x -u -u -e -o pipefail
 
 # configure mounts
 CONF_FOLDER="./configs/"
