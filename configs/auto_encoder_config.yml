@@ -17,14 +17,12 @@ trainer:
 model:
   class_path: Comprisk.model.ae.cnn.AutoEncoder
   init_args:
-    # complete or sequence
-    mode: complete
     # encoder/decoder parameters
     kernel_size: 80
     num_filters: 96
     stride: 8
     dropout_prob: 0.2
-    weather_bypass: false
+    weather_bypass: true
     # gerneral parameters
     base:
       activation: tanh

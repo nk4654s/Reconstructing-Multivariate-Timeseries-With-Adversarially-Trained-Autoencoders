@@ -1,15 +1,15 @@
 """This module implements a base AutoEncoder class."""
 
-from torchinfo import summary as torchsummary
 from typing import Dict
+from torchinfo import summary as torchsummary
 import numpy as np
 import torch
 
 from Dataflux.helper import get_logger
 
 from Comprisk.model.ae.base import AutoEncoderBase
-from Comprisk.model.ae.cnn.encoder import SequenceEncoder, CompleteEncoder
-from Comprisk.model.ae.cnn.decoder import SequenceDecoder, CompleteDecoder
+from Comprisk.model.ae.cnn.encoder import CompleteEncoder
+from Comprisk.model.ae.cnn.decoder import CompleteDecoder
 
 logger = get_logger(__name__, path="./logs/logfile")
 
@@ -27,7 +27,6 @@ class AutoEncoder(AutoEncoderBase):
 
     def __init__(
         self,
-        mode: str = "complete",
         num_weather: int = None,
         num_sensors: int = None,
         num_samples: int = None,
@@ -46,11 +45,7 @@ class AutoEncoder(AutoEncoderBase):
         self._num_sensors = num_sensors
         self._num_samples = num_samples
 
-        logger.debug("Using '%s' auto-encoder", mode)
-        self._encoder_class = SequenceEncoder if mode == "sequence" else CompleteEncoder
-        self._decoder_class = SequenceDecoder if mode == "sequence" else CompleteDecoder
-
-        self._encoder = self._encoder_class(
+        self._encoder = CompleteEncoder(
             **{
                 "num_features": num_weather + num_sensors,
                 "num_samples": num_samples,
@@ -61,7 +56,7 @@ class AutoEncoder(AutoEncoderBase):
             }
         )
 
-        self._decoder = self._decoder_class(
+        self._decoder = CompleteDecoder(
             **{
                 "num_features": num_sensors,
                 "num_samples": self._encoder.latent_size,
