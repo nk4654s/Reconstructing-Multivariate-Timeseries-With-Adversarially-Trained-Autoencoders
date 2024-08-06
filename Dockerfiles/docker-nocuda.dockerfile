@@ -32,7 +32,6 @@ ENV PATH=/home/user/miniconda3/bin:$PATH
 ARG PATH=/home/user/miniconda3/bin:$PATH
 
 # Install Miniconda and build comprisk
-RUN sh /app/scripts/setup.sh user
 RUN sh /app/scripts/build.sh
 
 # add folders as volume mount points
