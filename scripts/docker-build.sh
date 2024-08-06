@@ -18,5 +18,7 @@ if [ "$1" = "cpu" ]; then
     cp Dockerfiles/docker-nocuda.dockerfile ./Dockerfile
 fi
 
+sh scripts/build.sh cuda $USER
+
 docker build --platform "linux/$PLATFORM" -t comprisk .
 rm -rf Dockerfile

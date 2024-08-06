@@ -32,7 +32,10 @@ ENV PATH=/home/user/miniconda3/bin:$PATH
 ARG PATH=/home/user/miniconda3/bin:$PATH
 
 # Install Miniconda and build comprisk
-RUN sh /app/scripts/build.sh
+RUN sh /app/scripts/build.sh cpu user
 
 # add folders as volume mount points
 RUN mkdir -p models configs logs dataset
+
+RUN echo "source activate comprisk" > ~/.bashrc
+ENV PATH=/home/user/miniconda3/envs/comprisk/bin:$PATH

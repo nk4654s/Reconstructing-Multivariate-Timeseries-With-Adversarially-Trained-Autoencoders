@@ -4,7 +4,7 @@
 CONF_FOLDER="./configs/"
 LOG_FOLDER="./logs/"
 MODEL_FOLDER="./models/"
-DATA_FOLDER="/Users/jonas/Dataset"
+DATA_FOLDER="/home/jonas/NEAX/Dataset"
 
 # configure ports
 TB_PORT=6006
@@ -18,7 +18,7 @@ SHARED_MEM=8G
 PLATFORM=$(uname -m)
 
 # check the given command, if none then fallback to bash
-CMD="conda run -n comprisk $@"
+CMD="$@"
 ARG="-d -it"
 NAME="comprisk"
 if [ $# -eq 0 ]; then
@@ -29,31 +29,26 @@ else
 fi
 
 # build the docker command
-docker run --shm-size="$SHARED_MEM" --cpus="$N_CPU" \
+docker run --shm-size="$SHARED_MEM" --cpus="$N_CPU" --gpus all \
     --name $NAME \
     -v "$MODEL_FOLDER":/app/models/ \
     -v "$CONF_FOLDER":/app/configs/ \
     -v "$LOG_FOLDER":/app/logs/ \
     -v "$DATA_FOLDER":/app/dataset/ \
-    $ARG comprisk:latest /bin/bash
-
-docker exec -d $NAME /bin/bash -c "$CMD"
+    $ARG comprisk:latest /bin/bash -c "$CMD"
 
 if [ "$NAME" = "comprisk-tuner" ]; then
     # start tensorboard
     docker run --shm-size=256M --cpus=1 \
         --name optuna \
-        -p 0.0.0.0:8080:8080 \
+        -p 8080:8080 \
         -v "$MODEL_FOLDER":/app/models/ \
         -it -d comprisk:latest /bin/bash -c "conda run -n comprisk optuna-dashboard sqlite:///logs/optuna.sqlite3 "
 else
     # start tensorboard
     docker run --shm-size=256M --cpus=1 \
         --name tensorboard \
-        -p 0.0.0.0:6006:6006 \
+        -p 6006:6006 \
         -v "$MODEL_FOLDER":/app/models/ \
-        -it -d comprisk:latest /bin/bash -c "conda run -n comprisk tensorboard --logdir=models"
+        -it -d comprisk:latest tensorboard --logdir=models --host 0.0.0.0
 fi
-
-#docker logs -f --tail 10 $NAME
-#docker rm $(docker ps -aq)

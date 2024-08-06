@@ -26,9 +26,9 @@ Here, the generated documentation of this code will be located. The generation i
 Scripts to clean, start a training, and build the package are located here.
 
 ## Installation
-To install the package, run
+First make sure to have the `Dataflux` code next to this repository and named `Dataflux`. To install the package, run
 ```
-sh scripts/build.sh
+sh scripts/build.sh <cpu | cuda>
 ```
 
 or build the package manuall by typing

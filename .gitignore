@@ -3,6 +3,7 @@ src/*
 __pycache__/
 *egg-info/
 requirements.txt
+*.whl
 
 # exclude logs
 models/

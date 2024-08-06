@@ -51,5 +51,5 @@ setup(
     include_package_data=True,
     url="https://github.com/neaxplore/xplore-ai-comprisk",
     version=VERSION,
-    zip_safe=True
+    zip_safe=False
 )
