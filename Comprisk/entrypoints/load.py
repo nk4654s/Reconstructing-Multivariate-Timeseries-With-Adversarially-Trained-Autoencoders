@@ -51,9 +51,9 @@ def cli_main():
     for i in tqdm(range(0, len(dataset), meta.num_input_sequence)):
         sensors, weather, _ = dataset[i]
 
-        sensors = torch.tensor(sensors, device="mps")
+        sensors = torch.tensor(sensors, device=model.device)
         sensors = torch.unsqueeze(sensors, dim=0)
-        weather = torch.tensor(weather, device="mps")
+        weather = torch.tensor(weather, device=model.device)
         weather = torch.unsqueeze(weather, dim=0)
 
         # 3. pass sample into model, store prediction in list/numpy/dataframe
