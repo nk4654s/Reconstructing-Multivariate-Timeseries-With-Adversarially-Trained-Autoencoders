@@ -22,7 +22,7 @@ model:
     num_filters: 96
     stride: 8
     dropout_prob: 0.2
-    weather_bypass: true
+    bypass_hidden_size: 256
     # gerneral parameters
     base:
       activation: tanh

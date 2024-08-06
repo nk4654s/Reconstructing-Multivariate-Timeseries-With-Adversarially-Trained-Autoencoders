@@ -5,7 +5,7 @@ import torch
 from torch import nn
 
 
-class CompleteEncoder(nn.Module):
+class Encoder(nn.Module):
     def __init__(
         self,
         num_features: int,
@@ -15,7 +15,7 @@ class CompleteEncoder(nn.Module):
         num_filters: int = 32,
         dropout_prob: float = 0.2,
     ) -> None:
-        super(CompleteEncoder, self).__init__()
+        super(Encoder, self).__init__()
 
         self._num_features = num_features
         self._num_samples = num_samples

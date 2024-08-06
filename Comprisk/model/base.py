@@ -67,9 +67,18 @@ class BaseModel(L.LightningModule):
         raise NotImplementedError
 
     @property
-    def target(self) -> str:
+    def target(self) -> str | List[str]:
         """The target name of inputs to predict."""
         return "targets"
+
+    def _get_target_batch(self, batch: torch.Tensor) -> torch.Tensor:
+        """Returns the target batch from the given batch."""
+        if isinstance(self.target, List):
+            x = batch[self.target[0]]
+            for t in self.target[1:]:
+                x = torch.cat((x, batch[t]), dim=-1)
+            return x
+        return batch[self.target]
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         """The forward method defines how the input is passed through the
@@ -84,19 +93,19 @@ class BaseModel(L.LightningModule):
 
     def training_step(self, batch: torch.Tensor, **kwargs) -> torch.Tensor:
         y_hat = self(batch)
-        loss = self._loss(y_hat, batch[self.target])
+        loss = self._loss(y_hat, self._get_target_batch(batch))
         self.log(f"train/{self._loss_name}", loss)
         return loss
 
     def test_step(self, batch: torch.Tensor, **kwargs) -> torch.Tensor:
         y_hat = self(batch)
-        loss = self._loss(y_hat, batch[self.target])
+        loss = self._loss(y_hat, self._get_target_batch(batch))
         self.log(f"test/{self._loss_name}", loss)
         return loss
 
     def validation_step(self, batch: torch.Tensor, **kwargs) -> torch.Tensor:
         y_hat = self(batch)
-        loss = self._loss(y_hat, batch[self.target])
+        loss = self._loss(y_hat, self._get_target_batch(batch))
         self.log(f"validate/{self._loss_name}", loss)
         return loss
 

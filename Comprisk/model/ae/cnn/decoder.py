@@ -5,7 +5,7 @@ import torch
 from torch import nn
 
 
-class CompleteDecoder(nn.Module):
+class Decoder(nn.Module):
     def __init__(
         self,
         num_features: int,
@@ -14,9 +14,9 @@ class CompleteDecoder(nn.Module):
         stride: int = 1,
         num_filters: int = 32,
         dropout_prob: float = 0.2,
-        output_padding: List[int] = None
+        output_padding: List[int] = None,
     ) -> None:
-        super(CompleteDecoder, self).__init__()
+        super(Decoder, self).__init__()
 
         self._num_features = num_features
         self._num_samples = num_samples
@@ -31,18 +31,18 @@ class CompleteDecoder(nn.Module):
             kernel_size=self._kernel_size // stride,
             stride=1,
             padding=0,
-            output_padding=output_padding[0]
+            output_padding=output_padding[0],
         )
 
         self._dropout_1 = nn.Dropout(self._dropout_prob)
 
-        self._conv_trans_2 =  nn.ConvTranspose2d(
+        self._conv_trans_2 = nn.ConvTranspose2d(
             in_channels=self._num_filters,
             out_channels=1,
             kernel_size=(self._kernel_size, self._num_features),
             stride=(self._stride, 1),
             padding=0,
-            output_padding=(output_padding[1], 0)
+            output_padding=(output_padding[1], 0),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
