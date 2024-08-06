@@ -31,15 +31,29 @@ fi
 # build the docker command
 docker run --shm-size="$SHARED_MEM" --cpus="$N_CPU" \
     --name $NAME \
-    -p 8080:8080 \
-    -p 6006:6006 \
     -v "$MODEL_FOLDER":/app/models/ \
     -v "$CONF_FOLDER":/app/configs/ \
     -v "$LOG_FOLDER":/app/logs/ \
     -v "$DATA_FOLDER":/app/dataset/ \
     $ARG comprisk:latest /bin/bash
 
-docker exec $NAME /bin/bash -c "$CMD"
-docker logs -f --tail 10 $NAME
+docker exec -d $NAME /bin/bash -c "$CMD"
 
-docker rm $(docker ps -aq)
+if [ "$NAME" = "comprisk-tuner" ]; then
+    # start tensorboard
+    docker run --shm-size=256M --cpus=1 \
+        --name optuna \
+        -p 0.0.0.0:8080:8080 \
+        -v "$MODEL_FOLDER":/app/models/ \
+        -it -d comprisk:latest /bin/bash -c "conda run -n comprisk optuna-dashboard sqlite:///logs/optuna.sqlite3 "
+else
+    # start tensorboard
+    docker run --shm-size=256M --cpus=1 \
+        --name tensorboard \
+        -p 0.0.0.0:6006:6006 \
+        -v "$MODEL_FOLDER":/app/models/ \
+        -it -d comprisk:latest /bin/bash -c "conda run -n comprisk tensorboard --logdir=models"
+fi
+
+#docker logs -f --tail 10 $NAME
+#docker rm $(docker ps -aq)
