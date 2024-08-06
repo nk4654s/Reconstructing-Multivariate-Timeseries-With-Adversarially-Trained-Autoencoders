@@ -22,8 +22,12 @@ def cli_main():
     cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
 
     # set up the logger
-    logger.debug("Defining TensorBoard logger for %s", cli.model.__class__.__name__)
-    tb_logger = TensorBoardLogger("models", name=cli.model.__class__.__name__)
+    sub_path = cli.model.__class__.__name__
+    if cli.config.tag:
+        sub_path = f"{cli.model.__class__.__name__}/{cli.config.tag}"
+
+    logger.debug("Defining TensorBoard logger for %s", sub_path)
+    tb_logger = TensorBoardLogger("models", name=sub_path)
     cli.trainer.logger = tb_logger
     logger.debug("Using log folder %s", tb_logger.log_dir)
 

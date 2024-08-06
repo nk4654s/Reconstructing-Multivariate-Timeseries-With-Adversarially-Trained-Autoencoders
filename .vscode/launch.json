@@ -43,7 +43,8 @@
             "console": "integratedTerminal",
             "args": [
                 "-c",
-                "configs/auto_encoder_config.yml"
+                "configs/auto_encoder_config.yml",
+                "--tag", "debug"
             ]
         }
     ]

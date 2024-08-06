@@ -19,7 +19,7 @@ def cli_main():
 
     tuner = Tuner(cli)
     tuner.config(cli.config.tuner_config)
-    tuner.optimize(cli.config.tuner_trials)
+    tuner.optimize(cli.config.tuner_trials, cli.config.tag)
 
 
 if __name__ == "__main__":

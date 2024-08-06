@@ -1,5 +1,6 @@
 """This module contains the tuner class based on the `optuna` package to find
 optimal hyper parameters for training."""
+
 from typing import Any, Dict
 from copy import deepcopy
 import os
@@ -20,6 +21,7 @@ class Tuner:
             the initialized model and datamodule. During optimization, the model
             will be re-initialized with a different set of hyper parameters.
     """
+
     def __init__(self, cli: CompriskCLI) -> None:
         self._model = cli.model
         self._original_params = cli.model.hparams
@@ -41,10 +43,14 @@ class Tuner:
             trial (Trial): The trial object managed by `optuna`.
         """
         # define the new hparam suggestion and create the model to test
-        suggestion = self._define_suggestions(trial, self._original_params, self._config)
+        suggestion = self._define_suggestions(
+            trial, self._original_params, self._config
+        )
         test_model = self._model.__class__(**suggestion)
 
-        self._datamodule.setup(stage="fit", train_size=self._train_size, val_size=self._val_size)
+        self._datamodule.setup(
+            stage="fit", train_size=self._train_size, val_size=self._val_size
+        )
 
         # train the test model and validate it, the resulting loss is used to
         # set a new hparams suggestion
@@ -53,14 +59,17 @@ class Tuner:
             test_model, self._datamodule.train_dataloader(), val_dataloaders=None
         )
         trainer.save_checkpoint(".temp.ckpt")
-        result = trainer.validate(dataloaders=self._datamodule.val_dataloader(),
-                                  ckpt_path=".temp.ckpt")
+        result = trainer.validate(
+            dataloaders=self._datamodule.val_dataloader(), ckpt_path=".temp.ckpt"
+        )
         loss = result[0]["validate/MSELoss"]
 
         # trial.report(loss, 0)
         return loss
 
-    def _define_suggestions(self, trial: Trial, params: Dict, config: Dict) -> Dict[str, Any]:
+    def _define_suggestions(
+        self, trial: Trial, params: Dict, config: Dict
+    ) -> Dict[str, Any]:
         suggestion = {}
         # build the hyper parameters
         for key in params.keys():
@@ -69,8 +78,10 @@ class Tuner:
                 suggestion[key] = 0.0
                 continue
 
-            if isinstance(params[key], dict):
-                suggestion[key] = self._define_suggestions(trial, params[key], config[key])
+            if isinstance(params[key], dict) and key in config.keys():
+                suggestion[key] = self._define_suggestions(
+                    trial, params[key], config[key]
+                )
             # use hyper parameters from the model config, if they will not be tuned
             if key not in config.keys():
                 suggestion[key] = params[key]
@@ -108,20 +119,26 @@ class Tuner:
         for key in self._config.keys():
             assert key in self._model.hparams.keys(), f"Unexpected parameter '{key}'"
 
-    def optimize(self, n_trials: int) -> Dict[str, Any]:
+    def optimize(self, n_trials: int, tag: str = None) -> Dict[str, Any]:
         """This method starts the optimization process. Make sure to have `self.config` called
         beforehand.
 
         Args:
             n_trials (int): The number of search iterations before termination.
+            tag (str): The tag str as prefix of the experiment name.
         """
         assert self._config, "Define a config with hparams to tune first."
         if not os.path.exists("logs"):
             os.makedirs("logs")
 
+        name = (
+            f"{self._model.__class__.__name__}-{tag}"
+            if tag
+            else self._model.__class__.__name__
+        )
         study = optuna.create_study(
             storage="sqlite:///logs/optuna.sqlite3",
-            study_name=self._model.__class__.__name__,
+            study_name=name,
             load_if_exists=True,
             direction="minimize",
         )
