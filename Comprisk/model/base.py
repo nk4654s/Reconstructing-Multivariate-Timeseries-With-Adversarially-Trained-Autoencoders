@@ -7,6 +7,7 @@ import lightning as L
 import torch
 from torch.optim.lr_scheduler import ExponentialLR
 from Dataflux.helper import get_logger
+from Dataflux.pytorch.metadata import Metadata
 from Comprisk.helper import (
     get_loss_by_name,
     get_optimizer_by_name,
@@ -56,29 +57,35 @@ class BaseModel(L.LightningModule):
         self._dropout = torch.nn.Dropout()
         self._mc_iteration = monte_carlo
 
-    def summary(self) -> str:
+    def summary(self, meta: Metadata) -> str:
         """Returns a summary of the model as string. Requires to be
         implmenented by a child class to work. This function is just a
         placeholder, as the base model does not initialize any layers.
 
+        Args:
+            meta (Metadata): Metadata object containing information about the
+                dataset. May be required to build a dummy input for retrieving
+                the model's summary.
+        
         Returns:
             str: The summary of the model as string.
         """
         raise NotImplementedError
 
     @property
-    def target(self) -> str | List[str]:
+    def target(self) -> List[str]:
         """The target name of inputs to predict."""
-        return "targets"
+        return ["targets"]
 
     def _get_target_batch(self, batch: torch.Tensor) -> torch.Tensor:
         """Returns the target batch from the given batch."""
-        if isinstance(self.target, List):
-            x = batch[self.target[0]]
-            for t in self.target[1:]:
-                x = torch.cat((x, batch[t]), dim=-1)
-            return x
-        return batch[self.target]
+        if len(self.target) == 1:
+            return batch[self.target[0]]
+
+        x = batch[self.target[0]]
+        for t in self.target[1:]:
+            x = torch.cat((x, batch[t]), dim=-1)
+        return x
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         """The forward method defines how the input is passed through the

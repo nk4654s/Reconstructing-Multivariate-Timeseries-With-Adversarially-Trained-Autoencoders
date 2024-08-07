@@ -4,8 +4,22 @@ from typing import List
 import torch
 from torch import nn
 
+from Comprisk.model.ae import EncoderBase
 
-class Encoder(nn.Module):
+
+class FSEncoder(EncoderBase):
+    """The feature sequence encoder (FSEncoder) encodes the sequence of
+    features into a fixed-length vector. This is achieved by applying a
+    2D convolutional layer to the sequence of features.
+
+    Args:
+      num_features (int): The number of features in the sequence.
+      num_samples (int): The number of samples to encode.
+      kernel_size (int): The size of the convolutional kernel.
+      stride (int): The stride of the convolutional layer.
+      num_filters (int): The number of filters in the convolutional layer.
+      dropout_prob (float): The probability of dropout after each layer.
+    """
     def __init__(
         self,
         num_features: int,
@@ -15,7 +29,7 @@ class Encoder(nn.Module):
         num_filters: int = 32,
         dropout_prob: float = 0.2,
     ) -> None:
-        super(Encoder, self).__init__()
+        super(FSEncoder, self).__init__()
 
         self._num_features = num_features
         self._num_samples = num_samples
@@ -60,14 +74,12 @@ class Encoder(nn.Module):
         return self._latent
 
     @property
-    def output_padding(self) -> List[int]:
-        """Returns the output padding size for each encoder layer, which is
-        required in the decoder to restore to the correct shape."""
-        return self._output_padding
+    def input_keys(self) -> List[str]:
+        return ["sensors", "weather"]
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, batch: torch.Tensor) -> torch.Tensor:
         # change x shape to: batch, 1, sequence, features
-        x = torch.unsqueeze(x, dim=1)
+        x = torch.unsqueeze(batch, dim=1)
         x = self._cnn_1(x)
         x = self._dropout_1(x)
         x = torch.relu(x)

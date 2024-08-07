@@ -107,63 +107,12 @@ method. If set to <code>False</code>, the trainer and model classes will be inst
     &#34;&#34;&#34;
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -&gt; None:
+        parser.add_argument(&#34;--tag&#34;, type=str, default=None)
         parser.add_argument(&#34;--find-lr&#34;, default=False, action=&#34;store_true&#34;)
         parser.add_argument(&#34;--find-batch-size&#34;, default=False, action=&#34;store_true&#34;)
         parser.add_argument(&#34;--save-every&#34;, default=1)
         parser.add_argument(&#34;--tuner-config&#34;, nargs=&#34;?&#34;)
         parser.add_argument(&#34;--tuner-trials&#34;, type=int, default=25)
-
-    def _class_for_name(self, module_name, class_name):
-        # load the module, will raise ImportError if module cannot be loaded
-        m = importlib.import_module(module_name)
-        # get the class, will raise AttributeError if class cannot be found
-        c = getattr(m, class_name)
-        return c
-
-    def instantiate_classes(self) -&gt; None:
-        &#34;&#34;&#34;Instantiates the classes and sets their attributes.&#34;&#34;&#34;
-        # instantiate the data module
-        data_kwargs = self.config.data.as_dict()
-        self.datamodule = DataModule(**data_kwargs)
-        self.config.pop(&#34;data&#34;)
-
-        # instantiate the model, combining the config and dataset parameters
-        meta = self.datamodule.dataset.get_meta()
-        model_kwargs = self.config.model.as_dict()
-        class_string = model_kwargs[&#34;class_path&#34;].rsplit(&#34;.&#34;, maxsplit=1)
-
-        model_kwargs = model_kwargs[&#34;init_args&#34;]
-        model_kwargs[&#34;num_samples&#34;] = meta.num_input_sequence
-        model_kwargs[&#34;num_weather&#34;] = meta.num_features_weather
-        model_kwargs[&#34;num_sensors&#34;] = meta.num_features_sensors
-
-        # create model class, or load from pickled file
-        model_class = self._class_for_name(*class_string)
-        self.model = model_class(**model_kwargs)
-        self.config.pop(&#34;model&#34;)
-
-        # instantiate the trainer
-        self.trainer = self.instantiate_trainer()
-
-    def instantiate_trainer(self, **kwargs: Any) -&gt; Trainer:
-        &#34;&#34;&#34;Instantiates the trainer.
-
-        Args:
-            kwargs: Any custom trainer arguments.
-
-        &#34;&#34;&#34;
-        # instantiate callbacks
-        extra_callbacks = []
-        for namespace in self.config.trainer.callbacks:
-            class_path = self._class_for_name(*namespace.class_path.rsplit(&#34;.&#34;, maxsplit=1))
-            callback = class_path(**namespace.init_args.as_dict())
-            extra_callbacks.append(callback)
-
-        # get the args as dict without callback args
-        trainer_config = self.config.trainer.as_dict()
-        del trainer_config[&#34;callbacks&#34;]
-
-        return Trainer(callbacks=extra_callbacks, ** trainer_config)
 
     def before_fit(self):
         &#34;&#34;&#34;Method executes before fit automatically.&#34;&#34;&#34;
@@ -228,23 +177,6 @@ method. If set to <code>False</code>, the trainer and model classes will be inst
 <dd>
 <div class="desc"><p>Method executes before fit automatically.</p></div>
 </dd>
-<dt id="Comprisk.cli.cli.CompriskCLI.instantiate_classes"><code class="name flex">
-<span>def <span class="ident">instantiate_classes</span></span>(<span>self) ‑> None</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Instantiates the classes and sets their attributes.</p></div>
-</dd>
-<dt id="Comprisk.cli.cli.CompriskCLI.instantiate_trainer"><code class="name flex">
-<span>def <span class="ident">instantiate_trainer</span></span>(<span>self, **kwargs: Any) ‑> lightning.pytorch.trainer.trainer.Trainer</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Instantiates the trainer.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>kwargs</code></strong></dt>
-<dd>Any custom trainer arguments.</dd>
-</dl></div>
-</dd>
 </dl>
 </dd>
 </dl>
@@ -268,8 +200,6 @@ method. If set to <code>False</code>, the trainer and model classes will be inst
 <li><code><a title="Comprisk.cli.cli.CompriskCLI.add_arguments_to_parser" href="#Comprisk.cli.cli.CompriskCLI.add_arguments_to_parser">add_arguments_to_parser</a></code></li>
 <li><code><a title="Comprisk.cli.cli.CompriskCLI.after_fit" href="#Comprisk.cli.cli.CompriskCLI.after_fit">after_fit</a></code></li>
 <li><code><a title="Comprisk.cli.cli.CompriskCLI.before_fit" href="#Comprisk.cli.cli.CompriskCLI.before_fit">before_fit</a></code></li>
-<li><code><a title="Comprisk.cli.cli.CompriskCLI.instantiate_classes" href="#Comprisk.cli.cli.CompriskCLI.instantiate_classes">instantiate_classes</a></code></li>
-<li><code><a title="Comprisk.cli.cli.CompriskCLI.instantiate_trainer" href="#Comprisk.cli.cli.CompriskCLI.instantiate_trainer">instantiate_trainer</a></code></li>
 </ul>
 </li>
 </ul>

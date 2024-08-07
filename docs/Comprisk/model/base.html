@@ -107,20 +107,35 @@ slower but more stable. Defaults to 0 which is disabled.</dd>
         self._dropout = torch.nn.Dropout()
         self._mc_iteration = monte_carlo
 
-    def summary(self) -&gt; str:
+    def summary(self, meta: Metadata) -&gt; str:
         &#34;&#34;&#34;Returns a summary of the model as string. Requires to be
         implmenented by a child class to work. This function is just a
         placeholder, as the base model does not initialize any layers.
 
+        Args:
+            meta (Metadata): Metadata object containing information about the
+                dataset. May be required to build a dummy input for retrieving
+                the model&#39;s summary.
+        
         Returns:
             str: The summary of the model as string.
         &#34;&#34;&#34;
         raise NotImplementedError
 
     @property
-    def target(self) -&gt; str:
+    def target(self) -&gt; List[str]:
         &#34;&#34;&#34;The target name of inputs to predict.&#34;&#34;&#34;
-        return &#34;targets&#34;
+        return [&#34;targets&#34;]
+
+    def _get_target_batch(self, batch: torch.Tensor) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Returns the target batch from the given batch.&#34;&#34;&#34;
+        if len(self.target) == 1:
+            return batch[self.target[0]]
+
+        x = batch[self.target[0]]
+        for t in self.target[1:]:
+            x = torch.cat((x, batch[t]), dim=-1)
+        return x
 
     def forward(self, batch: torch.Tensor) -&gt; torch.Tensor:
         &#34;&#34;&#34;The forward method defines how the input is passed through the
@@ -135,19 +150,19 @@ slower but more stable. Defaults to 0 which is disabled.</dd>
 
     def training_step(self, batch: torch.Tensor, **kwargs) -&gt; torch.Tensor:
         y_hat = self(batch)
-        loss = self._loss(y_hat, batch[self.target])
+        loss = self._loss(y_hat, self._get_target_batch(batch))
         self.log(f&#34;train/{self._loss_name}&#34;, loss)
         return loss
 
     def test_step(self, batch: torch.Tensor, **kwargs) -&gt; torch.Tensor:
         y_hat = self(batch)
-        loss = self._loss(y_hat, batch[self.target])
+        loss = self._loss(y_hat, self._get_target_batch(batch))
         self.log(f&#34;test/{self._loss_name}&#34;, loss)
         return loss
 
     def validation_step(self, batch: torch.Tensor, **kwargs) -&gt; torch.Tensor:
         y_hat = self(batch)
-        loss = self._loss(y_hat, batch[self.target])
+        loss = self._loss(y_hat, self._get_target_batch(batch))
         self.log(f&#34;validate/{self._loss_name}&#34;, loss)
         return loss
 
@@ -217,11 +232,11 @@ slower but more stable. Defaults to 0 which is disabled.</dd>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
-<li><a title="Comprisk.model.ae.base.AutoEncoderBase" href="ae/base.html#Comprisk.model.ae.base.AutoEncoderBase">AutoEncoderBase</a></li>
+<li><a title="Comprisk.model.ae.base.AutoEncoder" href="ae/base.html#Comprisk.model.ae.base.AutoEncoder">AutoEncoder</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="Comprisk.model.base.BaseModel.target"><code class="name">prop <span class="ident">target</span> : str</code></dt>
+<dt id="Comprisk.model.base.BaseModel.target"><code class="name">prop <span class="ident">target</span> : List[str]</code></dt>
 <dd>
 <div class="desc"><p>The target name of inputs to predict.</p></div>
 <details class="source">
@@ -229,9 +244,9 @@ slower but more stable. Defaults to 0 which is disabled.</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
-def target(self) -&gt; str:
+def target(self) -&gt; List[str]:
     &#34;&#34;&#34;The target name of inputs to predict.&#34;&#34;&#34;
-    return &#34;targets&#34;</code></pre>
+    return [&#34;targets&#34;]</code></pre>
 </details>
 </dd>
 </dl>
@@ -348,7 +363,7 @@ as the base model just implements a placeholder.</p></div>
 <div class="desc"><p>Called in the training loop at the very beginning of the epoch.</p></div>
 </dd>
 <dt id="Comprisk.model.base.BaseModel.predict"><code class="name flex">
-<span>def <span class="ident">predict</span></span>(<span>self, x: <built-in method tensor of type object at 0x13be8cd00>, as_array: bool = False) ‑> List</span>
+<span>def <span class="ident">predict</span></span>(<span>self, x: <built-in method tensor of type object at 0x14e3ecd00>, as_array: bool = False) ‑> List</span>
 </code></dt>
 <dd>
 <div class="desc"><p>This method only predicts future steps based on the given curve described by
@@ -387,12 +402,19 @@ averaged over multiple runs with different to output a more stable prediction.</
 </dl></div>
 </dd>
 <dt id="Comprisk.model.base.BaseModel.summary"><code class="name flex">
-<span>def <span class="ident">summary</span></span>(<span>self) ‑> str</span>
+<span>def <span class="ident">summary</span></span>(<span>self, meta: Dataflux.pytorch.metadata.Metadata) ‑> str</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns a summary of the model as string. Requires to be
 implmenented by a child class to work. This function is just a
 placeholder, as the base model does not initialize any layers.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>meta</code></strong> :&ensp;<code>Metadata</code></dt>
+<dd>Metadata object containing information about the
+dataset. May be required to build a dummy input for retrieving
+the model's summary.</dd>
+</dl>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>str</code></dt>

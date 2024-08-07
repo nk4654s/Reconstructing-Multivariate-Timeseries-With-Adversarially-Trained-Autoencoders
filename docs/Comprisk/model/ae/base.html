@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.1">
 <title>Comprisk.model.ae.base API documentation</title>
-<meta name="description" content="This module implements a base AutoEncoder class.">
+<meta name="description" content="This module implements a basic AutoEncoder class and the base classes for an
+encoder and decoder.">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -25,7 +26,8 @@ hljs.highlightAll();
 <h1 class="title">Module <code>Comprisk.model.ae.base</code></h1>
 </header>
 <section id="section-intro">
-<p>This module implements a base AutoEncoder class.</p>
+<p>This module implements a basic AutoEncoder class and the base classes for an
+encoder and decoder.</p>
 </section>
 <section>
 </section>
@@ -36,75 +38,99 @@ hljs.highlightAll();
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="Comprisk.model.ae.base.AutoEncoderBase"><code class="flex name class">
-<span>class <span class="ident">AutoEncoderBase</span></span>
-<span>(</span><span>weather_bypass: bool = False, base: Dict = None)</span>
+<dt id="Comprisk.model.ae.base.AutoEncoder"><code class="flex name class">
+<span>class <span class="ident">AutoEncoder</span></span>
+<span>(</span><span>encoder: <a title="Comprisk.model.ae.base.EncoderBase" href="#Comprisk.model.ae.base.EncoderBase">EncoderBase</a>, decoder: <a title="Comprisk.model.ae.base.DecoderBase" href="#Comprisk.model.ae.base.DecoderBase">DecoderBase</a>, loss: str = 'MSELoss', activation: str = 'tanh', optimizer: str = 'Adam', lr: float = 0.001, lr_decay: float = 0.999, monte_carlo: int = 0)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>The auto encoder base class implements the forward and predict methods, as well as initializer
-function to define the encoder/decoder.</p>
+<div class="desc"><p>The AutoEncoder class uses a given encoder and decoder model to learn a latent
+space representation of the input data. Usually, the latent space is dramatically
+smaller than the input.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>weather_bypass</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Whether to bypass the weather data or not.</dd>
-<dt><strong><code>kwargs</code></strong> :&ensp;<code>Dict</code></dt>
-<dd>Keyword arguments to pass to the base model class.</dd>
-</dl></div>
+<dt><strong><code>encoder</code></strong> :&ensp;<code><a title="Comprisk.model.ae.base.EncoderBase" href="#Comprisk.model.ae.base.EncoderBase">EncoderBase</a></code></dt>
+<dd>The encoder model to learn the latent space representation.</dd>
+<dt><strong><code>decoder</code></strong> :&ensp;<code><a title="Comprisk.model.ae.base.DecoderBase" href="#Comprisk.model.ae.base.DecoderBase">DecoderBase</a></code></dt>
+<dd>The decoder model to reconstruct the input from the latent
+space.</dd>
+</dl>
+<blockquote>
+<p>More information about the other arguments can be found in the super class.</p>
+</blockquote></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class AutoEncoderBase(BaseModel):
-    &#34;&#34;&#34;
-    The auto encoder base class implements the forward and predict methods, as well as initializer
-    function to define the encoder/decoder.
+<pre><code class="python">class AutoEncoder(BaseModel):
+    &#34;&#34;&#34;The AutoEncoder class uses a given encoder and decoder model to learn a latent
+    space representation of the input data. Usually, the latent space is dramatically
+    smaller than the input.
 
     Args:
-        weather_bypass (bool): Whether to bypass the weather data or not.
-        kwargs (Dict): Keyword arguments to pass to the base model class.
+        encoder (EncoderBase): The encoder model to learn the latent space representation.
+        decoder (DecoderBase): The decoder model to reconstruct the input from the latent
+            space.
+    
+    &gt; More information about the other arguments can be found in the super class.
     &#34;&#34;&#34;
-
     def __init__(
         self,
-        weather_bypass: bool = False,
-        base: Dict = None,
+        encoder: EncoderBase,
+        decoder: DecoderBase,
+        loss: str = &#34;MSELoss&#34;,
+        activation: str = &#34;tanh&#34;,
+        optimizer: str = &#34;Adam&#34;,
+        lr: float = 0.001,
+        lr_decay: float = 0.999,
+        monte_carlo: int = 0,
     ) -&gt; None:
-        base = {} if base is None else base
-        super().__init__(**base)
+        super().__init__(
+            loss=loss,
+            activation=activation,
+            optimizer=optimizer,
+            lr=lr,
+            lr_decay=lr_decay,
+            monte_carlo=monte_carlo,
+        )
 
         # build encoder/decoder
-        self._bypass = weather_bypass
-        self._encoder = None
-        self._decoder = None
+        self._encoder = encoder
+        self._decoder = decoder
+
+    def summary(self, meta: Metadata) -&gt; str:
+        samples = meta.num_input_sequence
+        sensors = meta.num_features_sensors
+        weather = meta.num_features_weather
+
+        input_data = {
+            &#34;sensors&#34;: torch.tensor(
+                np.zeros((1, samples, sensors), dtype=np.float32)
+            ),
+            &#34;weather&#34;: torch.tensor(
+                np.zeros((1, samples, weather), dtype=np.float32)
+            ),
+        }
+
+        return str(torchsummary(self, input_data={&#34;batch&#34;: input_data}))
 
     @property
     def target(self) -&gt; str:
         &#34;&#34;&#34;The target name of inputs to predict.&#34;&#34;&#34;
-        return &#34;sensors&#34;
+        return self._decoder.output_keys
 
-    def forward(self, inputs: Dict[str, torch.Tensor]) -&gt; torch.Tensor:
+    def forward(self, batch: Dict[str, torch.Tensor]) -&gt; torch.Tensor:
         &#34;&#34;&#34;
         Passes the input through both the encoder and decoder.
 
         Args:
-            inputs (Dict[str, torch.Tensor]): The input tensor.
+            batch (Dict[str, torch.Tensor]): The input tensor.
 
         Returns:
             torch.Tensor: The output of the autoencoder.
         &#34;&#34;&#34;
-        # concat inputs when bypass is inactive
-        x = inputs[&#34;sensors&#34;]
-        if not self._bypass:
-            weather = inputs[&#34;weather&#34;]
-            x = torch.cat([x, weather], dim=-1)
-
-        # pass inputs through encoder/decoder
-        encoded = self._encoder(x)
-        if self._bypass:
-            encoded = torch.cat([encoded, inputs[&#34;weather&#34;]], dim=-1)
-
-        decoded = self._decoder(encoded)
-        return self._activation(decoded)
+        x = self.encode(batch)
+        x = self._decoder(x, batch)
+        return self._activation(x)
 
     def encode(self, inputs: Dict[str, torch.Tensor]) -&gt; torch.Tensor:
         &#34;&#34;&#34;
@@ -116,28 +142,29 @@ function to define the encoder/decoder.</p>
         Returns:
             torch.Tensor: The encoded output.
         &#34;&#34;&#34;
-        x = inputs[&#34;sensors&#34;]
-        if not self._bypass:
-            weather = inputs[&#34;weather&#34;]
-            x = torch.cat([x, weather], dim=1)
+        keys = self._encoder.input_keys
+        if len(keys) == 1:
+            return self._encoder(inputs[keys[0]])
+
+        x = inputs[keys[0]]
+        for key in keys[1:]:
+            x = torch.cat([x, inputs[key]], dim=-1)
 
         return self._encoder(x)
 
-    def decode(self, z: torch.Tensor, x_weather: torch.Tensor = None) -&gt; torch.Tensor:
+    def decode(self, z: torch.Tensor, inputs: torch.Tensor = None) -&gt; torch.Tensor:
         &#34;&#34;&#34;
         Decodes the input using the decoder network.
 
         Args:
             z (torch.Tensor): The input tensor to be decoded.
-            x_weather (torch.Tensor): The weather input tensor when bypassing the encoder.
+            inputs (torch.Tensor): The original input tensor, required when
+                bypassing the encoder.
 
         Returns:
             torch.Tensor: The decoded output.
         &#34;&#34;&#34;
-        if self._bypass:
-            z = torch.cat([z, x_weather], dim=-1)
-
-        return self._decoder(z)</code></pre>
+        return self._decoder(z, inputs)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -150,14 +177,10 @@ function to define the encoder/decoder.</p>
 <li>lightning.pytorch.core.hooks.CheckpointHooks</li>
 <li>torch.nn.modules.module.Module</li>
 </ul>
-<h3>Subclasses</h3>
-<ul class="hlist">
-<li><a title="Comprisk.model.ae.cnn.standard.AutoEncoder" href="cnn/standard.html#Comprisk.model.ae.cnn.standard.AutoEncoder">AutoEncoder</a></li>
-</ul>
 <h3>Methods</h3>
 <dl>
-<dt id="Comprisk.model.ae.base.AutoEncoderBase.decode"><code class="name flex">
-<span>def <span class="ident">decode</span></span>(<span>self, z: torch.Tensor, x_weather: torch.Tensor = None) ‑> torch.Tensor</span>
+<dt id="Comprisk.model.ae.base.AutoEncoder.decode"><code class="name flex">
+<span>def <span class="ident">decode</span></span>(<span>self, z: torch.Tensor, inputs: torch.Tensor = None) ‑> torch.Tensor</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Decodes the input using the decoder network.</p>
@@ -165,8 +188,9 @@ function to define the encoder/decoder.</p>
 <dl>
 <dt><strong><code>z</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>The input tensor to be decoded.</dd>
-<dt><strong><code>x_weather</code></strong> :&ensp;<code>torch.Tensor</code></dt>
-<dd>The weather input tensor when bypassing the encoder.</dd>
+<dt><strong><code>inputs</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The original input tensor, required when
+bypassing the encoder.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -174,7 +198,7 @@ function to define the encoder/decoder.</p>
 <dd>The decoded output.</dd>
 </dl></div>
 </dd>
-<dt id="Comprisk.model.ae.base.AutoEncoderBase.encode"><code class="name flex">
+<dt id="Comprisk.model.ae.base.AutoEncoder.encode"><code class="name flex">
 <span>def <span class="ident">encode</span></span>(<span>self, inputs: Dict[str, torch.Tensor]) ‑> torch.Tensor</span>
 </code></dt>
 <dd>
@@ -190,14 +214,14 @@ function to define the encoder/decoder.</p>
 <dd>The encoded output.</dd>
 </dl></div>
 </dd>
-<dt id="Comprisk.model.ae.base.AutoEncoderBase.forward"><code class="name flex">
-<span>def <span class="ident">forward</span></span>(<span>self, inputs: Dict[str, torch.Tensor]) ‑> torch.Tensor</span>
+<dt id="Comprisk.model.ae.base.AutoEncoder.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, batch: Dict[str, torch.Tensor]) ‑> torch.Tensor</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Passes the input through both the encoder and decoder.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>inputs</code></strong> :&ensp;<code>Dict[str, torch.Tensor]</code></dt>
+<dt><strong><code>batch</code></strong> :&ensp;<code>Dict[str, torch.Tensor]</code></dt>
 <dd>The input tensor.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
@@ -224,6 +248,134 @@ function to define the encoder/decoder.</p>
 </li>
 </ul>
 </dd>
+<dt id="Comprisk.model.ae.base.DecoderBase"><code class="flex name class">
+<span>class <span class="ident">DecoderBase</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The decoder base class implements the forward and predict methods, as well as initializer
+function to define the decoder.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DecoderBase(nn.Module):
+    &#34;&#34;&#34;
+    The decoder base class implements the forward and predict methods, as well as initializer
+    function to define the decoder.
+    &#34;&#34;&#34;
+
+    def __init__(self, *args, **kwargs) -&gt; None:
+        super(DecoderBase, self).__init__()
+
+    def forward(self, z: torch.Tensor, inputs: Dict[str, torch.tensor]) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Implements the forward pass of the decoder.&#34;&#34;&#34;
+        raise NotImplementedError()
+
+    @property
+    def output_keys(self) -&gt; List[str]:
+        &#34;&#34;&#34;The output keys to know what the target is.&#34;&#34;&#34;
+        return [&#34;sensors&#34;, &#34;weather&#34;]</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="Comprisk.model.ae.cnn.fs_decoder.FSDecoder" href="cnn/fs_decoder.html#Comprisk.model.ae.cnn.fs_decoder.FSDecoder">FSDecoder</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="Comprisk.model.ae.base.DecoderBase.output_keys"><code class="name">prop <span class="ident">output_keys</span> : List[str]</code></dt>
+<dd>
+<div class="desc"><p>The output keys to know what the target is.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def output_keys(self) -&gt; List[str]:
+    &#34;&#34;&#34;The output keys to know what the target is.&#34;&#34;&#34;
+    return [&#34;sensors&#34;, &#34;weather&#34;]</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="Comprisk.model.ae.base.DecoderBase.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, z: torch.Tensor, inputs: Dict[str, <built-in method tensor of type object at 0x14e3ecd00>]) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Implements the forward pass of the decoder.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="Comprisk.model.ae.base.EncoderBase"><code class="flex name class">
+<span>class <span class="ident">EncoderBase</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The encoder base class implements the forward and predict methods, as well as initializer
+function to define the encoder.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class EncoderBase(nn.Module):
+    &#34;&#34;&#34;
+    The encoder base class implements the forward and predict methods, as well as initializer
+    function to define the encoder.
+    &#34;&#34;&#34;
+
+    def __init__(self, *args, **kwargs) -&gt; None:
+        super(EncoderBase, self).__init__()
+
+    def forward(self, batch: torch.tensor) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Implements the forward pass of the encoder.&#34;&#34;&#34;
+        raise NotImplementedError()
+
+    @property
+    def input_keys(self) -&gt; List[str]:
+        &#34;&#34;&#34;Returns a list of input keys for the encoder.&#34;&#34;&#34;
+        return [&#34;sensors&#34;, &#34;weather&#34;]</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="Comprisk.model.ae.cnn.fs_encoder.FSEncoder" href="cnn/fs_encoder.html#Comprisk.model.ae.cnn.fs_encoder.FSEncoder">FSEncoder</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="Comprisk.model.ae.base.EncoderBase.input_keys"><code class="name">prop <span class="ident">input_keys</span> : List[str]</code></dt>
+<dd>
+<div class="desc"><p>Returns a list of input keys for the encoder.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def input_keys(self) -&gt; List[str]:
+    &#34;&#34;&#34;Returns a list of input keys for the encoder.&#34;&#34;&#34;
+    return [&#34;sensors&#34;, &#34;weather&#34;]</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="Comprisk.model.ae.base.EncoderBase.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, batch: <built-in method tensor of type object at 0x14e3ecd00>) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Implements the forward pass of the encoder.</p></div>
+</dd>
+</dl>
+</dd>
 </dl>
 </section>
 </article>
@@ -240,11 +392,25 @@ function to define the encoder/decoder.</p>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="Comprisk.model.ae.base.AutoEncoderBase" href="#Comprisk.model.ae.base.AutoEncoderBase">AutoEncoderBase</a></code></h4>
+<h4><code><a title="Comprisk.model.ae.base.AutoEncoder" href="#Comprisk.model.ae.base.AutoEncoder">AutoEncoder</a></code></h4>
 <ul class="">
-<li><code><a title="Comprisk.model.ae.base.AutoEncoderBase.decode" href="#Comprisk.model.ae.base.AutoEncoderBase.decode">decode</a></code></li>
-<li><code><a title="Comprisk.model.ae.base.AutoEncoderBase.encode" href="#Comprisk.model.ae.base.AutoEncoderBase.encode">encode</a></code></li>
-<li><code><a title="Comprisk.model.ae.base.AutoEncoderBase.forward" href="#Comprisk.model.ae.base.AutoEncoderBase.forward">forward</a></code></li>
+<li><code><a title="Comprisk.model.ae.base.AutoEncoder.decode" href="#Comprisk.model.ae.base.AutoEncoder.decode">decode</a></code></li>
+<li><code><a title="Comprisk.model.ae.base.AutoEncoder.encode" href="#Comprisk.model.ae.base.AutoEncoder.encode">encode</a></code></li>
+<li><code><a title="Comprisk.model.ae.base.AutoEncoder.forward" href="#Comprisk.model.ae.base.AutoEncoder.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="Comprisk.model.ae.base.DecoderBase" href="#Comprisk.model.ae.base.DecoderBase">DecoderBase</a></code></h4>
+<ul class="">
+<li><code><a title="Comprisk.model.ae.base.DecoderBase.forward" href="#Comprisk.model.ae.base.DecoderBase.forward">forward</a></code></li>
+<li><code><a title="Comprisk.model.ae.base.DecoderBase.output_keys" href="#Comprisk.model.ae.base.DecoderBase.output_keys">output_keys</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="Comprisk.model.ae.base.EncoderBase" href="#Comprisk.model.ae.base.EncoderBase">EncoderBase</a></code></h4>
+<ul class="">
+<li><code><a title="Comprisk.model.ae.base.EncoderBase.forward" href="#Comprisk.model.ae.base.EncoderBase.forward">forward</a></code></li>
+<li><code><a title="Comprisk.model.ae.base.EncoderBase.input_keys" href="#Comprisk.model.ae.base.EncoderBase.input_keys">input_keys</a></code></li>
 </ul>
 </li>
 </ul>

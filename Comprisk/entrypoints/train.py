@@ -4,6 +4,7 @@ import os
 import shutil
 import torch
 from lightning.pytorch.loggers import TensorBoardLogger
+
 from Dataflux.helper import get_logger
 
 from Comprisk.helper import get_config_path
@@ -37,10 +38,10 @@ def cli_main():
     shutil.copyfile(get_config_path(cli), os.path.join(tb_logger.log_dir, "config.yml"))
 
     # save model summary to log folder
-    with open(
-        os.path.join(tb_logger.log_dir, "summary.txt"), mode="w", encoding="UTF-8"
-    ) as sum_file:
-        sum_file.write(cli.model.summary())
+    summary_path = os.path.join(tb_logger.log_dir, "summary.txt")
+    with open(summary_path, mode="w", encoding="UTF-8") as sum_file:
+        meta = cli.datamodule.dataset.get_meta()
+        sum_file.write(cli.model.summary(meta))
 
     # run methods before fit
     logger.debug("CompriskCLI prepare training.")
