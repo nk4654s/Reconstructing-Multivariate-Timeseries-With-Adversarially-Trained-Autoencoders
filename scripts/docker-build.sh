@@ -22,3 +22,4 @@ sh scripts/build.sh cuda $USER
 
 docker build --platform "linux/$PLATFORM" -t comprisk .
 rm -rf Dockerfile
+rm -rf miniconda.sh

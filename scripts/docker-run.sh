@@ -4,7 +4,7 @@
 CONF_FOLDER="./configs/"
 LOG_FOLDER="./logs/"
 MODEL_FOLDER="./models/"
-DATA_FOLDER="/Users/jonas/Dataset"
+DATA_FOLDER="/home/jonas/NEAX/Dataset"
 
 # configure ports
 TB_PORT=6006
@@ -27,19 +27,20 @@ else
         fi
     fi
 fi
+shift;
 
 # auto-configure platform
 PLATFORM=$(uname -m)
 
 # check the given command, if none then fallback to bash
-CMD="${@:2}"
+CMD="$@"
 ARG="-d -it"
 NAME="comprisk"
-if [ -z "$2" ]; then
+if [ -z "$CMD" ]; then
     ARG="-it"
     CMD="/bin/bash"
 else
-    NAME="$2"
+    NAME="$1"
 fi
 
 # build the docker command
@@ -51,13 +52,24 @@ docker run $SYS_ARGS \
     -v "$DATA_FOLDER":/app/dataset/ \
     $ARG comprisk:latest /bin/bash -c "$CMD"
 
+# wait until the docker is up
+until [ "`docker inspect -f {{.State.Running}} $NAME`"=="true" ]; do
+    sleep 0.1;
+done;
+
 if [ "$NAME" = "comprisk-tuner" ]; then
-    # start tensorboard
+    # wait until sqlite db is created
+    until [ -f logs/optuna.sqlite3 ]
+    do
+        sleep 0.5
+    done
+
+    # start optuna dashboard
     docker run --shm-size=256M --cpus=1 \
         --name optuna \
         -p 8080:8080 \
         -v "$MODEL_FOLDER":/app/models/ \
-        -it -d comprisk:latest optuna-dashboard sqlite:///logs/optuna.sqlite3
+        -it -d comprisk:latest optuna-dashboard sqlite:///logs/optuna.sqlite3 --host 0.0.0.0
 else
     # start tensorboard
     docker run --shm-size=256M --cpus=1 \

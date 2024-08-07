@@ -9,7 +9,7 @@ trainer:
         patience: 5
   # define training configuration
   precision: 32
-  max_epochs: 1
+  max_epochs: 3
   gradient_clip_val: 1.0
 #  profiler: "simple"
   log_every_n_steps: 1
@@ -18,11 +18,11 @@ model:
   class_path: Comprisk.model.ae.cnn.AutoEncoder
   init_args:
     # encoder/decoder parameters
-    kernel_size: 80
-    num_filters: 96
-    stride: 8
+    kernel_size: 103
+    num_filters: 106
+    stride: 5
     dropout_prob: 0.2
-    bypass_hidden_size: 256
+    bypass_hidden_size: 1096
     # gerneral parameters
     base:
       activation: tanh
@@ -38,7 +38,7 @@ data:
   # configure how to sample from the dataset
   batch_size: 128
   shuffle: true
-  train_size: 0.2
-  validation_size: 0.05
+  train_size: 0.7
+  validation_size: 0.2
   # configure the workers sampling the dataset
   num_workers: 1

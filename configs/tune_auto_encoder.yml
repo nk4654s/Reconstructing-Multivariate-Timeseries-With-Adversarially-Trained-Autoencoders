@@ -4,17 +4,22 @@ tuner_args:
   val_size_percentage: 0.2
 
 # configure hyper parameter search spaces
-kernel_size:
+stride:
   type: int
-  min: 50
-  max: 200
+  min: 2
+  max: 12
 
 num_filters:
   type: int
-  min: 16
+  min: 80
+  max: 120
+
+kernel_size:
+  type: int
+  min: 64
   max: 128
 
-stride:
+bypass_hidden_size:
   type: int
-  min: 3
-  max: 20
+  min: 786
+  max: 2048
