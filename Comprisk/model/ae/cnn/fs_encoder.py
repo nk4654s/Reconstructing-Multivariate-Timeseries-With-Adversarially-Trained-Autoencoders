@@ -91,3 +91,12 @@ class FSEncoder(EncoderBase):
         # change x shape to: batch, sequence
         x = torch.squeeze(x, dim=1)
         return x
+
+
+class FSEncoderBypass(FSEncoder):
+    """The feature sequence encoder with bypass equals the FSEncoder super class
+    except it takes `sensor` data only.
+    """
+    @property
+    def input_keys(self) -> List[str]:
+        return ["sensors"]

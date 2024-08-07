@@ -21,7 +21,7 @@ model:
     activation: tanh
     loss: MSELoss
     optimizer: Adam
-    lr: 0.0015
+    lr: 0.00015
     # encoder/decoder
     encoder:
       class_path: Comprisk.model.ae.cnn.FSEncoder
@@ -30,7 +30,7 @@ model:
         num_samples: 1000
         kernel_size: 80
         num_filters: 96
-        stride: 8
+        stride: 12
         dropout_prob: 0.2
     decoder:
       class_path: Comprisk.model.ae.cnn.FSDecoder
@@ -38,7 +38,7 @@ model:
         num_features: 26
         kernel_size: 80
         num_filters: 96
-        stride: 8
+        stride: 12
         dropout_prob: 0.2
 data:
   # configure dataset to load
