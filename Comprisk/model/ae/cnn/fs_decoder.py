@@ -110,9 +110,11 @@ class FSDecoderBypass(FSDecoder):
         else:
             layers = [nn.Linear(num_features + num_bypass, num_hidden_nodes)]
             layers.append(nn.LeakyReLU())
+            layers.append(nn.Dropout(dropout_prob))
             for _ in range(1, num_hidden_layers - 1):
                 layers.append(nn.Linear(num_hidden_nodes, num_hidden_nodes))
                 layers.append(nn.LeakyReLU())
+                layers.append(nn.Dropout(dropout_prob))
             layers.append(nn.Linear(num_hidden_nodes, num_features))
 
             self._bypass_nn = nn.Sequential(*layers)
