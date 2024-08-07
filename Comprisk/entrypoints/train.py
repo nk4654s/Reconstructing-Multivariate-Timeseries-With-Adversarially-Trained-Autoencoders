@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import torch
 from lightning.pytorch.loggers import TensorBoardLogger
 from Dataflux.helper import get_logger
 
@@ -47,7 +48,11 @@ def cli_main():
 
     # train
     logger.debug("Starting training")
-    cli.trainer.fit(cli.model, cli.datamodule)
+    model = cli.model
+    if model.device == "cuda":
+        logger.debug("Compile model for faster training speeds")
+        model = torch.compile(cli.model)
+    cli.trainer.fit(model, cli.datamodule)
 
     # run methods after fit
     logger.debug("Training finished, clean up now.")
