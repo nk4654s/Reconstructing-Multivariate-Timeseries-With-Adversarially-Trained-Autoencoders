@@ -88,6 +88,8 @@ class AutoEncoder(BaseModel):
         self._encoder = encoder
         self._decoder = decoder
 
+        self.save_hyperparameters(ignore=["encoder", "decoder"])
+
     def summary(self, meta: Metadata) -> str:
         samples = meta.num_input_sequence
         sensors = meta.num_features_sensors

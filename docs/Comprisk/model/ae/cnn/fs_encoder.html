@@ -154,6 +154,10 @@ features into a fixed-length vector. This is achieved by applying a
 <li><a title="Comprisk.model.ae.base.EncoderBase" href="../base.html#Comprisk.model.ae.base.EncoderBase">EncoderBase</a></li>
 <li>torch.nn.modules.module.Module</li>
 </ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="Comprisk.model.ae.cnn.fs_encoder.FSEncoderBypass" href="#Comprisk.model.ae.cnn.fs_encoder.FSEncoderBypass">FSEncoderBypass</a></li>
+</ul>
 <h3>Instance variables</h3>
 <dl>
 <dt id="Comprisk.model.ae.cnn.fs_encoder.FSEncoder.latent_size"><code class="name">prop <span class="ident">latent_size</span> : int</code></dt>
@@ -180,6 +184,43 @@ def latent_size(self) -&gt; int:
 </li>
 </ul>
 </dd>
+<dt id="Comprisk.model.ae.cnn.fs_encoder.FSEncoderBypass"><code class="flex name class">
+<span>class <span class="ident">FSEncoderBypass</span></span>
+<span>(</span><span>num_features: int, num_samples: int, kernel_size: int = 3, stride: int = 1, num_filters: int = 32, dropout_prob: float = 0.2)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The feature sequence encoder with bypass equals the FSEncoder super class
+except it takes <code>sensor</code> data only.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FSEncoderBypass(FSEncoder):
+    &#34;&#34;&#34;The feature sequence encoder with bypass equals the FSEncoder super class
+    except it takes `sensor` data only.
+    &#34;&#34;&#34;
+    @property
+    def input_keys(self) -&gt; List[str]:
+        return [&#34;sensors&#34;]</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="Comprisk.model.ae.cnn.fs_encoder.FSEncoder" href="#Comprisk.model.ae.cnn.fs_encoder.FSEncoder">FSEncoder</a></li>
+<li><a title="Comprisk.model.ae.base.EncoderBase" href="../base.html#Comprisk.model.ae.base.EncoderBase">EncoderBase</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="Comprisk.model.ae.cnn.fs_encoder.FSEncoder" href="#Comprisk.model.ae.cnn.fs_encoder.FSEncoder">FSEncoder</a></b></code>:
+<ul class="hlist">
+<li><code><a title="Comprisk.model.ae.cnn.fs_encoder.FSEncoder.forward" href="../base.html#Comprisk.model.ae.base.EncoderBase.forward">forward</a></code></li>
+<li><code><a title="Comprisk.model.ae.cnn.fs_encoder.FSEncoder.input_keys" href="../base.html#Comprisk.model.ae.base.EncoderBase.input_keys">input_keys</a></code></li>
+<li><code><a title="Comprisk.model.ae.cnn.fs_encoder.FSEncoder.latent_size" href="#Comprisk.model.ae.cnn.fs_encoder.FSEncoder.latent_size">latent_size</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
 </dl>
 </section>
 </article>
@@ -200,6 +241,9 @@ def latent_size(self) -&gt; int:
 <ul class="">
 <li><code><a title="Comprisk.model.ae.cnn.fs_encoder.FSEncoder.latent_size" href="#Comprisk.model.ae.cnn.fs_encoder.FSEncoder.latent_size">latent_size</a></code></li>
 </ul>
+</li>
+<li>
+<h4><code><a title="Comprisk.model.ae.cnn.fs_encoder.FSEncoderBypass" href="#Comprisk.model.ae.cnn.fs_encoder.FSEncoderBypass">FSEncoderBypass</a></code></h4>
 </li>
 </ul>
 </li>

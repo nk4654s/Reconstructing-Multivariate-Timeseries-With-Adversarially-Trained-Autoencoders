@@ -63,7 +63,7 @@ reconstructs it back to the original size.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class FSDecoder(DecoderBase):
-    &#34;&#34;&#34; The feature sequence decoder is the matching counterpart to the
+    &#34;&#34;&#34;The feature sequence decoder is the matching counterpart to the
     `FSEncoder` class. It takes in the encoded feature sequence and
     reconstructs it back to the original size.
 
@@ -74,6 +74,7 @@ reconstructs it back to the original size.</p>
         num_filters (int): The number of filters to use for each layer.
         dropout_prob (float): Probability of zeroing out activations.
     &#34;&#34;&#34;
+
     def __init__(
         self,
         num_features: int,
@@ -134,12 +135,108 @@ reconstructs it back to the original size.</p>
 <li><a title="Comprisk.model.ae.base.DecoderBase" href="../base.html#Comprisk.model.ae.base.DecoderBase">DecoderBase</a></li>
 <li>torch.nn.modules.module.Module</li>
 </ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="Comprisk.model.ae.cnn.fs_decoder.FSDecoderBypass" href="#Comprisk.model.ae.cnn.fs_decoder.FSDecoderBypass">FSDecoderBypass</a></li>
+</ul>
 <h3>Inherited members</h3>
 <ul class="hlist">
 <li><code><b><a title="Comprisk.model.ae.base.DecoderBase" href="../base.html#Comprisk.model.ae.base.DecoderBase">DecoderBase</a></b></code>:
 <ul class="hlist">
 <li><code><a title="Comprisk.model.ae.base.DecoderBase.forward" href="../base.html#Comprisk.model.ae.base.DecoderBase.forward">forward</a></code></li>
 <li><code><a title="Comprisk.model.ae.base.DecoderBase.output_keys" href="../base.html#Comprisk.model.ae.base.DecoderBase.output_keys">output_keys</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="Comprisk.model.ae.cnn.fs_decoder.FSDecoderBypass"><code class="flex name class">
+<span>class <span class="ident">FSDecoderBypass</span></span>
+<span>(</span><span>num_features: int, num_bypass: int = 1, num_hidden_nodes: int = 32, num_hidden_layers: int = 1, kernel_size: int = 3, stride: int = 1, num_filters: int = 32, dropout_prob: float = 0.2)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The feature sequence decoder with bypass tries to reconstruct the latent space utilizing
+the bypassed data. The bypassed data should not be given to the FSEncoder, use the
+FSEncoderBypass accordingly.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>num_bypass</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of features to bypass the latent space.</dd>
+<dt><strong><code>num_hidden_nodes</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of nodes of the sequential network, which combines
+the decoder output and the bypassed data.</dd>
+<dt><strong><code>num_hidden_layers</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of layers of the sequential network.</dd>
+</dl>
+<blockquote>
+<p>To view the explanation of other arguments, head to the FSDecoder super class.</p>
+</blockquote>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FSDecoderBypass(FSDecoder):
+    &#34;&#34;&#34;The feature sequence decoder with bypass tries to reconstruct the latent space utilizing
+    the bypassed data. The bypassed data should not be given to the FSEncoder, use the
+    FSEncoderBypass accordingly.
+
+    Args:
+        num_bypass (int): The number of features to bypass the latent space.
+        num_hidden_nodes (int): The number of nodes of the sequential network, which combines
+            the decoder output and the bypassed data.
+        num_hidden_layers (int): The number of layers of the sequential network.
+    
+    &gt; To view the explanation of other arguments, head to the FSDecoder super class.
+    &#34;&#34;&#34;
+    def __init__(
+        self,
+        num_features: int,
+        num_bypass: int = 1,
+        num_hidden_nodes: int = 32,
+        num_hidden_layers: int = 1,
+        kernel_size: int = 3,
+        stride: int = 1,
+        num_filters: int = 32,
+        dropout_prob: float = 0.2,
+    ) -&gt; None:
+        super().__init__(num_features, kernel_size, stride, num_filters, dropout_prob)
+
+        self._num_bypass = num_bypass
+        if num_hidden_layers == 1:
+            self._bypass_nn = nn.Sequential(
+                nn.Linear(num_features + num_bypass, num_features)
+            )
+        else:
+            layers = [nn.Linear(num_features + num_bypass, num_hidden_nodes)]
+            layers.append(nn.LeakyReLU())
+            layers.append(nn.Dropout(dropout_prob))
+            for _ in range(1, num_hidden_layers - 1):
+                layers.append(nn.Linear(num_hidden_nodes, num_hidden_nodes))
+                layers.append(nn.LeakyReLU())
+                layers.append(nn.Dropout(dropout_prob))
+            layers.append(nn.Linear(num_hidden_nodes, num_features))
+
+            self._bypass_nn = nn.Sequential(*layers)
+
+    def forward(self, z: torch.Tensor, inputs: Dict[str, torch.tensor]) -&gt; torch.Tensor:
+        x = super().forward(z, inputs)
+        x = torch.tanh(x)
+        x = torch.cat([x, inputs[&#34;weather&#34;]], dim=-1)
+
+        return self._bypass_nn(x)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="Comprisk.model.ae.cnn.fs_decoder.FSDecoder" href="#Comprisk.model.ae.cnn.fs_decoder.FSDecoder">FSDecoder</a></li>
+<li><a title="Comprisk.model.ae.base.DecoderBase" href="../base.html#Comprisk.model.ae.base.DecoderBase">DecoderBase</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="Comprisk.model.ae.cnn.fs_decoder.FSDecoder" href="#Comprisk.model.ae.cnn.fs_decoder.FSDecoder">FSDecoder</a></b></code>:
+<ul class="hlist">
+<li><code><a title="Comprisk.model.ae.cnn.fs_decoder.FSDecoder.forward" href="../base.html#Comprisk.model.ae.base.DecoderBase.forward">forward</a></code></li>
+<li><code><a title="Comprisk.model.ae.cnn.fs_decoder.FSDecoder.output_keys" href="../base.html#Comprisk.model.ae.base.DecoderBase.output_keys">output_keys</a></code></li>
 </ul>
 </li>
 </ul>
@@ -161,6 +258,9 @@ reconstructs it back to the original size.</p>
 <ul>
 <li>
 <h4><code><a title="Comprisk.model.ae.cnn.fs_decoder.FSDecoder" href="#Comprisk.model.ae.cnn.fs_decoder.FSDecoder">FSDecoder</a></code></h4>
+</li>
+<li>
+<h4><code><a title="Comprisk.model.ae.cnn.fs_decoder.FSDecoderBypass" href="#Comprisk.model.ae.cnn.fs_decoder.FSDecoderBypass">FSDecoderBypass</a></code></h4>
 </li>
 </ul>
 </li>

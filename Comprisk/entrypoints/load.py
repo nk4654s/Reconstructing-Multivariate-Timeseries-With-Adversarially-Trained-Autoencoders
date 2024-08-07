@@ -3,9 +3,13 @@ applys the loaded model on the configured dataset. The prediction will be
 safed next to the model's log folder as graph comparing prediction
 vs. target."""
 
+from typing import Dict
+import importlib
 import os
 import torch
+import torch.nn as nn
 import pandas as pd
+import yaml
 from tqdm import tqdm
 
 # simple demo classes for your convenience
@@ -23,8 +27,27 @@ logger = get_logger(__name__, path="./logs/logfile")
 # FIXME: debug and check if the learning rate finder result is used (expected ~1h)
 # TODO: create cuda enabled conda environment (expected ~1h)
 # TODO: Setup Ubuntu machine for server training with CUDA and docker (expected <1h)
-
 # TODO: run config with more than 1 dataloader fails in docker
+
+def _class_for_name(module_name, class_name):
+    # load the module, will raise ImportError if module cannot be loaded
+    m = importlib.import_module(module_name)
+    # get the class, will raise AttributeError if class cannot be found
+    c = getattr(m, class_name)
+    return c
+
+
+def _init_sub_modules(path: str) -> Dict[str, nn.Module]:
+    hparam_path = os.path.join(path, "hparams.yaml")
+    with open(hparam_path, mode="r", encoding="UTF-8") as f:
+        hparams = yaml.safe_load(f)
+        sub_modules = {}
+        for key, value in hparams["init_args"].items():
+            if isinstance(value, dict):
+                libpath = value["class_path"]
+                module = _class_for_name(*libpath.rsplit(".", maxsplit=1))
+                sub_modules[key] = module(**value["init_args"])
+        return sub_modules
 
 
 def cli_main():
@@ -39,8 +62,10 @@ def cli_main():
     checkpoints = get_checkpoints(cli)
 
     # 1. get dataset configuration: start, end, step size (size of input window)
+    sub_modules = _init_sub_modules(base_path)
     model = cli.model.__class__.load_from_checkpoint(
-        os.path.join(base_path, checkpoints[-1])
+        os.path.join(base_path, checkpoints[-1]),
+        **sub_modules
     )
     dataset = cli.datamodule.dataset
     meta: Metadata = dataset.get_meta()
