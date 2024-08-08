@@ -1,4 +1,5 @@
 """This module contains the AnomalyDetector class."""
+
 import os
 import importlib
 from typing import Dict
@@ -9,7 +10,7 @@ import torch
 from tqdm import tqdm
 from Dataflux.pytorch import Dataset
 from Dataflux.helper import get_logger
-from Comprisk.helper import get_loss_by_name
+from Comprisk.helper import get_loss_by_name, init_sub_modules
 from Comprisk.model import BaseModel
 
 logger = get_logger(__name__)
@@ -56,8 +57,19 @@ class AnomalyDetector:
         # load the model from the latest checkpoint
         folder = os.path.dirname(path)
         checkpoints = sorted([_ for _ in os.listdir(folder) if "ckpt" in _])
-        model = cls.load_from_checkpoint(os.path.join(folder, checkpoints[-1]))
+        sub_modules = init_sub_modules(folder)
+        model = cls.load_from_checkpoint(
+            os.path.join(folder, checkpoints[-1]), **sub_modules
+        )
         return model
+
+    def set_threshold(self, threshold: float) -> None:
+        """Setter of the threshold.
+        
+        Args:
+            threshold (float): The threshold over which a loss counts as an anomaly.
+        """
+        self._threshold = threshold
 
     def train_threshold(
         self, dataset: Dataset, limit_samples: int = 1_000, overlap: int = None
@@ -111,7 +123,7 @@ class AnomalyDetector:
                 "No outliers detected, fallback to max loss %s", self._threshold
             )
 
-    def detect(self, inputs: Dict[str, np.array]) -> float:
+    def detect(self, inputs: Dict[str, np.array], feature: bool = False) -> float:
         """This method sends the input array to the model, compresses it
         and reconstructs the compressed representation. Then, the
         reconstruction loss is calculated and returned.
@@ -119,6 +131,8 @@ class AnomalyDetector:
         Args:
             inputs (np.array): The array of which the reconstruction loss
                 should be calculated.
+            feature (bool): If set to true, the loss per feature will be returned.
+                Otherwise the MSELoss of all features will be returned.
 
         Returns:
             float: The reconstruction loss.
@@ -135,8 +149,16 @@ class AnomalyDetector:
         reconstruct = self._model.predict(inputs)
 
         # calculate the loss of reconstruction, high means anomaly detected
-        reconstruction_loss = self._loss(inputs["sensors"], reconstruct)
-        return reconstruction_loss.detach().cpu().numpy()
+        if not feature:
+            reconstruction_loss = self._loss(inputs["sensors"], reconstruct)
+            return reconstruction_loss.detach().cpu().numpy()
+
+        per_feature = []
+        for i in range(reconstruct.shape[-1]):
+            x = torch.unsqueeze(inputs["sensors"][:, i], dim=-1)
+            x_hat = torch.unsqueeze(reconstruct[:, i], dim=-1)
+            per_feature.append(self._loss(x, x_hat).detach().cpu().numpy())
+        return per_feature
 
     def is_anomaly(
         self, inputs: Dict[str, np.array], return_loss: bool = False
