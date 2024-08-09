@@ -105,8 +105,19 @@ checkpoints must be in the same folder.</dd>
         # load the model from the latest checkpoint
         folder = os.path.dirname(path)
         checkpoints = sorted([_ for _ in os.listdir(folder) if &#34;ckpt&#34; in _])
-        model = cls.load_from_checkpoint(os.path.join(folder, checkpoints[-1]))
+        sub_modules = init_sub_modules(folder)
+        model = cls.load_from_checkpoint(
+            os.path.join(folder, checkpoints[-1]), **sub_modules
+        )
         return model
+
+    def set_threshold(self, threshold: float) -&gt; None:
+        &#34;&#34;&#34;Setter of the threshold.
+        
+        Args:
+            threshold (float): The threshold over which a loss counts as an anomaly.
+        &#34;&#34;&#34;
+        self._threshold = threshold
 
     def train_threshold(
         self, dataset: Dataset, limit_samples: int = 1_000, overlap: int = None
@@ -160,7 +171,7 @@ checkpoints must be in the same folder.</dd>
                 &#34;No outliers detected, fallback to max loss %s&#34;, self._threshold
             )
 
-    def detect(self, inputs: Dict[str, np.array]) -&gt; float:
+    def detect(self, inputs: Dict[str, np.array], feature: bool = False) -&gt; float:
         &#34;&#34;&#34;This method sends the input array to the model, compresses it
         and reconstructs the compressed representation. Then, the
         reconstruction loss is calculated and returned.
@@ -168,6 +179,8 @@ checkpoints must be in the same folder.</dd>
         Args:
             inputs (np.array): The array of which the reconstruction loss
                 should be calculated.
+            feature (bool): If set to true, the loss per feature will be returned.
+                Otherwise the MSELoss of all features will be returned.
 
         Returns:
             float: The reconstruction loss.
@@ -184,8 +197,16 @@ checkpoints must be in the same folder.</dd>
         reconstruct = self._model.predict(inputs)
 
         # calculate the loss of reconstruction, high means anomaly detected
-        reconstruction_loss = self._loss(inputs[&#34;sensors&#34;], reconstruct)
-        return reconstruction_loss.detach().cpu().numpy()
+        if not feature:
+            reconstruction_loss = self._loss(inputs[&#34;sensors&#34;], reconstruct)
+            return reconstruction_loss.detach().cpu().numpy()
+
+        per_feature = []
+        for i in range(reconstruct.shape[-1]):
+            x = torch.unsqueeze(inputs[&#34;sensors&#34;][:, i], dim=-1)
+            x_hat = torch.unsqueeze(reconstruct[:, i], dim=-1)
+            per_feature.append(self._loss(x, x_hat).detach().cpu().numpy())
+        return per_feature
 
     def is_anomaly(
         self, inputs: Dict[str, np.array], return_loss: bool = False
@@ -212,7 +233,7 @@ checkpoints must be in the same folder.</dd>
 <h3>Methods</h3>
 <dl>
 <dt id="Comprisk.anomaly.detection.AnomalyDetector.detect"><code class="name flex">
-<span>def <span class="ident">detect</span></span>(<span>self, inputs: Dict[str, <built-in function array>]) ‑> float</span>
+<span>def <span class="ident">detect</span></span>(<span>self, inputs: Dict[str, <built-in function array>], feature: bool = False) ‑> float</span>
 </code></dt>
 <dd>
 <div class="desc"><p>This method sends the input array to the model, compresses it
@@ -223,6 +244,9 @@ reconstruction loss is calculated and returned.</p>
 <dt><strong><code>inputs</code></strong> :&ensp;<code>np.array</code></dt>
 <dd>The array of which the reconstruction loss
 should be calculated.</dd>
+<dt><strong><code>feature</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If set to true, the loss per feature will be returned.
+Otherwise the MSELoss of all features will be returned.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -250,6 +274,17 @@ the loss value itself.</dd>
 <dl>
 <dt><code>bool</code></dt>
 <dd>True if an anomaly was detected, otherwise False.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.anomaly.detection.AnomalyDetector.set_threshold"><code class="name flex">
+<span>def <span class="ident">set_threshold</span></span>(<span>self, threshold: float) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Setter of the threshold.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>threshold</code></strong> :&ensp;<code>float</code></dt>
+<dd>The threshold over which a loss counts as an anomaly.</dd>
 </dl></div>
 </dd>
 <dt id="Comprisk.anomaly.detection.AnomalyDetector.train_threshold"><code class="name flex">
@@ -294,6 +329,7 @@ in overlapping samples.</dd>
 <ul class="">
 <li><code><a title="Comprisk.anomaly.detection.AnomalyDetector.detect" href="#Comprisk.anomaly.detection.AnomalyDetector.detect">detect</a></code></li>
 <li><code><a title="Comprisk.anomaly.detection.AnomalyDetector.is_anomaly" href="#Comprisk.anomaly.detection.AnomalyDetector.is_anomaly">is_anomaly</a></code></li>
+<li><code><a title="Comprisk.anomaly.detection.AnomalyDetector.set_threshold" href="#Comprisk.anomaly.detection.AnomalyDetector.set_threshold">set_threshold</a></code></li>
 <li><code><a title="Comprisk.anomaly.detection.AnomalyDetector.train_threshold" href="#Comprisk.anomaly.detection.AnomalyDetector.train_threshold">train_threshold</a></code></li>
 </ul>
 </li>

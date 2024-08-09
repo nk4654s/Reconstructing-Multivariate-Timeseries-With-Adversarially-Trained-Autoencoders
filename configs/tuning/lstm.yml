@@ -1,0 +1,15 @@
+search_space:
+  encoder:
+    num_latent_dim:
+      type: int
+      min: 1
+      max: 32
+
+    num_hidden_dim:
+      type: int
+      min: 32
+      max: 128
+
+rules:
+  - decoder.num_latent_dim: encoder.num_latent_dim + 1
+  - decoder.num_hidden_dim: encoder.num_hidden_dim

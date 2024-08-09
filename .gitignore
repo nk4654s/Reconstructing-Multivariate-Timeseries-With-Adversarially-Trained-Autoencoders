@@ -21,3 +21,4 @@ playground.ipynb
 
 # exclude optuna database
 *.sqlite3
+test.ipynb

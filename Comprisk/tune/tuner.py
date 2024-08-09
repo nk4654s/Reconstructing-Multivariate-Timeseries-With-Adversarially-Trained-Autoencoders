@@ -1,14 +1,12 @@
 """This module contains the tuner class based on the `optuna` package to find
 optimal hyper parameters for training."""
-
 from typing import Any, Dict
 from copy import deepcopy
 import os
-import yaml
 import optuna
 from optuna.trial import Trial
 
-from Comprisk.cli.cli import CompriskCLI
+from Comprisk.tune.config import ConfigManager
 
 
 class Tuner:
@@ -22,15 +20,16 @@ class Tuner:
             will be re-initialized with a different set of hyper parameters.
     """
 
-    def __init__(self, cli: CompriskCLI) -> None:
-        self._model = cli.model
-        self._original_params = cli.model.hparams
-        self._datamodule = cli.datamodule
-        self._trainer = cli.trainer
+    def __init__(self, config: ConfigManager) -> None:
+        self._model = config.cli.model
+        self._datamodule = config.cli.datamodule
+        self._trainer = config.cli.trainer
         self._trainer.early_stopping_callback.monitor = "train/MSELoss"
+        self._trainer.save_config_callback = None
         self._trainer.logger = False
 
-        self._config = None
+        self._config = config
+        self._hparam_deps = None
         self._train_size = None
         self._val_size = None
 
@@ -43,9 +42,7 @@ class Tuner:
             trial (Trial): The trial object managed by `optuna`.
         """
         # define the new hparam suggestion and create the model to test
-        suggestion = self._define_suggestions(
-            trial, self._original_params, self._config
-        )
+        suggestion = self._config.suggest(trial)
         test_model = self._model.__class__(**suggestion)
 
         self._datamodule.setup(
@@ -67,58 +64,6 @@ class Tuner:
         # trial.report(loss, 0)
         return loss
 
-    def _define_suggestions(
-        self, trial: Trial, params: Dict, config: Dict
-    ) -> Dict[str, Any]:
-        suggestion = {}
-        # build the hyper parameters
-        for key in params.keys():
-            # disable dropouts, as the training will be short
-            if "dropout" in key:
-                suggestion[key] = 0.0
-                continue
-
-            if isinstance(params[key], dict) and key in config.keys():
-                suggestion[key] = self._define_suggestions(
-                    trial, params[key], config[key]
-                )
-            # use hyper parameters from the model config, if they will not be tuned
-            if key not in config.keys():
-                suggestion[key] = params[key]
-                continue
-
-            # get hyper parameter (spaces) from the tuner config
-            value = config[key]
-            if value["type"] == "int":
-                suggestion[key] = trial.suggest_int(key, value["min"], value["max"])
-
-            elif value["type"] == "float":
-                suggestion[key] = trial.suggest_float(key, value["min"], value["max"])
-        return suggestion
-
-    def config(self, path_to_config: str) -> None:
-        """This method loads the tune config from a given path. The `CompriskCLI` provides
-        the argument `--tuner-config` which should be the path of the tuner config. This config
-        must be a yaml file containg the hyper parameters, their type, and min/max values.
-
-        Args:
-            path_to_config (str): The tuner config path.
-        """
-        with open(path_to_config, "r", encoding="UTF-8") as conf:
-            self._config = yaml.safe_load(conf)
-
-        # get tuner parameters
-        tuner_args = self._config.get("tuner_args", {})
-        self._train_size = tuner_args.get("train_size_percentage", 1) / 100
-        self._val_size = tuner_args.get("val_size_precentage", 0.2) / 100
-
-        if tuner_args != {}:
-            del self._config["tuner_args"]
-
-        # get hyper parameter search space
-        for key in self._config.keys():
-            assert key in self._model.hparams.keys(), f"Unexpected parameter '{key}'"
-
     def optimize(self, n_trials: int, tag: str = None) -> Dict[str, Any]:
         """This method starts the optimization process. Make sure to have `self.config` called
         beforehand.
@@ -127,7 +72,6 @@ class Tuner:
             n_trials (int): The number of search iterations before termination.
             tag (str): The tag str as prefix of the experiment name.
         """
-        assert self._config, "Define a config with hparams to tune first."
         if not os.path.exists("logs"):
             os.makedirs("logs")
 
@@ -145,7 +89,7 @@ class Tuner:
         study.optimize(
             self.objective,
             n_trials=n_trials,
-            catch=(RuntimeWarning, TypeError, RuntimeError),
+            #catch=(RuntimeWarning, TypeError, RuntimeError),
         )
 
         # restore the datamodel to the training mode

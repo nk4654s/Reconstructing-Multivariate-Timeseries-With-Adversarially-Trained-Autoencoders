@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.1">
+<title>Comprisk.tune.config API documentation</title>
+<meta name="description" content="This mdoule contains the ConfigManager and dict tools to navigate
+a nested dict.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>Comprisk.tune.config</code></h1>
+</header>
+<section id="section-intro">
+<p>This mdoule contains the ConfigManager and dict tools to navigate
+a nested dict.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="Comprisk.tune.config.eval_with_params"><code class="name flex">
+<span>def <span class="ident">eval_with_params</span></span>(<span>a: Dict[str, Any], expression: str) ‑> Any</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Evaluates an expression with provided parameters.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>a</code></strong> :&ensp;<code>Dict[str, Any]</code></dt>
+<dd>The dictionary of parameters to use in the expression.</dd>
+<dt><strong><code>expression</code></strong> :&ensp;<code>str</code></dt>
+<dd>The expression to evaluate using the parameters.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Any</code></dt>
+<dd>The result of the evaluated expression.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.tune.config.get_nested_from_dict"><code class="name flex">
+<span>def <span class="ident">get_nested_from_dict</span></span>(<span>a: Dict, key: str) ‑> Any</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Retrieves the nested value from the dictionary.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>a</code></strong> :&ensp;<code>Dict[str, Any]</code></dt>
+<dd>The dictionary to retrieve the value from.</dd>
+<dt><strong><code>key</code></strong> :&ensp;<code>str</code></dt>
+<dd>The key or nested keys used to find the value.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Any</code></dt>
+<dd>The retrieved value. If the key is not found, returns None.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.tune.config.set_nested_in_dict"><code class="name flex">
+<span>def <span class="ident">set_nested_in_dict</span></span>(<span>a: Dict[str, Any], key: str, value: Any) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sets the nested value in the dictionary.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>a</code></strong> :&ensp;<code>Dict[str, Any]</code></dt>
+<dd>The dictionary to update with the new value.</dd>
+<dt><strong><code>key</code></strong> :&ensp;<code>str</code></dt>
+<dd>The key or nested keys used to find and set the value.</dd>
+<dt><strong><code>value</code></strong> :&ensp;<code>Any</code></dt>
+<dd>The value to be set in the dictionary.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>None</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="Comprisk.tune.config.ConfigManager"><code class="flex name class">
+<span>class <span class="ident">ConfigManager</span></span>
+<span>(</span><span>cli: <a title="Comprisk.cli.cli.CompriskCLI" href="../cli/cli.html#Comprisk.cli.cli.CompriskCLI">CompriskCLI</a>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Manages configuration settings.</p>
+<p>This class provides methods to handle configuration-related tasks,
+such as setting and getting values from the configuration dictionary.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>cli</code></strong> :&ensp;<code>CompriskCLI</code></dt>
+<dd>The CompriskCLI instance associated with this manager.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ConfigManager:
+    &#34;&#34;&#34;
+    Manages configuration settings.
+
+    This class provides methods to handle configuration-related tasks,
+    such as setting and getting values from the configuration dictionary.
+
+    Args:
+        cli (CompriskCLI): The CompriskCLI instance associated with this manager.
+    &#34;&#34;&#34;
+
+    def __init__(self, cli: CompriskCLI) -&gt; None:
+        self._train = cli.model.hparams[&#34;init_args&#34;]
+        self._tune = None
+        self._rules = None
+        self._cli = cli
+
+    @property
+    def train_config(self) -&gt; Dict:
+        &#34;&#34;&#34;
+        Returns a dictionary containing the initialization arguments.
+
+        This property provides a read-only access to the `_train` attribute,
+        which contains the configuration settings for the training process.
+
+        Returns:
+            Dict: A dictionary with the initialization arguments.
+        &#34;&#34;&#34;
+        return self._train
+
+    @property
+    def cli(self) -&gt; CompriskCLI:
+        &#34;&#34;&#34;
+        Returns an instance of CompriskCLI associated with this ConfigManager.
+
+        This method provides a read-only access to the `_cli` attribute,
+        which contains the configuration settings for the CLI.
+
+        Returns:
+            CompriskCLI: An instance of CompriskCLI.
+        &#34;&#34;&#34;
+        return self._cli
+
+    def load(self, path_to_config: str) -&gt; None:
+        &#34;&#34;&#34;
+        Loads a YAML configuration file and stores it in self._tune.
+
+        This method loads the contents of the specified configuration file,
+        which is expected to be in YAML format. The loaded configuration settings
+        are stored in self._tune for future use.
+
+        Args:
+            path_to_config (str): The path to the configuration file.
+        &#34;&#34;&#34;
+        with open(path_to_config, &#34;r&#34;, encoding=&#34;UTF-8&#34;) as conf:
+            self._tune = yaml.safe_load(conf)
+
+        self._rules = self._tune.get(&#34;rules&#34;, {})
+        self._tune = self._tune[&#34;search_space&#34;]
+        self.check_config(self._train, self._tune)
+
+    def check_config(self, a: Dict[str, Any], b: Dict[str, Any]) -&gt; None:
+        &#34;&#34;&#34;
+        Check that config file &#39;b&#39; is a subset of config file &#39;a&#39;.
+        
+        Args:
+            a (Dict[str, Any]): The base configuration.
+            b (Dict[str, Any]): The configuration to check against the base.
+            
+        Raises:
+            AssertionError: If any key in &#39;b&#39; is not found in &#39;a&#39;.
+        &#34;&#34;&#34;
+        for key in b.keys():
+            assert key in a.keys(), f&#34;Unknown key &#39;{key}&#39; in config file.&#34;
+            if isinstance(a[key], dict):
+                self.check_config(a[key][&#34;init_args&#34;], b[key])
+
+    def _suggest(
+        self,
+        trial: Trial,
+        train: Dict[str, Any],
+        tune: Dict[str, Any],
+        root_key: str = None,
+    ) -&gt; None:
+        suggestion = {}
+        # build the hyper parameters
+        for key in train.keys():
+            if isinstance(train[key], dict) and key in tune.keys():
+                suggestion[key] = {&#34;class_path&#34;: train[key][&#34;class_path&#34;]}
+                suggestion[key][&#34;init_args&#34;] = self._suggest(
+                    trial, train[key][&#34;init_args&#34;], tune[key], key
+                )
+                continue
+            # use hyper parameters from the model config, if they will not be tuned
+            if key not in tune.keys():
+                suggestion[key] = train[key]
+                continue
+
+            # get hyper parameter (spaces) from the tuner config
+            value = tune[key]
+            name = key if not root_key else f&#34;{root_key}.{key}&#34;
+            if value[&#34;type&#34;] == &#34;int&#34;:
+                suggestion[key] = trial.suggest_int(name, value[&#34;min&#34;], value[&#34;max&#34;])
+
+            elif value[&#34;type&#34;] == &#34;float&#34;:
+                suggestion[key] = trial.suggest_float(name, value[&#34;min&#34;], value[&#34;max&#34;])
+        return suggestion
+
+    def apply_rules(self, suggestion: Dict[str, Any]) -&gt; Dict:
+        &#34;&#34;&#34;
+        Apply rules from self._rules to the suggestion dictionary.
+        
+        Args:
+            suggestion (Dict[str, Any]): The suggestion dictionary to modify.
+            
+        Returns:
+            Dict: The modified suggestion dictionary after applying all rules.
+        &#34;&#34;&#34;
+        for rule in self._rules:
+            key = list(rule.keys())[0]
+            value = eval_with_params(suggestion, rule[key])
+            set_nested_in_dict(suggestion, key, value)
+        return suggestion
+
+    def init_submodules(self, params: Dict) -&gt; Dict:
+        &#34;&#34;&#34;
+        Initializes submodules based on the provided parameters.
+        
+        This method iterates over the keys in the provided dictionary and 
+        initializes any non-dictionary values it finds. The initialized value 
+        is then stored in a new dictionary with the same key.
+        
+        Args:
+            params (Dict): A dictionary containing the configuration settings.
+        
+        Returns:
+            Dict: A dictionary with the initialized submodules.
+        &#34;&#34;&#34;
+        for key in params.keys():
+            if not isinstance(params[key], dict):
+                continue
+
+            class_str = params[key][&#34;class_path&#34;].rsplit(&#34;.&#34;, maxsplit=1)
+            init_args = params[key][&#34;init_args&#34;]
+            module = class_for_name(*class_str)(**init_args)
+            params[key] = module
+
+        return params
+
+    def suggest(self, trial: Trial) -&gt; Dict:
+        &#34;&#34;&#34;
+        Suggest a set of hyperparameters for a given trial.
+        
+        Args:
+            trial (Trial): The current trial.
+            
+        Returns:
+            Dict: A dictionary containing the suggested hyperparameters.
+        &#34;&#34;&#34;
+        params = self._suggest(trial, self._train, self._tune)
+        params = self.apply_rules(params)
+        return self.init_submodules(params)</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="Comprisk.tune.config.ConfigManager.cli"><code class="name">prop <span class="ident">cli</span> : <a title="Comprisk.cli.cli.CompriskCLI" href="../cli/cli.html#Comprisk.cli.cli.CompriskCLI">CompriskCLI</a></code></dt>
+<dd>
+<div class="desc"><p>Returns an instance of CompriskCLI associated with this ConfigManager.</p>
+<p>This method provides a read-only access to the <code>_cli</code> attribute,
+which contains the configuration settings for the CLI.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>CompriskCLI</code></dt>
+<dd>An instance of CompriskCLI.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def cli(self) -&gt; CompriskCLI:
+    &#34;&#34;&#34;
+    Returns an instance of CompriskCLI associated with this ConfigManager.
+
+    This method provides a read-only access to the `_cli` attribute,
+    which contains the configuration settings for the CLI.
+
+    Returns:
+        CompriskCLI: An instance of CompriskCLI.
+    &#34;&#34;&#34;
+    return self._cli</code></pre>
+</details>
+</dd>
+<dt id="Comprisk.tune.config.ConfigManager.train_config"><code class="name">prop <span class="ident">train_config</span> : Dict</code></dt>
+<dd>
+<div class="desc"><p>Returns a dictionary containing the initialization arguments.</p>
+<p>This property provides a read-only access to the <code>_train</code> attribute,
+which contains the configuration settings for the training process.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Dict</code></dt>
+<dd>A dictionary with the initialization arguments.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def train_config(self) -&gt; Dict:
+    &#34;&#34;&#34;
+    Returns a dictionary containing the initialization arguments.
+
+    This property provides a read-only access to the `_train` attribute,
+    which contains the configuration settings for the training process.
+
+    Returns:
+        Dict: A dictionary with the initialization arguments.
+    &#34;&#34;&#34;
+    return self._train</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="Comprisk.tune.config.ConfigManager.apply_rules"><code class="name flex">
+<span>def <span class="ident">apply_rules</span></span>(<span>self, suggestion: Dict[str, Any]) ‑> Dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Apply rules from self._rules to the suggestion dictionary.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>suggestion</code></strong> :&ensp;<code>Dict[str, Any]</code></dt>
+<dd>The suggestion dictionary to modify.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Dict</code></dt>
+<dd>The modified suggestion dictionary after applying all rules.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.tune.config.ConfigManager.check_config"><code class="name flex">
+<span>def <span class="ident">check_config</span></span>(<span>self, a: Dict[str, Any], b: Dict[str, Any]) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check that config file 'b' is a subset of config file 'a'.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>a</code></strong> :&ensp;<code>Dict[str, Any]</code></dt>
+<dd>The base configuration.</dd>
+<dt><strong><code>b</code></strong> :&ensp;<code>Dict[str, Any]</code></dt>
+<dd>The configuration to check against the base.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>AssertionError</code></dt>
+<dd>If any key in 'b' is not found in 'a'.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.tune.config.ConfigManager.init_submodules"><code class="name flex">
+<span>def <span class="ident">init_submodules</span></span>(<span>self, params: Dict) ‑> Dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initializes submodules based on the provided parameters.</p>
+<p>This method iterates over the keys in the provided dictionary and
+initializes any non-dictionary values it finds. The initialized value
+is then stored in a new dictionary with the same key.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>params</code></strong> :&ensp;<code>Dict</code></dt>
+<dd>A dictionary containing the configuration settings.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Dict</code></dt>
+<dd>A dictionary with the initialized submodules.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.tune.config.ConfigManager.load"><code class="name flex">
+<span>def <span class="ident">load</span></span>(<span>self, path_to_config: str) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Loads a YAML configuration file and stores it in self._tune.</p>
+<p>This method loads the contents of the specified configuration file,
+which is expected to be in YAML format. The loaded configuration settings
+are stored in self._tune for future use.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>path_to_config</code></strong> :&ensp;<code>str</code></dt>
+<dd>The path to the configuration file.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.tune.config.ConfigManager.suggest"><code class="name flex">
+<span>def <span class="ident">suggest</span></span>(<span>self, trial: optuna.trial._trial.Trial) ‑> Dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Suggest a set of hyperparameters for a given trial.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>trial</code></strong> :&ensp;<code>Trial</code></dt>
+<dd>The current trial.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Dict</code></dt>
+<dd>A dictionary containing the suggested hyperparameters.</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="Comprisk.tune" href="index.html">Comprisk.tune</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="Comprisk.tune.config.eval_with_params" href="#Comprisk.tune.config.eval_with_params">eval_with_params</a></code></li>
+<li><code><a title="Comprisk.tune.config.get_nested_from_dict" href="#Comprisk.tune.config.get_nested_from_dict">get_nested_from_dict</a></code></li>
+<li><code><a title="Comprisk.tune.config.set_nested_in_dict" href="#Comprisk.tune.config.set_nested_in_dict">set_nested_in_dict</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="Comprisk.tune.config.ConfigManager" href="#Comprisk.tune.config.ConfigManager">ConfigManager</a></code></h4>
+<ul class="two-column">
+<li><code><a title="Comprisk.tune.config.ConfigManager.apply_rules" href="#Comprisk.tune.config.ConfigManager.apply_rules">apply_rules</a></code></li>
+<li><code><a title="Comprisk.tune.config.ConfigManager.check_config" href="#Comprisk.tune.config.ConfigManager.check_config">check_config</a></code></li>
+<li><code><a title="Comprisk.tune.config.ConfigManager.cli" href="#Comprisk.tune.config.ConfigManager.cli">cli</a></code></li>
+<li><code><a title="Comprisk.tune.config.ConfigManager.init_submodules" href="#Comprisk.tune.config.ConfigManager.init_submodules">init_submodules</a></code></li>
+<li><code><a title="Comprisk.tune.config.ConfigManager.load" href="#Comprisk.tune.config.ConfigManager.load">load</a></code></li>
+<li><code><a title="Comprisk.tune.config.ConfigManager.suggest" href="#Comprisk.tune.config.ConfigManager.suggest">suggest</a></code></li>
+<li><code><a title="Comprisk.tune.config.ConfigManager.train_config" href="#Comprisk.tune.config.ConfigManager.train_config">train_config</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
+</footer>
+</body>
+</html>

@@ -21,8 +21,8 @@
             "program": "Comprisk/entrypoints/tuner.py",
             "console": "integratedTerminal",
             "args": [
-                "-c", "configs/auto_encoder_config.yml",
-                "--tuner-config", "configs/tune_auto_encoder.yml"
+                "-c", "configs/lstm_bypass_ae.yml",
+                "--tuner-config", "configs/tuning/lstm.yml"
             ]
         },
         {
