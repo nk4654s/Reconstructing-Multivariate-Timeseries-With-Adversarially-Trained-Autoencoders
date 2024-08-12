@@ -83,6 +83,7 @@ class Tuner:
         study = optuna.create_study(
             storage="sqlite:///logs/optuna.sqlite3",
             study_name=name,
+            sampler=optuna.samplers.GPSampler(),
             load_if_exists=True,
             direction="minimize",
         )
