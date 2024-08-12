@@ -1,22 +1,30 @@
 """This module creates a model summary and plots it."""
 
 import os
-import shutil
 from lightning import Callback
 from lightning.pytorch.callbacks import ModelCheckpoint
-import torch
 from lightning.pytorch.loggers import TensorBoardLogger
+import torch
 
 from Dataflux.helper import get_logger
 
-from Comprisk.helper import get_config_path
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
 
 logger = get_logger(__name__, path="./logs/logfile")
 
-def get_trainer_callback(trainer, callback_cls) -> Callback:
+def get_trainer_callback(trainer, callback_cls: Callback) -> Callback:
+    """Finds the fiven callback class in the trainer callbacks list. If the
+    callback could not be found, then the returned value is None.
+    
+    Args:
+        trainer (Any): The trainer object with the list of configured callbacks.
+        callback_cls (Callback): The `lightning.Callback` class.
+    
+    Returns:
+        Callback: The callback object, if found.
+    """
     for c in trainer.callbacks:
         if isinstance(c, callback_cls):
             return c
@@ -39,12 +47,14 @@ def cli_main():
     logger.debug("Defining TensorBoard logger for %s", sub_path)
     tb_logger = TensorBoardLogger("models", name=sub_path)
     cli.trainer.logger = tb_logger
+    os.makedirs(tb_logger.log_dir)
     logger.debug("Using log folder %s", tb_logger.log_dir)
 
     # set up the model saving
     checkpoint = get_trainer_callback(cli.trainer, ModelCheckpoint)
     if checkpoint:
-        checkpoint.dirpath = cli.trainer.logger.log_dir + "/checkpoints"
+        os.makedirs(tb_logger.log_dir + "/checkpoints")
+        checkpoint.dirpath = tb_logger.log_dir + "/checkpoints"
     else:
         logger.warning("ModelCheckpoint callback not defined in yaml-config.")
 
