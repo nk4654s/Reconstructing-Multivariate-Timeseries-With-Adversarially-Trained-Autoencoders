@@ -9,6 +9,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from tqdm import trange
+import matplotlib.pyplot as plt
 
 from Dataflux.pytorch import Dataset
 from Dataflux.pytorch.sampler import RandomBatchSampler
@@ -68,6 +69,13 @@ class AnomalyDetector:
         )
         return model
 
+    @property
+    def threshold(self) -> float:
+        """Simple getter of the internal threshold value. Make sure to run 
+        `self.train_threshold`, otherwise the `self.threshold` value might be incorrect.
+        """
+        return self._threshold
+
     def set_threshold(self, threshold: float) -> None:
         """Setter of the threshold.
 
@@ -77,7 +85,12 @@ class AnomalyDetector:
         self._threshold = threshold
 
     def train_threshold(
-        self, dataset: Dataset, limit_samples: int = 1_000, batch_size: int = 32
+        self,
+        dataset: Dataset,
+        limit_samples: int = 1_000,
+        batch_size: int = 32,
+        visualize: bool = False,
+        save: bool = None,
     ) -> None:
         """This method tunes the threshold based on a given set of samples. The
         reconstruction loss is calculated first, followed by an outlier detection
@@ -89,18 +102,22 @@ class AnomalyDetector:
             limit_samples (int): The amount of samples to use for training the
                 threshold.
             batch_size (int): The batch size of the input. Defaults to 32.
+            visualize (bool): Wether to visualize the outlier search or not.
+            save (bool): Wether to visualize and save the outlier search or not. This
+                will overwrite visualize, but it will not show the visualization. Provide
+                the path where to store the image.
         """
         self._threshold = 1
         logger.debug("Start training the threshold using IQR")
         losses = []
-        data_length = dataset.get_meta().num_input_sequence
 
         # apply model on dataset and record loss
-        batch_sampler = RandomBatchSampler(data_length, batch_size=batch_size)
+        batch_sampler = RandomBatchSampler(len(dataset), batch_size=batch_size)
         loader = DataLoader(dataset, batch_sampler=batch_sampler, collate_fn=collate_fn)
+        data_iter = loader.__iter__()
 
         for _ in trange(0, limit_samples // batch_size, 1, leave=True):
-            loss = self.detect(next(loader.__iter__()))
+            loss = self.detect(next(data_iter))
             losses += list(loss)
 
         df = pd.DataFrame({"losses": losses})
@@ -129,6 +146,43 @@ class AnomalyDetector:
             logger.debug(
                 "No outliers detected, fallback to max loss %s", self._threshold
             )
+
+        # extract the outlier indicies
+        if visualize or save:
+            _losses = np.array(losses)
+            idx = np.where(_losses > self.threshold)[0]
+            idx = list(idx - 1) + list(idx) + list(idx + 1)
+            idx = sorted(idx)
+            mask = np.ones_like(losses, dtype=np.bool_)
+            mask[idx] = False
+
+            # build the plot
+            plt.title("Reconstruction Loss (Random Samples)")
+
+            # plot the outliers
+            _losses = np.array(losses)
+            _losses[mask] = np.nan
+            plt.plot(_losses, color="teal", alpha=0.5, label="Anomalies")
+
+            # plot all non-outliers
+            _losses = np.array(losses)
+            _losses[_losses >= self.threshold] = np.nan
+            plt.plot(_losses, color="gray", alpha=0.2, label="Reconstruction Loss")
+
+            # plot the threshold line
+            plt.plot(
+                [self.threshold for _ in range(len(_losses))],
+                color="gray",
+                alpha=0.6,
+                label="Threshold",
+            )
+            plt.legend(loc="lower right")
+
+            if visualize:
+                plt.show()
+
+            if save:
+                plt.savefig(save)
 
     def reconstruction(
         self, inputs: Dict[str, np.array], detach: bool = True
