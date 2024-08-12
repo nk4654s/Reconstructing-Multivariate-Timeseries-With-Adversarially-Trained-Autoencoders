@@ -7,8 +7,13 @@ import yaml
 import pandas as pd
 import numpy as np
 import torch
-from tqdm import tqdm
+from torch.utils.data import DataLoader
+from tqdm import trange
+
 from Dataflux.pytorch import Dataset
+from Dataflux.pytorch.sampler import RandomBatchSampler
+from Dataflux.pytorch.utils import collate_fn
+
 from Dataflux.helper import get_logger
 from Comprisk.helper import get_loss_by_name, init_sub_modules
 from Comprisk.model import BaseModel
@@ -65,14 +70,14 @@ class AnomalyDetector:
 
     def set_threshold(self, threshold: float) -> None:
         """Setter of the threshold.
-        
+
         Args:
             threshold (float): The threshold over which a loss counts as an anomaly.
         """
         self._threshold = threshold
 
     def train_threshold(
-        self, dataset: Dataset, limit_samples: int = 1_000, overlap: int = None
+        self, dataset: Dataset, limit_samples: int = 1_000, batch_size: int = 32
     ) -> None:
         """This method tunes the threshold based on a given set of samples. The
         reconstruction loss is calculated first, followed by an outlier detection
@@ -83,18 +88,20 @@ class AnomalyDetector:
             dataset (Dataset): The dataset used to train the thresholds.
             limit_samples (int): The amount of samples to use for training the
                 threshold.
-            overlap (int): Set to a value to define the sliding, this might result
-                in overlapping samples.
+            batch_size (int): The batch size of the input. Defaults to 32.
         """
+        self._threshold = 1
         logger.debug("Start training the threshold using IQR")
         losses = []
-        sliding = overlap if overlap else dataset.get_meta().num_input_sequence
+        data_length = dataset.get_meta().num_input_sequence
 
         # apply model on dataset and record loss
-        for i in tqdm(range(0, limit_samples * sliding, sliding)):
-            sensors, weather, _ = dataset[i]
-            loss = self.detect({"sensors": sensors, "weather": weather})
-            losses.append(loss)
+        batch_sampler = RandomBatchSampler(data_length, batch_size=batch_size)
+        loader = DataLoader(dataset, batch_sampler=batch_sampler, collate_fn=collate_fn)
+
+        for _ in trange(0, limit_samples // batch_size, 1, leave=True):
+            loss = self.detect(next(loader.__iter__()))
+            losses += list(loss)
 
         df = pd.DataFrame({"losses": losses})
 
@@ -123,6 +130,36 @@ class AnomalyDetector:
                 "No outliers detected, fallback to max loss %s", self._threshold
             )
 
+    def reconstruction(
+        self, inputs: Dict[str, np.array], detach: bool = True
+    ) -> np.array:
+        """Calculate the reconstruction of the input data.
+
+        Args:
+            inputs (Dict): The input dictionary, which contains the original data.
+            detach (bool): Wether to detach the tensor or not. Defaults to true.
+
+        Returns:
+            np.array: Either the array or tensor, depending on `detach`.
+        """
+        # create tensor of inputs and move it to the same device as
+        # the model
+        if len(inputs["sensors"].shape) != 3:
+            inputs["sensors"] = torch.tensor(inputs["sensors"], device=self._device)
+            inputs["weather"] = torch.tensor(inputs["weather"], device=self._device)
+            inputs["sensors"] = torch.unsqueeze(inputs["sensors"], dim=0)
+            inputs["weather"] = torch.unsqueeze(inputs["weather"], dim=0)
+        else:
+            inputs["sensors"] = inputs["sensors"].to(self._device)
+            inputs["weather"] = inputs["weather"].to(self._device)
+
+        # pass the inputs to the model, compress it using the autoencoder
+        # then restore the compressed representation
+        reconstruct = self._model.predict(inputs)
+        if not detach:
+            return reconstruct, inputs
+        return reconstruct.detach().cpu().numpy()
+
     def detect(self, inputs: Dict[str, np.array], feature: bool = False) -> float:
         """This method sends the input array to the model, compresses it
         and reconstructs the compressed representation. Then, the
@@ -137,21 +174,22 @@ class AnomalyDetector:
         Returns:
             float: The reconstruction loss.
         """
-        # create tensor of inputs and move it to the same device as
-        # the model
-        inputs["sensors"] = torch.tensor(inputs["sensors"], device=self._device)
-        inputs["weather"] = torch.tensor(inputs["weather"], device=self._device)
-        inputs["sensors"] = torch.unsqueeze(inputs["sensors"], dim=0)
-        inputs["weather"] = torch.unsqueeze(inputs["weather"], dim=0)
+        assert (
+            self._threshold > 0.0
+        ), "Define a threshold first, either manually or using self.train_threshold()"
 
         # pass the inputs to the model, compress it using the autoencoder
         # then restore the compressed representation
-        reconstruct = self._model.predict(inputs)
+        reconstruct, inputs = self.reconstruction(inputs, detach=False)
 
         # calculate the loss of reconstruction, high means anomaly detected
         if not feature:
-            reconstruction_loss = self._loss(inputs["sensors"], reconstruct)
-            return reconstruction_loss.detach().cpu().numpy()
+            losses = []
+            for i in range(reconstruct.shape[0]):
+                reconstruction_loss = self._loss(inputs["sensors"][i], reconstruct[i])
+                losses.append(reconstruction_loss.detach().cpu().numpy())
+
+            return losses
 
         per_feature = []
         for i in range(reconstruct.shape[-1]):
