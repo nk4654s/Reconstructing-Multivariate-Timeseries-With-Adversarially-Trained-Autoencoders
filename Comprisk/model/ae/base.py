@@ -143,7 +143,8 @@ class AutoEncoder(BaseModel):
         for key in keys[1:]:
             x = torch.cat([x, inputs[key]], dim=-1)
 
-        return self._encoder(x)
+        x = self._encoder(x)
+        return torch.tanh(x)
 
     def decode(self, z: torch.Tensor, inputs: torch.Tensor = None) -> torch.Tensor:
         """
