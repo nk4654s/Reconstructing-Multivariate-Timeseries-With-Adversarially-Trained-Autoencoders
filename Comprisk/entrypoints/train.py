@@ -2,6 +2,8 @@
 
 import os
 import shutil
+from lightning import Callback
+from lightning.pytorch.callbacks import ModelCheckpoint
 import torch
 from lightning.pytorch.loggers import TensorBoardLogger
 
@@ -13,6 +15,12 @@ from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
 
 logger = get_logger(__name__, path="./logs/logfile")
+
+def get_trainer_callback(trainer, callback_cls) -> Callback:
+    for c in trainer.callbacks:
+        if isinstance(c, callback_cls):
+            return c
+    return None
 
 
 def cli_main():
@@ -33,9 +41,12 @@ def cli_main():
     cli.trainer.logger = tb_logger
     logger.debug("Using log folder %s", tb_logger.log_dir)
 
-    # copy config to tb_logger.logdir
-    os.makedirs(tb_logger.log_dir)
-    shutil.copyfile(get_config_path(cli), os.path.join(tb_logger.log_dir, "config.yml"))
+    # set up the model saving
+    checkpoint = get_trainer_callback(cli.trainer, ModelCheckpoint)
+    if checkpoint:
+        checkpoint.dirpath = cli.trainer.logger.log_dir + "/checkpoints"
+    else:
+        logger.warning("ModelCheckpoint callback not defined in yaml-config.")
 
     # save model summary to log folder
     summary_path = os.path.join(tb_logger.log_dir, "summary.txt")

@@ -43,7 +43,7 @@
             "console": "integratedTerminal",
             "args": [
                 "-c",
-                "configs/auto_encoder_config.yml",
+                "configs/lstm_bypass_ae.yml",
                 "--tag", "debug"
             ]
         }
