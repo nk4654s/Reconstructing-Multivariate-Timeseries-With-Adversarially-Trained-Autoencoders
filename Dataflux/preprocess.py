@@ -1,4 +1,6 @@
-"""This module downloads and pre-processes a dataset from a given S3 bucket."""
+"""This module downloads and pre-processes a dataset from a given S3 bucket.
+The `modules` container defines the order of the pre-processing modules to
+be executed on the downloaded DataFrames."""
 
 import os
 import shutil
