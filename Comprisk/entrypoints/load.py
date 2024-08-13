@@ -25,8 +25,6 @@ from Comprisk.cli import CompriskCLI
 logger = get_logger(__name__, path="./logs/logfile")
 
 # FIXME: debug and check if the learning rate finder result is used (expected ~1h)
-# TODO: create cuda enabled conda environment (expected ~1h)
-# TODO: Setup Ubuntu machine for server training with CUDA and docker (expected <1h)
 # TODO: run config with more than 1 dataloader fails in docker
 
 
@@ -47,6 +45,8 @@ def cli_main():
         os.path.join(base_path, checkpoints[-1]),
         **sub_modules
     )
+    model.eval()
+    #model.set_monte_carlo(20)
     dataset = cli.datamodule.dataset
     meta: Metadata = dataset.get_meta()
 

@@ -48,6 +48,7 @@ class AnomalyDetector:
         self._device = self._model.device
 
         self._threshold = 0.0
+        self._loss_name = loss
         self._loss = get_loss_by_name(loss)
 
     def _load_model(self, path: str) -> BaseModel:
@@ -67,6 +68,7 @@ class AnomalyDetector:
         model = cls.load_from_checkpoint(
             os.path.join(folder, checkpoints[-1]), **sub_modules
         )
+        model.eval()
         return model
 
     @property
@@ -176,6 +178,8 @@ class AnomalyDetector:
                 alpha=0.6,
                 label="Threshold",
             )
+            plt.xlabel("# Samples")
+            plt.ylabel(self._loss_name)
             plt.legend(loc="lower right")
 
             if visualize:
@@ -268,8 +272,8 @@ class AnomalyDetector:
         Returns:
             bool: True if an anomaly was detected, otherwise False.
         """
-        reconstruction_loss = self.detect(inputs)
+        reconstruction_loss = np.array(self.detect(inputs))
         if not return_loss:
-            return reconstruction_loss >= self._threshold
+            return (reconstruction_loss >= self._threshold).any()
 
-        return reconstruction_loss >= self._threshold, reconstruction_loss
+        return (reconstruction_loss >= self._threshold).any() >= self._threshold, reconstruction_loss
