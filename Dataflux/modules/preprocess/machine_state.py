@@ -19,17 +19,21 @@ class MachineStateSplit(BasePreProcessor):
 
     STATES = ["on", "off"]
 
-    def __init__(self, on_key: str = "Laeuft", keep_state: str = "on"):
+    def __init__(self, on_key: str = "Laeuft", keep_state: str = "on",
+                 state_change_threshold: int = 900):
         """The constructor of the class. This will be automatically executed by
         the CLIArgumentParser.
 
         Args:
             on_key (str): The key of the column that contains the machine state.
-            Defaults to "Laeuft".
+                Defaults to "Laeuft".
             keep_state (str): Wether to split when machine is on/off. Defaults to 'on'.
+            state_change_threshold (int): Remove the first x seconds of a dataframe, if there
+                was a statechange. Defaults to 900 which equals to 15 minutes.
         """
         self._column_key = on_key
         self._state = keep_state
+        self._threshold = state_change_threshold
         self._stats = {}
 
     def _trim(self, df: DataFrame) -> DataFrame:
@@ -71,6 +75,23 @@ class MachineStateSplit(BasePreProcessor):
 
         return df_splits
 
+    def _apply_threshold(self, dfs: List[DataFrame], state_change: bool) -> List[DataFrame]:
+        reduced = []
+        # remove the first x datapoints of the first dataframe if there was a state change
+        # otherwise, the machine was on and there is just another day recorded. Threshold
+        # should not be applied in that case.
+        if state_change:
+            reduced.append(dfs[0].iloc[self._threshold:])
+        else:
+            reduced.append(dfs[0])
+
+        if len(dfs) > 0:
+            # remove the first x datapoints of all other dataframes, such dataframes
+            # must have a state change
+            for i in range(1, len(dfs)):
+                reduced.append(dfs[i].iloc[self._threshold:])
+        return reduced
+
     def on_download_finished(
         self, df: DataFrame, metadata: Metadata = None
     ) -> List[DataFrame]:
@@ -88,8 +109,11 @@ class MachineStateSplit(BasePreProcessor):
         # inform any handler, that the machine state did not change if there is a single
         # dataframe in the splits array with the same length as the original
         state_change = not (len(df_splits) == 1 and df_splits[0].shape == df.shape)
+        reduced_splits = self._apply_threshold(df_splits, state_change)
+        state_change = state_change if len(reduced_splits) == len(df_splits) else True
+
         metadata.put(state_change, Meta.MACHINE_STATE_CHANGE)
-        return df_splits
+        return reduced_splits
 
     def on_processing_finished(self, metadata: Metadata) -> None:
         days = list(self._stats.keys())

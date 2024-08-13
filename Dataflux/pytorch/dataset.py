@@ -91,6 +91,13 @@ class Dataset(torch.utils.data.Dataset):
         """
         raise NotImplementedError
 
+    def get_day(self, index: int) -> Tuple[str, float]:
+        day, index = self._tree.search(index)
+        seconds = index * self._skip
+        minutes = seconds / 60 
+        hour = minutes / 60
+        return day, hour
+
     def __len__(self) -> int:
         return self.shape[0]
 
@@ -119,7 +126,7 @@ class Dataset(torch.utils.data.Dataset):
 
 
 if __name__ == "__main__":
-    from tqdm import tqdm
+    from tqdm import tqdm, trange
     from torch.utils.data import DataLoader
     from Dataflux.pytorch.utils import collate_fn
     from Dataflux.pytorch.sampler import RandomBatchSampler
@@ -127,7 +134,7 @@ if __name__ == "__main__":
     # end of file one: index=22121
 
     DAY = 24 * 60 * 60
-    dataset = Dataset("dataset-2021-22", DAY, DAY // 4, cache_size=None, skip=4)
+    dataset = Dataset("/Users/jonas/Dataset/dataset-2021-22", DAY, DAY // 4, cache_size=None, skip=4)
     for _ in tqdm(dataset):
         pass
 
@@ -135,5 +142,13 @@ if __name__ == "__main__":
     loader = DataLoader(
         dataset, batch_sampler=batch_sampler, collate_fn=collate_fn
     )
-    for _ in tqdm(loader):
-        pass
+
+    prev = None
+    for _ in trange(0, 5_000, 1, leave=True):
+        current = next(loader.__iter__())
+        if prev is None:
+            prev = current
+            continue
+
+        assert prev is not current
+        prev = current
