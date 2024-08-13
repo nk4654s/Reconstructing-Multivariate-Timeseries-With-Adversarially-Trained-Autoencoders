@@ -82,6 +82,7 @@ class Dataset(torch.utils.data.Dataset):
 
     def scale_back(self, data: List | np.ndarray | pd.DataFrame) -> pd.DataFrame:
         """Method scales back the given data using the normalizer of the dataset.
+        The input must match the feature list provided by `self.get_meta().column_names`.
 
         Args:
             data (List | np.array | pd.DataFrame): The data to scale back.
@@ -89,9 +90,35 @@ class Dataset(torch.utils.data.Dataset):
         Returns:
             pd.DataFrame: The scaled back data.
         """
+        m = self._metadata
+        a = np.array(m[Meta.NORMALIZER][Meta.NORM_VAL_A.name])
+        b = np.array(m[Meta.NORMALIZER][Meta.NORM_VAL_B.name])
+
+        if isinstance(data, list):
+            data = np.array(data)
+
+        if len(data.shape) == 1:
+            data = np.expand_dims(data, axis=-1)
+
+        if not isinstance(data, pd.DataFrame):
+            data = {key: data[:, i] for i, key in enumerate(self.get_meta().column_names)}
+            data = pd.DataFrame(data)
+
+        if m[Meta.NORMALIZER][Meta.NORM_METHOD.name] == "minmax":
+            return ((data + 1) / 2) * (b - a) + a
+
         raise NotImplementedError
 
     def get_day(self, index: int) -> Tuple[str, float]:
+        """Returns the day and hours the machine is on for the provided index
+        value.
+
+        Args:
+            index (int): The index of the dataset.
+        
+        Returns:
+            Tuple: Day as string and hours the machine is on as float.
+        """
         day, index = self._tree.search(index)
         seconds = index * self._skip
         minutes = seconds / 60 
