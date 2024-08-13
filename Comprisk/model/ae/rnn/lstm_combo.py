@@ -1,6 +1,5 @@
 """This module contains auto encoder modules based on LSTM layers."""
 from typing import List
-from torch.autograd import Variable
 import torch
 import torch.nn as nn
 from Comprisk.model.ae import EncoderBase, DecoderBase
@@ -48,24 +47,7 @@ class LSTMEncoder(EncoderBase):
         return ["sensors", "weather"]
 
     def forward(self, batch: torch.tensor) -> torch.tensor:
-        hn = Variable(
-            torch.zeros(
-                self._num_hidden_layers,
-                batch.size(0),
-                self._num_hidden_dim,
-                device=batch.device,
-            )
-        )
-        cn = Variable(
-            torch.zeros(
-                self._num_hidden_layers,
-                batch.size(0),
-                self._num_hidden_dim,
-                device=batch.device,
-            )
-        )
-
-        x, _ = self._lstm_1(batch, (hn, cn))
+        x, _ = self._lstm_1(batch)
         x = torch.relu(x)
 
         return self._linear_1(x)
@@ -109,24 +91,7 @@ class LSTMDecoder(DecoderBase):
     def forward(
         self, z: torch.tensor, inputs: torch.Dict[str, torch.tensor]
     ) -> torch.Tensor:
-        hn = Variable(
-            torch.zeros(
-                self._num_hidden_layers,
-                z.size(0),
-                self._num_hidden_dim,
-                device=z.device,
-            )
-        )
-        cn = Variable(
-            torch.zeros(
-                self._num_hidden_layers,
-                z.size(0),
-                self._num_hidden_dim,
-                device=z.device,
-            )
-        )
-
-        x, _ = self._lstm_1(z, (hn, cn))
+        x, _ = self._lstm_1(z)
         x = torch.relu(x)
         return self._linear_1(x)
 
@@ -171,25 +136,8 @@ class LSTMDecoderBypass(LSTMDecoder):
     def forward(
         self, z: torch.tensor, inputs: torch.Dict[str, torch.tensor]
     ) -> torch.Tensor:
-        hn = Variable(
-            torch.zeros(
-                self._num_hidden_layers,
-                z.size(0),
-                self._num_hidden_dim,
-                device=z.device,
-            )
-        )
-        cn = Variable(
-            torch.zeros(
-                self._num_hidden_layers,
-                z.size(0),
-                self._num_hidden_dim,
-                device=z.device,
-            )
-        )
-
         x = torch.cat([z, inputs["weather"]], dim=-1)
-        x, _ = self._lstm_1(x, (hn, cn))
+        x, _ = self._lstm_1(x)
         x = torch.relu(x)
         return self._linear_1(x)
 
