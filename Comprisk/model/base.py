@@ -56,6 +56,19 @@ class BaseModel(L.LightningModule):
         # define stable predict-step parameters
         self._dropout = torch.nn.Dropout()
         self._mc_iteration = monte_carlo
+        if self._mc_iteration > 0:
+            logger.debug("Predict step uses Monte-Carlo (num samples: %s)", self._mc_iteration)
+
+    def set_monte_carlo(self, num_iterations: int) -> None:
+        """Overwrites the constructor monte-carlo iteration number. Setting this value to 0
+        disables monte carlo sampling.
+
+        Args:
+            num_iterations (int): The amount of iterations to sample from the model. The mean
+                of the sampled outputs defines the model's output given an input.
+        """
+        logger.debug("Overwriting MC iteration in predict from %s to %s", self._mc_iteration, num_iterations)
+        self._mc_iteration = num_iterations
 
     def summary(self, meta: Metadata) -> str:
         """Returns a summary of the model as string. Requires to be
