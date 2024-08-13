@@ -1,12 +1,12 @@
 #!/bin/sh
-DIRECTORY_RAW="dataset-2021-23-raw"
-DIRECTORY="dataset-2021-23"
+DIRECTORY_RAW="dataset-2021-6m-raw"
+DIRECTORY="dataset-2021-6m"
 
 pip install -e .
 
 if [ ! -d "$DIRECTORY_RAW" ]; then
     echo "$DIRECTORY_RAW does not exist. Downloading dataset..."
-    flux-pre --folder "$DIRECTORY" --machine-keep-state on --interval 2021-09-01 2022-08-31 --overwrite
+    flux-pre --folder "$DIRECTORY" --machine-keep-state on --interval 2021-09-01 2022-03-31 --overwrite
     cp -r "$DIRECTORY" "$DIRECTORY_RAW"
 else
     echo "$DIRECTORY_RAW does exist. Restoring backup..."
