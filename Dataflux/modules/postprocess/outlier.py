@@ -1,79 +1,127 @@
-"""This module removes outliers from the dataframe."""
-
-from pandas import DataFrame
+import os
+from threading import Lock
+from typing import Any, List
 import numpy as np
+import pandas as pd
+from Dataflux.helper import Metadata, Meta, get_logger
+from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
 
-from Dataflux.modules import BasePreProcessor
-from Dataflux.helper import Meta, Metadata, get_logger, simple_graph
+from .normalize import NormalizeTransform
 
 logger = get_logger(__name__)
-
-GRAPH_FILE_NAME = "outliers_statistics.png"
-GRAPH_TITLE = "Outliers Removed Per Day (%)"
-GRAPH_XLABEL = "Date"
-GRAPH_YLABEL = "% Outliers Removed"
+mutex = Lock()
 
 
-class OutlierPreProcessor(BasePreProcessor):
-    """This class removes outliers from the dataset using IQR-distance from Median."""
+class ContextParam:
+    """Represents context parameters for outlier operations.
+    
+    This class provides constants for values and headers used
+    in outlier operations.
+    """
+    VALUES = "Outlier_values"
+    IGNORE = "Outlier_ignore_columns"
 
-    def __init__(
-        self,
-        lower_quantile: float = 0.02,
-        upper_quantile: float = 0.98,
-        threshold: float = 1.5,
-    ):
-        """The constructor of the class. This will be automatically executed by
-        the CLIArgumentParser.
 
-        Args:
-            lower_quantile (float): The lower quantile to be used for outlier removal
-            upper_quantile (float): The upper quantile to be used for outlier removal
-            threshold (float): The threshold to be used for outlier removal
-        """
-        super().__init__()
-        self._lower = lower_quantile
-        self._upper = upper_quantile
-        self._threshold = threshold
+class OutlierFit(FileWorkerCallable):
+    """Represents a fit operation for outlier detection.
+    
+    This class provides methods and constants for performing
+    outlier detection. To remove the detected outliers, use the `OutlierTransform`
+    class.
 
-        # collect statistics
-        self._stats = {}
+    Args:
+        ignore (str): List of columns to ignore, proved as string of column names
+            separated by a ','.
+    """
+    def __init__(self, ignore: str = ""):
+        self._ignore = set([_.strip() for _ in ignore.replace("\"", "").split(",")])
+        self._means = []
+        self._stds = []
 
-    def on_download_finished(
-        self, df: DataFrame, metadata: Metadata = None
-    ) -> DataFrame:
-        original_len = df.shape[0]
-        if df.shape[0] == 0:
-            return df
+        logger.debug("Ignoring following columns for outlier detection: %s", self._ignore)
 
-        # Calculate the interquartile range (IQR)
-        q1 = df.quantile(self._lower)
-        q3 = df.quantile(self._upper)
-        iqr = q3 - q1
+    def get_dependencies(self) -> List[str]:
+        return {OutlierTransform.__name__: CallableDependency.IMMEDIATELY_AFTER,
+                NormalizeTransform.__name__: CallableDependency.NOT_BEFORE}
 
-        # Define a threshold for outliers
-        threshold = self._threshold * iqr
+    def run(self, file_path: str, context: FileWorkerContext) -> Any:
+        print("findoutliers:", file_path)
+        # Load the file into a pandas DataFrame
+        df = pd.read_hdf(file_path, key="data")
+        df = df.reindex(sorted(df.columns), axis=1)
 
-        # Identify and remove the outliers
-        df[(df < (q1 - threshold)) | (df > (q3 + threshold))] = np.nan
+        include = list(set(df.columns.values) - self._ignore)
 
-        # Remove the outliers from your DataFrame
+        self._means.append(df[include].mean())
+        self._stds.append(df[include].std())
+
+    def finish(self, context: FileWorkerContext, _: Metadata) -> None:
+        # pass the trained variables to the next callable
+        with mutex:
+            mean = sum(self._means) / len(self._means)
+            std = sum(self._stds) / len(self._stds)
+
+            context.put(ContextParam.VALUES, (mean, std))
+            context.put(ContextParam.IGNORE, self._ignore)
+
+            logger.debug("Outlier mean \n%s", mean)
+            logger.debug("Outlier std \n%s", std)
+
+
+class OutlierTransform(FileWorkerCallable):
+    """
+    Removes detected outliers found by the `OutlierFit` class.
+    
+    It assumes that the `OutlierFit` class has been run beforehand, and the
+    `FileWorkerContext` contains values needed to normalize a dataframe.
+
+    Args:
+        sigma (float): The sigma is used in the following calculation:
+            mean +- sigma * std
+    """
+    def __init__(self, sigma: float = 3.0) -> None:
+        self._sigma = sigma
+        self._removed_files = []
+        self._lengths_files = {}
+        logger.debug("Outlier detection uses sigma %s", sigma)
+
+    def get_dependencies(self) -> List[str]:
+        return {OutlierFit.__name__: CallableDependency.IMMEDIATELY_BEFORE}
+
+    def run(self, file_path: str, context: FileWorkerContext) -> Any:
+        print("removeoutliers:", file_path)
+        df = pd.read_hdf(file_path, key="data")
+        df = df.reindex(sorted(df.columns), axis=1)
+
+        include = list(set(df.columns.values) - context.get(ContextParam.IGNORE))
+
+        # remove files, which have outliers
+        mean, std = context.get(ContextParam.VALUES)
+        sigma = self._sigma * std
+        df[(df[include] < (mean - sigma)) | (df[include] > (mean + sigma))] = np.nan
         df = df.dropna(how="any")
 
-        removed_len = original_len - df.shape[0]
-        removed_perc = round(removed_len / original_len * 100, 3)
-        logger.debug("Outlier detection removed %d%% of the DataFrame", removed_perc)
+        day = file_path.split("_", maxsplit=1)[-1][:-3]
+        if df.empty:
+            print("\tRemoving empty file", file_path)
+            self._removed_files.append(day)
+            os.remove(file_path)
+        else:
+            self._lengths_files[day] = len(df)
+            df.to_hdf(file_path, key="data")
 
-        # add outlier statistics to metadata
-        self._stats[metadata[Meta.DAY]] = removed_perc
-        return df
+    def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
+        context.clear(ContextParam.VALUES)
 
-    def on_processing_finished(self, metadata: Metadata) -> None:
-        days = list(self._stats.keys())
-        vals = list(self._stats.values())
+        new_files = []
+        for f in metadata[Meta.FILES]:
+            day = f["day"]
+            if day in self._removed_files:
+                continue
 
-        # generate graph
-        ax = simple_graph(days, vals)(GRAPH_TITLE, GRAPH_XLABEL, GRAPH_YLABEL)
+            if day in self._lengths_files.keys():
+                f["recordings"] = self._lengths_files[day]
+                new_files.append(f)
 
-        # add graph to metadata
-        metadata.put_list((ax, GRAPH_FILE_NAME), Meta.ADDITIONAL_REPORT_GRAPHS)
+        metadata.drop(Meta.FILES)
+        metadata.put(new_files, Meta.FILES)

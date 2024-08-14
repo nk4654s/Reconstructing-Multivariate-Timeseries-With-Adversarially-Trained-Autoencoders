@@ -4,12 +4,14 @@ be executed on the downloaded DataFrames."""
 from Dataflux.cli import PostProcessingCLI
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
 from Dataflux.helper import Metadata
-from Dataflux.modules.postprocess import NormalizeFit, NormalizeTransform, WeatherDataset, MonoFile, RemoveColumns
+from Dataflux.modules.postprocess import NormalizeFit, NormalizeTransform, WeatherDataset, RemoveColumns, OutlierFit, OutlierTransform, MonoFile
 
 # define module classes to be available here
 modules = [
     WeatherDataset,
     RemoveColumns,
+    OutlierFit,
+    OutlierTransform,
     NormalizeFit,
     NormalizeTransform,
     MonoFile
