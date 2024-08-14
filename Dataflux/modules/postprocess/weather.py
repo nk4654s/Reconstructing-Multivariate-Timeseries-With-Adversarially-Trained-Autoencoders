@@ -66,7 +66,15 @@ class WeatherDataset(FileWorkerCallable):
                 WeatherDataset.DF = self._weather.get_data_by_id(**kwargs)
 
         # get the weather data fro the time span of the loaded DataFrame
-        df = pd.read_hdf(file_path, key="data")
+        try:
+            df = pd.read_hdf(file_path, key="data")
+        except KeyError:
+            print("\tRemoving empty file", file_path)
+            os.remove(file_path)
+            day = file_path.split("_", maxsplit=1)[-1][:-3]
+            self._removed_files.append(day)
+            return
+
         df = df.astype(np.float32)
 
         min_ts = df["ts"].min()

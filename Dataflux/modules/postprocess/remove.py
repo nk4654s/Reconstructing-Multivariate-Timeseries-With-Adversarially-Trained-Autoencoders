@@ -9,9 +9,14 @@ logger = get_logger(__name__)
 
 
 class RemoveColumns(FileWorkerCallable):
-    """This module removes specified columns from the dataframe"""
+    """This module removes specified columns from the dataframe.
+    
+    Args:
+        columns (str): The list of column names to remove, provided as string
+            where each list entry is separated by a ','.
+    """
     def __init__(self, columns: str = "") -> None:
-        self._columns = columns.replace("\"", "").split(" ")
+        self._columns = [_.strip() for _ in columns.replace("\"", "").split(",")]
         self._num_columns = 0
         logger.debug("RemoveColumns will remove %s", self._columns)
 
