@@ -100,8 +100,8 @@ class DFIO:
             day_index (int): index of the day to be saved
         """
         assert df is not None, "No dataframe to save"
-        assert self._store is not None, "No HDF store opened."
         if not df.empty:
+            assert self._store is not None, "No HDF store opened."
             self._store.put("data", df, format="table", append=True)
 
     def parse_stream(
@@ -153,6 +153,7 @@ class DFIO:
         self._meta.put(True, Meta.MACHINE_STATE_CHANGE)
 
         # iterate over all streams and append their content to the dataframe
+        init_save = True
         desc = f"Fetching TSV daily data for machine {self._s3.machine_uuid}"
         for i in trange(len(self._s3), desc=desc):
             # get the stream, skip if the stream could not be opened
@@ -174,15 +175,23 @@ class DFIO:
 
             # some modules might return a list of DataFrames, save each of those
             dfs = [df] if isinstance(df, pd.DataFrame) else df
-            logger.info("Single TSV download resultet in %s file(s).", len(dfs))
+            if len(dfs) == 0:
+                continue
+
+            if init_save:
+                init_save = False
+                self._create_storage(dir_name, i)
 
             # save the processed dataframes
+            logger.info("Single TSV download resultet in %s file(s).", len(dfs))
             for j, df in enumerate(dfs):
                 # check if a new storage needs to be created, only after a machine state
                 # change
-                if i == 0 or (j > 0 or self._meta[Meta.MACHINE_STATE_CHANGE]):
+                if j > 0 or self._meta[Meta.MACHINE_STATE_CHANGE]:
                     self._create_storage(dir_name, i)
+
                 self.save(df)
+
             self._meta.put(False, Meta.MACHINE_STATE_CHANGE)
         self._store.close()
 
