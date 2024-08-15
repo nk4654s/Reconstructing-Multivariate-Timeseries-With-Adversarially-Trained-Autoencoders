@@ -1,0 +1,47 @@
+seed_everything: true
+trainer:
+  callbacks: 
+    # define the early stopping callback
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        monitor: validate/MSELoss
+        min_delta: 0.0001
+        patience: 3
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        every_n_epochs: 1
+  # define training configuration
+  precision: 32
+  max_epochs: 5
+  gradient_clip_val: 1.0
+#  profiler: "simple"
+  log_every_n_steps: 1
+# configure model hyper-parameter
+model:
+  class_path: Comprisk.model.future.FSLSTMModel
+  init_args:
+    # gerneral parameters
+    activation: tanh
+    loss: MSELoss
+    optimizer: Adam
+    lr: 0.00015
+    # model specific parameters
+    num_features: 27
+    num_targets: 26
+    num_hidden_dim: 256
+    num_hidden_layers: 3
+    dropout_prob: 0.3
+
+data:
+  # configure dataset to load
+  path: /Users/jonas/Dataset/dataset-2021-6m
+  input_sequence: 500
+  output_sequence: 10
+  skip: 20
+  # configure how to sample from the dataset
+  batch_size: 64
+  shuffle: true
+  train_size: 0.7
+  validation_size: 0.2
+  # configure the workers sampling the dataset
+  num_workers: 4
