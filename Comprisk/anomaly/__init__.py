@@ -1,1 +1,1 @@
-from Comprisk.anomaly.detection import AnomalyDetector
+from Comprisk.anomaly.detection import AnomalyDetector, AnomalyDetectionMethod

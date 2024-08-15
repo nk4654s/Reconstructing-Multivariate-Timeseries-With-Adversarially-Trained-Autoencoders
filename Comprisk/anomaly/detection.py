@@ -1,5 +1,6 @@
 """This module contains the AnomalyDetector class."""
 
+from enum import Enum
 import os
 import importlib
 from typing import Dict
@@ -21,6 +22,13 @@ from Comprisk.model import BaseModel
 
 logger = get_logger(__name__)
 
+class AnomalyDetectionMethod(Enum):
+    """The anomaly detection methods implemented in the AnomalyDetector
+    class.
+    """
+    QUANTILE = "quantile"
+    MEAN = "mean"
+
 
 class AnomalyDetector:
     """The detector class tries to find an anomaly in a given input by passing the
@@ -41,11 +49,15 @@ class AnomalyDetector:
         model_config_path (str): The path to the model configuration. The model's
             checkpoints must be in the same folder.
         loss (str): The loss function to use. Defaults to 'MSELoss'.
+        detection_method (AnomalyDetectionMethod): The method used to detect anomalies. Defaults
+        to AnomalyDetectionMethod.MEAN.
     """
 
-    def __init__(self, model_config_path: str, loss: str = "MSELoss") -> None:
+    def __init__(self, model_config_path: str, loss: str = "MSELoss",
+                 detection_method: AnomalyDetectionMethod = AnomalyDetectionMethod.MEAN) -> None:
         self._model = self._load_model(model_config_path)
         self._device = self._model.device
+        self._detection = detection_method
 
         self._threshold = 0.0
         self._loss_name = loss
@@ -70,6 +82,11 @@ class AnomalyDetector:
         )
         model.eval()
         return model
+
+    @property
+    def model(self) -> BaseModel:
+        """Returns the loaded model."""
+        return self._model
 
     @property
     def threshold(self) -> float:
@@ -124,18 +141,29 @@ class AnomalyDetector:
 
         df = pd.DataFrame({"losses": losses})
 
+        # Calculate mean and std
+        if self._detection == AnomalyDetectionMethod.MEAN:
+            mean = df.mean()
+            std = df.std()
+            sigma = std * 3
+
+            # Identify the outliers, which are defining the threshold
+            outliers = (
+                df[(df < (mean - sigma)) | (df > (mean + std))].dropna().to_numpy()
+            )
         # Calculate the interquartile range (IQR)
-        q1 = df.quantile(0.0)
-        q3 = df.quantile(0.9)
-        iqr = q3 - q1
+        if self._detection == AnomalyDetectionMethod.QUANTILE:
+            q1 = df.quantile(0.0)
+            q3 = df.quantile(0.9)
+            iqr = q3 - q1
 
-        # Define a threshold for outliers
-        threshold = 1.5 * iqr
+            # # Define a threshold for outliers
+            threshold = 2 * iqr
 
-        # Identify the outliers, which are defining the threshold
-        outliers = (
-            df[(df < (q1 - threshold)) | (df > (q3 + threshold))].dropna().to_numpy()
-        )
+            # Identify the outliers, which are defining the threshold
+            outliers = (
+                df[(df < (q1 - threshold)) | (df > (q3 + threshold))].dropna().to_numpy()
+            )
         if len(outliers) > 0:
             self._threshold = outliers.min()
             logger.debug(
