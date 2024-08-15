@@ -23,4 +23,6 @@ def init_sub_modules(path: str) -> Dict[str, nn.Module]:
                 libpath = value["class_path"]
                 module = class_for_name(*libpath.rsplit(".", maxsplit=1))
                 sub_modules[key] = module(**value["init_args"])
+            else:
+                sub_modules[key] = value
         return sub_modules
