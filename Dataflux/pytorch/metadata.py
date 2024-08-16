@@ -21,6 +21,7 @@ class MetadataTypes(Enum):
     NAMES_SENSOR = "column_names_sensors"
     IN_SEQUENCE = "num_input_sequence"
     OUT_SEQUENCE = "num_output_sequence"
+    SKIP = "skip"
 
 
 class Metadata:
@@ -41,6 +42,7 @@ class Metadata:
                  num_features_targets: int,
                  num_input_sequence: int,
                  num_output_sequence: int,
+                 skip: int,
                  column_names: List[str],
                  column_names_sensors: List[str]) -> None:
         self._num_features_sensors = num_features_sensors
@@ -50,6 +52,16 @@ class Metadata:
         self._num_output_sequence = num_output_sequence
         self._column_names = column_names
         self._column_names_sensors = column_names_sensors
+        self._skip = skip
+
+    @property
+    def skip(self) -> int:
+        """The number of seconds skipped in each sample.
+
+        Returns:
+            int: The skipped seconds.
+        """
+        return self._skip
 
     @property
     def column_names(self) -> List[str]:

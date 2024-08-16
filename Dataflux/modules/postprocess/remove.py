@@ -2,10 +2,9 @@ from typing import Any, List
 
 import pandas as pd
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
-from Dataflux.helper import Metadata, Meta, get_logger
+from Dataflux.helper import Metadata, Meta
 from Dataflux.modules.postprocess.normalize import NormalizeFit
-
-logger = get_logger(__name__)
+from Dataflux import logger
 
 
 class RemoveColumns(FileWorkerCallable):

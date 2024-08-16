@@ -2,9 +2,8 @@
 
 from pandas import DataFrame
 from Dataflux.modules import BasePreProcessor
-from Dataflux.helper import Metadata, get_logger
-
-logger = get_logger(__name__)
+from Dataflux.helper import Metadata
+from Dataflux import logger
 
 
 class InterpolatePreProcessor(BasePreProcessor):

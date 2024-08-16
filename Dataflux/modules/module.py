@@ -2,10 +2,8 @@
 from enum import Enum
 from typing import Callable, List
 from pandas import DataFrame
-from Dataflux.helper import Metadata, get_logger
-
-# create logger object
-logger = get_logger(__name__)
+from Dataflux.helper import Metadata
+from Dataflux import logger
 
 
 class EntryPoint(Enum):

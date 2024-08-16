@@ -9,10 +9,8 @@ from uuid import UUID
 from enum import Enum
 import boto3
 
-from Dataflux.helper import get_day_list, get_logger
-
-# create logger object
-logger = get_logger(__name__)
+from Dataflux.helper import get_day_list
+from Dataflux import logger
 
 
 class BucketType(Enum):

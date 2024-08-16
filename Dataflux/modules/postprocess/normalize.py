@@ -2,10 +2,10 @@ from threading import Lock
 from typing import Any, List, Tuple
 import numpy as np
 import pandas as pd
-from Dataflux.helper import Meta, Metadata, get_logger
+from Dataflux.helper import Meta, Metadata
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
+from Dataflux import logger
 
-logger = get_logger(__name__)
 mutex = Lock()
 
 

@@ -2,14 +2,13 @@
 import os
 import math
 from typing import List
-from Dataflux.helper import get_logger, Meta, Metadata
+from Dataflux.helper import Meta, Metadata
 from .pool import FileWorkerPool
 from .worker import FileWorkerThread
 from .context import FileWorkerContext
 from .callable import FileWorkerCallable
+from Dataflux import logger
 
-# create logger object
-logger = get_logger(__name__)
 
 class FileWorkerFactory:
     """This class is used to create a pool of file workers.

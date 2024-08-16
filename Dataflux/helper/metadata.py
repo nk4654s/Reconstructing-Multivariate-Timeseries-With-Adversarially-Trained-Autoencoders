@@ -5,10 +5,6 @@ from typing import Any
 import json
 
 from Dataflux.helper.utils import get_file
-from Dataflux.helper.logger import get_logger
-
-# create logger object
-logger = get_logger(__name__)
 
 
 class Meta(Enum):

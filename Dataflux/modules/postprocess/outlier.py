@@ -3,12 +3,12 @@ from threading import Lock
 from typing import Any, List
 import numpy as np
 import pandas as pd
-from Dataflux.helper import Metadata, Meta, get_logger
+from Dataflux.helper import Metadata, Meta
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
+from Dataflux import logger
 
 from .normalize import NormalizeTransform
 
-logger = get_logger(__name__)
 mutex = Lock()
 
 

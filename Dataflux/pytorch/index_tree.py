@@ -2,9 +2,8 @@
 to the sampling index."""
 from typing import Dict, List, Tuple
 
-from Dataflux.helper import Meta, Metadata, get_logger
-
-logger = get_logger(__name__)
+from Dataflux.helper import Meta, Metadata
+from Dataflux import logger
 
 
 class Node:

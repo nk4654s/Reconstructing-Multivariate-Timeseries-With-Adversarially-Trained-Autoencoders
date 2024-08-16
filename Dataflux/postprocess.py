@@ -3,8 +3,10 @@ The `modules` container defines the order of the post-processing modules to
 be executed on the downloaded DataFrames."""
 from Dataflux.cli import PostProcessingCLI
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
-from Dataflux.helper import Metadata
+from Dataflux.helper import Metadata, LOGGING_ENABLED
 from Dataflux.modules.postprocess import NormalizeFit, NormalizeTransform, WeatherDataset, RemoveColumns, OutlierFit, OutlierTransform, MonoFile
+
+LOGGING_ENABLED = True
 
 # define module classes to be available here
 modules = [

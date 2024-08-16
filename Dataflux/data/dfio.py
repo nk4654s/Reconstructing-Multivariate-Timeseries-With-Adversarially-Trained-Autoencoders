@@ -17,9 +17,7 @@ from Dataflux.helper import (
     line_str_to_array,
 )
 from Dataflux.modules import BasePreProcessor, EntryPoint
-
-# create logger object
-logger = get_logger(__name__)
+from Dataflux import logger
 
 
 class DFIO:

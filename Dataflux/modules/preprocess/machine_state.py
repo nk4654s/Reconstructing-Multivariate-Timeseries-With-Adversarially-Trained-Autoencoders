@@ -4,9 +4,8 @@ from typing import List, Tuple
 from pandas import DataFrame
 import numpy as np
 from Dataflux.modules import BasePreProcessor
-from Dataflux.helper import Meta, Metadata, get_logger, simple_graph
-
-logger = get_logger(__name__)
+from Dataflux.helper import Meta, Metadata, simple_graph
+from Dataflux import logger
 
 GRAPH_FILE_NAME = "split_statistics.png"
 GRAPH_TITLE = "Data Splits Per Day"

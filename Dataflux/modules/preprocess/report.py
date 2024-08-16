@@ -10,10 +10,9 @@ from matplotlib import rcParams
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from Dataflux.modules import BasePreProcessor
-from Dataflux.helper import Metadata, Meta, get_file, get_logger
+from Dataflux.helper import Metadata, Meta, get_file
+from Dataflux import logger
 
-# create logger object
-logger = get_logger(__name__)
 rcParams.update({"figure.autolayout": True})
 
 

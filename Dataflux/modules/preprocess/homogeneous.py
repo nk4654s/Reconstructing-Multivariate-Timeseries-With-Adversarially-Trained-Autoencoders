@@ -6,10 +6,9 @@ from pandas import DataFrame, Index
 import numpy as np
 
 from Dataflux.data.header import Header
-from Dataflux.helper import Meta, Metadata, get_logger, simple_graph
+from Dataflux.helper import Meta, Metadata, simple_graph
 from Dataflux.modules import BasePreProcessor
-
-logger = get_logger(__name__)
+from Dataflux import logger
 
 GRAPH_HTS_TITLE = "Time Steps Addded (%)"
 GRAPH_HTS_XLABEL = "Date"

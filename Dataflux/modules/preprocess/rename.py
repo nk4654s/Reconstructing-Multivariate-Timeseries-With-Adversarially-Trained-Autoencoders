@@ -1,10 +1,9 @@
 """This module replaces the sensor UUID with a human readable text."""
 from typing import List
 from pandas import DataFrame
-from Dataflux.helper import Metadata, Meta, get_sensor_uuid_to_name, get_logger
+from Dataflux.helper import Metadata, Meta, get_sensor_uuid_to_name
 from Dataflux.modules.module import BasePreProcessor
-
-logger = get_logger(__name__)
+from Dataflux import logger
 
 
 class RenameColumns(BasePreProcessor):

@@ -7,7 +7,10 @@ import shutil
 from datetime import date
 from Dataflux.cli import PreProcessCLI
 from Dataflux.modules.preprocess import *
+from Dataflux.helper import LOGGING_ENABLED
 from Dataflux.data import S3, DFIO, BucketType
+
+LOGGING_ENABLED = True
 
 # define modules to be applied here
 modules = [

@@ -8,3 +8,7 @@ new modules, head to the `Dataflux.modules` submodule.
 To use a downloaded dataset, the package provides a `pytorch` submodule. Install the
 Dataflux package as `pip`-package and import it.
 """
+import logging
+from Dataflux.helper.logger import get_logger
+
+logger = get_logger(__name__, path="logfile", level=logging.DEBUG)
