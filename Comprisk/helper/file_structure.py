@@ -60,6 +60,6 @@ def get_checkpoints(cli) -> List[str]:
     Returns:
         List[str]: The list of checkpoint paths, sorted.
     """
-    base_path = get_config_folder(cli)
+    base_path = get_config_folder(cli) + "/checkpoints/"
     checkpoints = sorted([_ for _ in os.listdir(base_path) if "ckpt" in _])
     return checkpoints
