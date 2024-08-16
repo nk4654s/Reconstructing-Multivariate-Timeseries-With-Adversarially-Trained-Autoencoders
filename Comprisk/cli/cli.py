@@ -1,21 +1,14 @@
 """This module implements an advanced CLI for training or loading
 a model. Moreover, the module expands the CLI by **lightning.ai**."""
 
-import importlib
-from typing import Any
+import datetime
 from lightning.pytorch.cli import (
     LightningArgumentParser,
     LightningCLI,
 )
 from lightning.pytorch.tuner.tuning import Tuner
 from lightning.pytorch.callbacks import ModelCheckpoint
-from lightning.pytorch.trainer import Trainer
-
-from Dataflux.helper import get_logger
-
-from Comprisk.data import DataModule
-
-logger = get_logger(__name__, path="./logs/logfile")
+from Comprisk import logger
 
 
 class CompriskCLI(LightningCLI):
@@ -34,6 +27,12 @@ class CompriskCLI(LightningCLI):
 
     def before_fit(self):
         """Method executes before fit automatically."""
+        start_str = "-" * 40 + datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S") + "-" * 40
+        header_str = "-" * 100
+        logger.debug(header_str)
+        logger.debug(start_str)
+        logger.debug("Starting CompriskCLI for training")
+
         tuner = Tuner(self.trainer)
         # find best batch size
         if self.config.find_batch_size:
@@ -64,4 +63,8 @@ class CompriskCLI(LightningCLI):
 
     def after_fit(self):
         """Method executes after fit automatically."""
-        pass
+        logger.debug("Training finished, clean up now.")
+        end_str = "-" * 40 + datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S") + "-" * 40
+        footer_str = "-" * 100
+        logger.debug(end_str)
+        logger.debug(footer_str)

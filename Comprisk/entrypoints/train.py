@@ -6,13 +6,13 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 import torch
 
-from Dataflux.helper import get_logger
+from Dataflux import *
 
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
 
-logger = get_logger(__name__, path="./logs/logfile")
+from Comprisk import logger
 
 def get_trainer_callback(trainer, callback_cls: Callback) -> Callback:
     """Finds the fiven callback class in the trainer callbacks list. If the
@@ -36,8 +36,10 @@ def cli_main():
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    logger.debug("Starting CompriskCLI")
     cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+
+    # run methods before fit
+    cli.before_fit()
 
     # set up the logger
     sub_path = cli.model.__class__.__name__
@@ -53,8 +55,8 @@ def cli_main():
     # set up the model saving
     checkpoint = get_trainer_callback(cli.trainer, ModelCheckpoint)
     if checkpoint:
-        os.makedirs(tb_logger.log_dir + "/checkpoints")
-        checkpoint.dirpath = tb_logger.log_dir + "/checkpoints"
+        os.makedirs(tb_logger.log_dir + "/checkpoints/")
+        checkpoint.dirpath = tb_logger.log_dir + "/checkpoints/"
     else:
         logger.warning("ModelCheckpoint callback not defined in yaml-config.")
 
@@ -63,10 +65,6 @@ def cli_main():
     with open(summary_path, mode="w", encoding="UTF-8") as sum_file:
         meta = cli.datamodule.dataset.get_meta()
         sum_file.write(cli.model.summary(meta))
-
-    # run methods before fit
-    logger.debug("CompriskCLI prepare training.")
-    cli.before_fit()
 
     # train
     logger.debug("Starting training")
@@ -77,7 +75,6 @@ def cli_main():
     cli.trainer.fit(model, cli.datamodule)
 
     # run methods after fit
-    logger.debug("Training finished, clean up now.")
     cli.after_fit()
 
 

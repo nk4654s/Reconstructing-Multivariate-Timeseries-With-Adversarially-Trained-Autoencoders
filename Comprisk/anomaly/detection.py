@@ -19,8 +19,8 @@ from Dataflux.pytorch.utils import collate_fn
 from Dataflux.helper import get_logger
 from Comprisk.helper import get_loss_by_name, init_sub_modules
 from Comprisk.model import BaseModel
+from Comprisk import logger
 
-logger = get_logger(__name__)
 
 class AnomalyDetectionMethod(Enum):
     """The anomaly detection methods implemented in the AnomalyDetector

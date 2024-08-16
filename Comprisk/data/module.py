@@ -12,6 +12,8 @@ from torch.utils.data import DataLoader
 from Dataflux.pytorch import Dataset, collate_fn
 from Dataflux.pytorch import RandomBatchSampler as RBS
 
+from Comprisk import logger
+
 
 class DataModule(L.LightningDataModule):
     """
@@ -69,6 +71,11 @@ class DataModule(L.LightningDataModule):
             output_sequence=output_sequence,
             skip=skip,
         )
+
+        logger.debug("Dataset consists of %s samples", len(self._dataset))
+        logger.debug("Dataset skip is set to %s", skip)
+        logger.debug("Dataset input sequence: %s", input_sequence)
+        logger.debug("Dataset output sequence: %s", output_sequence)
 
         self._sampler_kwargs["data_length"] = len(self._dataset)
 

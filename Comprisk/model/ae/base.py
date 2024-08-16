@@ -8,10 +8,8 @@ import torch.nn as nn
 from torchinfo import summary as torchsummary
 
 from Dataflux.pytorch.metadata import Metadata
-from Dataflux.helper import get_logger
 from Comprisk.model import BaseModel
-
-logger = get_logger(__name__, path="./logs/logfile")
+from Comprisk import logger
 
 
 class EncoderBase(nn.Module):

@@ -6,7 +6,6 @@ from typing import List
 import lightning as L
 import torch
 from torch.optim.lr_scheduler import ExponentialLR
-from Dataflux.helper import get_logger
 from Dataflux.pytorch.metadata import Metadata
 from Comprisk.helper import (
     get_loss_by_name,
@@ -14,7 +13,7 @@ from Comprisk.helper import (
     get_activation_from_string,
 )
 
-logger = get_logger(__name__, path="./logs/logfile")
+from Comprisk import logger
 
 
 class BaseModel(L.LightningModule):
