@@ -62,6 +62,7 @@ class LSTMDecoder(DecoderBase):
         num_hidden_dim (int): The number of hidden nodes in the LSTM.
         num_hidden_layers (int): The number of LSTM layers.
         dropout_prob (float): The dropout probability in the LSTM.
+        predict_key (str): The key to use for prediction (e.g. 'sensors', 'target').
     """
     def __init__(
         self,
@@ -70,9 +71,11 @@ class LSTMDecoder(DecoderBase):
         num_hidden_dim: int,
         num_hidden_layers: int,
         dropout_prob: float = 0.0,
+        predict_key: str = "sensors",
     ) -> None:
         super().__init__()
 
+        self._predict_key = predict_key
         self._num_features = num_features
         self._num_latent_dim = num_latent_dim
         self._num_hidden_dim = num_hidden_dim
@@ -97,7 +100,7 @@ class LSTMDecoder(DecoderBase):
 
     @property
     def output_keys(self) -> List[str]:
-        return ["sensors"]
+        return [self._predict_key]
 
 
 class LSTMEncoderBypass(LSTMEncoder):
@@ -123,6 +126,7 @@ class LSTMDecoderBypass(LSTMDecoder):
         num_hidden_dim: int,
         num_hidden_layers: int,
         dropout_prob: float = 0,
+        predict_key: str = "sensors",
     ) -> None:
         super().__init__(
             num_features,
@@ -130,6 +134,7 @@ class LSTMDecoderBypass(LSTMDecoder):
             num_hidden_dim,
             num_hidden_layers,
             dropout_prob,
+            predict_key
         )
         self._linear_1 = nn.Linear(num_hidden_dim, num_features)
 
@@ -140,7 +145,3 @@ class LSTMDecoderBypass(LSTMDecoder):
         x, _ = self._lstm_1(x)
         x = torch.relu(x)
         return self._linear_1(x)
-
-    @property
-    def output_keys(self) -> List[str]:
-        return ["sensors"]
