@@ -21,6 +21,7 @@ class FileWorkerFactory:
             num_workers (int): The number of workers to be created.
         """
         self._context = FileWorkerContext()
+        self._base_dir = base_dir
         self._metadata = Metadata()
         self._metadata.load(base_dir)
 
@@ -35,7 +36,7 @@ class FileWorkerFactory:
             FileWorkerPool: The pool of workers that are ready for processing.
         """
         # get all DataFrame files
-        path = self._metadata[Meta.PATH]
+        path = self._base_dir
         files = []
         for f in os.listdir(path):
             if os.path.isdir(os.path.join(path, f)):
