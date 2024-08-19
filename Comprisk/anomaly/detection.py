@@ -25,6 +25,7 @@ class AnomalyDetectionMethod(Enum):
     """The anomaly detection methods implemented in the AnomalyDetector
     class.
     """
+
     QUANTILE = "quantile"
     MEAN = "mean"
 
@@ -52,8 +53,12 @@ class AnomalyDetector:
         to AnomalyDetectionMethod.MEAN.
     """
 
-    def __init__(self, model_config_path: str, loss: str = "MSELoss",
-                 detection_method: AnomalyDetectionMethod = AnomalyDetectionMethod.MEAN) -> None:
+    def __init__(
+        self,
+        model_config_path: str,
+        loss: str = "MSELoss",
+        detection_method: AnomalyDetectionMethod = AnomalyDetectionMethod.MEAN,
+    ) -> None:
         self._model = self._load_model(model_config_path)
         self._device = self._model.device
         self._detection = detection_method
@@ -89,7 +94,7 @@ class AnomalyDetector:
 
     @property
     def threshold(self) -> float:
-        """Simple getter of the internal threshold value. Make sure to run 
+        """Simple getter of the internal threshold value. Make sure to run
         `self.train_threshold`, otherwise the `self.threshold` value might be incorrect.
         """
         return self._threshold
@@ -161,7 +166,9 @@ class AnomalyDetector:
 
             # Identify the outliers, which are defining the threshold
             outliers = (
-                df[(df < (q1 - threshold)) | (df > (q3 + threshold))].dropna().to_numpy()
+                df[(df < (q1 - threshold)) | (df > (q3 + threshold))]
+                .dropna()
+                .to_numpy()
             )
         if len(outliers) > 0:
             self._threshold = outliers.min()
@@ -266,7 +273,9 @@ class AnomalyDetector:
         # pass the inputs to the model, compress it using the autoencoder
         # then restore the compressed representation
         reconstruct = self.reconstruction(inputs, detach=True)[0]
-        error = np.power(reconstruct - inputs["sensors"].detach().cpu().numpy(), 2).mean(1)[0]
+        error = np.sqrt(
+            np.power(reconstruct - inputs["sensors"].detach().cpu().numpy(), 2)
+        ).mean(1)[0]
 
         # calculate the loss of reconstruction, high means anomaly detected
         if feature:
@@ -293,4 +302,6 @@ class AnomalyDetector:
         if not return_loss:
             return (reconstruction_loss >= self._threshold).any()
 
-        return (reconstruction_loss >= self._threshold).any() >= self._threshold, reconstruction_loss
+        return (
+            reconstruction_loss >= self._threshold
+        ).any() >= self._threshold, reconstruction_loss
