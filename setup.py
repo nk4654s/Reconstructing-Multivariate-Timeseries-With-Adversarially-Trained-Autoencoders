@@ -40,6 +40,7 @@ setup(
         "console_scripts": [
             "flux-pre=Dataflux.preprocess:main",
             "flux-post=Dataflux.postprocess:main",
+            "flux-merge=Dataflux.merge:main",
         ]
     },
     packages=find_packages(include=[

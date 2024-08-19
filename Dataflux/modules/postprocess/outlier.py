@@ -78,9 +78,11 @@ class OutlierTransform(FileWorkerCallable):
     Args:
         sigma (float): The sigma is used in the following calculation:
             mean +- sigma * std
+        enable (bool): Enable or disable this module, Defaults to True.
     """
-    def __init__(self, sigma: float = 3.0) -> None:
+    def __init__(self, sigma: float = 3.0, enable: bool = True) -> None:
         self._sigma = sigma
+        self._enable = enable
         self._removed_files = []
         self._lengths_files = {}
         logger.debug("Outlier detection uses sigma %s", sigma)
@@ -89,6 +91,9 @@ class OutlierTransform(FileWorkerCallable):
         return {OutlierFit.__name__: CallableDependency.IMMEDIATELY_BEFORE}
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
+        if self._enable is not True or self._enable != "True":
+            return None
+
         print("removeoutliers:", file_path)
         df = pd.read_hdf(file_path, key="data")
         df = df.reindex(sorted(df.columns), axis=1)
