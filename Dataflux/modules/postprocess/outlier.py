@@ -116,6 +116,9 @@ class OutlierTransform(FileWorkerCallable):
             df.to_hdf(file_path, key="data")
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
+        if self._enable is not True or self._enable != "True":
+            return None
+
         context.clear(ContextParam.VALUES)
 
         new_files = []
