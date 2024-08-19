@@ -16,7 +16,6 @@ from Dataflux.pytorch import Dataset
 from Dataflux.pytorch.sampler import RandomBatchSampler
 from Dataflux.pytorch.utils import collate_fn
 
-from Dataflux.helper import get_logger
 from Comprisk.helper import get_loss_by_name, init_sub_modules
 from Comprisk.model import BaseModel
 from Comprisk import logger
@@ -74,9 +73,9 @@ class AnomalyDetector:
         cls = getattr(module, class_str[1])
 
         # load the model from the latest checkpoint
-        folder = os.path.dirname(path)
+        folder = os.path.join(os.path.dirname(path), "checkpoints")
         checkpoints = sorted([_ for _ in os.listdir(folder) if "ckpt" in _])
-        sub_modules = init_sub_modules(folder)
+        sub_modules = init_sub_modules(folder.rsplit("/", maxsplit=1)[0])
         model = cls.load_from_checkpoint(
             os.path.join(folder, checkpoints[-1]), **sub_modules
         )
@@ -137,7 +136,7 @@ class AnomalyDetector:
 
         for _ in trange(0, limit_samples // batch_size, 1, leave=True):
             loss = self.detect(next(data_iter))
-            losses += list(loss)
+            losses.append(loss)
 
         df = pd.DataFrame({"losses": losses})
 
@@ -266,23 +265,13 @@ class AnomalyDetector:
 
         # pass the inputs to the model, compress it using the autoencoder
         # then restore the compressed representation
-        reconstruct, inputs = self.reconstruction(inputs, detach=False)
+        reconstruct = self.reconstruction(inputs, detach=True)[0]
+        error = np.power(reconstruct - inputs["sensors"].detach().cpu().numpy(), 2).mean(1)[0]
 
         # calculate the loss of reconstruction, high means anomaly detected
-        if not feature:
-            losses = []
-            for i in range(reconstruct.shape[0]):
-                reconstruction_loss = self._loss(inputs["sensors"][i], reconstruct[i])
-                losses.append(reconstruction_loss.detach().cpu().numpy())
-
-            return losses
-
-        per_feature = []
-        for i in range(reconstruct.shape[-1]):
-            x = torch.unsqueeze(inputs["sensors"][:, i], dim=-1)
-            x_hat = torch.unsqueeze(reconstruct[:, i], dim=-1)
-            per_feature.append(self._loss(x, x_hat).detach().cpu().numpy())
-        return per_feature
+        if feature:
+            return list(error)
+        return error.mean()
 
     def is_anomaly(
         self, inputs: Dict[str, np.array], return_loss: bool = False
