@@ -1,12 +1,13 @@
 """This module creates a model summary and plots it."""
 
 import os
+import json
 from lightning import Callback
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 import torch
 
-from Dataflux import *
+from Dataflux.pytorch import Dataset
 
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
@@ -29,6 +30,33 @@ def get_trainer_callback(trainer, callback_cls: Callback) -> Callback:
         if isinstance(c, callback_cls):
             return c
     return None
+
+
+def save_training_meta(base_path: str, dataset: Dataset) -> None:
+    """This function creates the model's metadata folder and generates the
+    training dataset correlation matrix, as well as copies the dataset's
+    normalizer.
+    
+    Args:
+        base_path (str): The path where the metadata folder will be created.
+        dataset (Dataset): The dataset used for training.
+    """
+    # create the metadata base dir
+    os.makedirs(base_path)
+
+    # save the correlation of the training data
+    correlation_path = os.path.join(base_path, "correlation.csv")
+    df = dataset.to_dataframe()
+    df.corr().to_csv(correlation_path, index=True)
+
+    # copy the normalizer of the training data to the model
+    meta = os.path.join(dataset.directory, "metadata", "info.json")
+    with open(meta, mode="r", encoding="UTF-8") as meta_file:
+        meta_dict = json.load(meta_file)["NORMALIZER"]
+
+    meta = os.path.join(base_path, "normalizer.json")
+    with open(meta, mode="w", encoding="UTF-8") as norm_file:
+        json.dump(meta_dict, norm_file)
 
 
 def cli_main():
@@ -61,10 +89,9 @@ def cli_main():
         logger.warning("ModelCheckpoint callback not defined in yaml-config.")
 
     # save model summary to log folder
-    summary_path = os.path.join(tb_logger.log_dir, "summary.txt")
-    with open(summary_path, mode="w", encoding="UTF-8") as sum_file:
-        meta = cli.datamodule.dataset.get_meta()
-        sum_file.write(cli.model.summary(meta))
+    data = cli.datamodule.dataset
+    metafolder = tb_logger.log_dir + "/metadata/"
+    save_training_meta(metafolder, data)
 
     # train
     logger.debug("Starting training")
