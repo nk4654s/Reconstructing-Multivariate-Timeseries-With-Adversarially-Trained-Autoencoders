@@ -9,6 +9,7 @@ import torch
 
 from Dataflux.pytorch import Dataset
 
+from Comprisk.callbacks import MeasurementCallback
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
@@ -88,9 +89,10 @@ def cli_main():
     else:
         logger.warning("ModelCheckpoint callback not defined in yaml-config.")
 
-    # save model summary to log folder
+    # save model metadata to log folder
     data = cli.datamodule.dataset
-    metafolder = tb_logger.log_dir + "/metadata/"
+    metafolder = os.path.join(tb_logger.log_dir, "metadata")
+    cli.trainer.callbacks.append(MeasurementCallback())
     save_training_meta(metafolder, data)
 
     # train

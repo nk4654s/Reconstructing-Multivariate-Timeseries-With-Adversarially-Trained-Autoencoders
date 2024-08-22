@@ -1,13 +1,12 @@
 """This module contains helper methods related to the models."""
 import os
 import json
-from typing import Dict, Tuple, Type
+from typing import Any, Dict, Tuple, Type
 import pandas as pd
 import torch.nn as nn
 import yaml
 
 from Comprisk.helper.file_structure import class_for_name, get_checkpoints
-from Comprisk.model import BaseModel
 
 
 def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
@@ -37,7 +36,7 @@ def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
         return model_class, sub_modules
 
 
-def load_model(path: str, eval_mode: bool = True) -> BaseModel:
+def load_model(path: str, eval_mode: bool = True) -> Any:
     """This method loads the latest checkpoint of a model.
 
     Args:
@@ -68,6 +67,24 @@ class ModelLoader:
         self._path = path
         self._model = load_model(path, eval_mode=False)
 
+    @property
+    def path(self) -> str:
+        """The path where the model is saved.
+        """
+        return self._path
+
+    def get_loss_statistics(self) -> pd.DataFrame:
+        """The loss statistics of the model collected during training phase. This will
+        be usefull when deploying a model to detect anomalies.
+
+        Returns:
+            pd.DataFrame: A pandas dataframe containing the loss statistics.
+        """
+        loss_path = os.path.join(self._path, "metadata", "loss.csv")
+        if not os.path.exists(loss_path):
+            return pd.DataFrame()
+        return pd.read_csv(loss_path, index_col=0)
+
     def get_correlations(self) -> pd.DataFrame:
         """Loads the correlations of input features from the model metadata folder. These
         correlations are computed from the training data.
@@ -81,11 +98,11 @@ class ModelLoader:
 
         return pd.read_csv(correlation_path, index_col=0)
 
-    def get_model(self) -> BaseModel:
+    def get_model(self) -> Any:
         """A simple getter for the loaded model during object initialization.
         
         Returns:
-            BaseModel: The loaded model.
+            Any: The loaded model.
         """
         return self._model
 
