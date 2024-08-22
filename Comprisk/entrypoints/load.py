@@ -9,39 +9,17 @@ import torch
 import pandas as pd
 from tqdm import tqdm
 
-# simple demo classes for your convenience
 from Dataflux.pytorch import Metadata, Dataset
 from Dataflux.visualization import show_dataframe
 from Dataflux.helper import get_logger
 
-from Comprisk.helper import get_config_folder, get_checkpoints, init_sub_modules
+from Comprisk.helper import get_config_folder, ModelLoader
 from Comprisk.model import BaseModel
 from Comprisk.model.ae import AutoEncoder
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
 
 logger = get_logger(__name__, path="./logs/logfile")
-
-
-def load_model(cli, eval_mode: bool = True) -> BaseModel:
-    """This method loads the latest checkpoint of a model.
-
-    Args:
-        cli (CompriskCLI): The cli object created when starting an entrypoint.
-        eval_mode (bool): Wether to set the loaded model to eval mode or not. Defaults to True.
-    """
-    base_path = get_config_folder(cli)
-    checkpoints = get_checkpoints(cli)
-
-    # 1. get dataset configuration: start, end, step size (size of input window)
-    sub_modules = init_sub_modules(base_path)
-    model = cli.model.__class__.load_from_checkpoint(
-        os.path.join(base_path + "/checkpoints/", checkpoints[-1]),
-        **sub_modules
-    )
-    if eval_mode:
-        model.eval()
-    return model
 
 
 def get_tensor_from_dataset(dataset: Dataset, i: int, device: str) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -128,11 +106,20 @@ def cli_main():
     cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
 
     logger.debug("Loging model: %s", cli.model.__class__.__name__)
-    model = load_model(cli, eval_mode=True)
+    base_path = get_config_folder(cli)
+    loader = ModelLoader(base_path)
+    model = loader.get_model()
+
+    model.eval()
     #model.set_monte_carlo(20)
 
     dataset = cli.datamodule.dataset
     predicted, inputs = predict_dataset(dataset, model)
+
+    # TODO: scale data back
+    # normalizer = loader.get_normalizer()
+    # inputs = normalizer.scale_back(inputs)
+    # predicted = normalizer.scale_back(predicted)
 
     # visualize
     sensors = [

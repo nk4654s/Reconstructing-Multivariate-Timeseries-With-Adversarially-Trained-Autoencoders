@@ -48,18 +48,17 @@ def get_config_folder(cli) -> str:
     return base_path
 
 
-def get_checkpoints(cli) -> List[str]:
+def get_checkpoints(path: str) -> List[str]:
     """Finds the checkpoints in the config folder from the command line
     arguments.
 
     Args:
-        cli (CLI): The command line interface object. To use this method,
-            cli must be called with the argument `-c`. Otherwise, no path
-            will be avialable.
+        path (str): The path to a model's output folder. This folder must contain
+            `checkpoints/`
 
     Returns:
         List[str]: The list of checkpoint paths, sorted.
     """
-    base_path = get_config_folder(cli) + "/checkpoints/"
+    base_path = os.path.join(path, "checkpoints")
     checkpoints = sorted([_ for _ in os.listdir(base_path) if "ckpt" in _])
     return checkpoints
