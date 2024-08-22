@@ -22,8 +22,6 @@ from Comprisk.cli import CompriskCLI
 
 logger = get_logger(__name__, path="./logs/logfile")
 
-# FIXME: debug and check if the learning rate finder result is used (expected ~1h)
-# TODO: run config with more than 1 dataloader fails in docker
 
 def load_model(cli, eval_mode: bool = True) -> BaseModel:
     """This method loads the latest checkpoint of a model.
