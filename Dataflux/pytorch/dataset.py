@@ -67,6 +67,12 @@ class Dataset(torch.utils.data.Dataset):
         self._meta_factory.set(MetadataTypes.TARGET, tragets.shape[-1])
 
     @property
+    def directory(self) -> str:
+        """Returns the base directory of this dataset.
+        """
+        return self._base_dir
+
+    @property
     def shape(self) -> Tuple[int, int, int]:
         """Outputs the shape of this dataset as `number_of_samples`,
         `input_window_size`, `number_of_features`.
