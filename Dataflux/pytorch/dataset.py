@@ -81,6 +81,31 @@ class Dataset(torch.utils.data.Dataset):
         """
         return self._meta_factory.build()
 
+    def to_dataframe(self, percentage: float = 1.0) -> pd.DataFrame:
+        """This method transforms the dataset into a single dataframe. To avoid
+        memory issues, set the percentage parameter accordingly.
+        
+        Args:
+            precentage (float): The percentage of the dataset to put into the
+                dataframe. Defaults to 1.0 (100%).
+        
+        Returns:
+            DataFrame: The dataset as dataframe.
+        """
+        names = self.get_meta().column_names
+        data = {key: [] for key in names}
+
+        for i in range(0, int(len(self) * percentage), 1000):
+            sensors, weather, _ = self[i]
+
+            num_weather = weather.shape[-1]
+            for j in range(num_weather):
+                data[names[j]] += list(weather[:, j])
+            for j in range(num_weather, num_weather + sensors.shape[-1]):
+                data[names[j]] += list(sensors[:, j - num_weather])
+
+        return pd.DataFrame(data)
+
     def scale_back(self, data: List | np.ndarray | pd.DataFrame) -> pd.DataFrame:
         """Method scales back the given data using the normalizer of the dataset.
         The input must match the feature list provided by `self.get_meta().column_names`.
