@@ -170,6 +170,15 @@ class DFIO:
             self._meta.put(self._s3.day(i).strftime("%Y-%m-%d"), Meta.DAY)
             for module in modules:
                 df = module(df, EntryPoint.ON_DOWNLOAD_FINISHED, metadata=self._meta)
+                shape = 0 if isinstance(df, list) else len(df)
+                if isinstance(df, list):
+                    for _ in df:
+                        shape += len(_)
+
+                logger.debug("Module %s outputs list of dataframes? %s (total=%s)",
+                             module.__class__.__name__,
+                             isinstance(df, list),
+                             shape)
 
             # some modules might return a list of DataFrames, save each of those
             dfs = [df] if isinstance(df, pd.DataFrame) else df
@@ -191,6 +200,7 @@ class DFIO:
                 self.save(df)
 
             self._meta.put(False, Meta.MACHINE_STATE_CHANGE)
+
         if self._store:
             self._store.close()
 

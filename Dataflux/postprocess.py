@@ -1,12 +1,14 @@
 """This module post-processes the downloaded and pre-processed dataset.
 The `modules` container defines the order of the post-processing modules to
 be executed on the downloaded DataFrames."""
+import logging
 from Dataflux.cli import PostProcessingCLI
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
-from Dataflux.helper import Metadata, LOGGING_ENABLED
+from Dataflux.helper import Metadata
 from Dataflux.modules.postprocess import NormalizeFit, NormalizeTransform, WeatherDataset, RemoveColumns, OutlierFit, OutlierTransform, MonoFile
 
-LOGGING_ENABLED = True
+from Dataflux import get_logger
+logger = get_logger(__name__, path="logfile", level=logging.DEBUG)
 
 # define module classes to be available here
 modules = [

@@ -4,13 +4,14 @@ be executed on the downloaded DataFrames."""
 
 import os
 import shutil
+import logging
 from datetime import date
 from Dataflux.cli import PreProcessCLI
 from Dataflux.modules.preprocess import *
-from Dataflux.helper import LOGGING_ENABLED
 from Dataflux.data import S3, DFIO, BucketType
 
-LOGGING_ENABLED = True
+from Dataflux import get_logger
+logger = get_logger(__name__, path="logfile", level=logging.DEBUG)
 
 # define modules to be applied here
 modules = [

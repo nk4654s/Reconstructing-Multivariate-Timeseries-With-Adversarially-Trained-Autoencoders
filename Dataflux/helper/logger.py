@@ -4,7 +4,7 @@ import logging
 import logging.config
 
 
-LOGGING_ENABLED = False
+LOGGING_ENABLED = True
 class LoggerDummy:
     """This dummy class represents a basic imitation of the python logger but
     implements methods without any function. THis becomes handy when disabling
