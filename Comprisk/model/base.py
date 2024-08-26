@@ -2,7 +2,7 @@
 of a nerual network are not implemented."""
 
 from typing import List
-
+import numpy as np
 import lightning as L
 import torch
 from torch.optim.lr_scheduler import ExponentialLR
@@ -99,6 +99,12 @@ class BaseModel(L.LightningModule):
             x = torch.cat((x, batch[t]), dim=-1)
         return x
 
+    def _get_feature_loss(self, y_hat, y) -> np.array:
+        y_hat = y_hat.detach().cpu().numpy()
+        y = y.detach().cpu().numpy()
+
+        return np.sqrt(np.power(y_hat - y, 2)).mean(1)[0]
+
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         """The forward method defines how the input is passed through the
         model's layers. This method needs to be overwritten by a child class,
@@ -112,9 +118,13 @@ class BaseModel(L.LightningModule):
 
     def training_step(self, batch: torch.Tensor, **kwargs) -> torch.Tensor:
         y_hat = self(batch)
-        loss = self._loss(y_hat, self._get_target_batch(batch))
+        y = self._get_target_batch(batch)
+        loss = self._loss(y_hat, y)
         self.log(f"train/{self._loss_name}", loss)
-        return loss
+
+        # the feature loss is required by the LossMeasurement callback to calculate
+        # the model's performance during training.
+        return {"loss": loss, "f_loss": self._get_feature_loss(y_hat, y)}
 
     def test_step(self, batch: torch.Tensor, **kwargs) -> torch.Tensor:
         y_hat = self(batch)

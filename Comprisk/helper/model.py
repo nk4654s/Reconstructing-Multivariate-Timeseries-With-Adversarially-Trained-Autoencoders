@@ -2,6 +2,7 @@
 import os
 import json
 from typing import Any, Dict, Tuple, Type
+import numpy as np
 import pandas as pd
 import torch.nn as nn
 import yaml
@@ -83,7 +84,13 @@ class ModelLoader:
         loss_path = os.path.join(self._path, "metadata", "loss.csv")
         if not os.path.exists(loss_path):
             return pd.DataFrame()
-        return pd.read_csv(loss_path, index_col=0)
+        loss = pd.read_csv(loss_path, index_col=0)
+        data = []
+        for i in range(len(loss)):
+            mean = np.array([_ for _ in loss["mean"][i][1:-1].split(" ") if len(_) > 0], dtype=np.float32)
+            std = np.array([_ for _ in loss["std"][i][1:-1].split(" ") if len(_) > 0], dtype=np.float32)
+            data.append((int(loss["epoch"][i]), mean, std))
+        return data
 
     def get_correlations(self) -> pd.DataFrame:
         """Loads the correlations of input features from the model metadata folder. These

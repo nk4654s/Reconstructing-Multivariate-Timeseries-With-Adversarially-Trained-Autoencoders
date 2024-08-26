@@ -1,6 +1,7 @@
 """Htis module contains the measurement callback used by the trainer in the train entrypoint."""
 import os
 from typing import Any
+import numpy as np
 from lightning.pytorch.callbacks import Callback
 from lightning.pytorch.utilities.types import STEP_OUTPUT
 import lightning.pytorch as pl
@@ -54,8 +55,8 @@ class MeasurementCallback(Callback):
         if not self._ready or self._steps == 0:
             return
 
-        self._data["mean"][self._i] = sum(self._data["mean"][self._i]) / self._steps
-        self._data["std"][self._i] = sum(self._data["std"][self._i]) / self._steps
+        self._data["mean"][self._i] = np.array(self._data["mean"][self._i]).mean(0)
+        self._data["std"][self._i] = np.array(self._data["std"][self._i]).std(0)
         self._data["epoch"].append(self._i)
 
         self._i += 1
@@ -72,8 +73,8 @@ class MeasurementCallback(Callback):
         if not self._ready:
             return
 
-        loss = outputs["loss"].detach().cpu().numpy()
-        self._collect(loss.mean(), loss.std())
+        loss = outputs["f_loss"]
+        self._collect(loss, loss)
 
     def on_validation_epoch_end(
         self, trainer: pl.Trainer, pl_module: pl.LightningModule
