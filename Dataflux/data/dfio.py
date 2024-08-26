@@ -191,7 +191,8 @@ class DFIO:
                 self.save(df)
 
             self._meta.put(False, Meta.MACHINE_STATE_CHANGE)
-        self._store.close()
+        if self._store:
+            self._store.close()
 
         # execute modules which require to be executed after processing
         # hence, there is no dataframe to process

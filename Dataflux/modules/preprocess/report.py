@@ -202,7 +202,37 @@ class Report(BasePreProcessor):
         return df
 
     def on_processing_finished(self, metadata: Metadata) -> DataFrame | List[DataFrame]:
+        if not self._folder:
+            return
+
+        # plot the outlier removed statistics if available
+        if metadata.has(Meta.ADDITIONAL_REPORT_GRAPHS):
+            graphs = metadata[Meta.ADDITIONAL_REPORT_GRAPHS]
+            for ax, file_name in graphs:
+                ax.figure.savefig(os.path.join(self._folder, file_name))
+
+        # plot the average of the correlation matrix, clean 0-only rows and cols
+        corr_matrix = self._clean_corr_matrix()
+        self._visualize_corr_matrix(corr_matrix, "correlation_matrix.png")
+        self._visualize_avg_corr(corr_matrix, "avg_feature_correlation.png")
+
+        # save the best correlated sensor names
+        corr_a, corr_b = self._highest_correlated_features(corr_matrix)
+        uncorr = self._lowest_correlated_features(corr_matrix)
+        coi = {"highest_correlated": [corr_a, corr_b], "most_uncorrelated": uncorr}
+
+        # update the metadata
+        metadata.put(self._file_register, Meta.FILES)
+        metadata.put(self._total_recordings, Meta.TOTAL_RECORDINGS)
+        metadata.put(coi, Meta.CORRELATION_OF_INTEREST)
+
+        metadata.drop(Meta.DAY)
+        metadata.drop(Meta.ADDITIONAL_REPORT_GRAPHS)
+
         # save the plot of num_features per day, from data gathered before
+        if len(days) == 0:
+            return
+
         num_features = [x["features"] for x in self._file_register]
         days = [x["day"] for x in self._file_register]
         logging.debug("Logging feature per day on %s days", len(days))
@@ -240,27 +270,3 @@ class Report(BasePreProcessor):
         ax.set_xticklabels(x_labels)
 
         plt.savefig(get_file(f"{self._folder}/recordings_per_file.png"))
-
-        # plot the outlier removed statistics if available
-        if metadata.has(Meta.ADDITIONAL_REPORT_GRAPHS):
-            graphs = metadata[Meta.ADDITIONAL_REPORT_GRAPHS]
-            for ax, file_name in graphs:
-                ax.figure.savefig(os.path.join(self._folder, file_name))
-
-        # plot the average of the correlation matrix, clean 0-only rows and cols
-        corr_matrix = self._clean_corr_matrix()
-        self._visualize_corr_matrix(corr_matrix, "correlation_matrix.png")
-        self._visualize_avg_corr(corr_matrix, "avg_feature_correlation.png")
-
-        # save the best correlated sensor names
-        corr_a, corr_b = self._highest_correlated_features(corr_matrix)
-        uncorr = self._lowest_correlated_features(corr_matrix)
-        coi = {"highest_correlated": [corr_a, corr_b], "most_uncorrelated": uncorr}
-
-        # update the metadata
-        metadata.put(self._file_register, Meta.FILES)
-        metadata.put(self._total_recordings, Meta.TOTAL_RECORDINGS)
-        metadata.put(coi, Meta.CORRELATION_OF_INTEREST)
-
-        metadata.drop(Meta.DAY)
-        metadata.drop(Meta.ADDITIONAL_REPORT_GRAPHS)

@@ -39,6 +39,8 @@ class HomogeneousTimeSteps(BasePreProcessor):
     def on_download_finished(
         self, df: DataFrame, metadata: Metadata
     ) -> DataFrame | List[DataFrame]:
+        if df.empty:
+            return df
         # get time start and end
         range_start = df[self._index_key].iloc[0]
         range_end = df[self._index_key].iloc[-1]

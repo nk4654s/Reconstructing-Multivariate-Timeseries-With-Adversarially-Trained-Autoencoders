@@ -106,6 +106,8 @@ def simple_graph(data_x: List[str], data_y: List[float]) -> Callable:
         ax.plot(data_x, data_y)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
+        if len(data_x) == 0:
+            return ax
 
         # limit label ticks
         x_locs = np.arange(0, len(data_x), max(len(data_x) // 2, len(data_x) // 50))
