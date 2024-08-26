@@ -1,13 +1,19 @@
 #!/bin/sh
-DIRECTORY="dataset-2023-04-01-orange"
+if [ -z "$1" ]; then
+    echo "Please specify a dataset name."
+    exit 1
+fi
 
-FROM_DATE="2023-04-01"
-TO_DATE="2023-08-01"
+if [ -z "$2" ]; then
+    echo "Please specify a start date (YYYY-MM-DD)."
+    exit 1
+fi
 
-printf "$DIRECTORY_RAW: Rebuilding package... "
-pip install -e . > /dev/null 2>&1
-printf "Done\n"
+if [ -z "$3" ]; then
+    echo "Please specify an end date (YYYY-MM-DD)."
+    exit 1
+fi
 
-printf "$DIRECTORY_RAW: Downloading dataset... "
-flux-pre --folder "$DIRECTORY" --machine-keep-state on --interval "$FROM_DATE" "$TO_DATE" --overwrite > /dev/null 2>&1
+printf "$1: Downloading dataset... "
+flux-pre --folder "$1" --machine-keep-state on --interval "$2" "$3" --overwrite > /dev/null 2>&1
 printf "Done\n"
