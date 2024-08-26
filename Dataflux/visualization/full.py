@@ -4,7 +4,7 @@ from typing import List
 import matplotlib.pyplot as plt
 import pandas as pd
 
-colors = ["blue", "orange", "green", "red", "purple", "brown", "pink", "olive", "cyan"]
+colors = ["teal", "orange", "blue", "red", "purple", "brown", "pink", "olive", "cyan"]
 
 
 def show_dataframe(

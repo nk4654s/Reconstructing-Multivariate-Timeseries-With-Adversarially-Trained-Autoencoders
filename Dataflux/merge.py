@@ -1,13 +1,22 @@
+"""This module merges downloaded and pre-processed datasets. The post-processing
+entrypoint is meant to run after merging datasets."""
+
 import os
 import shutil
 import argparse
 
 from Dataflux.helper import Metadata, Meta
 
+
 def main() -> None:
+    """
+    The main entry point for merging datasets. This function
+    initializes the ArgumentParser to handle command-line interface
+    arguments.
+    """
     parser = argparse.ArgumentParser(description="This entrypoint merges two datasets")
     parser.add_argument("--datasets", nargs="+", type=str, required=True, help="A list of datasets")
-    parser.add_argument("--export", type=str, required=True, help="The output dataset name")
+    parser.add_argument( "--export", type=str, required=True, help="The output dataset name")
     args = parser.parse_args()
 
     # remove the export folder if exists
@@ -40,7 +49,9 @@ def main() -> None:
         # copy the dataset files first
         for h5 in os.listdir(dataset):
             if h5[-3:] == ".h5":
-                shutil.copyfile(os.path.join(dataset, h5), os.path.join(args.export, h5))
+                shutil.copyfile(
+                    os.path.join(dataset, h5), os.path.join(args.export, h5)
+                )
 
         _metadata = Metadata()
         _metadata.load(dataset)
@@ -55,5 +66,6 @@ def main() -> None:
     metadata.put(files, Meta.FILES)
     metadata.save(args.export)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

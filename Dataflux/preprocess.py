@@ -7,21 +7,23 @@ import shutil
 import logging
 from datetime import date
 from Dataflux.cli import PreProcessCLI
-from Dataflux.modules.preprocess import *
+import Dataflux.modules.preprocess as pre
 from Dataflux.data import S3, DFIO, BucketType
 
 from Dataflux import get_logger
+
 logger = get_logger(__name__, path="logfile", level=logging.DEBUG)
 
 # define modules to be applied here
 modules = [
-    HomogeneousColumns,
-    RenameColumns,
-    InterpolatePreProcessor,
-    HomogeneousTimeSteps,
-    MachineStateSplit,
-    Report,
+    pre.HomogeneousColumns,
+    pre.RenameColumns,
+    pre.InterpolatePreProcessor,
+    pre.HomogeneousTimeSteps,
+    pre.MachineStateSplit,
+    pre.Report,
 ]
+
 
 def main():
     """
@@ -49,6 +51,7 @@ def main():
     # download and process data
     dfio = DFIO(s3)
     dfio.download(parser.args.folder, modules=prep_modules)
+
 
 if __name__ == "__main__":
     main()

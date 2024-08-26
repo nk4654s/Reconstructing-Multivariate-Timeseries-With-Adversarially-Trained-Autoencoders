@@ -9,8 +9,10 @@ from Dataflux.modules import BasePreProcessor
 
 
 class GroupedAction(Action):
-    """This class groups arguments into a single namespace."""
-
+    """This class groups arguments into a single namespace. For example, the class `TestModule` has
+    the attributes `A` and `B`, then this class groups those attributes given the namespace
+    `TestModule.A` and `TestModule.B`.
+    """
     def __call__(self, parser, namespace, values, option_string=None):
         group, dest = self.dest.split(".", 2)
         groupspace = getattr(namespace, group, Namespace())
@@ -26,10 +28,12 @@ class CLIArgumentParser(ArgumentParser):
     ):
         super().__init__(*args, **kwargs)
 
-        # init arguments from child classews
+        # init additional arguments from child classes
         self.prepare_arguments()
 
-        # store all pre-processor instances and instantiate their arguments
+        # store all processing modules as classes and inspect their attributes
+        # each attribute required by the classes constructer will be added as argument to
+        # the parser. The namespace of the argument will be `class.attribute_name`
         self._preps = modules if isinstance(modules, list) else [modules]
         for prep in self._preps:
             prefix = re.findall("[A-Z][^A-Z]*", prep.__name__)[0]
@@ -40,7 +44,7 @@ class CLIArgumentParser(ArgumentParser):
             for attr in signature.keys():
                 if attr == "self":
                     continue
-
+                
                 attr_arg = attr.replace("_", "-")
                 self.add_argument(
                     f"--{prefix}-{attr_arg}",
@@ -55,19 +59,22 @@ class CLIArgumentParser(ArgumentParser):
         self._args = self.parse_args()
 
     def get_modules(self) -> List[BasePreProcessor]:
-        """The method instatiates the pre-processor classes."""
-        # initiate the pre-processors
+        """The method instatiates the processing modules. To call this method, arguments must
+        define attributes of processing modules, if a default is not defined.
+        """
+        # initiate the each processing module with its arguments
         modules = []
         for prep in self._preps:
+            # get the module's name
             name = prep.__name__.lower()
             kwargs = {}
 
-            # check if class name is in arguments and add the arg to the kwargs
+            # get the attributes set by the user in the command line interface
             namespace = self.args.__dict__.get(name, None)
             if namespace is not None:
                 kwargs = kwargs | namespace.__dict__
 
-            # add defaults to kwargs
+            # add defaults to kwargs, without overwriting the user's input
             if namespace is None:
                 for key, val in self.args.__dict__.items():
                     arg_split = key.split(".")
@@ -75,6 +82,7 @@ class CLIArgumentParser(ArgumentParser):
                         if arg_split[1] not in kwargs.keys():
                             kwargs[arg_split[1]] = val
 
+            # instantiate the class
             modules.append(prep(**kwargs))
 
         return modules

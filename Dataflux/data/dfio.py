@@ -13,7 +13,6 @@ from Dataflux.helper import Meta, Metadata
 from Dataflux.helper import (
     get_sensor_uuid_to_name,
     get_file,
-    get_logger,
     line_str_to_array,
 )
 from Dataflux.modules import BasePreProcessor, EntryPoint
