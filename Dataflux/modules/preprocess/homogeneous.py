@@ -40,7 +40,9 @@ class HomogeneousTimeSteps(BasePreProcessor):
         self, df: DataFrame, metadata: Metadata
     ) -> DataFrame | List[DataFrame]:
         if df.empty:
+            logger.debug("HomogeneousTimeSteps got empty dataframe.")
             return df
+
         # get time start and end
         range_start = df[self._index_key].iloc[0]
         range_end = df[self._index_key].iloc[-1]
@@ -91,12 +93,19 @@ class HomogeneousColumns(BasePreProcessor):
         self._enable = enable
         self._stats = {}
 
+    def _drop_empty_cols(self, df: DataFrame) -> DataFrame:
+        drop = [c for c in df.columns.values if df[c].isnull().all()]
+        return df.drop(columns=drop, errors="ignore")
+
     def on_download_finished(
         self, df: DataFrame, metadata: Metadata
     ) -> DataFrame | List[DataFrame]:
         self._stats[metadata[Meta.DAY]] = 0
         if not self._enable:
             return df
+
+        # make sure to remove columns which are completely empty
+        df = self._drop_empty_cols(df)
 
         incoming = Header()
         incoming.values = df.columns.values
@@ -121,7 +130,7 @@ class HomogeneousColumns(BasePreProcessor):
 
         incoming.relative_complement(self._header)
         if incoming.drop:
-            df.drop(columns=incoming.drop, axis=1, inplace=True)
+            df.drop(columns=incoming.drop, axis=1, inplace=True, errors="ignore")
             logger.debug("Removed %s columns", len(incoming.drop))
 
         self._stats[metadata[Meta.DAY]] = len(incoming.drop)
