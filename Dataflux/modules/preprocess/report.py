@@ -204,6 +204,7 @@ class Report(BasePreProcessor):
     def on_processing_finished(self, metadata: Metadata) -> DataFrame | List[DataFrame]:
         if not self._folder:
             return
+        os.mkdir(self._folder)
 
         # plot the outlier removed statistics if available
         if metadata.has(Meta.ADDITIONAL_REPORT_GRAPHS):
@@ -230,11 +231,11 @@ class Report(BasePreProcessor):
         metadata.drop(Meta.ADDITIONAL_REPORT_GRAPHS)
 
         # save the plot of num_features per day, from data gathered before
-        if len(days) == 0:
-            return
-
         num_features = [x["features"] for x in self._file_register]
         days = [x["day"] for x in self._file_register]
+        if len(days) < 2:
+            return
+
         logging.debug("Logging feature per day on %s days", len(days))
 
         _, ax = plt.subplots(figsize=(8, 6))
