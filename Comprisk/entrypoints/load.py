@@ -17,7 +17,7 @@ from Comprisk.helper import get_config_folder, ModelLoader
 from Comprisk.model import BaseModel
 from Comprisk.model.ae import AutoEncoder
 from Comprisk.data import DataModule
-from Comprisk.cli import CompriskCLI
+from Comprisk.cli import CompriskLoadCLI
 
 logger = get_logger(__name__, path="./logs/logfile")
 
@@ -103,17 +103,23 @@ def cli_main():
     CompriskCLI object and sets up the command-line interface.
     """
     logger.debug("Starting CompriskCLI")
-    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskLoadCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
 
     logger.debug("Loging model: %s", cli.model.__class__.__name__)
     base_path = get_config_folder(cli)
+
     loader = ModelLoader(base_path)
     model = loader.get_model()
-
     model.eval()
-    #model.set_monte_carlo(20)
 
     dataset = cli.datamodule.dataset
+    if cli.config.dataset:
+        meta = dataset.get_meta()
+        dataset = Dataset(cli.config.dataset,
+                          meta.num_input_sequence,
+                          meta.num_output_sequence,
+                          meta.skip)
+
     predicted, inputs = predict_dataset(dataset, model)
 
     # TODO: scale data back
@@ -124,7 +130,7 @@ def cli_main():
     # visualize
     sensors = [
         "SaugtemperaturZweiteStufeTETIT74341 (°C)",
-        "DifferenzdruckTriebwerksölPDIT74553 (bar)",
+        "PackungsleckageFIT74389 (Nm3h)",
         "KühlwassertemperaturnachKühlerTETIT74422 (°C)",
         "ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)",
         "Motorlager (°C)",
@@ -135,6 +141,10 @@ def cli_main():
         "EndtemperaturZweiteStufeTETIT74371 (°C)",
     ]
 
+    prefix = "prediction"
+    if cli.config.prefix:
+        prefix = cli.config.prefix
+
     logger.debug("Visualizing whole dataset (samples=%s)", len(dataset))
     base_path = get_config_folder(cli)
     show_dataframe(
@@ -142,7 +152,7 @@ def cli_main():
         [predicted, inputs],
         ["Prediction", "Target"],
         grid_size=5,
-        save=os.path.join(base_path, f"prediction-{len(dataset)}.png"),
+        save=os.path.join(base_path, f"{prefix}-{len(dataset)}.png"),
     )
 
     meta: Metadata = dataset.get_meta()
@@ -153,7 +163,7 @@ def cli_main():
         [predicted[:three_days], inputs[:three_days]],
         ["Prediction", "Target"],
         grid_size=5,
-        save=os.path.join(base_path, f"prediction-{three_days}.png"),
+        save=os.path.join(base_path, f"{prefix}-{three_days}.png"),
     )
 
 
