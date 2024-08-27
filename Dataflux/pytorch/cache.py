@@ -74,9 +74,13 @@ class DataFrameCache:
                 self._column_names = list(df.columns.values)
 
             # get every nth value for weather and sensor data
-            weather = df[WEATHER_KEYS].to_numpy()[::self._skip]
-            sensors = df.drop(WEATHER_KEYS, axis=1).to_numpy()[::self._skip]
-
+            weather = None
+            weather_keys = [wk for wk in WEATHER_KEYS if wk in df.columns.values]
+            if len(weather_keys) > 0:
+                weather = df[weather_keys].to_numpy()[::self._skip]
+                sensors = df.drop(WEATHER_KEYS, axis=1)
+            
+            sensors = df.to_numpy()[::self._skip]
             self._register(path, (sensors, weather))
         else:
             sensors, weather = data

@@ -37,10 +37,12 @@ class Dataset(torch.utils.data.Dataset):
         output_sequence: int,
         skip: int = 1,
         cache_size: int = None,
+        key: str = "norm"
     ) -> None:
         self._metadata = FileMetadata()
         self._metadata.load(path)
         self._skip = skip
+        self._key = key
 
         self._num_input = input_sequence
         self._num_output = output_sequence
@@ -58,13 +60,13 @@ class Dataset(torch.utils.data.Dataset):
         self._meta_factory.set(MetadataTypes.IN_SEQUENCE, self._num_input)
         self._meta_factory.set(MetadataTypes.OUT_SEQUENCE, self._num_output)
 
-        sensors, weather, tragets = self[0]
+        sensors, weather, targets = self[0]
         self._meta_factory.set(MetadataTypes.NAMES, self._cache.columns)
         self._meta_factory.set(MetadataTypes.NAMES_SENSOR, self._cache.columns_sensor)
         self._meta_factory.set(MetadataTypes.SKIP, skip)
         self._meta_factory.set(MetadataTypes.SENSOR, sensors.shape[-1])
+        self._meta_factory.set(MetadataTypes.TARGET, targets.shape[-1])
         self._meta_factory.set(MetadataTypes.WEATHER, weather.shape[-1])
-        self._meta_factory.set(MetadataTypes.TARGET, tragets.shape[-1])
 
     @property
     def directory(self) -> str:
@@ -174,11 +176,12 @@ class Dataset(torch.utils.data.Dataset):
         start_idx = index + self._num_input
         end_idx = index + self._num_input + self._num_output
 
-        sensors, weather = self._cache.get(file_path, key="data")
-        assert end_idx < len(sensors)
+        # get sensor/weather data, the cache returns values sorted by the dataframe's
+        # column names for consistency
+        sensors, weather = self._cache.get(file_path, key=self._key)
 
         x_1 = sensors[index:start_idx, :]
-        x_2 = weather[index:start_idx, :]
+        x_2 = np.array([], dtype=np.float32) if weather is None else weather[index:start_idx, :]
         y = sensors[start_idx:end_idx, :]
 
         return x_1, x_2, y

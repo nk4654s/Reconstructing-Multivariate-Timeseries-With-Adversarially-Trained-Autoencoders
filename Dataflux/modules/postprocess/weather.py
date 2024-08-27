@@ -21,11 +21,12 @@ class WeatherDataset(FileWorkerCallable):
     DF = pd.DataFrame()
 
     def __init__(
-        self, normalize: bool = False, merge: str = "inner", interpolate: bool = False
+        self, normalize: bool = False, merge: str = "inner", interpolate: bool = False, enable: bool = True
     ) -> None:
         self._normalize = normalize
         self._merge = merge
         self._interpolate = interpolate
+        self._enable = enable
 
         # FIXME: fallback when machine UUID is not found
         # get_machine_location(machine_uuid)
@@ -48,6 +49,19 @@ class WeatherDataset(FileWorkerCallable):
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
         print("weather:", file_path)
+        day = file_path.split("_", maxsplit=1)[-1][:-3]
+        try:
+            df = pd.read_hdf(file_path, key="data")
+        except KeyError:
+            print("\tRemoving empty file", file_path)
+            os.remove(file_path)
+            self._removed_files.append(day)
+            return
+
+        if self._enable is not True or self._enable != "True":
+            self._lengths_files[day] = len(df)
+            return
+
         with mutex:
             metadata = Metadata()
             metadata.load(os.path.dirname(file_path))
@@ -66,15 +80,6 @@ class WeatherDataset(FileWorkerCallable):
                 WeatherDataset.DF = self._weather.get_data_by_id(**kwargs)
 
         # get the weather data fro the time span of the loaded DataFrame
-        try:
-            df = pd.read_hdf(file_path, key="data")
-        except KeyError:
-            print("\tRemoving empty file", file_path)
-            os.remove(file_path)
-            day = file_path.split("_", maxsplit=1)[-1][:-3]
-            self._removed_files.append(day)
-            return
-
         df = df.astype(np.float32)
 
         min_ts = df["ts"].min()
@@ -99,7 +104,6 @@ class WeatherDataset(FileWorkerCallable):
             # )
 
         df.to_hdf(file_path, key="data", format="table", mode="w")
-        day = file_path.split("_", maxsplit=1)[-1][:-3]
         if df.empty or temp_df.empty:
             print("\tRemoving empty file", file_path)
             self._removed_files.append(day)
