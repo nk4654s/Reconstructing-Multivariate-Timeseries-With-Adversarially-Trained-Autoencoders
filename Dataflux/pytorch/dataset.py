@@ -101,7 +101,7 @@ class Dataset(torch.utils.data.Dataset):
         names = self.get_meta().column_names
         data = {key: [] for key in names}
 
-        for i in range(0, int(len(self) * percentage), 1000):
+        for i in range(0, int(len(self) * percentage), self._num_input):
             sensors, weather, _ = self[i]
 
             num_weather = weather.shape[-1]
@@ -174,7 +174,7 @@ class Dataset(torch.utils.data.Dataset):
         start_idx = index + self._num_input
         end_idx = index + self._num_input + self._num_output
 
-        sensors, weather = self._cache.get(file_path, key="norm")
+        sensors, weather = self._cache.get(file_path, key="data")
         assert end_idx < len(sensors)
 
         x_1 = sensors[index:start_idx, :]
