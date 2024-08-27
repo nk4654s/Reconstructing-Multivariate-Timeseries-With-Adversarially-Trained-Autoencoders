@@ -31,89 +31,53 @@ class NormalizeFit(FileWorkerCallable):
         METHODS (list): A list of supported normalization methods.
         [`minmax`, `standard`]
     """
-    METHODS = ["minmax", "standard"]
+    METHODS = ["minmax"]
 
     def __init__(self, method: str = "minmax"):
         self._method = method
         self._header = None
-        self._a, self._b = None, None
-        self._counter = []
         assert self._method in NormalizeFit.METHODS, f"{method} is not supported."
-
-    def _fit_minmax(self, a: np.array, b: np.array) -> None:
-        """Keeps track of the minimum and maxium values in the arrays a and b.
-
-        Args:
-            a (np.array): Array with minima.
-            b (np.array): Array with maxima.
-        """
-        if self._a is None:
-            self._a = a
-        else:
-            self._a[a < self._a] = a[a < self._a]
-
-        if self._b is None:
-            self._b = b
-        else:
-            self._b[b > self._b] = b[b > self._b]
-
-    def _fit_standard(self, a: np.array, b: np.array) -> None:
-        if self._a is None:
-            self._a = [a]
-            self._b = [b]
-            return
-
-        self._a.append(a)
-        self._b.append(b)
 
     def get_dependencies(self) -> List[str]:
         return {NormalizeTransform.__name__: CallableDependency.IMMEDIATELY_AFTER}
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
         print("trainnorm:", file_path)
-        # Load the file into a pandas DataFrame
+        # Load the file into a pandas DataFrame, sort by column names to ensure that
+        # dataframe is consistent
         df = pd.read_hdf(file_path, key="data")
         df = df.reindex(sorted(df.columns), axis=1)
         self._header = df.columns.values
 
-        # Calculate minimum and maximum per column
-        if self._method == NormalizeFit.METHODS[0]:
-            df_min = df.min(axis=0).to_numpy()
-            df_max = df.max(axis=0).to_numpy()
-            self._fit_minmax(df_min, df_max)
+        with mutex:
+            # get minimum and maximum values from previous files
+            values = context.get(ContextParam.VALUES)
+            if values is None:
+                # if this is the first file, simply use the current min/max values
+                df_min = df.min().to_numpy()
+                df_max = df.max().to_numpy()
 
-        # Calculate mean and std per columns
-        elif self._method == NormalizeFit.METHODS[1]:
-            df_mean = df.to_numpy().mean(axis=0)
-            df_std = df.to_numpy().std(axis=0)
-            self._counter.append(len(df))
-            self._fit_standard(df_mean, df_std)
+                # pass fitted values to next files
+                context.put(ContextParam.VALUES, (df_min, df_max))
+
+            else:
+                mins, maxs = values
+                df_min = df.min().to_numpy()
+                df_max = df.max().to_numpy()
+
+                # update minimum and maximum values for columns which
+                # are lower/greater then recorded min/max values
+                mins[mins > df_min] = df_min[mins > df_min]
+                maxs[maxs < df_max] = df_max[maxs < df_max]
+
+                # pass fitted values to next files
+                context.put(ContextParam.VALUES, (mins, maxs))
 
     def finish(self, context: FileWorkerContext, _: Metadata) -> None:
-        # pass the trained variables to the next callable
+        # pass the fitted values to the next callable
         with mutex:
             context.put(ContextParam.METHOD, self._method)
             context.put(ContextParam.HEADER, self._header)
-            if self._method == NormalizeFit.METHODS[0]:
-                logger.debug("Normalize with MinMax and min=%s; max=%s", self._a, self._b)
-                context.append_list(ContextParam.VALUES, (self._a, self._b))
-
-            # Calculate mean and std per file
-            elif self._method == NormalizeFit.METHODS[1]:
-                logger.debug("Normalize with STD, counted %s values per file", self._counter)
-                a = np.array(self._a)
-                b = np.array(self._b)
-
-                factors = np.array(self._counter) / sum(np.array(self._counter))
-                factors = np.repeat([factors], a.shape[1], axis=0)
-                factors = np.swapaxes(factors, 0, 1)
-
-                a = (a * factors).sum(axis=0)
-                b = (b * factors).sum(axis=0)
-
-                logger.debug("Normalize with STD and mean=%s", a)
-                logger.debug("Normalize with STD and std=%s", b)
-                context.append_list(ContextParam.VALUES, (a, b))
 
 
 class NormalizeTransform(FileWorkerCallable):
@@ -136,44 +100,46 @@ class NormalizeTransform(FileWorkerCallable):
         method = context.get(ContextParam.METHOD)
         values = np.array(context.get(ContextParam.VALUES))
 
-        # minmax
+        # minmax method stores min/max values
         if method == NormalizeFit.METHODS[0]:
-            a = values[:, 0].min(axis=0)
-            b = values[:, 1].max(axis=0)
-            return a, b
-
-        # standard
-        elif method == NormalizeFit.METHODS[1]:
-            a = values[:, 0].mean(axis=0)
-            b = values[:, 1].mean(axis=0)
-            return a, b
+            mins, maxs = values
+            return mins, maxs
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
         print("applynorm:", file_path)
-        a, b = self._get_single_norm_params(context)
-        method = context.get(ContextParam.METHOD)
+        # read the file as pandas dataframe and sort by column names
+        # to be consistent with the fitted values
         df = pd.read_hdf(file_path, key="data")
         df = df.reindex(sorted(df.columns), axis=1)
 
+        # get the used normalization method and the fitted values
+        method = context.get(ContextParam.METHOD)
+        mins, maxs = self._get_single_norm_params(context)
+
+        # apply normalization according to method
         if method == NormalizeFit.METHODS[0]:
-            normed = ((df - a).div(b - a).fillna(0) - 0.5).div(0.5)
-        elif method == NormalizeFit.METHODS[1]:
-            normed = (df - a).div(b).fillna(0)
+            normed = ((df - mins).div(maxs - mins) - 0.5).div(0.5).fillna(0)
 
         normed.astype(np.float32).to_hdf(file_path, key="norm")
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
-        a, b = self._get_single_norm_params(context)
-        method = context.get(ContextParam.METHOD)
-        header = context.get(ContextParam.HEADER)
-        context.clear(ContextParam.METHOD)
-        context.clear(ContextParam.HEADER)
-        context.clear(ContextParam.VALUES)
+        with mutex:
+            # get the fitted values and method
+            a, b = self._get_single_norm_params(context)
+            method = context.get(ContextParam.METHOD)
+            header = context.get(ContextParam.HEADER)
 
-        data = {
-            Meta.NORM_METHOD.name: method,
-            Meta.NORM_KEYS.name: [str(_) for _ in header],
-            Meta.NORM_VAL_A.name: [float(_) for _ in a],
-            Meta.NORM_VAL_B.name: [float(_) for _ in b],
-        }
-        metadata.put(data, Meta.NORMALIZER)
+            # clear the context parameters as they are not needed anymore
+            context.clear(ContextParam.METHOD)
+            context.clear(ContextParam.HEADER)
+            context.clear(ContextParam.VALUES)
+
+            # save the used normalization method and fitted values to the
+            # dataset's metadata
+            data = {
+                Meta.NORM_METHOD.name: method,
+                Meta.NORM_KEYS.name: [str(_) for _ in header],
+                Meta.NORM_VAL_A.name: [float(_) for _ in a],
+                Meta.NORM_VAL_B.name: [float(_) for _ in b],
+            }
+            metadata.put(data, Meta.NORMALIZER)
