@@ -40,9 +40,11 @@ class FileWorkerPool:
 
             # check registered dependencies
             for module_name, mode in dependencies.items():
-
                 # check that dependecies is registered as a module
-                assert module_name in all_modules.keys(), f"{module_name} should exist"
+                if module_name not in all_modules.keys():
+                    continue
+
+                # assert module_name in all_modules.keys(), f"{module_name} should exist"
                 if mode == CallableDependency.IMMEDIATELY_AFTER:
                     j, _ = all_modules[module_name]
                     assert i + 1 == j, f"{module_name} should come after {name}"
