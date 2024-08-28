@@ -2,6 +2,7 @@
 
 import os
 import json
+import shutil
 from lightning import Callback
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
@@ -51,13 +52,8 @@ def save_training_meta(base_path: str, dataset: Dataset) -> None:
     df.corr().to_csv(correlation_path, index=True)
 
     # copy the normalizer of the training data to the model
-    meta = os.path.join(dataset.directory, "metadata", "info.json")
-    with open(meta, mode="r", encoding="UTF-8") as meta_file:
-        meta_dict = json.load(meta_file)["NORMALIZER"]
-
-    meta = os.path.join(base_path, "normalizer.json")
-    with open(meta, mode="w", encoding="UTF-8") as norm_file:
-        json.dump(meta_dict, norm_file)
+    normfile = os.path.join(dataset.directory, "metadata", "normalizer.pkl")
+    shutil.copyfile(normfile, os.path.join(base_path, "normalizer.pkl"))
 
 
 def cli_main():
