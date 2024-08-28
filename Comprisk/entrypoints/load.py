@@ -129,16 +129,18 @@ def cli_main():
 
     # visualize
     sensors = [
-        "SaugtemperaturZweiteStufeTETIT74341 (°C)",
+        "SaugdruckErsteStufePIT74319 (bar)",
+        "EndtemperaturErsteStufeTETIT74334 (°C)",
         "PackungsleckageFIT74389 (Nm3h)",
+        "SchwingungsmessungTriebwerkVT74280 (mm/s)",
         "KühlwassertemperaturnachKühlerTETIT74422 (°C)",
+        "KühlwasserdurchflussmengeFIT74423 (m^3/min)",
         "ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)",
         "Motorlager (°C)",
-        "SaugdruckErsteStufePIT74319 (bar)",
-        "SchwingungsmessungTriebwerkVT74280 (mm/s)",
         "KompressordrehzahlSE74201 (rpm)",
-        "EndtemperaturErsteStufeTETIT74334 (°C)",
+        "SaugtemperaturZweiteStufeTETIT74341 (°C)",
         "EndtemperaturZweiteStufeTETIT74371 (°C)",
+        "VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)"
     ]
 
     prefix = "prediction"
