@@ -16,7 +16,8 @@ from Dataflux.pytorch import Dataset
 from Dataflux.pytorch.sampler import RandomBatchSampler
 from Dataflux.pytorch.utils import collate_fn
 
-from Comprisk.helper import get_loss_by_name, init_sub_modules
+from Comprisk.helper import ModelLoader
+from Comprisk.helper import get_loss_by_name
 from Comprisk.model import BaseModel
 from Comprisk import logger
 
@@ -59,33 +60,16 @@ class AnomalyDetector:
         loss: str = "MSELoss",
         detection_method: AnomalyDetectionMethod = AnomalyDetectionMethod.MEAN,
     ) -> None:
-        self._model = self._load_model(model_config_path)
+        loader = ModelLoader(model_config_path)
+        self._model = loader.get_model()
+        self._model.eval()
+
         self._device = self._model.device
         self._detection = detection_method
 
         self._threshold = 0.0
         self._loss_name = loss
         self._loss = get_loss_by_name(loss)
-
-    def _load_model(self, path: str) -> BaseModel:
-        # open the config of the trained model
-        with open(path, "r", encoding="UTF-8") as stream:
-            config = yaml.safe_load(stream)
-
-        # get the model's class
-        class_str = config["model"]["class_path"].rsplit(".", maxsplit=1)
-        module = importlib.import_module(class_str[0])
-        cls = getattr(module, class_str[1])
-
-        # load the model from the latest checkpoint
-        folder = os.path.join(os.path.dirname(path), "checkpoints")
-        checkpoints = sorted([_ for _ in os.listdir(folder) if "ckpt" in _])
-        sub_modules = init_sub_modules(folder.rsplit("/", maxsplit=1)[0])
-        model = cls.load_from_checkpoint(
-            os.path.join(folder, checkpoints[-1]), **sub_modules
-        )
-        model.eval()
-        return model
 
     @property
     def model(self) -> BaseModel:
