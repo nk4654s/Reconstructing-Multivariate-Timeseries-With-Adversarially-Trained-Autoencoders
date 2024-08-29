@@ -144,7 +144,7 @@ def get_machine_location(machine_uuid: str) -> Tuple[float, float]:
         "Authorization": "eyJhbGciOiIiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJ"
         + "jN2VlN2ZmNi03ZTQ3LTRmMGItYWIxMy0xYjM5NWE1NjZlNmIifQ.",
     }
-    print(payload)
+
     try:
         response = requests.request(
             "POST", url, data=payload, headers=headers, timeout=30
@@ -168,7 +168,7 @@ def get_sensor_uuid_to_name(machine_uuid: str) -> dict:
         + "\t\t\t\tis_high_frequency\n\t\t\t\t\tis_infrastructure\n\t\t\t\t}"
         + '\n\t\t\t}\n    }\n  }\n}","operationName":"getMachine"}'
     )
-    print(payload)
+
     headers = {
         "Content-Type": "application/json",
         "Authorization": "eyJhbGciOiIiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJ"
