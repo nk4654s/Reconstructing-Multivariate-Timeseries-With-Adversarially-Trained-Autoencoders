@@ -145,6 +145,11 @@ Default value is False.</p></div>
             skip=skip,
         )
 
+        logger.debug(&#34;Dataset consists of %s samples&#34;, len(self._dataset))
+        logger.debug(&#34;Dataset skip is set to %s&#34;, skip)
+        logger.debug(&#34;Dataset input sequence: %s&#34;, input_sequence)
+        logger.debug(&#34;Dataset output sequence: %s&#34;, output_sequence)
+
         self._sampler_kwargs[&#34;data_length&#34;] = len(self._dataset)
 
         self._train = None

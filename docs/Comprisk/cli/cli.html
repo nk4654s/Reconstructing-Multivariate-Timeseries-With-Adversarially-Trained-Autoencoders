@@ -116,6 +116,12 @@ method. If set to <code>False</code>, the trainer and model classes will be inst
 
     def before_fit(self):
         &#34;&#34;&#34;Method executes before fit automatically.&#34;&#34;&#34;
+        start_str = &#34;-&#34; * 40 + datetime.datetime.now().strftime(&#34;%d/%m/%Y, %H:%M:%S&#34;) + &#34;-&#34; * 40
+        header_str = &#34;-&#34; * 100
+        logger.debug(header_str)
+        logger.debug(start_str)
+        logger.debug(&#34;Starting CompriskCLI for training&#34;)
+
         tuner = Tuner(self.trainer)
         # find best batch size
         if self.config.find_batch_size:
@@ -146,11 +152,19 @@ method. If set to <code>False</code>, the trainer and model classes will be inst
 
     def after_fit(self):
         &#34;&#34;&#34;Method executes after fit automatically.&#34;&#34;&#34;
-        pass</code></pre>
+        logger.debug(&#34;Training finished, clean up now.&#34;)
+        end_str = &#34;-&#34; * 40 + datetime.datetime.now().strftime(&#34;%d/%m/%Y, %H:%M:%S&#34;) + &#34;-&#34; * 40
+        footer_str = &#34;-&#34; * 100
+        logger.debug(end_str)
+        logger.debug(footer_str)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>lightning.pytorch.cli.LightningCLI</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="Comprisk.cli.load.CompriskLoadCLI" href="load.html#Comprisk.cli.load.CompriskLoadCLI">CompriskLoadCLI</a></li>
 </ul>
 <h3>Methods</h3>
 <dl>

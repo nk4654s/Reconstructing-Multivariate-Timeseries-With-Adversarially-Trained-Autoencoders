@@ -34,21 +34,191 @@ hljs.highlightAll();
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="Comprisk.helper.model.init_sub_modules"><code class="name flex">
-<span>def <span class="ident">init_sub_modules</span></span>(<span>path: str) ‑> Dict[str, torch.nn.modules.module.Module]</span>
+<dt id="Comprisk.helper.model.init_modules"><code class="name flex">
+<span>def <span class="ident">init_modules</span></span>(<span>path: str) ‑> Tuple[Type, Dict[str, torch.nn.modules.module.Module]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>This method loads the hyperparameters of an already trained model
 and initializes the model's sub_modules if existing.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>patah</code></strong> :&ensp;<code>str</code></dt>
-<dd>The folde rpath where the model is saved.</dd>
+<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
+<dd>The folder path where the model is saved.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Tuple</code></dt>
+<dd>The class of the model to load and a dictionary of
+initialized submodules modules.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.helper.model.load_model"><code class="name flex">
+<span>def <span class="ident">load_model</span></span>(<span>path: str, eval_mode: bool = True) ‑> Any</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This method loads the latest checkpoint of a model.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>cli</code></strong> :&ensp;<code>CompriskCLI</code></dt>
+<dd>The cli object created when starting an entrypoint.</dd>
+<dt><strong><code>eval_mode</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Wether to set the loaded model to eval mode or not. Defaults to True.</dd>
 </dl></div>
 </dd>
 </dl>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="Comprisk.helper.model.ModelLoader"><code class="flex name class">
+<span>class <span class="ident">ModelLoader</span></span>
+<span>(</span><span>path: str)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This class handles loading the model and related objects/configurations from the model's
+output directory.</p>
+<pre><code>Args:
+    path (str): The path where the model is saved.
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ModelLoader:
+    &#34;&#34;&#34;This class handles loading the model and related objects/configurations from the model&#39;s
+    output directory.
+
+        Args:
+            path (str): The path where the model is saved.
+    &#34;&#34;&#34;
+    def __init__(self, path: str) -&gt; None:
+        self._path = path
+        self._model = load_model(path, eval_mode=False)
+
+    @property
+    def path(self) -&gt; str:
+        &#34;&#34;&#34;The path where the model is saved.
+        &#34;&#34;&#34;
+        return self._path
+
+    def get_loss_statistics(self) -&gt; pd.DataFrame:
+        &#34;&#34;&#34;The loss statistics of the model collected during training phase. This will
+        be usefull when deploying a model to detect anomalies.
+
+        Returns:
+            pd.DataFrame: A pandas dataframe containing the loss statistics.
+        &#34;&#34;&#34;
+        loss_path = os.path.join(self._path, &#34;metadata&#34;, &#34;loss.csv&#34;)
+        if not os.path.exists(loss_path):
+            return pd.DataFrame()
+        loss = pd.read_csv(loss_path, index_col=0)
+        data = []
+        for i in range(len(loss)):
+            mean = np.array([_ for _ in loss[&#34;mean&#34;][i][1:-1].split(&#34; &#34;) if len(_) &gt; 0], dtype=np.float32)
+            std = np.array([_ for _ in loss[&#34;std&#34;][i][1:-1].split(&#34; &#34;) if len(_) &gt; 0], dtype=np.float32)
+            data.append((int(loss[&#34;epoch&#34;][i]), mean, std))
+        return data
+
+    def get_correlations(self) -&gt; pd.DataFrame:
+        &#34;&#34;&#34;Loads the correlations of input features from the model metadata folder. These
+        correlations are computed from the training data.
+
+        Returns:
+            pd.DataFrame: The correlations of input features as pandas DataFrame.
+        &#34;&#34;&#34;
+        correlation_path = os.path.join(self._path, &#34;metadata&#34;, &#34;correlation.csv&#34;)
+        if not os.path.exists(correlation_path):
+            return pd.DataFrame()
+
+        return pd.read_csv(correlation_path, index_col=0)
+
+    def get_model(self) -&gt; Any:
+        &#34;&#34;&#34;A simple getter for the loaded model during object initialization.
+        
+        Returns:
+            Any: The loaded model.
+        &#34;&#34;&#34;
+        return self._model
+
+    def get_normalization(self) -&gt; pd.DataFrame:
+        norm_path = os.path.join(self._path, &#34;metadata&#34;, &#34;normalizer.json&#34;)
+        if not os.path.exists(norm_path):
+            return
+
+        norm_data = {}
+        with open(norm_path, &#34;r&#34;, encoding=&#34;UTF-8&#34;) as f:
+            norm_file = json.load(f)
+            for i, key in enumerate(norm_file[&#34;NORM_KEYS&#34;]):
+                norm_data[key] = (norm_file[&#34;NORM_VAL_A&#34;][i],
+                                  norm_file[&#34;NORM_VAL_B&#34;][i])
+
+        # TODO: should create a custom Normalize-class to handle this?
+        norm_data = pd.DataFrame(norm_data)
+        return norm_data</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="Comprisk.helper.model.ModelLoader.path"><code class="name">prop <span class="ident">path</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The path where the model is saved.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def path(self) -&gt; str:
+    &#34;&#34;&#34;The path where the model is saved.
+    &#34;&#34;&#34;
+    return self._path</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="Comprisk.helper.model.ModelLoader.get_correlations"><code class="name flex">
+<span>def <span class="ident">get_correlations</span></span>(<span>self) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Loads the correlations of input features from the model metadata folder. These
+correlations are computed from the training data.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>The correlations of input features as pandas DataFrame.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.helper.model.ModelLoader.get_loss_statistics"><code class="name flex">
+<span>def <span class="ident">get_loss_statistics</span></span>(<span>self) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The loss statistics of the model collected during training phase. This will
+be usefull when deploying a model to detect anomalies.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>A pandas dataframe containing the loss statistics.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.helper.model.ModelLoader.get_model"><code class="name flex">
+<span>def <span class="ident">get_model</span></span>(<span>self) ‑> Any</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A simple getter for the loaded model during object initialization.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Any</code></dt>
+<dd>The loaded model.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.helper.model.ModelLoader.get_normalization"><code class="name flex">
+<span>def <span class="ident">get_normalization</span></span>(<span>self) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -63,7 +233,22 @@ and initializes the model's sub_modules if existing.</p>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="Comprisk.helper.model.init_sub_modules" href="#Comprisk.helper.model.init_sub_modules">init_sub_modules</a></code></li>
+<li><code><a title="Comprisk.helper.model.init_modules" href="#Comprisk.helper.model.init_modules">init_modules</a></code></li>
+<li><code><a title="Comprisk.helper.model.load_model" href="#Comprisk.helper.model.load_model">load_model</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="Comprisk.helper.model.ModelLoader" href="#Comprisk.helper.model.ModelLoader">ModelLoader</a></code></h4>
+<ul class="">
+<li><code><a title="Comprisk.helper.model.ModelLoader.get_correlations" href="#Comprisk.helper.model.ModelLoader.get_correlations">get_correlations</a></code></li>
+<li><code><a title="Comprisk.helper.model.ModelLoader.get_loss_statistics" href="#Comprisk.helper.model.ModelLoader.get_loss_statistics">get_loss_statistics</a></code></li>
+<li><code><a title="Comprisk.helper.model.ModelLoader.get_model" href="#Comprisk.helper.model.ModelLoader.get_model">get_model</a></code></li>
+<li><code><a title="Comprisk.helper.model.ModelLoader.get_normalization" href="#Comprisk.helper.model.ModelLoader.get_normalization">get_normalization</a></code></li>
+<li><code><a title="Comprisk.helper.model.ModelLoader.path" href="#Comprisk.helper.model.ModelLoader.path">path</a></code></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

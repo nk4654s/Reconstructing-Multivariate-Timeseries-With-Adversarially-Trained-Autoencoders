@@ -131,6 +131,7 @@ will be re-initialized with a different set of hyper parameters.</dd>
         study = optuna.create_study(
             storage=&#34;sqlite:///logs/optuna.sqlite3&#34;,
             study_name=name,
+            sampler=optuna.samplers.GPSampler(),
             load_if_exists=True,
             direction=&#34;minimize&#34;,
         )

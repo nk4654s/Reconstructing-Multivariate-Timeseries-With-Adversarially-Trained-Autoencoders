@@ -46,6 +46,44 @@ vs. target.</p>
 <div class="desc"><p>The main entry point for the Comprisk CLI. This function initializes the
 CompriskCLI object and sets up the command-line interface.</p></div>
 </dd>
+<dt id="Comprisk.entrypoints.load.get_tensor_from_dataset"><code class="name flex">
+<span>def <span class="ident">get_tensor_from_dataset</span></span>(<span>dataset: Dataflux.pytorch.dataset.Dataset, i: int, device: str) ‑> Tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This method gets a sample from a dataset given the index and transforms it
+to a tensor including moving the tensor to the provided device.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dataset</code></strong> :&ensp;<code>Dataset</code></dt>
+<dd>The dataset from which samples should be gathered.</dd>
+<dt><strong><code>i</code></strong> :&ensp;<code>int</code></dt>
+<dd>The index of the sample to get.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code></dt>
+<dd>The device to move the tensors to (e.g. 'cpu', 'cuda', or 'mps').</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Tuple[torch.tensor, torch.tensor]</code></dt>
+<dd>Sensor and weather data as tensor.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.entrypoints.load.predict_dataset"><code class="name flex">
+<span>def <span class="ident">predict_dataset</span></span>(<span>dataset: Dataflux.pytorch.dataset.Dataset, model: <a title="Comprisk.model.base.BaseModel" href="../model/base.html#Comprisk.model.base.BaseModel">BaseModel</a>) ‑> Tuple[pandas.core.frame.DataFrame, pandas.core.frame.DataFrame]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This method applies a model on a given dataset. For an AutoEncoder, the reconstructed
+output will be returned. For future prediction models, the prediction of the future is
+output. In addition, the original input data will be temporarily stored and returned.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dataset</code></strong> :&ensp;<code>Dataset</code></dt>
+<dd>The dataset to use.</dd>
+<dt><strong><code>model</code></strong> :&ensp;<code>BaseModel</code></dt>
+<dd>The model to use.</dd>
+</dl>
+<p>Returns
+Tuple[pd.DataFrame, pd.DataFrame]: Pandas dataframes containing the prediction and input.</p></div>
+</dd>
 </dl>
 </section>
 <section>
@@ -64,6 +102,8 @@ CompriskCLI object and sets up the command-line interface.</p></div>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="Comprisk.entrypoints.load.cli_main" href="#Comprisk.entrypoints.load.cli_main">cli_main</a></code></li>
+<li><code><a title="Comprisk.entrypoints.load.get_tensor_from_dataset" href="#Comprisk.entrypoints.load.get_tensor_from_dataset">get_tensor_from_dataset</a></code></li>
+<li><code><a title="Comprisk.entrypoints.load.predict_dataset" href="#Comprisk.entrypoints.load.predict_dataset">predict_dataset</a></code></li>
 </ul>
 </li>
 </ul>

@@ -48,17 +48,16 @@ hljs.highlightAll();
 </dl></div>
 </dd>
 <dt id="Comprisk.helper.file_structure.get_checkpoints"><code class="name flex">
-<span>def <span class="ident">get_checkpoints</span></span>(<span>cli) ‑> List[str]</span>
+<span>def <span class="ident">get_checkpoints</span></span>(<span>path: str) ‑> List[str]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Finds the checkpoints in the config folder from the command line
 arguments.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>cli</code></strong> :&ensp;<code>CLI</code></dt>
-<dd>The command line interface object. To use this method,
-cli must be called with the argument <code>-c</code>. Otherwise, no path
-will be avialable.</dd>
+<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
+<dd>The path to a model's output folder. This folder must contain
+<code>checkpoints/</code></dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>

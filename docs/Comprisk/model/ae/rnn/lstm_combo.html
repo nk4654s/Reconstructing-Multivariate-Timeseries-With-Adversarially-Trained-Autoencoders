@@ -38,7 +38,7 @@ hljs.highlightAll();
 <dl>
 <dt id="Comprisk.model.ae.rnn.lstm_combo.LSTMDecoder"><code class="flex name class">
 <span>class <span class="ident">LSTMDecoder</span></span>
-<span>(</span><span>num_features: int, num_latent_dim: int, num_hidden_dim: int, num_hidden_layers: int, dropout_prob: float = 0.0)</span>
+<span>(</span><span>num_features: int, num_latent_dim: int, num_hidden_dim: int, num_hidden_layers: int, dropout_prob: float = 0.0, predict_key: str = 'sensors')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A simple Decoder based on an LSTM layer folowed by a Linear layer.</p>
@@ -54,6 +54,8 @@ hljs.highlightAll();
 <dd>The number of LSTM layers.</dd>
 <dt><strong><code>dropout_prob</code></strong> :&ensp;<code>float</code></dt>
 <dd>The dropout probability in the LSTM.</dd>
+<dt><strong><code>predict_key</code></strong> :&ensp;<code>str</code></dt>
+<dd>The key to use for prediction (e.g. 'sensors', 'target').</dd>
 </dl>
 <p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
 <details class="source">
@@ -69,6 +71,7 @@ hljs.highlightAll();
         num_hidden_dim (int): The number of hidden nodes in the LSTM.
         num_hidden_layers (int): The number of LSTM layers.
         dropout_prob (float): The dropout probability in the LSTM.
+        predict_key (str): The key to use for prediction (e.g. &#39;sensors&#39;, &#39;target&#39;).
     &#34;&#34;&#34;
     def __init__(
         self,
@@ -77,9 +80,11 @@ hljs.highlightAll();
         num_hidden_dim: int,
         num_hidden_layers: int,
         dropout_prob: float = 0.0,
+        predict_key: str = &#34;sensors&#34;,
     ) -&gt; None:
         super().__init__()
 
+        self._predict_key = predict_key
         self._num_features = num_features
         self._num_latent_dim = num_latent_dim
         self._num_hidden_dim = num_hidden_dim
@@ -98,30 +103,13 @@ hljs.highlightAll();
     def forward(
         self, z: torch.tensor, inputs: torch.Dict[str, torch.tensor]
     ) -&gt; torch.Tensor:
-        hn = Variable(
-            torch.zeros(
-                self._num_hidden_layers,
-                z.size(0),
-                self._num_hidden_dim,
-                device=z.device,
-            )
-        )
-        cn = Variable(
-            torch.zeros(
-                self._num_hidden_layers,
-                z.size(0),
-                self._num_hidden_dim,
-                device=z.device,
-            )
-        )
-
-        x, _ = self._lstm_1(z, (hn, cn))
+        x, _ = self._lstm_1(z)
         x = torch.relu(x)
         return self._linear_1(x)
 
     @property
     def output_keys(self) -&gt; List[str]:
-        return [&#34;sensors&#34;]</code></pre>
+        return [self._predict_key]</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -144,7 +132,7 @@ hljs.highlightAll();
 </dd>
 <dt id="Comprisk.model.ae.rnn.lstm_combo.LSTMDecoderBypass"><code class="flex name class">
 <span>class <span class="ident">LSTMDecoderBypass</span></span>
-<span>(</span><span>num_features: int, num_latent_dim: int, num_hidden_dim: int, num_hidden_layers: int, dropout_prob: float = 0)</span>
+<span>(</span><span>num_features: int, num_latent_dim: int, num_hidden_dim: int, num_hidden_layers: int, dropout_prob: float = 0, predict_key: str = 'sensors')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>This Decoder variant equals the <code><a title="Comprisk.model.ae.rnn.lstm_combo.LSTMDecoder" href="#Comprisk.model.ae.rnn.lstm_combo.LSTMDecoder">LSTMDecoder</a></code>, but it combines the
@@ -172,6 +160,7 @@ argument has to be <code>+1</code> bigger than what the encoder outputs.</p>
         num_hidden_dim: int,
         num_hidden_layers: int,
         dropout_prob: float = 0,
+        predict_key: str = &#34;sensors&#34;,
     ) -&gt; None:
         super().__init__(
             num_features,
@@ -179,37 +168,17 @@ argument has to be <code>+1</code> bigger than what the encoder outputs.</p>
             num_hidden_dim,
             num_hidden_layers,
             dropout_prob,
+            predict_key
         )
         self._linear_1 = nn.Linear(num_hidden_dim, num_features)
 
     def forward(
         self, z: torch.tensor, inputs: torch.Dict[str, torch.tensor]
     ) -&gt; torch.Tensor:
-        hn = Variable(
-            torch.zeros(
-                self._num_hidden_layers,
-                z.size(0),
-                self._num_hidden_dim,
-                device=z.device,
-            )
-        )
-        cn = Variable(
-            torch.zeros(
-                self._num_hidden_layers,
-                z.size(0),
-                self._num_hidden_dim,
-                device=z.device,
-            )
-        )
-
         x = torch.cat([z, inputs[&#34;weather&#34;]], dim=-1)
-        x, _ = self._lstm_1(x, (hn, cn))
+        x, _ = self._lstm_1(x)
         x = torch.relu(x)
-        return self._linear_1(x)
-
-    @property
-    def output_keys(self) -&gt; List[str]:
-        return [&#34;sensors&#34;]</code></pre>
+        return self._linear_1(x)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -295,24 +264,7 @@ data (see <code>self.input_keys</code>).</dd>
         return [&#34;sensors&#34;, &#34;weather&#34;]
 
     def forward(self, batch: torch.tensor) -&gt; torch.tensor:
-        hn = Variable(
-            torch.zeros(
-                self._num_hidden_layers,
-                batch.size(0),
-                self._num_hidden_dim,
-                device=batch.device,
-            )
-        )
-        cn = Variable(
-            torch.zeros(
-                self._num_hidden_layers,
-                batch.size(0),
-                self._num_hidden_dim,
-                device=batch.device,
-            )
-        )
-
-        x, _ = self._lstm_1(batch, (hn, cn))
+        x, _ = self._lstm_1(batch)
         x = torch.relu(x)
 
         return self._linear_1(x)</code></pre>
