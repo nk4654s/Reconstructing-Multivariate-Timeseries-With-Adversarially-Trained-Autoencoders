@@ -20,6 +20,7 @@ modules = [
     pre.RenameColumns,
     pre.InterpolatePreProcessor,
     pre.HomogeneousTimeSteps,
+    pre.PositionBypassRemoval,
     pre.MachineStateSplit,
     pre.Report,
 ]
