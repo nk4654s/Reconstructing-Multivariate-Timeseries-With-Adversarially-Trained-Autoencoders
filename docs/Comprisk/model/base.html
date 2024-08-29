@@ -106,6 +106,19 @@ slower but more stable. Defaults to 0 which is disabled.</dd>
         # define stable predict-step parameters
         self._dropout = torch.nn.Dropout()
         self._mc_iteration = monte_carlo
+        if self._mc_iteration &gt; 0:
+            logger.debug(&#34;Predict step uses Monte-Carlo (num samples: %s)&#34;, self._mc_iteration)
+
+    def set_monte_carlo(self, num_iterations: int) -&gt; None:
+        &#34;&#34;&#34;Overwrites the constructor monte-carlo iteration number. Setting this value to 0
+        disables monte carlo sampling.
+
+        Args:
+            num_iterations (int): The amount of iterations to sample from the model. The mean
+                of the sampled outputs defines the model&#39;s output given an input.
+        &#34;&#34;&#34;
+        logger.debug(&#34;Overwriting MC iteration in predict from %s to %s&#34;, self._mc_iteration, num_iterations)
+        self._mc_iteration = num_iterations
 
     def summary(self, meta: Metadata) -&gt; str:
         &#34;&#34;&#34;Returns a summary of the model as string. Requires to be
@@ -137,6 +150,12 @@ slower but more stable. Defaults to 0 which is disabled.</dd>
             x = torch.cat((x, batch[t]), dim=-1)
         return x
 
+    def _get_feature_loss(self, y_hat, y) -&gt; np.array:
+        y_hat = y_hat.detach().cpu().numpy()
+        y = y.detach().cpu().numpy()
+
+        return np.sqrt(np.power(y_hat - y, 2)).mean(1)[0]
+
     def forward(self, batch: torch.Tensor) -&gt; torch.Tensor:
         &#34;&#34;&#34;The forward method defines how the input is passed through the
         model&#39;s layers. This method needs to be overwritten by a child class,
@@ -150,9 +169,13 @@ slower but more stable. Defaults to 0 which is disabled.</dd>
 
     def training_step(self, batch: torch.Tensor, **kwargs) -&gt; torch.Tensor:
         y_hat = self(batch)
-        loss = self._loss(y_hat, self._get_target_batch(batch))
+        y = self._get_target_batch(batch)
+        loss = self._loss(y_hat, y)
         self.log(f&#34;train/{self._loss_name}&#34;, loss)
-        return loss
+
+        # the feature loss is required by the LossMeasurement callback to calculate
+        # the model&#39;s performance during training.
+        return {&#34;loss&#34;: loss, &#34;f_loss&#34;: self._get_feature_loss(y_hat, y)}
 
     def test_step(self, batch: torch.Tensor, **kwargs) -&gt; torch.Tensor:
         y_hat = self(batch)
@@ -233,6 +256,7 @@ slower but more stable. Defaults to 0 which is disabled.</dd>
 <h3>Subclasses</h3>
 <ul class="hlist">
 <li><a title="Comprisk.model.ae.base.AutoEncoder" href="ae/base.html#Comprisk.model.ae.base.AutoEncoder">AutoEncoder</a></li>
+<li><a title="Comprisk.model.future.lstm.FSLSTMModel" href="future/lstm.html#Comprisk.model.future.lstm.FSLSTMModel">FSLSTMModel</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
@@ -363,7 +387,7 @@ as the base model just implements a placeholder.</p></div>
 <div class="desc"><p>Called in the training loop at the very beginning of the epoch.</p></div>
 </dd>
 <dt id="Comprisk.model.base.BaseModel.predict"><code class="name flex">
-<span>def <span class="ident">predict</span></span>(<span>self, x: <built-in method tensor of type object at 0x143e8cd00>, as_array: bool = False) ‑> List</span>
+<span>def <span class="ident">predict</span></span>(<span>self, x: <built-in method tensor of type object at 0x168dfcd00>, as_array: bool = False) ‑> List</span>
 </code></dt>
 <dd>
 <div class="desc"><p>This method only predicts future steps based on the given curve described by
@@ -399,6 +423,19 @@ averaged over multiple runs with different to output a more stable prediction.</
 <dl>
 <dt><code>torch.Tensor</code></dt>
 <dd>The predicted output for the given batch, averaged over multiple MCD runs.</dd>
+</dl></div>
+</dd>
+<dt id="Comprisk.model.base.BaseModel.set_monte_carlo"><code class="name flex">
+<span>def <span class="ident">set_monte_carlo</span></span>(<span>self, num_iterations: int) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Overwrites the constructor monte-carlo iteration number. Setting this value to 0
+disables monte carlo sampling.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>num_iterations</code></strong> :&ensp;<code>int</code></dt>
+<dd>The amount of iterations to sample from the model. The mean
+of the sampled outputs defines the model's output given an input.</dd>
 </dl></div>
 </dd>
 <dt id="Comprisk.model.base.BaseModel.summary"><code class="name flex">
@@ -636,6 +673,7 @@ the model goes back to training mode and gradients are enabled.</p></div>
 <li><code><a title="Comprisk.model.base.BaseModel.on_train_epoch_start" href="#Comprisk.model.base.BaseModel.on_train_epoch_start">on_train_epoch_start</a></code></li>
 <li><code><a title="Comprisk.model.base.BaseModel.predict" href="#Comprisk.model.base.BaseModel.predict">predict</a></code></li>
 <li><code><a title="Comprisk.model.base.BaseModel.predict_step" href="#Comprisk.model.base.BaseModel.predict_step">predict_step</a></code></li>
+<li><code><a title="Comprisk.model.base.BaseModel.set_monte_carlo" href="#Comprisk.model.base.BaseModel.set_monte_carlo">set_monte_carlo</a></code></li>
 <li><code><a title="Comprisk.model.base.BaseModel.summary" href="#Comprisk.model.base.BaseModel.summary">summary</a></code></li>
 <li><code><a title="Comprisk.model.base.BaseModel.target" href="#Comprisk.model.base.BaseModel.target">target</a></code></li>
 <li><code><a title="Comprisk.model.base.BaseModel.test_step" href="#Comprisk.model.base.BaseModel.test_step">test_step</a></code></li>

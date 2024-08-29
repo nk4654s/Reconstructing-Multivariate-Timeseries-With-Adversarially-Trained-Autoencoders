@@ -132,7 +132,7 @@ space.</dd>
         &#34;&#34;&#34;
         x = self.encode(batch)
         x = self._decoder(x, batch)
-        return self._activation(x)
+        return x #self._activation(x)
 
     def encode(self, inputs: Dict[str, torch.Tensor]) -&gt; torch.Tensor:
         &#34;&#34;&#34;
@@ -152,7 +152,8 @@ space.</dd>
         for key in keys[1:]:
             x = torch.cat([x, inputs[key]], dim=-1)
 
-        return self._encoder(x)
+        x = self._encoder(x)
+        return torch.tanh(x)
 
     def decode(self, z: torch.Tensor, inputs: torch.Tensor = None) -&gt; torch.Tensor:
         &#34;&#34;&#34;
@@ -241,6 +242,7 @@ bypassing the encoder.</dd>
 <li><code><a title="Comprisk.model.base.BaseModel.on_train_epoch_start" href="../base.html#Comprisk.model.base.BaseModel.on_train_epoch_start">on_train_epoch_start</a></code></li>
 <li><code><a title="Comprisk.model.base.BaseModel.predict" href="../base.html#Comprisk.model.base.BaseModel.predict">predict</a></code></li>
 <li><code><a title="Comprisk.model.base.BaseModel.predict_step" href="../base.html#Comprisk.model.base.BaseModel.predict_step">predict_step</a></code></li>
+<li><code><a title="Comprisk.model.base.BaseModel.set_monte_carlo" href="../base.html#Comprisk.model.base.BaseModel.set_monte_carlo">set_monte_carlo</a></code></li>
 <li><code><a title="Comprisk.model.base.BaseModel.summary" href="../base.html#Comprisk.model.base.BaseModel.summary">summary</a></code></li>
 <li><code><a title="Comprisk.model.base.BaseModel.target" href="../base.html#Comprisk.model.base.BaseModel.target">target</a></code></li>
 <li><code><a title="Comprisk.model.base.BaseModel.test_step" href="../base.html#Comprisk.model.base.BaseModel.test_step">test_step</a></code></li>
@@ -286,6 +288,7 @@ function to define the decoder.</p>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
+<li><a title="Comprisk.model.ae.anacision.simple_mlp.AnacisionDecoder" href="anacision/simple_mlp.html#Comprisk.model.ae.anacision.simple_mlp.AnacisionDecoder">AnacisionDecoder</a></li>
 <li><a title="Comprisk.model.ae.cnn.fs_decoder.FSDecoder" href="cnn/fs_decoder.html#Comprisk.model.ae.cnn.fs_decoder.FSDecoder">FSDecoder</a></li>
 <li><a title="Comprisk.model.ae.rnn.lstm_combo.LSTMDecoder" href="rnn/lstm_combo.html#Comprisk.model.ae.rnn.lstm_combo.LSTMDecoder">LSTMDecoder</a></li>
 </ul>
@@ -308,7 +311,7 @@ def output_keys(self) -&gt; List[str]:
 <h3>Methods</h3>
 <dl>
 <dt id="Comprisk.model.ae.base.DecoderBase.forward"><code class="name flex">
-<span>def <span class="ident">forward</span></span>(<span>self, z: torch.Tensor, inputs: Dict[str, <built-in method tensor of type object at 0x143e8cd00>]) ‑> torch.Tensor</span>
+<span>def <span class="ident">forward</span></span>(<span>self, z: torch.Tensor, inputs: Dict[str, <built-in method tensor of type object at 0x168dfcd00>]) ‑> torch.Tensor</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Implements the forward pass of the decoder.</p></div>
@@ -351,6 +354,7 @@ function to define the encoder.</p>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
+<li><a title="Comprisk.model.ae.anacision.simple_mlp.AnacisionEncoder" href="anacision/simple_mlp.html#Comprisk.model.ae.anacision.simple_mlp.AnacisionEncoder">AnacisionEncoder</a></li>
 <li><a title="Comprisk.model.ae.cnn.fs_encoder.FSEncoder" href="cnn/fs_encoder.html#Comprisk.model.ae.cnn.fs_encoder.FSEncoder">FSEncoder</a></li>
 <li><a title="Comprisk.model.ae.rnn.lstm_combo.LSTMEncoder" href="rnn/lstm_combo.html#Comprisk.model.ae.rnn.lstm_combo.LSTMEncoder">LSTMEncoder</a></li>
 </ul>
@@ -373,7 +377,7 @@ def input_keys(self) -&gt; List[str]:
 <h3>Methods</h3>
 <dl>
 <dt id="Comprisk.model.ae.base.EncoderBase.forward"><code class="name flex">
-<span>def <span class="ident">forward</span></span>(<span>self, batch: <built-in method tensor of type object at 0x143e8cd00>) ‑> torch.Tensor</span>
+<span>def <span class="ident">forward</span></span>(<span>self, batch: <built-in method tensor of type object at 0x168dfcd00>) ‑> torch.Tensor</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Implements the forward pass of the encoder.</p></div>
