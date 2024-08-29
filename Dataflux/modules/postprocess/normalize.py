@@ -1,8 +1,12 @@
+from argparse import ArgumentError
+import os
 from threading import Lock
 from typing import Any, List, Tuple
 import numpy as np
 import pandas as pd
-from Dataflux.helper import Meta, Metadata, StatisticsRecorder
+import pickle
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
+from Dataflux.helper import Meta, Metadata
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
 from Dataflux import logger
 
@@ -15,7 +19,7 @@ class ContextParam:
     This class provides constants for values and headers used
     in normalization operations.
     """
-    RECORDER = "TrainNormalize_recorder"
+    SCALER = "TrainNormalize_recorder"
     HEADER = "TrainNormalize_header"
     METHOD = "TrainNormalize_method"
 
@@ -31,7 +35,7 @@ class NormalizeFit(FileWorkerCallable):
         METHODS (list): A list of supported normalization methods.
         [`minmax`, `standard`]
     """
-    METHODS = ["minmax"]
+    METHODS = ["minmax", "standard", "robust"]
 
     def __init__(self, method: str = "minmax"):
         self._method = method
@@ -41,6 +45,23 @@ class NormalizeFit(FileWorkerCallable):
     def get_dependencies(self) -> List[str]:
         return {NormalizeTransform.__name__: CallableDependency.IMMEDIATELY_AFTER}
 
+    def _get_scaler(self, context: FileWorkerContext):
+        with mutex:
+            # get minimum and maximum values from previous files
+            recorder = context.get(ContextParam.SCALER)
+            if recorder is None:
+                if self._method == "minmax":
+                    recorder = MinMaxScaler(feature_range=(-1, 1))
+                if self._method == "standard":
+                    recorder = StandardScaler()
+                if self._method == "robust":
+                    recorder = RobustScaler()
+
+            fit = recorder.fit
+            if self._method != "robust":
+                fit = recorder.partial_fit
+            return recorder, fit
+
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
         print("trainnorm:", file_path)
         # Load the file into a pandas DataFrame, sort by column names to ensure that
@@ -49,14 +70,12 @@ class NormalizeFit(FileWorkerCallable):
         df = df.reindex(sorted(df.columns), axis=1)
         self._header = df.columns.values
 
-        with mutex:
-            # get minimum and maximum values from previous files
-            recorder = context.get(ContextParam.RECORDER)
-            if recorder is None:
-                recorder = StatisticsRecorder()
+        # get minimum and maximum values from previous files
+        recorder, fit = self._get_scaler(context)
+        fit(df)
 
-            recorder.data(df)
-            context.put(ContextParam.RECORDER, recorder)
+        with mutex:
+            context.put(ContextParam.SCALER, recorder)
 
     def finish(self, context: FileWorkerContext, _: Metadata) -> None:
         # pass the fitted values to the next callable
@@ -72,12 +91,33 @@ class NormalizeTransform(FileWorkerCallable):
     
     It assumes that the `NormalizeFit` class has been run beforehand, and the
     `FileWorkerContext` contains values needed to normalize a dataframe.
+
+    Args:
+        from_other (str): Another dataset to use the normalizer from.
     """
-    def __init__(self, kwargs) -> None:
-        pass
+    def __init__(self, from_other: str = None) -> None:
+        self._scaler = None
+        if from_other:
+            m = Metadata()
+            m.load(from_other)
+
+            norm_meta = m[Meta.NORMALIZER]
+            path = norm_meta[Meta.NORM_PATH.name]
+
+            with open(path, "rb") as f:
+                self._scaler = pickle.load(f)
+                self._scaler.set_output(transform="pandas")
 
     def get_dependencies(self) -> List[str]:
         return {NormalizeFit.__name__: CallableDependency.IMMEDIATELY_BEFORE}
+
+    def _get_scaler(self, context: FileWorkerContext):
+        if self._scaler:
+            return self._scaler
+
+        scaler = context.get(ContextParam.SCALER)
+        scaler.set_output(transform="pandas")
+        return scaler
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
         print("applynorm:", file_path)
@@ -87,30 +127,34 @@ class NormalizeTransform(FileWorkerCallable):
         df = df.reindex(sorted(df.columns), axis=1)
 
         # get the used normalization method and the fitted values
-        recorder = context.get(ContextParam.RECORDER)
+        scaler = self._get_scaler(context)
 
         # apply normalization
-        normed = recorder.normalize(df)
+        normed = scaler.transform(df)
         normed.astype(np.float32).to_hdf(file_path, key="norm")
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         with mutex:
             # get the fitted values and method
-            recorder = context.get(ContextParam.RECORDER)
+            scaler = self._get_scaler(context)
             method = context.get(ContextParam.METHOD)
             header = context.get(ContextParam.HEADER)
 
             # clear the context parameters as they are not needed anymore
             context.clear(ContextParam.METHOD)
             context.clear(ContextParam.HEADER)
-            context.clear(ContextParam.RECORDER)
+            context.clear(ContextParam.SCALER)
+
+            # save the normalizer
+            path = os.path.join(metadata[Meta.PATH], "metadata", "normalizer.pkl")
+            with open(path, "wb") as f:
+                pickle.dump(scaler, f)
 
             # save the used normalization method and fitted values to the
             # dataset's metadata
             data = {
                 Meta.NORM_METHOD.name: method,
                 Meta.NORM_KEYS.name: [str(_) for _ in header],
-                Meta.NORM_VAL_A.name: [float(_) for _ in recorder.min],
-                Meta.NORM_VAL_B.name: [float(_) for _ in recorder.max],
+                Meta.NORM_PATH.name: path,
             }
             metadata.put(data, Meta.NORMALIZER)

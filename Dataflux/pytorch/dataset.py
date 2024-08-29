@@ -1,5 +1,6 @@
 """This module contains the Dataset class, required to train a NN."""
 
+import pickle
 from typing import List, Tuple
 import numpy as np
 import torch
@@ -114,8 +115,8 @@ class Dataset(torch.utils.data.Dataset):
 
         return pd.DataFrame(data)
 
-    def scale_back(self, data: List | np.ndarray | pd.DataFrame) -> pd.DataFrame:
-        """Method scales back the given data using the normalizer of the dataset.
+    def scale(self, data: List | np.ndarray | pd.DataFrame) -> pd.DataFrame:
+        """Method scales the given data using the normalizer of the dataset.
         The input must match the feature list provided by `self.get_meta().column_names`.
 
         Args:
@@ -124,9 +125,11 @@ class Dataset(torch.utils.data.Dataset):
         Returns:
             pd.DataFrame: The scaled back data.
         """
-        m = self._metadata
-        a = np.array(m[Meta.NORMALIZER][Meta.NORM_VAL_A.name])
-        b = np.array(m[Meta.NORMALIZER][Meta.NORM_VAL_B.name])
+        m = self._metadata[Meta.NORMALIZER]
+        path = m[Meta.NORM_PATH.name]
+        with open(path, "rb") as f:
+            scaler = pickle.load(f)
+            scaler.set_output(transform="pandas")
 
         if isinstance(data, list):
             data = np.array(data)
@@ -138,10 +141,35 @@ class Dataset(torch.utils.data.Dataset):
             data = {key: data[:, i] for i, key in enumerate(self.get_meta().column_names)}
             data = pd.DataFrame(data)
 
-        if m[Meta.NORMALIZER][Meta.NORM_METHOD.name] == "minmax":
-            return ((data + 1) / 2) * (b - a) + a
+        return scaler.transform(data)
 
-        raise NotImplementedError
+    def scale_back(self, data: List | np.ndarray | pd.DataFrame) -> pd.DataFrame:
+        """Method scales back the given data using the normalizer of the dataset.
+        The input must match the feature list provided by `self.get_meta().column_names`.
+
+        Args:
+            data (List | np.array | pd.DataFrame): The data to scale back.
+
+        Returns:
+            pd.DataFrame: The scaled back data.
+        """
+        m = self._metadata[Meta.NORMALIZER]
+        path = m[Meta.NORM_PATH.name]
+        with open(path, "rb") as f:
+            scaler = pickle.load(f)
+
+        if isinstance(data, list):
+            data = np.array(data)
+
+        if len(data.shape) == 1:
+            data = np.expand_dims(data, axis=-1)
+
+        if not isinstance(data, pd.DataFrame):
+            data = {key: data[:, i] for i, key in enumerate(self.get_meta().column_names)}
+            data = pd.DataFrame(data)
+
+        scaled = scaler.inverse_transform(data)
+        return pd.DataFrame(scaled, columns=self.get_meta().column_names)
 
     def get_day(self, index: int) -> Tuple[str, float]:
         """Returns the day and hours the machine is on for the provided index

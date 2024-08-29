@@ -23,8 +23,7 @@ class Meta(Enum):
     NORMALIZER = "normalizer"
     NORM_KEYS = "normalizer_keys"
     NORM_METHOD = "normalizer_method"
-    NORM_VAL_A = "normalizer_val_a"
-    NORM_VAL_B = "normalizer_val_b"
+    NORM_PATH = "normalizer_path"
     ADDITIONAL_REPORT_GRAPHS = "additional_report_graphs"
     MACHINE_STATE_CHANGE = "machine_state_change"
 
