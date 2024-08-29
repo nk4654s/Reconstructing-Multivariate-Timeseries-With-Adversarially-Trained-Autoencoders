@@ -14,6 +14,4 @@ if [ -z "$3" ]; then
     exit 1
 fi
 
-printf "$1: Downloading dataset... "
-flux-pre --folder "$1" --machine-keep-state on --interval "$2" "$3" --overwrite > /dev/null 2>&1
-printf "Done\n"
+flux-pre --folder "$1" --machine-keep-state on --interval "$2" "$3" --overwrite
