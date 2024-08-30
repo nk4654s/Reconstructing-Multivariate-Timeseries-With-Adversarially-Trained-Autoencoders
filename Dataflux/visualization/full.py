@@ -12,6 +12,7 @@ def show_dataframe(
     df: pd.DataFrame | List[pd.DataFrame],
     names: List[str] = None,
     grid_size: int = 4,
+    y_label: str = None,
     save: str = None,
     show: bool = False,
 ):
@@ -25,6 +26,7 @@ def show_dataframe(
             DataFrames to be visualized.
         names (List[str]): The name of each DataFrame to be visualized.
         grid_size (int): The number of DataFrames per row in the visualization figure.
+        y_label (str): The label of the y-axis. Defaults to None, uses the unit of the label.
         save (str): The path where the visualization should be saved.
         show (bool): Whether to show the visualization or not.
     """
@@ -50,7 +52,10 @@ def show_dataframe(
     for i, sensor_test in enumerate(sensors):
         axs[i // num_cols][i % num_cols].title.set_text(sensor_test.split(" ")[0])
         axs[i // num_cols][i % num_cols].set_xlabel("Seconds")
-        axs[i // num_cols][i % num_cols].set_ylabel(sensor_test.split(" ")[-1])
+        if y_label is None:
+            axs[i // num_cols][i % num_cols].set_ylabel(sensor_test.split(" ")[-1])
+        else:
+            axs[i // num_cols][i % num_cols].set_ylabel(y_label)
         for j, _df in enumerate(df):
             axs[i // num_cols][i % num_cols].plot(
                 _df[sensor_test], label=names[j], color=colors[j], alpha=0.4
