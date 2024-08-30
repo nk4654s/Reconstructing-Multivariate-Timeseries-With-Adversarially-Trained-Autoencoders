@@ -113,6 +113,8 @@ class ScoreTransformer:
         loss = pd.DataFrame(loss, columns=names)
 
         if visualize:
-            show_dataframe(names, [malfunction, loss, critical], ["Malfunction", "Critical Evidence", "Critical"], show=True)
+            # TODO: remove show and replace with store given the path
+            show_dataframe(names, [malfunction, loss, critical], ["Malfunction", "Critical Evidence", "Critical"],
+                           y_label="% -  lower is better", show=True)
     
         return malfunction, critical
