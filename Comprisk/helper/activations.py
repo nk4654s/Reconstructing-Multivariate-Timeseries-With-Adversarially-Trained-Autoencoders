@@ -4,7 +4,7 @@ used with the config manager."""
 from typing import Callable
 import torch
 
-_str_to_activation = {"relu": torch.relu, "sigmoid": torch.sigmoid, "tanh": torch.tanh}
+_str_to_activation = {"relu": torch.relu, "sigmoid": torch.sigmoid, "tanh": torch.tanh, "linear": lambda x: x}
 
 
 def get_activation_from_string(activation_str: str) -> Callable:
