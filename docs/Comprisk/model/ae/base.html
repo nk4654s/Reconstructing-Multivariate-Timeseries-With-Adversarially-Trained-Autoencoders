@@ -132,7 +132,7 @@ space.</dd>
         &#34;&#34;&#34;
         x = self.encode(batch)
         x = self._decoder(x, batch)
-        return x #self._activation(x)
+        return self._activation(x)
 
     def encode(self, inputs: Dict[str, torch.Tensor]) -&gt; torch.Tensor:
         &#34;&#34;&#34;
@@ -311,7 +311,7 @@ def output_keys(self) -&gt; List[str]:
 <h3>Methods</h3>
 <dl>
 <dt id="Comprisk.model.ae.base.DecoderBase.forward"><code class="name flex">
-<span>def <span class="ident">forward</span></span>(<span>self, z: torch.Tensor, inputs: Dict[str, <built-in method tensor of type object at 0x168dfcd00>]) ‑> torch.Tensor</span>
+<span>def <span class="ident">forward</span></span>(<span>self, z: torch.Tensor, inputs: Dict[str, <built-in method tensor of type object at 0x14eb1cd00>]) ‑> torch.Tensor</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Implements the forward pass of the decoder.</p></div>
@@ -377,7 +377,7 @@ def input_keys(self) -&gt; List[str]:
 <h3>Methods</h3>
 <dl>
 <dt id="Comprisk.model.ae.base.EncoderBase.forward"><code class="name flex">
-<span>def <span class="ident">forward</span></span>(<span>self, batch: <built-in method tensor of type object at 0x168dfcd00>) ‑> torch.Tensor</span>
+<span>def <span class="ident">forward</span></span>(<span>self, batch: <built-in method tensor of type object at 0x14eb1cd00>) ‑> torch.Tensor</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Implements the forward pass of the encoder.</p></div>
