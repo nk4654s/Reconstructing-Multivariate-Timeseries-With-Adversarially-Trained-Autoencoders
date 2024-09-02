@@ -22,6 +22,7 @@ from Comprisk.model import BaseModel
 from Comprisk import logger
 
 
+@DeprecationWarning("Deprecated as AnomalyDetector is deprecated.")
 class AnomalyDetectionMethod(Enum):
     """The anomaly detection methods implemented in the AnomalyDetector
     class.
@@ -31,6 +32,7 @@ class AnomalyDetectionMethod(Enum):
     MEAN = "mean"
 
 
+@DeprecationWarning("Deprecated, use ScoreTransformer to get malfunction probability.")
 class AnomalyDetector:
     """The detector class tries to find an anomaly in a given input by passing the
     data into an auto-encoder. here, the input is compressed and reconstructed, while
