@@ -3,7 +3,7 @@
 import os
 import gzip
 from datetime import date
-from typing import Tuple, Union, TextIO
+from typing import List, Tuple, Union, TextIO
 from io import BytesIO
 from uuid import UUID
 from enum import Enum
@@ -26,25 +26,32 @@ class S3:
     def __init__(
         self,
         machine_uuid: str | UUID,
-        interval: Tuple[date, date],
+        interval: List[Tuple[date, date]] | Tuple[date, date],
     ) -> None:
         """Initialize the class and defines the s3 bucket.
 
         Args:
             machine_uuid (str): The machine uuid, from which sensor data can be
-            downloaded.
+                downloaded.
             interval (tuple): A tuple of two dates. The first one is the start
-            date and the second one is the end date.
+                date and the second one is the end date. A list of intervals is also
+                possible.
         """
         self._bucket = None
         self._bucket_type = None
         self._client = boto3.client("s3")
 
         self._machine_uuid = machine_uuid
-        self._start, self._end = interval
-        self._days = get_day_list((self._start, self._end))
 
-        assert self._start < self._end, "Start date must be before end date"
+        if isinstance(interval, list):
+            self._days = []
+            for inter in interval:
+                assert inter[0] < inter[1], "Start date must be before end date"
+                self._days += get_day_list((inter[0], inter[1]))
+        else:
+            assert interval[0] < interval[1], "Start date must be before end date"
+            self._days = get_day_list((interval[0], interval[1]))
+
 
     def set_bucket(self, bucket: BucketType) -> None:
         """Sets the bucket to be used for downloads.

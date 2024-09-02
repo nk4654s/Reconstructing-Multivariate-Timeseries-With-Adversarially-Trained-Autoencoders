@@ -1,5 +1,6 @@
 """This module contains utilities for handling downloaded data from the s3 bucket."""
 
+import importlib
 import os
 from typing import Callable, Tuple, List
 from datetime import datetime, date, timedelta
@@ -10,6 +11,24 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
 rcParams.update({"figure.autolayout": True})
+
+
+def fullname(module):
+    return str(module).split("'")[1]
+
+
+def class_for_name(module_name: str, class_name: str):
+    """This function finds the class given the module and class name
+    
+    Args:
+        module_name (str): The module path where the class is located.
+        class_name (str): The name of the class.
+    """
+    # load the module, will raise ImportError if module cannot be loaded
+    m = importlib.import_module(module_name)
+    # get the class, will raise AttributeError if class cannot be found
+    c = getattr(m, class_name)
+    return c
 
 
 def get_file(

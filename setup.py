@@ -38,8 +38,7 @@ setup(
     name="Dataflux",
     entry_points={
         "console_scripts": [
-            "flux-pre=Dataflux.preprocess:main",
-            "flux-post=Dataflux.postprocess:main",
+            "flux-pipeline=Dataflux.pipeline:main",
             "flux-merge=Dataflux.merge:main",
         ]
     },
