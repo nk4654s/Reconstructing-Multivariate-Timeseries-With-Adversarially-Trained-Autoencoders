@@ -20,15 +20,11 @@ pip install -e .
 > Note: The last output line should contain `Successfully installed Dataflux-1.0`.
 
 # Usage
-The application consits of two main scripts `flux-pre` and `flux-post`. As the amount of processing modules and the configuration of those might change, run
-```
-<flux-pre | flux-post> --help
-```
-to get more information. In general, the `flux-pre` downloads a dataset from the Amazon S3 bucket, runs some preprocessing and stores the files on the local disk. Afterward, the `flux-post` can be used to further process the data (e.g. normalize the dataset).
+The application main script can be executed by typing `flux-pipeline`. In general, the `flux-pipeline` downloads a dataset from the Amazon S3 bucket, runs some preprocessing and stores the files on the local disk. Afterward, the data is further processed (e.g. normalize the dataset). The recommended way to execute the pipeline is by configuring a `yaml`-config file. An example for a config file is available under `configs/green_config.yaml`.
 
 # Modules
 ## Preprocessing
-The preprocessing module's code is located under `Dataflux/modules/preprocess`. Adding a new module can be achieved, by simply inheriting the base class from `Dataflux/modules/preprocess/module.py` and publishing the class to the package in `Dataflux/modules/preprocess/__init__.py`. Finally, import the created module in `Dataflux/preprocess.py` and add the class name to `modules = []` at the start of the file.
+The preprocessing module's code is located under `Dataflux/modules/preprocess`. Adding a new module can be achieved, by simply inheriting the base class from `Dataflux/modules/preprocess/module.py` and publishing the class to the package in `Dataflux/modules/preprocess/__init__.py`. Finally, define the created class path in a config file to enable the newly created module.
 
 Available modules are:
 - Homogeneous columns and rows
