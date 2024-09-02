@@ -14,8 +14,8 @@ class RemoveColumns(FileWorkerCallable):
         columns (str): The list of column names to remove, provided as string
             where each list entry is separated by a ','.
     """
-    def __init__(self, columns: str = "") -> None:
-        self._columns = [_.strip() for _ in columns.replace("\"", "").split(",")]
+    def __init__(self, columns: List[str] = None) -> None:
+        self._columns = columns
         self._num_columns = 0
         logger.debug("RemoveColumns will remove %s", self._columns)
 

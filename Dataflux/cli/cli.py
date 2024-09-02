@@ -109,9 +109,9 @@ class CLIArgumentParser(ArgumentParser):
                 if namespace is None:
                     for arg_key, val in self.args.__dict__.items():
                         arg_split = arg_key.split(".")
-                        if name == arg_split[0] and len(arg_split) == 2:
-                            if arg_split[1] not in kwargs.keys():
-                                kwargs[arg_split[1]] = val
+                        if len(arg_split) == 3 and key == arg_split[0] and name == arg_split[1]:
+                            if arg_split[2] not in kwargs.keys():
+                                kwargs[arg_split[2]] = val
 
                 self._config[key].append({"class_path": fullname(module), "order": i, "init_args": kwargs})
 
