@@ -1,22 +1,5 @@
 """The pipeline combines both, the preprocessing.py and postprocessing.py which comes in handy
-when processing a dataset using a defined yaml-config. This config should look like:
-```
-folder: dataset-name
-machine-uuid: <UUID>
-intervals:
-  - <start> <end>
-  - ...
-
-preprocessing:
-  - class_path: <class-path-with-package>
-    init_args:
-      <arg-name>: <arg-value>
-
-postprocessing:
-  - class_path: <class-path-with-package>
-    init_args:
-      <arg-name>: <arg-value>
-```
+when processing a dataset using a defined yaml-config.
 """
 
 import os
