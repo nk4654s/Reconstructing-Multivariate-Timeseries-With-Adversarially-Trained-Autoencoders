@@ -3,13 +3,18 @@
 import inspect
 import re
 from argparse import ArgumentParser, Namespace, Action
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
+from Dataflux.diskio import FileWorkerCallable
 from Dataflux.helper import fullname, class_for_name
 from Dataflux.modules import BasePreProcessor
 
 from Dataflux.cli.config_helper import build_config, expand_module_list, get_module_config_args
 from Dataflux.cli.defaults import DEFAULT_ARGUMENTS
+
+
+TYPE_MODULES_PRE = List[BasePreProcessor] | BasePreProcessor
+TYPE_MODULES_POST = List[FileWorkerCallable] | FileWorkerCallable
 
 
 class GroupedAction(Action):
@@ -29,8 +34,8 @@ class CLIArgumentParser(ArgumentParser):
 
     def __init__(
         self,
-        modules_pre: List[BasePreProcessor] | BasePreProcessor,
-        modules_post: List[BasePreProcessor] | BasePreProcessor,
+        modules_pre: TYPE_MODULES_PRE,
+        modules_post: TYPE_MODULES_POST,
         *args,
         **kwargs
     ):
@@ -110,7 +115,7 @@ class CLIArgumentParser(ArgumentParser):
 
                 self._config[key].append({"class_path": fullname(module), "order": i, "init_args": kwargs})
 
-    def get_modules(self) -> Dict[str, List[BasePreProcessor]]:
+    def get_modules(self) -> Tuple[TYPE_MODULES_PRE, TYPE_MODULES_POST]:
         """The method instatiates the processing modules. To call this method, arguments must
         define attributes of processing modules, if a default is not defined.
         """
@@ -126,7 +131,7 @@ class CLIArgumentParser(ArgumentParser):
             modules[key] = sorted(modules[key], key=lambda x: x[1])
             modules[key] = [module[0] for module in modules[key]]
 
-        return modules
+        return modules["preprocessing"], modules["postprocessing"]
 
     def prepare_arguments(self):
         """Adds the arguments to the parser, before creating the namespace. Overwrite this
