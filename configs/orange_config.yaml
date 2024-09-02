@@ -57,3 +57,5 @@ postprocessing:
     init_args:
       method: minmax
   - class_path: Dataflux.modules.postprocess.normalize.NormalizeTransform
+    init_args:
+      from_other: dataset-cat-green
