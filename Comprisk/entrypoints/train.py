@@ -10,6 +10,7 @@ import torch
 
 from Dataflux.pytorch import Dataset
 
+from Comprisk.anomaly import ScoreTransformer
 from Comprisk.callbacks import MeasurementCallback
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
@@ -55,6 +56,10 @@ def save_training_meta(base_path: str, dataset: Dataset) -> None:
     normfile = os.path.join(dataset.directory, "metadata", "normalizer.pkl")
     shutil.copyfile(normfile, os.path.join(base_path, "normalizer.pkl"))
 
+    # copy the dataset config of the training data to the model
+    config_file = os.path.join(dataset.directory, "metadata", "config.yaml")
+    shutil.copyfile(config_file, os.path.join(base_path, "dataset_config.yaml"))
+
 
 def cli_main():
     """
@@ -82,6 +87,8 @@ def cli_main():
     if checkpoint:
         os.makedirs(tb_logger.log_dir + "/checkpoints/")
         checkpoint.dirpath = tb_logger.log_dir + "/checkpoints/"
+        checkpoint.filename = "{epoch}-{val_loss:.2f}-{other_metric:.2f}"
+
     else:
         logger.warning("ModelCheckpoint callback not defined in yaml-config.")
 
@@ -101,6 +108,14 @@ def cli_main():
 
     # run methods after fit
     cli.after_fit()
+
+    # fit and save the score transformer
+    score = ScoreTransformer()
+    score.fit()
+
+    score_path = os.path.join(metafolder, "score_transformer.pkl")
+    with open(score_path, "wb") as f:
+        pickle.dump(score, f)
 
 
 if __name__ == "__main__":

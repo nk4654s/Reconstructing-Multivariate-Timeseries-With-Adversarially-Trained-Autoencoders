@@ -8,6 +8,10 @@ from Dataflux.visualization import show_dataframe
 from Comprisk import logger
 
 
+def loss_fn(y: np.array, y_hat: np.array) -> np.array:
+    return np.sqrt(np.power(y - y_hat, 2))
+
+
 class ScoreTransformer:
     """The ScoreTransformer learns the loss distribution of a trained model over the training data
     to translate a loss value into a score between 0 and 1. Here, 0 means the model is working fine,
@@ -40,7 +44,6 @@ class ScoreTransformer:
         self._median_quantile = None
         self._smoothing = None
 
-        self._loss_fn = lambda y, y_hat: np.sqrt(np.power(y - y_hat, 2))
         self._critical_threshold = critical_threshold
 
     def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -> None:
@@ -98,7 +101,7 @@ class ScoreTransformer:
         )
 
         # get the loss values to find wether a score is critical or not
-        loss = self._loss_fn(predicted.to_numpy(), target.to_numpy())
+        loss = loss_fn(predicted.to_numpy(), target.to_numpy())
         critical = malfunction.copy()
         critical[loss < self._critical_threshold] = np.nan
 
@@ -113,8 +116,7 @@ class ScoreTransformer:
         loss = pd.DataFrame(loss, columns=names)
 
         if visualize:
-            # TODO: remove show and replace with store given the path
             show_dataframe(names, [malfunction, loss, critical], ["Malfunction", "Critical Evidence", "Critical"],
-                           y_label="% -  lower is better", show=True)
+                           y_label="% -  lower is better", save=visualize)
     
         return malfunction, critical

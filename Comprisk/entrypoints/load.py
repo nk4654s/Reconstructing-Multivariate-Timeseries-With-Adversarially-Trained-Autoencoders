@@ -5,6 +5,8 @@ vs. target."""
 
 from typing import Tuple
 import os
+import shutil
+import pickle
 import torch
 import pandas as pd
 from tqdm import tqdm
@@ -13,6 +15,7 @@ from Dataflux.pytorch import Metadata, Dataset
 from Dataflux.visualization import show_dataframe
 from Dataflux.helper import get_logger
 
+from Comprisk.anomaly import ScoreTransformer
 from Comprisk.helper import get_config_folder, ModelLoader
 from Comprisk.model import BaseModel
 from Comprisk.model.ae import AutoEncoder
@@ -20,81 +23,6 @@ from Comprisk.data import DataModule
 from Comprisk.cli import CompriskLoadCLI
 
 logger = get_logger(__name__, path="./logs/logfile")
-
-
-def get_tensor_from_dataset(dataset: Dataset, i: int, device: str) -> Tuple[torch.Tensor, torch.Tensor]:
-    """This method gets a sample from a dataset given the index and transforms it
-    to a tensor including moving the tensor to the provided device.
-
-    Args:
-        dataset (Dataset): The dataset from which samples should be gathered.
-        i (int): The index of the sample to get.
-        device (str): The device to move the tensors to (e.g. 'cpu', 'cuda', or 'mps').
-    
-    Returns:
-        Tuple[torch.tensor, torch.tensor]: Sensor and weather data as tensor.
-    """
-    sensors, weather, _ = dataset[i]
-
-    sensors = torch.tensor(sensors, device=device)
-    sensors = torch.unsqueeze(sensors, dim=0)
-    weather = torch.tensor(weather, device=device)
-    weather = torch.unsqueeze(weather, dim=0)
-    return sensors, weather
-
-
-
-def predict_dataset(dataset: Dataset, model: BaseModel) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """This method applies a model on a given dataset. For an AutoEncoder, the reconstructed
-    output will be returned. For future prediction models, the prediction of the future is
-    output. In addition, the original input data will be temporarily stored and returned.
-
-    Args:
-        dataset (Dataset): The dataset to use.
-        model (BaseModel): The model to use.
-    
-    Returns
-        Tuple[pd.DataFrame, pd.DataFrame]: Pandas dataframes containing the prediction and input.
-    """
-    meta: Metadata = dataset.get_meta()
-    logger.debug("Predict on dataset, length=%s", len(dataset))
-    logger.debug("Dataset input sequence: %s", meta.num_input_sequence)
-    logger.debug("Dataset output sequence: %s", meta.num_output_sequence)
-
-    # 1. iterate over dataset, with shuffle deactivated
-    predicted = {key: [] for key in meta.column_names_sensor}
-    inputs = {key: [] for key in meta.column_names_sensor}
-
-    if isinstance(model, AutoEncoder):
-        for i in tqdm(range(0, len(dataset), meta.num_input_sequence)):
-            sensors, weather = get_tensor_from_dataset(dataset, i, model.device)
-            target = model.predict({"sensors": sensors, "weather": weather}, True)[0]
-
-            # store the model inputs/outputs to a temporary dict
-            for j, key in enumerate(meta.column_names_sensor):
-                predicted[key] += list(target[:, j])
-                inputs[key] += list(sensors.cpu().numpy()[0, :, j])
-
-    else:
-        for i in tqdm(range(0, len(dataset), meta.num_output_sequence)):
-            sensors, weather = get_tensor_from_dataset(dataset, i, model.device)
-            target = model.predict({"sensors": sensors, "weather": weather}, True)[0]
-
-            # store the model inputs/outputs to a temporary dict
-            for j, key in enumerate(meta.column_names_sensor):
-                if i == 0:
-                    predicted[key] += list(sensors.cpu().numpy()[0, :, j])
-                if i % meta.num_input_sequence == 0:
-                    inputs[key] += list(sensors.cpu().numpy()[0, :, j])
-                predicted[key] += list(target[:, j])
-
-    # 4. finalize dataframe, give columns names matching input dataframe column names
-    logger.debug("Creating 'prediction' Dataframe of gathered data")
-    predicted = pd.DataFrame(predicted)
-
-    logger.debug("Creating 'inputs' Dataframe of gathered data")
-    inputs = pd.DataFrame(inputs)
-    return predicted, inputs
 
 
 def cli_main():
@@ -108,10 +36,7 @@ def cli_main():
     logger.debug("Loging model: %s", cli.model.__class__.__name__)
     base_path = get_config_folder(cli)
 
-    loader = ModelLoader(base_path)
-    model = loader.get_model()
-    model.eval()
-
+    # load the dataset and configure it to work with the trained model
     dataset = cli.datamodule.dataset
     if cli.config.dataset:
         meta = dataset.get_meta()
@@ -120,14 +45,11 @@ def cli_main():
                           meta.num_output_sequence,
                           meta.skip)
 
-    predicted, inputs = predict_dataset(dataset, model)
+    # load the model with the helper class, then apply the model on the dataset
+    loader = ModelLoader(base_path)
+    predicted, target = loader.predict_loop(dataset)
 
-    # TODO: scale data back
-    # normalizer = loader.get_normalizer()
-    # inputs = normalizer.scale_back(inputs)
-    # predicted = normalizer.scale_back(predicted)
-
-    # visualize
+    # visualize the loaded dataset
     sensors = [
         "SaugdruckErsteStufePIT74319 (bar)",
         "EndtemperaturErsteStufeTETIT74334 (°C)",
@@ -143,30 +65,46 @@ def cli_main():
         "VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)"
     ]
 
+
     prefix = "prediction"
+    base_path = os.path.join(get_config_folder(cli), prefix)
+
+    # create prefix sub-folders
     if cli.config.prefix:
         prefix = cli.config.prefix
+        base_path = os.path.join(get_config_folder(cli), prefix)
 
+    if os.path.exists(base_path):
+        shutil.rmtree(base_path)
+    os.makedirs(base_path)
+
+    # save the whole prediction of the dataset
+    meta: Metadata = dataset.get_meta()
+    days = round(len(dataset) * meta.skip // 60 // 60 // 24)
     logger.debug("Visualizing whole dataset (samples=%s)", len(dataset))
-    base_path = get_config_folder(cli)
     show_dataframe(
         sensors,
-        [predicted, inputs],
+        [predicted, target],
         ["Prediction", "Target"],
         grid_size=5,
-        save=os.path.join(base_path, f"{prefix}-{len(dataset)}.png"),
+        save=os.path.join(base_path, f"days={days}.png"),
     )
 
-    meta: Metadata = dataset.get_meta()
+    # save the prediction of three days of the dataset
     three_days = (24 * 60 * 60) // meta.skip * 3
     logger.debug("Visualizing reduced dataset (samples=%s)", 3 * three_days)
     show_dataframe(
         sensors,
-        [predicted[:three_days], inputs[:three_days]],
+        [predicted[:three_days], target[:three_days]],
         ["Prediction", "Target"],
         grid_size=5,
-        save=os.path.join(base_path, f"{prefix}-{three_days}.png"),
+        save=os.path.join(base_path, "days=3.png"),
     )
+
+    # transformes the loss between prediction and target to a score between 0 and 1.
+    score = loader.get_score_transformer()
+    score_vis_path = os.path.join(base_path, "score-transformed.png")
+    score.transform(predicted, target, visualize=score_vis_path)
 
 
 if __name__ == "__main__":
