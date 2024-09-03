@@ -2,6 +2,7 @@
 a model. Moreover, the module expands the CLI by **lightning.ai**."""
 
 import datetime
+from lightning import Trainer
 from lightning.pytorch.cli import (
     LightningArgumentParser,
     LightningCLI,
@@ -23,7 +24,7 @@ class CompriskCLI(LightningCLI):
         parser.add_argument("--find-batch-size", default=False, action="store_true")
         parser.add_argument("--save-every", default=1)
         parser.add_argument("--tuner-config", nargs="?")
-        parser.add_argument("--tuner-trials", type=int, default=25)
+        parser.add_argument("--tuner-trials", type=int, default=1)
 
     def before_fit(self):
         """Method executes before fit automatically."""
@@ -32,7 +33,17 @@ class CompriskCLI(LightningCLI):
         logger.debug(header_str)
         logger.debug(start_str)
         logger.debug("Starting CompriskCLI for training")
+        
+        # if the package should tune the model's hyperparameters, then reset the number
+        # of training iterations
+        if self.config.tuner_config:
+            trainer_args = vars(self.config.trainer)
+            trainer_args["callbacks"] = self.trainer.callbacks
+            trainer_args["max_epochs"] = 1
+            self.trainer = Trainer(**trainer_args)
 
+        # tune the learning rate and batcg size if required
+        # this operation may take a while before the training can start
         tuner = Tuner(self.trainer)
         # find best batch size
         if self.config.find_batch_size:
@@ -54,12 +65,13 @@ class CompriskCLI(LightningCLI):
             self.model.lr = lr
 
         # add model checkpoint callback
-        model_check = ModelCheckpoint(
-            self.trainer.logger.log_dir, every_n_epochs=self.config.save_every
-        )
-        for i, c in enumerate(self.trainer.callbacks):
-            if isinstance(c, ModelCheckpoint):
-                self.trainer.callbacks[i] = model_check
+        # model_check = ModelCheckpoint(
+        #     self.trainer.logger.log_dir, every_n_epochs=self.config.save_every
+        # )
+        # for i, c in enumerate(self.trainer.callbacks):
+        #     if isinstance(c, ModelCheckpoint):
+        #         self.trainer.callbacks[i] = model_check
+
 
     def after_fit(self):
         """Method executes after fit automatically."""

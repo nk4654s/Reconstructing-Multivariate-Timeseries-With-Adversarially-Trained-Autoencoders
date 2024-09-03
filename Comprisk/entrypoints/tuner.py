@@ -19,6 +19,7 @@ def cli_main():
     logger.debug("Starting CompriskCLI")
     cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False,
                       save_config_callback=None)
+    cli.before_fit()
     
     # load the parameters to tune in a ConfigManager
     config = ConfigManager(cli)
