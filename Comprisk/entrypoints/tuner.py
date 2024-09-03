@@ -1,6 +1,10 @@
 """This module creates a model and tunes its hyperparameters."""
+import os
+from typing import Any, Dict
+import yaml
 from Dataflux.helper import get_logger
 
+from Comprisk.helper import get_config_path
 from Comprisk.tune import Tuner, ConfigManager
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
@@ -17,12 +21,28 @@ def cli_main():
     logger.debug("Starting CompriskCLI")
     cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False,
                       save_config_callback=None)
-
+    
+    # load the parameters to tune in a ConfigManager
     config = ConfigManager(cli)
     config.load(cli.config.tuner_config)
 
+    # run the hyperparameter optimization with the ConfigManager
     tuner = Tuner(config)
-    tuner.optimize(cli.config.tuner_trials, cli.config.tag)
+    params = tuner.optimize(cli.config.tuner_trials, cli.config.tag)
+    logger.info("Best parameters: %s", params)
+
+    # get the base config for training and modify the parameters with the best ones
+    modified = config.modify_config(params)
+
+    # save the modified config to a new file with increasing suffix
+    modified_path = config.train_path.replace(".yml", "_tuned.yml")
+    i = 0
+    while os.path.exists(modified_path):
+        modified_path = config.train_path.replace(".yml", f"_tuned_{i}.yml")
+        i += 1
+
+    with open(modified_path, "w", encoding="utf-8") as f:
+        yaml.dump(modified, f)
 
 
 if __name__ == "__main__":

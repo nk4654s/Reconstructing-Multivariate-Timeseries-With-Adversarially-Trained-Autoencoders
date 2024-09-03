@@ -3,12 +3,14 @@ a nested dict."""
 
 from typing import Any, Dict
 from functools import reduce
+from copy import deepcopy
 import operator
 
 import yaml
 from optuna import Trial
-from Comprisk.helper import class_for_name
+from Comprisk.helper import class_for_name, get_config_path
 from Comprisk.cli.cli import CompriskCLI
+from Comprisk.tune.provider import SuggestionProvider, TunedProvider
 
 
 def get_nested_from_dict(a: Dict, key: str) -> Any:
@@ -86,6 +88,21 @@ class ConfigManager:
         self._rules = None
         self._cli = cli
 
+        # load the original train config
+        self._train_path = get_config_path(cli)
+        with open(self._train_path, "r", encoding="utf-8") as f:
+            self._base_config = yaml.load(f, Loader=yaml.FullLoader)
+
+    @property
+    def train_path(self) -> str:
+        """
+        Returns the path of the original config file used in training.
+
+        Returns:
+            str: The path of the original config file used in training.
+        """
+        return self._train_path
+
     @property
     def train_config(self) -> Dict:
         """
@@ -148,7 +165,7 @@ class ConfigManager:
 
     def _suggest(
         self,
-        trial: Trial,
+        provider: SuggestionProvider,
         train: Dict[str, Any],
         tune: Dict[str, Any],
         root_key: str = None,
@@ -159,7 +176,7 @@ class ConfigManager:
             if isinstance(train[key], dict) and key in tune.keys():
                 suggestion[key] = {"class_path": train[key]["class_path"]}
                 suggestion[key]["init_args"] = self._suggest(
-                    trial, train[key]["init_args"], tune[key], key
+                    provider, train[key]["init_args"], tune[key], key
                 )
                 continue
             # use hyper parameters from the model config, if they will not be tuned
@@ -170,11 +187,8 @@ class ConfigManager:
             # get hyper parameter (spaces) from the tuner config
             value = tune[key]
             name = key if not root_key else f"{root_key}.{key}"
-            if value["type"] == "int":
-                suggestion[key] = trial.suggest_int(name, value["min"], value["max"])
+            suggestion[key] = provider.get(name, value)
 
-            elif value["type"] == "float":
-                suggestion[key] = trial.suggest_float(name, value["min"], value["max"])
         return suggestion
 
     def apply_rules(self, suggestion: Dict[str, Any]) -> Dict:
@@ -218,6 +232,17 @@ class ConfigManager:
 
         return params
 
+    def modify_config(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        provider = TunedProvider(params)
+
+        base_config = self._base_config["model"]["init_args"]
+        params = self._suggest(provider, base_config, self._tune)
+        params = self.apply_rules(params)
+
+        base_config = deepcopy(self._base_config)
+        base_config["model"]["init_args"] = params
+        return base_config
+
     def suggest(self, trial: Trial) -> Dict:
         """
         Suggest a set of hyperparameters for a given trial.
@@ -228,6 +253,7 @@ class ConfigManager:
         Returns:
             Dict: A dictionary containing the suggested hyperparameters.
         """
-        params = self._suggest(trial, self._train, self._tune)
+        provider = SuggestionProvider(trial)
+        params = self._suggest(provider, self._train, self._tune)
         params = self.apply_rules(params)
         return self.init_submodules(params)

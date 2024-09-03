@@ -23,8 +23,10 @@ class Tuner:
     def __init__(self, config: ConfigManager) -> None:
         self._model = config.cli.model
         self._datamodule = config.cli.datamodule
+
         self._trainer = config.cli.trainer
         self._trainer.early_stopping_callback.monitor = "train/MSELoss"
+
         self._trainer.save_config_callback = None
         self._trainer.logger = False
 
