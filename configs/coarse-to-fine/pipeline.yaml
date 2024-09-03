@@ -1,0 +1,18 @@
+# train a coarse model, then fine-tune it two times
+trainer:
+# 1. train on coarse dataset, with many seconds skipped
+  - config: configs/coarse-to-fine/lstm_coarse.yml
+    tag: coarse-to-fine
+# 2. train on medium dataset, with some seconds skipped
+  - config: configs/coarse-to-fine/lstm_medium.yml
+    tag: coarse-to-fine
+# 3. train on fine dataset, with few seconds skipped
+  - config: configs/coarse-to-fine/lstm_fine.yml
+    tag: coarse-to-fine
+analyzer:
+# 4. generate data on the test dataset
+  - dataset: /Users/jonas/Dataset/labeled/dataset-cat-orange
+    prefix: orange
+# 5. generate data on the train dataset
+  - dataset: /Users/jonas/Dataset/labeled/dataset-cat-green
+    prefix: green

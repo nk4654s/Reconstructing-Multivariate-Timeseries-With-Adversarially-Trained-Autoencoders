@@ -1,0 +1,19 @@
+# 1. tune the model given a search space for the hyperparameters
+tuner:
+  config: configs/tuning/lstm_base.yml
+  tuner_config: configs/tuning/tune_search_space.yml
+  tuner_trials: 20
+
+# 2. train the model using the tuned hyperparameters
+trainer:
+  - config: configs/tuning/lstm_base.yml
+    tag: tuned
+    prefer_tuned: true
+
+analyzer:
+# 3. generate data on the test dataset
+  - dataset: /Users/jonas/Dataset/labeled/dataset-cat-orange
+    prefix: orange
+# 4. generate data on the train dataset
+  - dataset: /Users/jonas/Dataset/labeled/dataset-cat-green
+    prefix: green

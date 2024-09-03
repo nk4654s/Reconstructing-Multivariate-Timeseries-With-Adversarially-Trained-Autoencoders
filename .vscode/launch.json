@@ -21,8 +21,9 @@
             "program": "Comprisk/entrypoints/tuner.py",
             "console": "integratedTerminal",
             "args": [
-                "-c", "configs/lstm_bypass_ae.yml",
-                "--tuner-config", "configs/tuning/lstm.yml"
+                "-c", "configs/lstm_ae_no_weather.yml",
+                "--tuner-config", "configs/tuning/lstm.yml",
+                "--tuner-trials", "1"
             ]
         },
         {
@@ -41,9 +42,22 @@
             "request": "launch",
             "program": "Comprisk/entrypoints/train.py",
             "console": "integratedTerminal",
+            "justMyCode": false,
             "args": [
                 "-c",
-                "configs/lstm_bypass_ae.yml",
+                "configs/lstm_ae_no_weather.yml",
+                "--tag", "debug"
+            ]
+        },
+        {
+            "name": "Python Debugger: Future",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "Comprisk/entrypoints/train.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-c",
+                "configs/lstm_future.yml",
                 "--tag", "debug"
             ]
         }

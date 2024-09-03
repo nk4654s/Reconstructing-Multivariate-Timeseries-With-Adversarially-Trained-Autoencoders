@@ -2,23 +2,15 @@
 applys the loaded model on the configured dataset. The prediction will be
 safed next to the model's log folder as graph comparing prediction
 vs. target."""
-
-from typing import Tuple
 import os
 import shutil
-import pickle
-import torch
-import pandas as pd
-from tqdm import tqdm
 
 from Dataflux.pytorch import Metadata, Dataset
 from Dataflux.visualization import show_dataframe
 from Dataflux.helper import get_logger
 
-from Comprisk.anomaly import ScoreTransformer
 from Comprisk.helper import get_config_folder, ModelLoader
 from Comprisk.model import BaseModel
-from Comprisk.model.ae import AutoEncoder
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskLoadCLI
 

@@ -39,8 +39,9 @@ setup(
     entry_points={
         "console_scripts": [
             "comprisk-summary=Comprisk.entrypoints.summary:cli_main",
-            "comprisk-train=Comprisk.entrypoints.train:cli_main",
-            "comprisk-load=Comprisk.entrypoints.load:cli_main",
+            "comprisk-trainer=Comprisk.entrypoints.trainer:cli_main",
+            "comprisk-analyzer=Comprisk.entrypoints.analyzer:cli_main",
+            "comprisk-pipeline=Comprisk.entrypoints.pipeline:cli_main",
             "comprisk-tuner=Comprisk.entrypoints.tuner:cli_main",
         ]
     },

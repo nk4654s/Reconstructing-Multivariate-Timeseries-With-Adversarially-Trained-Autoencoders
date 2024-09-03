@@ -10,9 +10,16 @@ trainer:
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
         every_n_epochs: 1
+        monitor: validate/MSELoss
+        filename: "epoch={epoch}-val={validate/MSELoss:.6f}"
+        auto_insert_metric_name: false
+        save_top_k: 3
+        mode: min
+        dirpath: checkpoints
+        
   # define training configuration
   precision: 32
-  max_epochs: 10
+  max_epochs: 2
   gradient_clip_val: 1.0
 #  profiler: "simple"
   log_every_n_steps: 1
@@ -27,29 +34,30 @@ model:
     lr: 0.00015
     # encoder/decoder
     encoder:
-      class_path: Comprisk.model.ae.rnn.LSTMEncoder
+      class_path: Comprisk.model.ae.rnn.LSTMEncoderBypass
       init_args:
-        num_features: 27
-        num_latent_dim: 96
-        num_hidden_dim: 224
+        num_features: 20
+        num_latent_dim: 10
+        num_hidden_dim: 32
         num_hidden_layers: 2
         dropout_prob: 0.3
     decoder:
       class_path: Comprisk.model.ae.rnn.LSTMDecoder
       init_args:
-        num_features: 26
-        num_latent_dim: 96
-        num_hidden_dim: 224
+        num_features: 20
+        num_latent_dim: 10
+        num_hidden_dim: 32
         num_hidden_layers: 2
         dropout_prob: 0.3
+        predict_key: sensors
 data:
   # configure dataset to load
-  path: /Users/jonas/Dataset/dataset-2021-6m
-  input_sequence: 500
-  output_sequence: 1
+  path: /Users/jonas/Dataset/labeled/dataset-cat-green
+  input_sequence: 200
+  output_sequence: 0
   skip: 20
   # configure how to sample from the dataset
-  batch_size: 16
+  batch_size: 256
   shuffle: true
   train_size: 0.7
   validation_size: 0.2

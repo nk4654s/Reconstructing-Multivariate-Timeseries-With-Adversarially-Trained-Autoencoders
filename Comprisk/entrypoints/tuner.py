@@ -11,16 +11,18 @@ from Comprisk.cli import CompriskCLI
 logger = get_logger(__name__, path="./logs/logfile")
 
 
-def cli_main():
+def run_tuner(cli: CompriskCLI) -> str:
     """
-    The main entry point for the Comprisk CLI. This function initializes the
-    CompriskCLI object and sets up the command-line interface.
-    """
-    logger.debug("Starting CompriskCLI")
-    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False,
-                      save_config_callback=None)
-    cli.before_fit()
+    This function runs the hyperparameter tuning using the Tuner class. It takes a
+    CompriskCLI object as input and returns the best model configuration.
+
+    Args:
+        cli (CompriskCLI): A CompriskCLI object that contains the configuration
+            and data modules for hyperparameter tuning.
     
+    Returns:
+        str: The best model configuration as a string in YAML.
+    """
     # load the parameters to tune in a ConfigManager
     config = ConfigManager(cli)
     config.load(cli.config.tuner_config)
@@ -42,6 +44,20 @@ def cli_main():
 
     with open(modified_path, "w", encoding="utf-8") as f:
         yaml.dump(modified, f)
+    
+    return modified_path
+
+
+def cli_main():
+    """
+    The main entry point for the Comprisk CLI. This function initializes the
+    CompriskCLI object and sets up the command-line interface.
+    """
+    logger.debug("Starting CompriskCLI")
+    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False,
+                      save_config_callback=None)
+    cli.before_fit()
+    run_tuner(cli)
 
 
 if __name__ == "__main__":
