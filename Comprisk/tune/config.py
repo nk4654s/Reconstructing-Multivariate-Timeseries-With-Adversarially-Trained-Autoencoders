@@ -1,13 +1,14 @@
 """This mdoule contains the ConfigManager and dict tools to navigate
 a nested dict."""
 
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 from functools import reduce
 from copy import deepcopy
 import operator
 
 import yaml
 from optuna import Trial
+from Comprisk.data import DataModule
 from Comprisk.helper import class_for_name, get_config_path
 from Comprisk.cli.cli import CompriskCLI
 from Comprisk.tune.provider import SuggestionProvider, TunedProvider
@@ -83,7 +84,6 @@ class ConfigManager:
     """
 
     def __init__(self, cli: CompriskCLI) -> None:
-        self._train = cli.model.hparams["init_args"]
         self._tune = None
         self._rules = None
         self._cli = cli
@@ -92,6 +92,9 @@ class ConfigManager:
         self._train_path = get_config_path(cli)
         with open(self._train_path, "r", encoding="utf-8") as f:
             self._base_config = yaml.load(f, Loader=yaml.FullLoader)
+
+        self._model = self._base_config["model"]["init_args"]
+        self._data = self._base_config["data"]
 
     @property
     def train_path(self) -> str:
@@ -114,7 +117,7 @@ class ConfigManager:
         Returns:
             Dict: A dictionary with the initialization arguments.
         """
-        return self._train
+        return self._model
 
     @property
     def cli(self) -> CompriskCLI:
@@ -144,8 +147,10 @@ class ConfigManager:
             self._tune = yaml.safe_load(conf)
 
         self._rules = self._tune.get("rules", {})
-        self._tune = self._tune["search_space"]
-        self.check_config(self._train, self._tune)
+        del self._tune["rules"]
+
+        self.check_config(self._model, self._tune["model"])
+        self.check_config(self._data, self._tune["data"])
 
     def check_config(self, a: Dict[str, Any], b: Dict[str, Any]) -> None:
         """
@@ -246,15 +251,15 @@ class ConfigManager:
         """
         provider = TunedProvider(params)
 
-        base_config = self._base_config["model"]["init_args"]
-        params = self._suggest(provider, base_config, self._tune)
-        params = self.apply_rules(params)
-
         base_config = deepcopy(self._base_config)
+        params = self._suggest(provider, base_config["model"]["init_args"], self._tune["model"])
+        params = self.apply_rules(params)
         base_config["model"]["init_args"] = params
+
+        base_config["data"] = self._suggest(provider, base_config["data"], self._tune["data"])
         return base_config
 
-    def suggest(self, trial: Trial) -> Dict:
+    def suggest(self, trial: Trial) -> Tuple[Dict, DataModule]:
         """
         Suggest a set of hyperparameters for a given trial.
         
@@ -266,7 +271,8 @@ class ConfigManager:
         """
         provider = SuggestionProvider(trial)
 
-        params = self._suggest(provider, self._train, self._tune)
+        params = self._suggest(provider, self._model, self._tune["model"])
         params = self.apply_rules(params)
 
-        return self.init_submodules(params)
+        data_params = self._suggest(provider, self._data, self._tune["data"])
+        return self.init_submodules(params), DataModule(**data_params)

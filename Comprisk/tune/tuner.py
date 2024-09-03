@@ -44,10 +44,10 @@ class Tuner:
             trial (Trial): The trial object managed by `optuna`.
         """
         # define the new hparam suggestion and create the model to test
-        suggestion = self._config.suggest(trial)
+        suggestion, datamodule = self._config.suggest(trial)
         test_model = self._model.__class__(**suggestion)
 
-        self._datamodule.setup(
+        datamodule.setup(
             stage="fit", train_size=self._train_size, val_size=self._val_size
         )
 
@@ -55,15 +55,13 @@ class Tuner:
         # set a new hparams suggestion
         trainer = deepcopy(self._trainer)
         trainer.fit(
-            test_model, self._datamodule.train_dataloader(), val_dataloaders=None
+            test_model, datamodule.train_dataloader(), val_dataloaders=None
         )
         trainer.save_checkpoint(".temp.ckpt")
         result = trainer.validate(
-            dataloaders=self._datamodule.val_dataloader(), ckpt_path=".temp.ckpt"
+            dataloaders=datamodule.val_dataloader(), ckpt_path=".temp.ckpt"
         )
         loss = result[0]["validate/MSELoss"]
-
-        # trial.report(loss, 0)
         return loss
 
     def optimize(self, n_trials: int, tag: str = None) -> Dict[str, Any]:

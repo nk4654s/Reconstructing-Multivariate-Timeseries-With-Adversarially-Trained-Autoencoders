@@ -1,10 +1,8 @@
 """This module creates a model and tunes its hyperparameters."""
 import os
-from typing import Any, Dict
 import yaml
 from Dataflux.helper import get_logger
 
-from Comprisk.helper import get_config_path
 from Comprisk.tune import Tuner, ConfigManager
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
@@ -35,7 +33,7 @@ def cli_main():
     modified = config.modify_config(params)
 
     # save the modified config to a new file with increasing suffix
-    modified_path = config.train_path.replace(".yml", "_tuned.yml")
+    modified_path = config.train_path.replace(".yml", "_tuned_0.yml")
     i = 0
     while os.path.exists(modified_path):
         modified_path = config.train_path.replace(".yml", f"_tuned_{i}.yml")
