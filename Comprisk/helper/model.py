@@ -1,6 +1,7 @@
 """This module contains helper methods related to the models."""
 import os
 import json
+import pickle
 from typing import Any, Dict, Tuple, Type, List
 import numpy as np
 import pandas as pd
@@ -14,7 +15,6 @@ from Dataflux.helper import get_logger
 from Dataflux.pytorch import Dataset
 
 from Comprisk.anomaly import ScoreTransformer
-from Comprisk.model.ae import AutoEncoder
 from Comprisk.helper.file_structure import class_for_name, get_checkpoints
 
 logger = get_logger(__name__, path="./logs/logfile")
@@ -149,20 +149,21 @@ class ModelLoader:
 
         return pd.read_csv(correlation_path, index_col=0)
 
-    def predict_loop(self, dataset: Dataset) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def predict_loop(self, dataset: Dataset, mode: str = "autoencoder") -> Tuple[pd.DataFrame, pd.DataFrame]:
         """This method applies a model on a given dataset. For an AutoEncoder, the reconstructed
         output will be returned. For future prediction models, the prediction of the future is
         output. In addition, the original input data will be temporarily stored and returned.
 
         Args:
             dataset (Dataset): The dataset to use.
+            mode (str): The mode to use for prediction. Defaults to 'autoencoder'.
         
         Returns
             Tuple[pd.DataFrame, pd.DataFrame]: Pandas dataframes containing the prediction and input.
         """
         self._model.eval()
-        meta: Metadata = dataset.get_meta()
-        step = meta.num_input_sequence if isinstance(self._model, AutoEncoder) else meta.num_output_sequence
+        meta = dataset.get_meta()
+        step = meta.num_input_sequence if mode == "autoencoder" else meta.num_output_sequence
 
         logger.debug("Predict on dataset, length=%s", len(dataset))
         logger.debug("Dataset input sequence: %s", meta.num_input_sequence)
