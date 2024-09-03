@@ -64,14 +64,6 @@ class CompriskCLI(LightningCLI):
             logger.debug("Tuned learning rate: lr=%s", lr)
             self.model.lr = lr
 
-        # add model checkpoint callback
-        # model_check = ModelCheckpoint(
-        #     self.trainer.logger.log_dir, every_n_epochs=self.config.save_every
-        # )
-        # for i, c in enumerate(self.trainer.callbacks):
-        #     if isinstance(c, ModelCheckpoint):
-        #         self.trainer.callbacks[i] = model_check
-
 
     def after_fit(self):
         """Method executes after fit automatically."""
