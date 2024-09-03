@@ -20,6 +20,7 @@ class CompriskCLI(LightningCLI):
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--tag", type=str, default=None)
+        parser.add_argument("--finetune", "-f", type=str, default=None)
         parser.add_argument("--find-lr", default=False, action="store_true")
         parser.add_argument("--find-batch-size", default=False, action="store_true")
         parser.add_argument("--save-every", default=1)

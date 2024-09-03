@@ -1,7 +1,6 @@
 """This module creates a model summary and plots it."""
 
 import os
-import json
 import pickle
 import shutil
 from lightning import Callback
@@ -21,7 +20,8 @@ from Comprisk.cli import CompriskCLI
 from Comprisk import logger
 
 def get_trainer_callback(trainer, callback_cls: Callback) -> Callback:
-    """Finds the fiven callback class in the trainer callbacks list. If the
+    """
+    Finds the fiven callback class in the trainer callbacks list. If the
     callback could not be found, then the returned value is None.
     
     Args:
@@ -38,7 +38,8 @@ def get_trainer_callback(trainer, callback_cls: Callback) -> Callback:
 
 
 def save_training_meta(base_path: str, dataset: Dataset) -> None:
-    """This function creates the model's metadata folder and generates the
+    """
+    This function creates the model's metadata folder and generates the
     training dataset correlation matrix, as well as copies the dataset's
     normalizer.
     
@@ -63,16 +64,17 @@ def save_training_meta(base_path: str, dataset: Dataset) -> None:
     shutil.copyfile(config_file, os.path.join(base_path, "dataset_config.yaml"))
 
 
-def cli_main():
+def run_trainer(cli: CompriskCLI) -> str:
     """
-    The main entry point for the Comprisk CLI. This function initializes the
-    CompriskCLI object and sets up the command-line interface.
+    This function trains a model given the cli which contains all parameters, e.g.
+    for the model itself or the dataset.
+
+    Args:
+        cli (CompriskCLI): The CLI containing all parameters for training.
+
+    Returns:
+        str: The path where the model was saved.
     """
-    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
-
-    # run methods before fit
-    cli.before_fit()
-
     # set up the logger
     sub_path = cli.model.__class__.__name__
     if cli.config.tag:
@@ -100,17 +102,35 @@ def cli_main():
     metafolder = os.path.join(tb_logger.log_dir, "metadata")
     cli.trainer.callbacks.append(MeasurementCallback())
     save_training_meta(metafolder, data)
+    
+    # check iif a model should be finetuned
+    if cli.config.finetune:
+        config_path = os.path.dirname(cli.config.finetune)
+        loader = ModelLoader(config_path)
+        loaded_model = loader.get_model()
+        model = loaded_model
+        model.train()
+    else:
+        model = cli.model
+        if model.device == "cuda":
+            logger.debug("Compile model for faster training speeds")
+            model = torch.compile(cli.model)
 
     # train
     logger.debug("Starting training")
-    model = cli.model
-    if model.device == "cuda":
-        logger.debug("Compile model for faster training speeds")
-        model = torch.compile(cli.model)
     cli.trainer.fit(model, cli.datamodule)
 
     # run methods after fit
     cli.after_fit()
+
+    # if a model was finetuned, make sure to have the same hparams.yaml in the
+    # output folder.
+    # FIXME: this should not be a problem, this is a workaround
+    if cli.config.finetune:
+        if os.path.exists(os.path.join(tb_logger.log_dir, "hparams.yaml")):
+            os.remove(os.path.join(tb_logger.log_dir, "hparams.yaml"))
+        shutil.copyfile(os.path.join(config_path, "hparams.yaml"),
+                        os.path.join(tb_logger.log_dir, "hparams.yaml"))
 
     # load the (best) trained model back
     loader = ModelLoader(tb_logger.log_dir)
@@ -123,6 +143,20 @@ def cli_main():
     score_path = os.path.join(metafolder, "score_transformer.pkl")
     with open(score_path, "wb") as f:
         pickle.dump(score, f)
+    
+    return tb_logger.log_dir
+
+
+def cli_main():
+    """
+    The main entry point for the Comprisk CLI. This function initializes the
+    CompriskCLI object and sets up the command-line interface.
+    """
+    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+
+    # run methods before fit, then train
+    cli.before_fit()
+    run_trainer(cli)
 
 
 if __name__ == "__main__":
