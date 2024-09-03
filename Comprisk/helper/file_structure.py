@@ -60,5 +60,8 @@ def get_checkpoints(path: str) -> List[str]:
         List[str]: The list of checkpoint paths, sorted.
     """
     base_path = os.path.join(path, "checkpoints")
+    if not os.path.exists(base_path):
+        return []
+
     checkpoints = sorted([_ for _ in os.listdir(base_path) if "ckpt" in _])
     return checkpoints

@@ -57,6 +57,8 @@ def load_model(path: str, eval_mode: bool = True) -> Any:
     """
     checkpoints = get_checkpoints(path)
     checkpoints = sorted(checkpoints, key = lambda x : float(x[:-5].split("val=")[-1]))
+    if len(checkpoints) == 0:
+        return None
 
     # 1. get dataset configuration: start, end, step size (size of input window)
     model_class, sub_modules = init_modules(path)
