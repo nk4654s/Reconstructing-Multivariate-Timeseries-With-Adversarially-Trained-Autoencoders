@@ -233,6 +233,17 @@ class ConfigManager:
         return params
 
     def modify_config(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        This method modifies the original configuration with the provided parameters
+        with respect to the rule set.
+
+        Args:
+            params (Dict): A dictionary containing the configuration settings. Should
+                be the dictionary containing the tuned hyperparameters.
+        
+        Returns:
+            Dict: A dictionary containing the modified configuration settings.
+        """
         provider = TunedProvider(params)
 
         base_config = self._base_config["model"]["init_args"]
@@ -254,6 +265,8 @@ class ConfigManager:
             Dict: A dictionary containing the suggested hyperparameters.
         """
         provider = SuggestionProvider(trial)
+
         params = self._suggest(provider, self._train, self._tune)
         params = self.apply_rules(params)
+
         return self.init_submodules(params)
