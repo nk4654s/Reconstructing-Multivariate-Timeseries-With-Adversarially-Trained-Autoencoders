@@ -48,20 +48,24 @@ def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
 
 
 def load_model(path: str, eval_mode: bool = True) -> Any:
-    """This method loads the latest checkpoint of a model.
+    """This method loads the best checkpoint of a model. Requires checkpoints of model to have
+    the filename structure `...val=<validation_loss>.ckpt`.
 
     Args:
         cli (CompriskCLI): The cli object created when starting an entrypoint.
         eval_mode (bool): Wether to set the loaded model to eval mode or not. Defaults to True.
     """
     checkpoints = get_checkpoints(path)
+    checkpoints = sorted(checkpoints, key = lambda x : float(x[:-5].split("val=")[-1]))
 
     # 1. get dataset configuration: start, end, step size (size of input window)
     model_class, sub_modules = init_modules(path)
     model = model_class.load_from_checkpoint(
-        os.path.join(path, "checkpoints", checkpoints[-1]),
+        os.path.join(path, "checkpoints", checkpoints[0]),
         **sub_modules
     )
+
+    logger.debug("Loaded model %s from %s", checkpoints[0], path)
     if eval_mode:
         model.eval()
     return model

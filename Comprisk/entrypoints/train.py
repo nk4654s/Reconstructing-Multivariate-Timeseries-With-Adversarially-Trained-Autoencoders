@@ -13,6 +13,7 @@ from Dataflux.pytorch import Dataset
 
 from Comprisk.anomaly import ScoreTransformer
 from Comprisk.callbacks import MeasurementCallback
+from Comprisk.helper import ModelLoader
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
@@ -111,9 +112,13 @@ def cli_main():
     # run methods after fit
     cli.after_fit()
 
+    # load the (best) trained model back
+    loader = ModelLoader(tb_logger.log_dir)
+    predicted, target = loader.predict_loop(data)
+
     # fit and save the score transformer
     score = ScoreTransformer()
-    score.fit()
+    score.fit(predicted, target)
 
     score_path = os.path.join(metafolder, "score_transformer.pkl")
     with open(score_path, "wb") as f:
