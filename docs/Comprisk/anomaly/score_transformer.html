@@ -32,6 +32,15 @@ hljs.highlightAll();
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="Comprisk.anomaly.score_transformer.loss_fn"><code class="name flex">
+<span>def <span class="ident">loss_fn</span></span>(<span>y: <built-in function array>, y_hat: <built-in function array>) ‑> <built-in function array></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
@@ -100,7 +109,6 @@ Defaults to 1.</dd>
         self._median_quantile = None
         self._smoothing = None
 
-        self._loss_fn = lambda y, y_hat: np.sqrt(np.power(y - y_hat, 2))
         self._critical_threshold = critical_threshold
 
     def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -&gt; None:
@@ -158,7 +166,7 @@ Defaults to 1.</dd>
         )
 
         # get the loss values to find wether a score is critical or not
-        loss = self._loss_fn(predicted.to_numpy(), target.to_numpy())
+        loss = loss_fn(predicted.to_numpy(), target.to_numpy())
         critical = malfunction.copy()
         critical[loss &lt; self._critical_threshold] = np.nan
 
@@ -173,7 +181,8 @@ Defaults to 1.</dd>
         loss = pd.DataFrame(loss, columns=names)
 
         if visualize:
-            show_dataframe(names, [malfunction, loss, critical], [&#34;Malfunction&#34;, &#34;Critical Evidence&#34;, &#34;Critical&#34;], show=True)
+            show_dataframe(names, [malfunction, loss, critical], [&#34;Malfunction&#34;, &#34;Critical Evidence&#34;, &#34;Critical&#34;],
+                           y_label=&#34;% -  lower is better&#34;, save=visualize)
     
         return malfunction, critical</code></pre>
 </details>
@@ -229,6 +238,11 @@ and 1 is worst. (2) The scores which are critical as the loss values exceed the 
 <li><h3>Super-module</h3>
 <ul>
 <li><code><a title="Comprisk.anomaly" href="index.html">Comprisk.anomaly</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="Comprisk.anomaly.score_transformer.loss_fn" href="#Comprisk.anomaly.score_transformer.loss_fn">loss_fn</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>

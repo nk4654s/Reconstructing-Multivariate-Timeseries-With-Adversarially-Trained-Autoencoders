@@ -123,10 +123,27 @@ such as setting and getting values from the configuration dictionary.</p>
     &#34;&#34;&#34;
 
     def __init__(self, cli: CompriskCLI) -&gt; None:
-        self._train = cli.model.hparams[&#34;init_args&#34;]
         self._tune = None
         self._rules = None
         self._cli = cli
+
+        # load the original train config
+        self._train_path = get_config_path(cli)
+        with open(self._train_path, &#34;r&#34;, encoding=&#34;utf-8&#34;) as f:
+            self._base_config = yaml.load(f, Loader=yaml.FullLoader)
+
+        self._model = self._base_config[&#34;model&#34;][&#34;init_args&#34;]
+        self._data = self._base_config[&#34;data&#34;]
+
+    @property
+    def train_path(self) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the path of the original config file used in training.
+
+        Returns:
+            str: The path of the original config file used in training.
+        &#34;&#34;&#34;
+        return self._train_path
 
     @property
     def train_config(self) -&gt; Dict:
@@ -139,7 +156,7 @@ such as setting and getting values from the configuration dictionary.</p>
         Returns:
             Dict: A dictionary with the initialization arguments.
         &#34;&#34;&#34;
-        return self._train
+        return self._model
 
     @property
     def cli(self) -&gt; CompriskCLI:
@@ -169,8 +186,10 @@ such as setting and getting values from the configuration dictionary.</p>
             self._tune = yaml.safe_load(conf)
 
         self._rules = self._tune.get(&#34;rules&#34;, {})
-        self._tune = self._tune[&#34;search_space&#34;]
-        self.check_config(self._train, self._tune)
+        del self._tune[&#34;rules&#34;]
+
+        self.check_config(self._model, self._tune[&#34;model&#34;])
+        self.check_config(self._data, self._tune[&#34;data&#34;])
 
     def check_config(self, a: Dict[str, Any], b: Dict[str, Any]) -&gt; None:
         &#34;&#34;&#34;
@@ -190,7 +209,7 @@ such as setting and getting values from the configuration dictionary.</p>
 
     def _suggest(
         self,
-        trial: Trial,
+        provider: SuggestionProvider,
         train: Dict[str, Any],
         tune: Dict[str, Any],
         root_key: str = None,
@@ -201,7 +220,7 @@ such as setting and getting values from the configuration dictionary.</p>
             if isinstance(train[key], dict) and key in tune.keys():
                 suggestion[key] = {&#34;class_path&#34;: train[key][&#34;class_path&#34;]}
                 suggestion[key][&#34;init_args&#34;] = self._suggest(
-                    trial, train[key][&#34;init_args&#34;], tune[key], key
+                    provider, train[key][&#34;init_args&#34;], tune[key], key
                 )
                 continue
             # use hyper parameters from the model config, if they will not be tuned
@@ -212,11 +231,8 @@ such as setting and getting values from the configuration dictionary.</p>
             # get hyper parameter (spaces) from the tuner config
             value = tune[key]
             name = key if not root_key else f&#34;{root_key}.{key}&#34;
-            if value[&#34;type&#34;] == &#34;int&#34;:
-                suggestion[key] = trial.suggest_int(name, value[&#34;min&#34;], value[&#34;max&#34;])
+            suggestion[key] = provider.get(name, value)
 
-            elif value[&#34;type&#34;] == &#34;float&#34;:
-                suggestion[key] = trial.suggest_float(name, value[&#34;min&#34;], value[&#34;max&#34;])
         return suggestion
 
     def apply_rules(self, suggestion: Dict[str, Any]) -&gt; Dict:
@@ -260,7 +276,29 @@ such as setting and getting values from the configuration dictionary.</p>
 
         return params
 
-    def suggest(self, trial: Trial) -&gt; Dict:
+    def modify_config(self, params: Dict[str, Any]) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;
+        This method modifies the original configuration with the provided parameters
+        with respect to the rule set.
+
+        Args:
+            params (Dict): A dictionary containing the configuration settings. Should
+                be the dictionary containing the tuned hyperparameters.
+        
+        Returns:
+            Dict: A dictionary containing the modified configuration settings.
+        &#34;&#34;&#34;
+        provider = TunedProvider(params)
+
+        base_config = deepcopy(self._base_config)
+        params = self._suggest(provider, base_config[&#34;model&#34;][&#34;init_args&#34;], self._tune[&#34;model&#34;])
+        params = self.apply_rules(params)
+        base_config[&#34;model&#34;][&#34;init_args&#34;] = params
+
+        base_config[&#34;data&#34;] = self._suggest(provider, base_config[&#34;data&#34;], self._tune[&#34;data&#34;])
+        return base_config
+
+    def suggest(self, trial: Trial) -&gt; Tuple[Dict, DataModule]:
         &#34;&#34;&#34;
         Suggest a set of hyperparameters for a given trial.
         
@@ -270,9 +308,13 @@ such as setting and getting values from the configuration dictionary.</p>
         Returns:
             Dict: A dictionary containing the suggested hyperparameters.
         &#34;&#34;&#34;
-        params = self._suggest(trial, self._train, self._tune)
+        provider = SuggestionProvider(trial)
+
+        params = self._suggest(provider, self._model, self._tune[&#34;model&#34;])
         params = self.apply_rules(params)
-        return self.init_submodules(params)</code></pre>
+
+        data_params = self._suggest(provider, self._data, self._tune[&#34;data&#34;])
+        return self.init_submodules(params), DataModule(**data_params)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -329,7 +371,30 @@ def train_config(self) -&gt; Dict:
     Returns:
         Dict: A dictionary with the initialization arguments.
     &#34;&#34;&#34;
-    return self._train</code></pre>
+    return self._model</code></pre>
+</details>
+</dd>
+<dt id="Comprisk.tune.config.ConfigManager.train_path"><code class="name">prop <span class="ident">train_path</span> : str</code></dt>
+<dd>
+<div class="desc"><p>Returns the path of the original config file used in training.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>The path of the original config file used in training.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def train_path(self) -&gt; str:
+    &#34;&#34;&#34;
+    Returns the path of the original config file used in training.
+
+    Returns:
+        str: The path of the original config file used in training.
+    &#34;&#34;&#34;
+    return self._train_path</code></pre>
 </details>
 </dd>
 </dl>
@@ -402,8 +467,26 @@ are stored in self._tune for future use.</p>
 <dd>The path to the configuration file.</dd>
 </dl></div>
 </dd>
+<dt id="Comprisk.tune.config.ConfigManager.modify_config"><code class="name flex">
+<span>def <span class="ident">modify_config</span></span>(<span>self, params: Dict[str, Any]) ‑> Dict[str, Any]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This method modifies the original configuration with the provided parameters
+with respect to the rule set.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>params</code></strong> :&ensp;<code>Dict</code></dt>
+<dd>A dictionary containing the configuration settings. Should
+be the dictionary containing the tuned hyperparameters.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Dict</code></dt>
+<dd>A dictionary containing the modified configuration settings.</dd>
+</dl></div>
+</dd>
 <dt id="Comprisk.tune.config.ConfigManager.suggest"><code class="name flex">
-<span>def <span class="ident">suggest</span></span>(<span>self, trial: optuna.trial._trial.Trial) ‑> Dict</span>
+<span>def <span class="ident">suggest</span></span>(<span>self, trial: optuna.trial._trial.Trial) ‑> Tuple[Dict, <a title="Comprisk.data.module.DataModule" href="../data/module.html#Comprisk.data.module.DataModule">DataModule</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Suggest a set of hyperparameters for a given trial.</p>
@@ -450,8 +533,10 @@ are stored in self._tune for future use.</p>
 <li><code><a title="Comprisk.tune.config.ConfigManager.cli" href="#Comprisk.tune.config.ConfigManager.cli">cli</a></code></li>
 <li><code><a title="Comprisk.tune.config.ConfigManager.init_submodules" href="#Comprisk.tune.config.ConfigManager.init_submodules">init_submodules</a></code></li>
 <li><code><a title="Comprisk.tune.config.ConfigManager.load" href="#Comprisk.tune.config.ConfigManager.load">load</a></code></li>
+<li><code><a title="Comprisk.tune.config.ConfigManager.modify_config" href="#Comprisk.tune.config.ConfigManager.modify_config">modify_config</a></code></li>
 <li><code><a title="Comprisk.tune.config.ConfigManager.suggest" href="#Comprisk.tune.config.ConfigManager.suggest">suggest</a></code></li>
 <li><code><a title="Comprisk.tune.config.ConfigManager.train_config" href="#Comprisk.tune.config.ConfigManager.train_config">train_config</a></code></li>
+<li><code><a title="Comprisk.tune.config.ConfigManager.train_path" href="#Comprisk.tune.config.ConfigManager.train_path">train_path</a></code></li>
 </ul>
 </li>
 </ul>

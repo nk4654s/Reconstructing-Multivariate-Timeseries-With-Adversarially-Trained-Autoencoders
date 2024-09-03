@@ -108,11 +108,12 @@ method. If set to <code>False</code>, the trainer and model classes will be inst
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -&gt; None:
         parser.add_argument(&#34;--tag&#34;, type=str, default=None)
+        parser.add_argument(&#34;--finetune&#34;, &#34;-f&#34;, type=str, default=None)
         parser.add_argument(&#34;--find-lr&#34;, default=False, action=&#34;store_true&#34;)
         parser.add_argument(&#34;--find-batch-size&#34;, default=False, action=&#34;store_true&#34;)
         parser.add_argument(&#34;--save-every&#34;, default=1)
         parser.add_argument(&#34;--tuner-config&#34;, nargs=&#34;?&#34;)
-        parser.add_argument(&#34;--tuner-trials&#34;, type=int, default=25)
+        parser.add_argument(&#34;--tuner-trials&#34;, type=int, default=1)
 
     def before_fit(self):
         &#34;&#34;&#34;Method executes before fit automatically.&#34;&#34;&#34;
@@ -121,7 +122,17 @@ method. If set to <code>False</code>, the trainer and model classes will be inst
         logger.debug(header_str)
         logger.debug(start_str)
         logger.debug(&#34;Starting CompriskCLI for training&#34;)
+        
+        # if the package should tune the model&#39;s hyperparameters, then reset the number
+        # of training iterations
+        if self.config.tuner_config:
+            trainer_args = vars(self.config.trainer)
+            trainer_args[&#34;callbacks&#34;] = self.trainer.callbacks
+            trainer_args[&#34;max_epochs&#34;] = 1
+            self.trainer = Trainer(**trainer_args)
 
+        # tune the learning rate and batcg size if required
+        # this operation may take a while before the training can start
         tuner = Tuner(self.trainer)
         # find best batch size
         if self.config.find_batch_size:
@@ -142,13 +153,6 @@ method. If set to <code>False</code>, the trainer and model classes will be inst
             logger.debug(&#34;Tuned learning rate: lr=%s&#34;, lr)
             self.model.lr = lr
 
-        # add model checkpoint callback
-        model_check = ModelCheckpoint(
-            self.trainer.logger.log_dir, every_n_epochs=self.config.save_every
-        )
-        for i, c in enumerate(self.trainer.callbacks):
-            if isinstance(c, ModelCheckpoint):
-                self.trainer.callbacks[i] = model_check
 
     def after_fit(self):
         &#34;&#34;&#34;Method executes after fit automatically.&#34;&#34;&#34;

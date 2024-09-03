@@ -71,8 +71,10 @@ will be re-initialized with a different set of hyper parameters.</dd>
     def __init__(self, config: ConfigManager) -&gt; None:
         self._model = config.cli.model
         self._datamodule = config.cli.datamodule
+
         self._trainer = config.cli.trainer
         self._trainer.early_stopping_callback.monitor = &#34;train/MSELoss&#34;
+
         self._trainer.save_config_callback = None
         self._trainer.logger = False
 
@@ -90,10 +92,10 @@ will be re-initialized with a different set of hyper parameters.</dd>
             trial (Trial): The trial object managed by `optuna`.
         &#34;&#34;&#34;
         # define the new hparam suggestion and create the model to test
-        suggestion = self._config.suggest(trial)
+        suggestion, datamodule = self._config.suggest(trial)
         test_model = self._model.__class__(**suggestion)
 
-        self._datamodule.setup(
+        datamodule.setup(
             stage=&#34;fit&#34;, train_size=self._train_size, val_size=self._val_size
         )
 
@@ -101,15 +103,13 @@ will be re-initialized with a different set of hyper parameters.</dd>
         # set a new hparams suggestion
         trainer = deepcopy(self._trainer)
         trainer.fit(
-            test_model, self._datamodule.train_dataloader(), val_dataloaders=None
+            test_model, datamodule.train_dataloader(), val_dataloaders=None
         )
         trainer.save_checkpoint(&#34;.temp.ckpt&#34;)
         result = trainer.validate(
-            dataloaders=self._datamodule.val_dataloader(), ckpt_path=&#34;.temp.ckpt&#34;
+            dataloaders=datamodule.val_dataloader(), ckpt_path=&#34;.temp.ckpt&#34;
         )
         loss = result[0][&#34;validate/MSELoss&#34;]
-
-        # trial.report(loss, 0)
         return loss
 
     def optimize(self, n_trials: int, tag: str = None) -&gt; Dict[str, Any]:
