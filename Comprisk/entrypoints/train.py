@@ -2,6 +2,7 @@
 
 import os
 import json
+import pickle
 import shutil
 from lightning import Callback
 from lightning.pytorch.callbacks import ModelCheckpoint
@@ -82,12 +83,13 @@ def cli_main():
     os.makedirs(tb_logger.log_dir)
     logger.debug("Using log folder %s", tb_logger.log_dir)
 
-    # set up the model saving
+    # set up the model saving as configuring the checkpoint path in the yaml config does not
+    # work. The config file does not know the model's output folder name with the increasing
+    # suffix number
     checkpoint = get_trainer_callback(cli.trainer, ModelCheckpoint)
     if checkpoint:
         os.makedirs(tb_logger.log_dir + "/checkpoints/")
         checkpoint.dirpath = tb_logger.log_dir + "/checkpoints/"
-        checkpoint.filename = "{epoch}-{val_loss:.2f}-{other_metric:.2f}"
 
     else:
         logger.warning("ModelCheckpoint callback not defined in yaml-config.")
