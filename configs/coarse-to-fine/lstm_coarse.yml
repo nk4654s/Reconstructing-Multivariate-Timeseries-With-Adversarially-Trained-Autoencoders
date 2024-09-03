@@ -31,7 +31,7 @@ model:
     activation: tanh
     loss: MSELoss
     optimizer: Adam
-    lr: 0.00015
+    lr: 0.001
     # encoder/decoder
     encoder:
       class_path: Comprisk.model.ae.rnn.LSTMEncoderBypass
