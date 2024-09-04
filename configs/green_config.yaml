@@ -75,3 +75,8 @@ postprocessing:
     init_args:
       method: minmax
   - class_path: Dataflux.modules.postprocess.normalize.NormalizeTransform
+  - class_path: Dataflux.modules.postprocess.split.SplitDataset
+    init_args:
+      name: dataset-cat-gray
+      percentage: 0.2
+      overwrite: true
