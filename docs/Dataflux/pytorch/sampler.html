@@ -36,18 +36,6 @@
                         <li>
                                 <a class="function" href="#RandomBatchSampler.__init__">RandomBatchSampler</a>
                         </li>
-                        <li>
-                                <a class="variable" href="#RandomBatchSampler.TRAIN">TRAIN</a>
-                        </li>
-                        <li>
-                                <a class="variable" href="#RandomBatchSampler.VALIDATION">VALIDATION</a>
-                        </li>
-                        <li>
-                                <a class="variable" href="#RandomBatchSampler.TEST">TEST</a>
-                        </li>
-                        <li>
-                                <a class="function" href="#RandomBatchSampler.set_mode">set_mode</a>
-                        </li>
                 </ul>
 
             </li>
@@ -67,87 +55,54 @@
                     <h1 class="modulename">
 <a href="./../../Dataflux.html">Dataflux</a><wbr>.<a href="./../pytorch.html">pytorch</a><wbr>.sampler    </h1>
 
-                        <div class="docstring"><p>This module contains a custom sampler, which returns indicies concerning the
-split: train 70%, validation 20% and test 10%.</p>
+                        <div class="docstring"><p>This module contains a custom sampler, which returns indicies concerning the within a given range.</p>
 </div>
 
                         <input id="mod-sampler-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-sampler-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="sd">&quot;&quot;&quot;This module contains a custom sampler, which returns indicies concerning the</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="sd">split: train 70%, validation 20% and test 10%.&quot;&quot;&quot;</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">Sampler</span>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="sd">&quot;&quot;&quot;This module contains a custom sampler, which returns indicies concerning the within a given range.&quot;&quot;&quot;</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">Sampler</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a>
 </span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="k">class</span> <span class="nc">RandomBatchSampler</span><span class="p">(</span><span class="n">Sampler</span><span class="p">):</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="sd">    A custom sampler that generates random batches of indices from a dataset.</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">    </span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">    Attributes:</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">        TRAIN (int): Index for training data.</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">        VALIDATION (int): Index for validation data.</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">        TEST (int): Index for testing data.</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="k">class</span> <span class="nc">RandomBatchSampler</span><span class="p">(</span><span class="n">Sampler</span><span class="p">):</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="sd">    A custom sampler that generates random batches of indices from a dataset.</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">    Args:</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">        data_length (int): The length of the dataset, which results in the highest index</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">            to be returned by the sampler.</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">        batch_size (int): The size of each batch that will be generated by the sampler.</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">        shuffle (bool): Whether or not to randomly permutate the indicies.</span>
 </span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>    <span class="n">TRAIN</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>    <span class="n">VALIDATION</span> <span class="o">=</span> <span class="mi">1</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>    <span class="n">TEST</span> <span class="o">=</span> <span class="mi">2</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>        <span class="n">data_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>        <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>        <span class="n">train_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>        <span class="n">validation_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>    <span class="p">):</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>        <span class="k">assert</span> <span class="n">train_size</span> <span class="o">+</span> <span class="n">validation_size</span> <span class="o">&lt;=</span> <span class="mi">1</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_train</span> <span class="o">=</span> <span class="n">train_size</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_validation</span> <span class="o">=</span> <span class="n">validation_size</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_test</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">train_size</span> <span class="o">+</span> <span class="n">validation_size</span><span class="p">)</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">=</span> <span class="n">data_length</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train</span><span class="p">)]</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_shuffle</span> <span class="o">=</span> <span class="n">shuffle</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>    <span class="k">def</span> <span class="nf">set_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">        Sets the mode of the sampler to either TRAIN, VALIDATION, or TEST.</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">        </span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">        Args:</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="sd">            mode (int): The mode to set (0 for TRAIN, 1 for VALIDATION, or 2 for TEST).</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">            </span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="sd">        Raises:</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">            AssertionError: If the mode is not one of TRAIN, VALIDATION, or TEST.</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a><span class="sd">            AssertionError: If the indices have already been set.</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>        <span class="k">assert</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;Mode needs to be TRAIN, VALIDATION, TEST.&quot;</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Mode already set.&quot;</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="n">RandomBatchSampler</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">:</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>            <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train</span><span class="p">)</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="n">RandomBatchSampler</span><span class="o">.</span><span class="n">VALIDATION</span><span class="p">:</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>            <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train</span><span class="p">)</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>            <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_train</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation</span><span class="p">))</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>        <span class="k">else</span><span class="p">:</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>            <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_train</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation</span><span class="p">))</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="n">start</span><span class="p">:]</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>
-</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a>    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span><span class="p">):</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span><span class="p">]</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a>    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>        <span class="n">data_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>        <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>    <span class="p">):</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">=</span> <span class="n">data_length</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>        <span class="c1"># randomly permutate the indicies if shuffle is set to true, otherwise</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>        <span class="c1"># use the indicies sequentially</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>        <span class="k">if</span> <span class="n">shuffle</span><span class="p">:</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="o">=</span> <span class="p">[</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_length</span><span class="p">)]</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span><span class="p">):</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span><span class="p">]</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span>
 </span></pre></div>
 
 
@@ -163,82 +118,52 @@ split: train 70%, validation 20% and test 10%.</p>
 
     </div>
     <a class="headerlink" href="#RandomBatchSampler"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="RandomBatchSampler-8"><a href="#RandomBatchSampler-8"><span class="linenos"> 8</span></a><span class="k">class</span> <span class="nc">RandomBatchSampler</span><span class="p">(</span><span class="n">Sampler</span><span class="p">):</span>
-</span><span id="RandomBatchSampler-9"><a href="#RandomBatchSampler-9"><span class="linenos"> 9</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="RandomBatchSampler-10"><a href="#RandomBatchSampler-10"><span class="linenos">10</span></a><span class="sd">    A custom sampler that generates random batches of indices from a dataset.</span>
-</span><span id="RandomBatchSampler-11"><a href="#RandomBatchSampler-11"><span class="linenos">11</span></a><span class="sd">    </span>
-</span><span id="RandomBatchSampler-12"><a href="#RandomBatchSampler-12"><span class="linenos">12</span></a><span class="sd">    Attributes:</span>
-</span><span id="RandomBatchSampler-13"><a href="#RandomBatchSampler-13"><span class="linenos">13</span></a><span class="sd">        TRAIN (int): Index for training data.</span>
-</span><span id="RandomBatchSampler-14"><a href="#RandomBatchSampler-14"><span class="linenos">14</span></a><span class="sd">        VALIDATION (int): Index for validation data.</span>
-</span><span id="RandomBatchSampler-15"><a href="#RandomBatchSampler-15"><span class="linenos">15</span></a><span class="sd">        TEST (int): Index for testing data.</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RandomBatchSampler-7"><a href="#RandomBatchSampler-7"><span class="linenos"> 7</span></a><span class="k">class</span> <span class="nc">RandomBatchSampler</span><span class="p">(</span><span class="n">Sampler</span><span class="p">):</span>
+</span><span id="RandomBatchSampler-8"><a href="#RandomBatchSampler-8"><span class="linenos"> 8</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="RandomBatchSampler-9"><a href="#RandomBatchSampler-9"><span class="linenos"> 9</span></a><span class="sd">    A custom sampler that generates random batches of indices from a dataset.</span>
+</span><span id="RandomBatchSampler-10"><a href="#RandomBatchSampler-10"><span class="linenos">10</span></a>
+</span><span id="RandomBatchSampler-11"><a href="#RandomBatchSampler-11"><span class="linenos">11</span></a><span class="sd">    Args:</span>
+</span><span id="RandomBatchSampler-12"><a href="#RandomBatchSampler-12"><span class="linenos">12</span></a><span class="sd">        data_length (int): The length of the dataset, which results in the highest index</span>
+</span><span id="RandomBatchSampler-13"><a href="#RandomBatchSampler-13"><span class="linenos">13</span></a><span class="sd">            to be returned by the sampler.</span>
+</span><span id="RandomBatchSampler-14"><a href="#RandomBatchSampler-14"><span class="linenos">14</span></a><span class="sd">        batch_size (int): The size of each batch that will be generated by the sampler.</span>
+</span><span id="RandomBatchSampler-15"><a href="#RandomBatchSampler-15"><span class="linenos">15</span></a><span class="sd">        shuffle (bool): Whether or not to randomly permutate the indicies.</span>
 </span><span id="RandomBatchSampler-16"><a href="#RandomBatchSampler-16"><span class="linenos">16</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="RandomBatchSampler-17"><a href="#RandomBatchSampler-17"><span class="linenos">17</span></a>    <span class="n">TRAIN</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span id="RandomBatchSampler-18"><a href="#RandomBatchSampler-18"><span class="linenos">18</span></a>    <span class="n">VALIDATION</span> <span class="o">=</span> <span class="mi">1</span>
-</span><span id="RandomBatchSampler-19"><a href="#RandomBatchSampler-19"><span class="linenos">19</span></a>    <span class="n">TEST</span> <span class="o">=</span> <span class="mi">2</span>
-</span><span id="RandomBatchSampler-20"><a href="#RandomBatchSampler-20"><span class="linenos">20</span></a>
-</span><span id="RandomBatchSampler-21"><a href="#RandomBatchSampler-21"><span class="linenos">21</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-</span><span id="RandomBatchSampler-22"><a href="#RandomBatchSampler-22"><span class="linenos">22</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="RandomBatchSampler-23"><a href="#RandomBatchSampler-23"><span class="linenos">23</span></a>        <span class="n">data_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="RandomBatchSampler-24"><a href="#RandomBatchSampler-24"><span class="linenos">24</span></a>        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="RandomBatchSampler-25"><a href="#RandomBatchSampler-25"><span class="linenos">25</span></a>        <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-</span><span id="RandomBatchSampler-26"><a href="#RandomBatchSampler-26"><span class="linenos">26</span></a>        <span class="n">train_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span>
-</span><span id="RandomBatchSampler-27"><a href="#RandomBatchSampler-27"><span class="linenos">27</span></a>        <span class="n">validation_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
-</span><span id="RandomBatchSampler-28"><a href="#RandomBatchSampler-28"><span class="linenos">28</span></a>    <span class="p">):</span>
-</span><span id="RandomBatchSampler-29"><a href="#RandomBatchSampler-29"><span class="linenos">29</span></a>        <span class="k">assert</span> <span class="n">train_size</span> <span class="o">+</span> <span class="n">validation_size</span> <span class="o">&lt;=</span> <span class="mi">1</span>
-</span><span id="RandomBatchSampler-30"><a href="#RandomBatchSampler-30"><span class="linenos">30</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-</span><span id="RandomBatchSampler-31"><a href="#RandomBatchSampler-31"><span class="linenos">31</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_train</span> <span class="o">=</span> <span class="n">train_size</span>
-</span><span id="RandomBatchSampler-32"><a href="#RandomBatchSampler-32"><span class="linenos">32</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_validation</span> <span class="o">=</span> <span class="n">validation_size</span>
-</span><span id="RandomBatchSampler-33"><a href="#RandomBatchSampler-33"><span class="linenos">33</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_test</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">train_size</span> <span class="o">+</span> <span class="n">validation_size</span><span class="p">)</span>
-</span><span id="RandomBatchSampler-34"><a href="#RandomBatchSampler-34"><span class="linenos">34</span></a>
-</span><span id="RandomBatchSampler-35"><a href="#RandomBatchSampler-35"><span class="linenos">35</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">=</span> <span class="n">data_length</span>
-</span><span id="RandomBatchSampler-36"><a href="#RandomBatchSampler-36"><span class="linenos">36</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-</span><span id="RandomBatchSampler-37"><a href="#RandomBatchSampler-37"><span class="linenos">37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train</span><span class="p">)]</span>
-</span><span id="RandomBatchSampler-38"><a href="#RandomBatchSampler-38"><span class="linenos">38</span></a>
-</span><span id="RandomBatchSampler-39"><a href="#RandomBatchSampler-39"><span class="linenos">39</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
-</span><span id="RandomBatchSampler-40"><a href="#RandomBatchSampler-40"><span class="linenos">40</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_shuffle</span> <span class="o">=</span> <span class="n">shuffle</span>
-</span><span id="RandomBatchSampler-41"><a href="#RandomBatchSampler-41"><span class="linenos">41</span></a>
-</span><span id="RandomBatchSampler-42"><a href="#RandomBatchSampler-42"><span class="linenos">42</span></a>    <span class="k">def</span> <span class="nf">set_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="RandomBatchSampler-43"><a href="#RandomBatchSampler-43"><span class="linenos">43</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="RandomBatchSampler-44"><a href="#RandomBatchSampler-44"><span class="linenos">44</span></a><span class="sd">        Sets the mode of the sampler to either TRAIN, VALIDATION, or TEST.</span>
-</span><span id="RandomBatchSampler-45"><a href="#RandomBatchSampler-45"><span class="linenos">45</span></a><span class="sd">        </span>
-</span><span id="RandomBatchSampler-46"><a href="#RandomBatchSampler-46"><span class="linenos">46</span></a><span class="sd">        Args:</span>
-</span><span id="RandomBatchSampler-47"><a href="#RandomBatchSampler-47"><span class="linenos">47</span></a><span class="sd">            mode (int): The mode to set (0 for TRAIN, 1 for VALIDATION, or 2 for TEST).</span>
-</span><span id="RandomBatchSampler-48"><a href="#RandomBatchSampler-48"><span class="linenos">48</span></a><span class="sd">            </span>
-</span><span id="RandomBatchSampler-49"><a href="#RandomBatchSampler-49"><span class="linenos">49</span></a><span class="sd">        Raises:</span>
-</span><span id="RandomBatchSampler-50"><a href="#RandomBatchSampler-50"><span class="linenos">50</span></a><span class="sd">            AssertionError: If the mode is not one of TRAIN, VALIDATION, or TEST.</span>
-</span><span id="RandomBatchSampler-51"><a href="#RandomBatchSampler-51"><span class="linenos">51</span></a><span class="sd">            AssertionError: If the indices have already been set.</span>
-</span><span id="RandomBatchSampler-52"><a href="#RandomBatchSampler-52"><span class="linenos">52</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="RandomBatchSampler-53"><a href="#RandomBatchSampler-53"><span class="linenos">53</span></a>        <span class="k">assert</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;Mode needs to be TRAIN, VALIDATION, TEST.&quot;</span>
-</span><span id="RandomBatchSampler-54"><a href="#RandomBatchSampler-54"><span class="linenos">54</span></a>        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Mode already set.&quot;</span>
-</span><span id="RandomBatchSampler-55"><a href="#RandomBatchSampler-55"><span class="linenos">55</span></a>
-</span><span id="RandomBatchSampler-56"><a href="#RandomBatchSampler-56"><span class="linenos">56</span></a>        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="n">RandomBatchSampler</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">:</span>
-</span><span id="RandomBatchSampler-57"><a href="#RandomBatchSampler-57"><span class="linenos">57</span></a>            <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train</span><span class="p">)</span>
-</span><span id="RandomBatchSampler-58"><a href="#RandomBatchSampler-58"><span class="linenos">58</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
-</span><span id="RandomBatchSampler-59"><a href="#RandomBatchSampler-59"><span class="linenos">59</span></a>        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="n">RandomBatchSampler</span><span class="o">.</span><span class="n">VALIDATION</span><span class="p">:</span>
-</span><span id="RandomBatchSampler-60"><a href="#RandomBatchSampler-60"><span class="linenos">60</span></a>            <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train</span><span class="p">)</span>
-</span><span id="RandomBatchSampler-61"><a href="#RandomBatchSampler-61"><span class="linenos">61</span></a>            <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_train</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation</span><span class="p">))</span>
-</span><span id="RandomBatchSampler-62"><a href="#RandomBatchSampler-62"><span class="linenos">62</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
-</span><span id="RandomBatchSampler-63"><a href="#RandomBatchSampler-63"><span class="linenos">63</span></a>        <span class="k">else</span><span class="p">:</span>
-</span><span id="RandomBatchSampler-64"><a href="#RandomBatchSampler-64"><span class="linenos">64</span></a>            <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_train</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation</span><span class="p">))</span>
-</span><span id="RandomBatchSampler-65"><a href="#RandomBatchSampler-65"><span class="linenos">65</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="n">start</span><span class="p">:]</span>
-</span><span id="RandomBatchSampler-66"><a href="#RandomBatchSampler-66"><span class="linenos">66</span></a>
-</span><span id="RandomBatchSampler-67"><a href="#RandomBatchSampler-67"><span class="linenos">67</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="RandomBatchSampler-68"><a href="#RandomBatchSampler-68"><span class="linenos">68</span></a>
-</span><span id="RandomBatchSampler-69"><a href="#RandomBatchSampler-69"><span class="linenos">69</span></a>    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="RandomBatchSampler-70"><a href="#RandomBatchSampler-70"><span class="linenos">70</span></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span><span class="p">):</span>
-</span><span id="RandomBatchSampler-71"><a href="#RandomBatchSampler-71"><span class="linenos">71</span></a>            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span><span class="p">]</span>
-</span><span id="RandomBatchSampler-72"><a href="#RandomBatchSampler-72"><span class="linenos">72</span></a>
-</span><span id="RandomBatchSampler-73"><a href="#RandomBatchSampler-73"><span class="linenos">73</span></a>    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="RandomBatchSampler-74"><a href="#RandomBatchSampler-74"><span class="linenos">74</span></a>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span>
+</span><span id="RandomBatchSampler-17"><a href="#RandomBatchSampler-17"><span class="linenos">17</span></a>
+</span><span id="RandomBatchSampler-18"><a href="#RandomBatchSampler-18"><span class="linenos">18</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+</span><span id="RandomBatchSampler-19"><a href="#RandomBatchSampler-19"><span class="linenos">19</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="RandomBatchSampler-20"><a href="#RandomBatchSampler-20"><span class="linenos">20</span></a>        <span class="n">data_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="RandomBatchSampler-21"><a href="#RandomBatchSampler-21"><span class="linenos">21</span></a>        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="RandomBatchSampler-22"><a href="#RandomBatchSampler-22"><span class="linenos">22</span></a>        <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="RandomBatchSampler-23"><a href="#RandomBatchSampler-23"><span class="linenos">23</span></a>    <span class="p">):</span>
+</span><span id="RandomBatchSampler-24"><a href="#RandomBatchSampler-24"><span class="linenos">24</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span><span id="RandomBatchSampler-25"><a href="#RandomBatchSampler-25"><span class="linenos">25</span></a>
+</span><span id="RandomBatchSampler-26"><a href="#RandomBatchSampler-26"><span class="linenos">26</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">=</span> <span class="n">data_length</span>
+</span><span id="RandomBatchSampler-27"><a href="#RandomBatchSampler-27"><span class="linenos">27</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+</span><span id="RandomBatchSampler-28"><a href="#RandomBatchSampler-28"><span class="linenos">28</span></a>
+</span><span id="RandomBatchSampler-29"><a href="#RandomBatchSampler-29"><span class="linenos">29</span></a>        <span class="c1"># randomly permutate the indicies if shuffle is set to true, otherwise</span>
+</span><span id="RandomBatchSampler-30"><a href="#RandomBatchSampler-30"><span class="linenos">30</span></a>        <span class="c1"># use the indicies sequentially</span>
+</span><span id="RandomBatchSampler-31"><a href="#RandomBatchSampler-31"><span class="linenos">31</span></a>        <span class="k">if</span> <span class="n">shuffle</span><span class="p">:</span>
+</span><span id="RandomBatchSampler-32"><a href="#RandomBatchSampler-32"><span class="linenos">32</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+</span><span id="RandomBatchSampler-33"><a href="#RandomBatchSampler-33"><span class="linenos">33</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="RandomBatchSampler-34"><a href="#RandomBatchSampler-34"><span class="linenos">34</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="o">=</span> <span class="p">[</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_length</span><span class="p">)]</span>
+</span><span id="RandomBatchSampler-35"><a href="#RandomBatchSampler-35"><span class="linenos">35</span></a>
+</span><span id="RandomBatchSampler-36"><a href="#RandomBatchSampler-36"><span class="linenos">36</span></a>
+</span><span id="RandomBatchSampler-37"><a href="#RandomBatchSampler-37"><span class="linenos">37</span></a>    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="RandomBatchSampler-38"><a href="#RandomBatchSampler-38"><span class="linenos">38</span></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span><span class="p">):</span>
+</span><span id="RandomBatchSampler-39"><a href="#RandomBatchSampler-39"><span class="linenos">39</span></a>            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span><span class="p">]</span>
+</span><span id="RandomBatchSampler-40"><a href="#RandomBatchSampler-40"><span class="linenos">40</span></a>
+</span><span id="RandomBatchSampler-41"><a href="#RandomBatchSampler-41"><span class="linenos">41</span></a>    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="RandomBatchSampler-42"><a href="#RandomBatchSampler-42"><span class="linenos">42</span></a>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span>
 </span></pre></div>
 
 
             <div class="docstring"><p>A custom sampler that generates random batches of indices from a dataset.</p>
 
-<p>Attributes:
-    TRAIN (int): Index for training data.
-    VALIDATION (int): Index for validation data.
-    TEST (int): Index for testing data.</p>
+<p>Args:
+    data_length (int): The length of the dataset, which results in the highest index
+        to be returned by the sampler.
+    batch_size (int): The size of each batch that will be generated by the sampler.
+    shuffle (bool): Whether or not to randomly permutate the indicies.</p>
 </div>
 
 
@@ -246,124 +171,33 @@ split: train 70%, validation 20% and test 10%.</p>
                                         <input id="RandomBatchSampler.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
-        <span class="name">RandomBatchSampler</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">data_length</span><span class="p">:</span> <span class="nb">int</span>,</span><span class="param">	<span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span>,</span><span class="param">	<span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>,</span><span class="param">	<span class="n">train_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span>,</span><span class="param">	<span class="n">validation_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span></span>)</span>
+        <span class="name">RandomBatchSampler</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">data_length</span><span class="p">:</span> <span class="nb">int</span>, </span><span class="param"><span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span>, </span><span class="param"><span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span></span>)</span>
 
                 <label class="view-source-button" for="RandomBatchSampler.__init__-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#RandomBatchSampler.__init__"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="RandomBatchSampler.__init__-21"><a href="#RandomBatchSampler.__init__-21"><span class="linenos">21</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-</span><span id="RandomBatchSampler.__init__-22"><a href="#RandomBatchSampler.__init__-22"><span class="linenos">22</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="RandomBatchSampler.__init__-23"><a href="#RandomBatchSampler.__init__-23"><span class="linenos">23</span></a>        <span class="n">data_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="RandomBatchSampler.__init__-24"><a href="#RandomBatchSampler.__init__-24"><span class="linenos">24</span></a>        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="RandomBatchSampler.__init__-25"><a href="#RandomBatchSampler.__init__-25"><span class="linenos">25</span></a>        <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-</span><span id="RandomBatchSampler.__init__-26"><a href="#RandomBatchSampler.__init__-26"><span class="linenos">26</span></a>        <span class="n">train_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span>
-</span><span id="RandomBatchSampler.__init__-27"><a href="#RandomBatchSampler.__init__-27"><span class="linenos">27</span></a>        <span class="n">validation_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
-</span><span id="RandomBatchSampler.__init__-28"><a href="#RandomBatchSampler.__init__-28"><span class="linenos">28</span></a>    <span class="p">):</span>
-</span><span id="RandomBatchSampler.__init__-29"><a href="#RandomBatchSampler.__init__-29"><span class="linenos">29</span></a>        <span class="k">assert</span> <span class="n">train_size</span> <span class="o">+</span> <span class="n">validation_size</span> <span class="o">&lt;=</span> <span class="mi">1</span>
-</span><span id="RandomBatchSampler.__init__-30"><a href="#RandomBatchSampler.__init__-30"><span class="linenos">30</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-</span><span id="RandomBatchSampler.__init__-31"><a href="#RandomBatchSampler.__init__-31"><span class="linenos">31</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_train</span> <span class="o">=</span> <span class="n">train_size</span>
-</span><span id="RandomBatchSampler.__init__-32"><a href="#RandomBatchSampler.__init__-32"><span class="linenos">32</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_validation</span> <span class="o">=</span> <span class="n">validation_size</span>
-</span><span id="RandomBatchSampler.__init__-33"><a href="#RandomBatchSampler.__init__-33"><span class="linenos">33</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_test</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">train_size</span> <span class="o">+</span> <span class="n">validation_size</span><span class="p">)</span>
-</span><span id="RandomBatchSampler.__init__-34"><a href="#RandomBatchSampler.__init__-34"><span class="linenos">34</span></a>
-</span><span id="RandomBatchSampler.__init__-35"><a href="#RandomBatchSampler.__init__-35"><span class="linenos">35</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">=</span> <span class="n">data_length</span>
-</span><span id="RandomBatchSampler.__init__-36"><a href="#RandomBatchSampler.__init__-36"><span class="linenos">36</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-</span><span id="RandomBatchSampler.__init__-37"><a href="#RandomBatchSampler.__init__-37"><span class="linenos">37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train</span><span class="p">)]</span>
-</span><span id="RandomBatchSampler.__init__-38"><a href="#RandomBatchSampler.__init__-38"><span class="linenos">38</span></a>
-</span><span id="RandomBatchSampler.__init__-39"><a href="#RandomBatchSampler.__init__-39"><span class="linenos">39</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
-</span><span id="RandomBatchSampler.__init__-40"><a href="#RandomBatchSampler.__init__-40"><span class="linenos">40</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_shuffle</span> <span class="o">=</span> <span class="n">shuffle</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RandomBatchSampler.__init__-18"><a href="#RandomBatchSampler.__init__-18"><span class="linenos">18</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+</span><span id="RandomBatchSampler.__init__-19"><a href="#RandomBatchSampler.__init__-19"><span class="linenos">19</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="RandomBatchSampler.__init__-20"><a href="#RandomBatchSampler.__init__-20"><span class="linenos">20</span></a>        <span class="n">data_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="RandomBatchSampler.__init__-21"><a href="#RandomBatchSampler.__init__-21"><span class="linenos">21</span></a>        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="RandomBatchSampler.__init__-22"><a href="#RandomBatchSampler.__init__-22"><span class="linenos">22</span></a>        <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="RandomBatchSampler.__init__-23"><a href="#RandomBatchSampler.__init__-23"><span class="linenos">23</span></a>    <span class="p">):</span>
+</span><span id="RandomBatchSampler.__init__-24"><a href="#RandomBatchSampler.__init__-24"><span class="linenos">24</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span><span id="RandomBatchSampler.__init__-25"><a href="#RandomBatchSampler.__init__-25"><span class="linenos">25</span></a>
+</span><span id="RandomBatchSampler.__init__-26"><a href="#RandomBatchSampler.__init__-26"><span class="linenos">26</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">=</span> <span class="n">data_length</span>
+</span><span id="RandomBatchSampler.__init__-27"><a href="#RandomBatchSampler.__init__-27"><span class="linenos">27</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+</span><span id="RandomBatchSampler.__init__-28"><a href="#RandomBatchSampler.__init__-28"><span class="linenos">28</span></a>
+</span><span id="RandomBatchSampler.__init__-29"><a href="#RandomBatchSampler.__init__-29"><span class="linenos">29</span></a>        <span class="c1"># randomly permutate the indicies if shuffle is set to true, otherwise</span>
+</span><span id="RandomBatchSampler.__init__-30"><a href="#RandomBatchSampler.__init__-30"><span class="linenos">30</span></a>        <span class="c1"># use the indicies sequentially</span>
+</span><span id="RandomBatchSampler.__init__-31"><a href="#RandomBatchSampler.__init__-31"><span class="linenos">31</span></a>        <span class="k">if</span> <span class="n">shuffle</span><span class="p">:</span>
+</span><span id="RandomBatchSampler.__init__-32"><a href="#RandomBatchSampler.__init__-32"><span class="linenos">32</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+</span><span id="RandomBatchSampler.__init__-33"><a href="#RandomBatchSampler.__init__-33"><span class="linenos">33</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="RandomBatchSampler.__init__-34"><a href="#RandomBatchSampler.__init__-34"><span class="linenos">34</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="o">=</span> <span class="p">[</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_length</span><span class="p">)]</span>
 </span></pre></div>
 
 
     
-
-                            </div>
-                            <div id="RandomBatchSampler.TRAIN" class="classattr">
-                                <div class="attr variable">
-            <span class="name">TRAIN</span>        =
-<span class="default_value">0</span>
-
-        
-    </div>
-    <a class="headerlink" href="#RandomBatchSampler.TRAIN"></a>
-    
-    
-
-                            </div>
-                            <div id="RandomBatchSampler.VALIDATION" class="classattr">
-                                <div class="attr variable">
-            <span class="name">VALIDATION</span>        =
-<span class="default_value">1</span>
-
-        
-    </div>
-    <a class="headerlink" href="#RandomBatchSampler.VALIDATION"></a>
-    
-    
-
-                            </div>
-                            <div id="RandomBatchSampler.TEST" class="classattr">
-                                <div class="attr variable">
-            <span class="name">TEST</span>        =
-<span class="default_value">2</span>
-
-        
-    </div>
-    <a class="headerlink" href="#RandomBatchSampler.TEST"></a>
-    
-    
-
-                            </div>
-                            <div id="RandomBatchSampler.set_mode" class="classattr">
-                                        <input id="RandomBatchSampler.set_mode-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-<div class="attr function">
-            
-        <span class="def">def</span>
-        <span class="name">set_mode</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">mode</span><span class="p">:</span> <span class="nb">int</span></span><span class="return-annotation">) -> <span class="kc">None</span>:</span></span>
-
-                <label class="view-source-button" for="RandomBatchSampler.set_mode-view-source"><span>View Source</span></label>
-
-    </div>
-    <a class="headerlink" href="#RandomBatchSampler.set_mode"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="RandomBatchSampler.set_mode-42"><a href="#RandomBatchSampler.set_mode-42"><span class="linenos">42</span></a>    <span class="k">def</span> <span class="nf">set_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="RandomBatchSampler.set_mode-43"><a href="#RandomBatchSampler.set_mode-43"><span class="linenos">43</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="RandomBatchSampler.set_mode-44"><a href="#RandomBatchSampler.set_mode-44"><span class="linenos">44</span></a><span class="sd">        Sets the mode of the sampler to either TRAIN, VALIDATION, or TEST.</span>
-</span><span id="RandomBatchSampler.set_mode-45"><a href="#RandomBatchSampler.set_mode-45"><span class="linenos">45</span></a><span class="sd">        </span>
-</span><span id="RandomBatchSampler.set_mode-46"><a href="#RandomBatchSampler.set_mode-46"><span class="linenos">46</span></a><span class="sd">        Args:</span>
-</span><span id="RandomBatchSampler.set_mode-47"><a href="#RandomBatchSampler.set_mode-47"><span class="linenos">47</span></a><span class="sd">            mode (int): The mode to set (0 for TRAIN, 1 for VALIDATION, or 2 for TEST).</span>
-</span><span id="RandomBatchSampler.set_mode-48"><a href="#RandomBatchSampler.set_mode-48"><span class="linenos">48</span></a><span class="sd">            </span>
-</span><span id="RandomBatchSampler.set_mode-49"><a href="#RandomBatchSampler.set_mode-49"><span class="linenos">49</span></a><span class="sd">        Raises:</span>
-</span><span id="RandomBatchSampler.set_mode-50"><a href="#RandomBatchSampler.set_mode-50"><span class="linenos">50</span></a><span class="sd">            AssertionError: If the mode is not one of TRAIN, VALIDATION, or TEST.</span>
-</span><span id="RandomBatchSampler.set_mode-51"><a href="#RandomBatchSampler.set_mode-51"><span class="linenos">51</span></a><span class="sd">            AssertionError: If the indices have already been set.</span>
-</span><span id="RandomBatchSampler.set_mode-52"><a href="#RandomBatchSampler.set_mode-52"><span class="linenos">52</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="RandomBatchSampler.set_mode-53"><a href="#RandomBatchSampler.set_mode-53"><span class="linenos">53</span></a>        <span class="k">assert</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;Mode needs to be TRAIN, VALIDATION, TEST.&quot;</span>
-</span><span id="RandomBatchSampler.set_mode-54"><a href="#RandomBatchSampler.set_mode-54"><span class="linenos">54</span></a>        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Mode already set.&quot;</span>
-</span><span id="RandomBatchSampler.set_mode-55"><a href="#RandomBatchSampler.set_mode-55"><span class="linenos">55</span></a>
-</span><span id="RandomBatchSampler.set_mode-56"><a href="#RandomBatchSampler.set_mode-56"><span class="linenos">56</span></a>        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="n">RandomBatchSampler</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">:</span>
-</span><span id="RandomBatchSampler.set_mode-57"><a href="#RandomBatchSampler.set_mode-57"><span class="linenos">57</span></a>            <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train</span><span class="p">)</span>
-</span><span id="RandomBatchSampler.set_mode-58"><a href="#RandomBatchSampler.set_mode-58"><span class="linenos">58</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
-</span><span id="RandomBatchSampler.set_mode-59"><a href="#RandomBatchSampler.set_mode-59"><span class="linenos">59</span></a>        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="n">RandomBatchSampler</span><span class="o">.</span><span class="n">VALIDATION</span><span class="p">:</span>
-</span><span id="RandomBatchSampler.set_mode-60"><a href="#RandomBatchSampler.set_mode-60"><span class="linenos">60</span></a>            <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train</span><span class="p">)</span>
-</span><span id="RandomBatchSampler.set_mode-61"><a href="#RandomBatchSampler.set_mode-61"><span class="linenos">61</span></a>            <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_train</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation</span><span class="p">))</span>
-</span><span id="RandomBatchSampler.set_mode-62"><a href="#RandomBatchSampler.set_mode-62"><span class="linenos">62</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
-</span><span id="RandomBatchSampler.set_mode-63"><a href="#RandomBatchSampler.set_mode-63"><span class="linenos">63</span></a>        <span class="k">else</span><span class="p">:</span>
-</span><span id="RandomBatchSampler.set_mode-64"><a href="#RandomBatchSampler.set_mode-64"><span class="linenos">64</span></a>            <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_length</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_train</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation</span><span class="p">))</span>
-</span><span id="RandomBatchSampler.set_mode-65"><a href="#RandomBatchSampler.set_mode-65"><span class="linenos">65</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_mode_indicies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span><span class="p">[</span><span class="n">start</span><span class="p">:]</span>
-</span><span id="RandomBatchSampler.set_mode-66"><a href="#RandomBatchSampler.set_mode-66"><span class="linenos">66</span></a>
-</span><span id="RandomBatchSampler.set_mode-67"><a href="#RandomBatchSampler.set_mode-67"><span class="linenos">67</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_indicies</span> <span class="o">=</span> <span class="kc">None</span>
-</span></pre></div>
-
-
-            <div class="docstring"><p>Sets the mode of the sampler to either TRAIN, VALIDATION, or TEST.</p>
-
-<p>Args:
-    mode (int): The mode to set (0 for TRAIN, 1 for VALIDATION, or 2 for TEST).</p>
-
-<p>Raises:
-    AssertionError: If the mode is not one of TRAIN, VALIDATION, or TEST.
-    AssertionError: If the indices have already been set.</p>
-</div>
-
 
                             </div>
                 </section>

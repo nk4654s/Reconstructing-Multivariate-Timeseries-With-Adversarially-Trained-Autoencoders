@@ -45,6 +45,9 @@
                         <li>
                                 <a class="variable" href="#CallableDependency.NOT_BEFORE">NOT_BEFORE</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#CallableDependency.FINAL">FINAL</a>
+                        </li>
                 </ul>
 
             </li>
@@ -103,44 +106,45 @@
 </span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>    <span class="n">IMMEDIATELY_BEFORE</span> <span class="o">=</span> <span class="s2">&quot;immediately_before&quot;</span>
 </span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>    <span class="n">EXISTS</span> <span class="o">=</span> <span class="s2">&quot;exists&quot;</span>
 </span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>    <span class="n">NOT_BEFORE</span> <span class="o">=</span> <span class="s2">&quot;not_before&quot;</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>    <span class="n">FINAL</span> <span class="o">=</span> <span class="s2">&quot;final&quot;</span>
 </span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="k">class</span> <span class="nc">FileWorkerCallable</span><span class="p">:</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The FileWorkerCallable defines the task, which the</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="sd">    FileWorkerThread should execute.</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>    <span class="k">def</span> <span class="nf">get_dependencies</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CallableDependency</span><span class="p">]:</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method should return a list of dependencies for this callable instance.</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="sd">        Returns:</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="sd">            List[str]: A list of dependencies for this callable instance.</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>        <span class="k">return</span> <span class="p">{}</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>    <span class="k">def</span> <span class="nf">finish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">FileWorkerContext</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method will be executed on last and should be used to do some clean-up.</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">        Args:</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">            context (FileWorkerContext): A context object, which contains</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">            information passed between modules.</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">            metadata (Metadata): A Metadata object containing information about</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="sd">            the dataset.</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">FileWorkerContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method will be executed by the FileWorkerThread.</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">        Args:</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="sd">            file_path (str): The file path as string.</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">            context (FileWorkerContext): A context object, which contains</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a><span class="sd">            information passed between modules.</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="sd">        Returns:</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a><span class="sd">            Any result of the file processing task. Can be `None`.</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="k">class</span> <span class="nc">FileWorkerCallable</span><span class="p">:</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The FileWorkerCallable defines the task, which the</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="sd">    FileWorkerThread should execute.</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>    <span class="k">def</span> <span class="nf">get_dependencies</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CallableDependency</span><span class="p">]:</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method should return a list of dependencies for this callable instance.</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="sd">        Returns:</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a><span class="sd">            List[str]: A list of dependencies for this callable instance.</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>        <span class="k">return</span> <span class="p">{}</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>    <span class="k">def</span> <span class="nf">finish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">FileWorkerContext</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method will be executed on last and should be used to do some clean-up.</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">        Args:</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">            context (FileWorkerContext): A context object, which contains</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">            information passed between modules.</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="sd">            metadata (Metadata): A Metadata object containing information about</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">            the dataset.</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">FileWorkerContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method will be executed by the FileWorkerThread.</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="sd">        Args:</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">            file_path (str): The file path as string.</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a><span class="sd">            context (FileWorkerContext): A context object, which contains</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="sd">            information passed between modules.</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>
+</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a><span class="sd">        Returns:</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="sd">            Any result of the file processing task. Can be `None`.</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </span></pre></div>
 
 
@@ -166,6 +170,7 @@
 </span><span id="CallableDependency-16"><a href="#CallableDependency-16"><span class="linenos">16</span></a>    <span class="n">IMMEDIATELY_BEFORE</span> <span class="o">=</span> <span class="s2">&quot;immediately_before&quot;</span>
 </span><span id="CallableDependency-17"><a href="#CallableDependency-17"><span class="linenos">17</span></a>    <span class="n">EXISTS</span> <span class="o">=</span> <span class="s2">&quot;exists&quot;</span>
 </span><span id="CallableDependency-18"><a href="#CallableDependency-18"><span class="linenos">18</span></a>    <span class="n">NOT_BEFORE</span> <span class="o">=</span> <span class="s2">&quot;not_before&quot;</span>
+</span><span id="CallableDependency-19"><a href="#CallableDependency-19"><span class="linenos">19</span></a>    <span class="n">FINAL</span> <span class="o">=</span> <span class="s2">&quot;final&quot;</span>
 </span></pre></div>
 
 
@@ -224,6 +229,18 @@ callable objects.</p>
     
 
                             </div>
+                            <div id="CallableDependency.FINAL" class="classattr">
+                                <div class="attr variable">
+            <span class="name">FINAL</span>        =
+<span class="default_value">&lt;<a href="#CallableDependency.FINAL">CallableDependency.FINAL</a>: &#39;final&#39;&gt;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#CallableDependency.FINAL"></a>
+    
+    
+
+                            </div>
                             <div class="inherited">
                                 <h5>Inherited Members</h5>
                                 <dl>
@@ -246,42 +263,42 @@ callable objects.</p>
 
     </div>
     <a class="headerlink" href="#FileWorkerCallable"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="FileWorkerCallable-21"><a href="#FileWorkerCallable-21"><span class="linenos">21</span></a><span class="k">class</span> <span class="nc">FileWorkerCallable</span><span class="p">:</span>
-</span><span id="FileWorkerCallable-22"><a href="#FileWorkerCallable-22"><span class="linenos">22</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The FileWorkerCallable defines the task, which the</span>
-</span><span id="FileWorkerCallable-23"><a href="#FileWorkerCallable-23"><span class="linenos">23</span></a><span class="sd">    FileWorkerThread should execute.</span>
-</span><span id="FileWorkerCallable-24"><a href="#FileWorkerCallable-24"><span class="linenos">24</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="FileWorkerCallable-25"><a href="#FileWorkerCallable-25"><span class="linenos">25</span></a>
-</span><span id="FileWorkerCallable-26"><a href="#FileWorkerCallable-26"><span class="linenos">26</span></a>    <span class="k">def</span> <span class="nf">get_dependencies</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CallableDependency</span><span class="p">]:</span>
-</span><span id="FileWorkerCallable-27"><a href="#FileWorkerCallable-27"><span class="linenos">27</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method should return a list of dependencies for this callable instance.</span>
-</span><span id="FileWorkerCallable-28"><a href="#FileWorkerCallable-28"><span class="linenos">28</span></a>
-</span><span id="FileWorkerCallable-29"><a href="#FileWorkerCallable-29"><span class="linenos">29</span></a><span class="sd">        Returns:</span>
-</span><span id="FileWorkerCallable-30"><a href="#FileWorkerCallable-30"><span class="linenos">30</span></a><span class="sd">            List[str]: A list of dependencies for this callable instance.</span>
-</span><span id="FileWorkerCallable-31"><a href="#FileWorkerCallable-31"><span class="linenos">31</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="FileWorkerCallable-32"><a href="#FileWorkerCallable-32"><span class="linenos">32</span></a>        <span class="k">return</span> <span class="p">{}</span>
-</span><span id="FileWorkerCallable-33"><a href="#FileWorkerCallable-33"><span class="linenos">33</span></a>
-</span><span id="FileWorkerCallable-34"><a href="#FileWorkerCallable-34"><span class="linenos">34</span></a>    <span class="k">def</span> <span class="nf">finish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">FileWorkerContext</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="FileWorkerCallable-35"><a href="#FileWorkerCallable-35"><span class="linenos">35</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method will be executed on last and should be used to do some clean-up.</span>
-</span><span id="FileWorkerCallable-36"><a href="#FileWorkerCallable-36"><span class="linenos">36</span></a>
-</span><span id="FileWorkerCallable-37"><a href="#FileWorkerCallable-37"><span class="linenos">37</span></a><span class="sd">        Args:</span>
-</span><span id="FileWorkerCallable-38"><a href="#FileWorkerCallable-38"><span class="linenos">38</span></a><span class="sd">            context (FileWorkerContext): A context object, which contains</span>
-</span><span id="FileWorkerCallable-39"><a href="#FileWorkerCallable-39"><span class="linenos">39</span></a><span class="sd">            information passed between modules.</span>
-</span><span id="FileWorkerCallable-40"><a href="#FileWorkerCallable-40"><span class="linenos">40</span></a><span class="sd">            metadata (Metadata): A Metadata object containing information about</span>
-</span><span id="FileWorkerCallable-41"><a href="#FileWorkerCallable-41"><span class="linenos">41</span></a><span class="sd">            the dataset.</span>
-</span><span id="FileWorkerCallable-42"><a href="#FileWorkerCallable-42"><span class="linenos">42</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="FileWorkerCallable-43"><a href="#FileWorkerCallable-43"><span class="linenos">43</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</span><span id="FileWorkerCallable-44"><a href="#FileWorkerCallable-44"><span class="linenos">44</span></a>
-</span><span id="FileWorkerCallable-45"><a href="#FileWorkerCallable-45"><span class="linenos">45</span></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">FileWorkerContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-</span><span id="FileWorkerCallable-46"><a href="#FileWorkerCallable-46"><span class="linenos">46</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method will be executed by the FileWorkerThread.</span>
-</span><span id="FileWorkerCallable-47"><a href="#FileWorkerCallable-47"><span class="linenos">47</span></a>
-</span><span id="FileWorkerCallable-48"><a href="#FileWorkerCallable-48"><span class="linenos">48</span></a><span class="sd">        Args:</span>
-</span><span id="FileWorkerCallable-49"><a href="#FileWorkerCallable-49"><span class="linenos">49</span></a><span class="sd">            file_path (str): The file path as string.</span>
-</span><span id="FileWorkerCallable-50"><a href="#FileWorkerCallable-50"><span class="linenos">50</span></a><span class="sd">            context (FileWorkerContext): A context object, which contains</span>
-</span><span id="FileWorkerCallable-51"><a href="#FileWorkerCallable-51"><span class="linenos">51</span></a><span class="sd">            information passed between modules.</span>
-</span><span id="FileWorkerCallable-52"><a href="#FileWorkerCallable-52"><span class="linenos">52</span></a>
-</span><span id="FileWorkerCallable-53"><a href="#FileWorkerCallable-53"><span class="linenos">53</span></a><span class="sd">        Returns:</span>
-</span><span id="FileWorkerCallable-54"><a href="#FileWorkerCallable-54"><span class="linenos">54</span></a><span class="sd">            Any result of the file processing task. Can be `None`.</span>
-</span><span id="FileWorkerCallable-55"><a href="#FileWorkerCallable-55"><span class="linenos">55</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="FileWorkerCallable-56"><a href="#FileWorkerCallable-56"><span class="linenos">56</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="FileWorkerCallable-22"><a href="#FileWorkerCallable-22"><span class="linenos">22</span></a><span class="k">class</span> <span class="nc">FileWorkerCallable</span><span class="p">:</span>
+</span><span id="FileWorkerCallable-23"><a href="#FileWorkerCallable-23"><span class="linenos">23</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The FileWorkerCallable defines the task, which the</span>
+</span><span id="FileWorkerCallable-24"><a href="#FileWorkerCallable-24"><span class="linenos">24</span></a><span class="sd">    FileWorkerThread should execute.</span>
+</span><span id="FileWorkerCallable-25"><a href="#FileWorkerCallable-25"><span class="linenos">25</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="FileWorkerCallable-26"><a href="#FileWorkerCallable-26"><span class="linenos">26</span></a>
+</span><span id="FileWorkerCallable-27"><a href="#FileWorkerCallable-27"><span class="linenos">27</span></a>    <span class="k">def</span> <span class="nf">get_dependencies</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CallableDependency</span><span class="p">]:</span>
+</span><span id="FileWorkerCallable-28"><a href="#FileWorkerCallable-28"><span class="linenos">28</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method should return a list of dependencies for this callable instance.</span>
+</span><span id="FileWorkerCallable-29"><a href="#FileWorkerCallable-29"><span class="linenos">29</span></a>
+</span><span id="FileWorkerCallable-30"><a href="#FileWorkerCallable-30"><span class="linenos">30</span></a><span class="sd">        Returns:</span>
+</span><span id="FileWorkerCallable-31"><a href="#FileWorkerCallable-31"><span class="linenos">31</span></a><span class="sd">            List[str]: A list of dependencies for this callable instance.</span>
+</span><span id="FileWorkerCallable-32"><a href="#FileWorkerCallable-32"><span class="linenos">32</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="FileWorkerCallable-33"><a href="#FileWorkerCallable-33"><span class="linenos">33</span></a>        <span class="k">return</span> <span class="p">{}</span>
+</span><span id="FileWorkerCallable-34"><a href="#FileWorkerCallable-34"><span class="linenos">34</span></a>
+</span><span id="FileWorkerCallable-35"><a href="#FileWorkerCallable-35"><span class="linenos">35</span></a>    <span class="k">def</span> <span class="nf">finish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">FileWorkerContext</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="FileWorkerCallable-36"><a href="#FileWorkerCallable-36"><span class="linenos">36</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method will be executed on last and should be used to do some clean-up.</span>
+</span><span id="FileWorkerCallable-37"><a href="#FileWorkerCallable-37"><span class="linenos">37</span></a>
+</span><span id="FileWorkerCallable-38"><a href="#FileWorkerCallable-38"><span class="linenos">38</span></a><span class="sd">        Args:</span>
+</span><span id="FileWorkerCallable-39"><a href="#FileWorkerCallable-39"><span class="linenos">39</span></a><span class="sd">            context (FileWorkerContext): A context object, which contains</span>
+</span><span id="FileWorkerCallable-40"><a href="#FileWorkerCallable-40"><span class="linenos">40</span></a><span class="sd">            information passed between modules.</span>
+</span><span id="FileWorkerCallable-41"><a href="#FileWorkerCallable-41"><span class="linenos">41</span></a><span class="sd">            metadata (Metadata): A Metadata object containing information about</span>
+</span><span id="FileWorkerCallable-42"><a href="#FileWorkerCallable-42"><span class="linenos">42</span></a><span class="sd">            the dataset.</span>
+</span><span id="FileWorkerCallable-43"><a href="#FileWorkerCallable-43"><span class="linenos">43</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="FileWorkerCallable-44"><a href="#FileWorkerCallable-44"><span class="linenos">44</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</span><span id="FileWorkerCallable-45"><a href="#FileWorkerCallable-45"><span class="linenos">45</span></a>
+</span><span id="FileWorkerCallable-46"><a href="#FileWorkerCallable-46"><span class="linenos">46</span></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">FileWorkerContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="FileWorkerCallable-47"><a href="#FileWorkerCallable-47"><span class="linenos">47</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method will be executed by the FileWorkerThread.</span>
+</span><span id="FileWorkerCallable-48"><a href="#FileWorkerCallable-48"><span class="linenos">48</span></a>
+</span><span id="FileWorkerCallable-49"><a href="#FileWorkerCallable-49"><span class="linenos">49</span></a><span class="sd">        Args:</span>
+</span><span id="FileWorkerCallable-50"><a href="#FileWorkerCallable-50"><span class="linenos">50</span></a><span class="sd">            file_path (str): The file path as string.</span>
+</span><span id="FileWorkerCallable-51"><a href="#FileWorkerCallable-51"><span class="linenos">51</span></a><span class="sd">            context (FileWorkerContext): A context object, which contains</span>
+</span><span id="FileWorkerCallable-52"><a href="#FileWorkerCallable-52"><span class="linenos">52</span></a><span class="sd">            information passed between modules.</span>
+</span><span id="FileWorkerCallable-53"><a href="#FileWorkerCallable-53"><span class="linenos">53</span></a>
+</span><span id="FileWorkerCallable-54"><a href="#FileWorkerCallable-54"><span class="linenos">54</span></a><span class="sd">        Returns:</span>
+</span><span id="FileWorkerCallable-55"><a href="#FileWorkerCallable-55"><span class="linenos">55</span></a><span class="sd">            Any result of the file processing task. Can be `None`.</span>
+</span><span id="FileWorkerCallable-56"><a href="#FileWorkerCallable-56"><span class="linenos">56</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="FileWorkerCallable-57"><a href="#FileWorkerCallable-57"><span class="linenos">57</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </span></pre></div>
 
 
@@ -301,13 +318,13 @@ FileWorkerThread should execute.</p>
 
     </div>
     <a class="headerlink" href="#FileWorkerCallable.get_dependencies"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="FileWorkerCallable.get_dependencies-26"><a href="#FileWorkerCallable.get_dependencies-26"><span class="linenos">26</span></a>    <span class="k">def</span> <span class="nf">get_dependencies</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CallableDependency</span><span class="p">]:</span>
-</span><span id="FileWorkerCallable.get_dependencies-27"><a href="#FileWorkerCallable.get_dependencies-27"><span class="linenos">27</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method should return a list of dependencies for this callable instance.</span>
-</span><span id="FileWorkerCallable.get_dependencies-28"><a href="#FileWorkerCallable.get_dependencies-28"><span class="linenos">28</span></a>
-</span><span id="FileWorkerCallable.get_dependencies-29"><a href="#FileWorkerCallable.get_dependencies-29"><span class="linenos">29</span></a><span class="sd">        Returns:</span>
-</span><span id="FileWorkerCallable.get_dependencies-30"><a href="#FileWorkerCallable.get_dependencies-30"><span class="linenos">30</span></a><span class="sd">            List[str]: A list of dependencies for this callable instance.</span>
-</span><span id="FileWorkerCallable.get_dependencies-31"><a href="#FileWorkerCallable.get_dependencies-31"><span class="linenos">31</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="FileWorkerCallable.get_dependencies-32"><a href="#FileWorkerCallable.get_dependencies-32"><span class="linenos">32</span></a>        <span class="k">return</span> <span class="p">{}</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="FileWorkerCallable.get_dependencies-27"><a href="#FileWorkerCallable.get_dependencies-27"><span class="linenos">27</span></a>    <span class="k">def</span> <span class="nf">get_dependencies</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CallableDependency</span><span class="p">]:</span>
+</span><span id="FileWorkerCallable.get_dependencies-28"><a href="#FileWorkerCallable.get_dependencies-28"><span class="linenos">28</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method should return a list of dependencies for this callable instance.</span>
+</span><span id="FileWorkerCallable.get_dependencies-29"><a href="#FileWorkerCallable.get_dependencies-29"><span class="linenos">29</span></a>
+</span><span id="FileWorkerCallable.get_dependencies-30"><a href="#FileWorkerCallable.get_dependencies-30"><span class="linenos">30</span></a><span class="sd">        Returns:</span>
+</span><span id="FileWorkerCallable.get_dependencies-31"><a href="#FileWorkerCallable.get_dependencies-31"><span class="linenos">31</span></a><span class="sd">            List[str]: A list of dependencies for this callable instance.</span>
+</span><span id="FileWorkerCallable.get_dependencies-32"><a href="#FileWorkerCallable.get_dependencies-32"><span class="linenos">32</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="FileWorkerCallable.get_dependencies-33"><a href="#FileWorkerCallable.get_dependencies-33"><span class="linenos">33</span></a>        <span class="k">return</span> <span class="p">{}</span>
 </span></pre></div>
 
 
@@ -330,16 +347,16 @@ FileWorkerThread should execute.</p>
 
     </div>
     <a class="headerlink" href="#FileWorkerCallable.finish"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="FileWorkerCallable.finish-34"><a href="#FileWorkerCallable.finish-34"><span class="linenos">34</span></a>    <span class="k">def</span> <span class="nf">finish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">FileWorkerContext</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="FileWorkerCallable.finish-35"><a href="#FileWorkerCallable.finish-35"><span class="linenos">35</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method will be executed on last and should be used to do some clean-up.</span>
-</span><span id="FileWorkerCallable.finish-36"><a href="#FileWorkerCallable.finish-36"><span class="linenos">36</span></a>
-</span><span id="FileWorkerCallable.finish-37"><a href="#FileWorkerCallable.finish-37"><span class="linenos">37</span></a><span class="sd">        Args:</span>
-</span><span id="FileWorkerCallable.finish-38"><a href="#FileWorkerCallable.finish-38"><span class="linenos">38</span></a><span class="sd">            context (FileWorkerContext): A context object, which contains</span>
-</span><span id="FileWorkerCallable.finish-39"><a href="#FileWorkerCallable.finish-39"><span class="linenos">39</span></a><span class="sd">            information passed between modules.</span>
-</span><span id="FileWorkerCallable.finish-40"><a href="#FileWorkerCallable.finish-40"><span class="linenos">40</span></a><span class="sd">            metadata (Metadata): A Metadata object containing information about</span>
-</span><span id="FileWorkerCallable.finish-41"><a href="#FileWorkerCallable.finish-41"><span class="linenos">41</span></a><span class="sd">            the dataset.</span>
-</span><span id="FileWorkerCallable.finish-42"><a href="#FileWorkerCallable.finish-42"><span class="linenos">42</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="FileWorkerCallable.finish-43"><a href="#FileWorkerCallable.finish-43"><span class="linenos">43</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="FileWorkerCallable.finish-35"><a href="#FileWorkerCallable.finish-35"><span class="linenos">35</span></a>    <span class="k">def</span> <span class="nf">finish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">FileWorkerContext</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="FileWorkerCallable.finish-36"><a href="#FileWorkerCallable.finish-36"><span class="linenos">36</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method will be executed on last and should be used to do some clean-up.</span>
+</span><span id="FileWorkerCallable.finish-37"><a href="#FileWorkerCallable.finish-37"><span class="linenos">37</span></a>
+</span><span id="FileWorkerCallable.finish-38"><a href="#FileWorkerCallable.finish-38"><span class="linenos">38</span></a><span class="sd">        Args:</span>
+</span><span id="FileWorkerCallable.finish-39"><a href="#FileWorkerCallable.finish-39"><span class="linenos">39</span></a><span class="sd">            context (FileWorkerContext): A context object, which contains</span>
+</span><span id="FileWorkerCallable.finish-40"><a href="#FileWorkerCallable.finish-40"><span class="linenos">40</span></a><span class="sd">            information passed between modules.</span>
+</span><span id="FileWorkerCallable.finish-41"><a href="#FileWorkerCallable.finish-41"><span class="linenos">41</span></a><span class="sd">            metadata (Metadata): A Metadata object containing information about</span>
+</span><span id="FileWorkerCallable.finish-42"><a href="#FileWorkerCallable.finish-42"><span class="linenos">42</span></a><span class="sd">            the dataset.</span>
+</span><span id="FileWorkerCallable.finish-43"><a href="#FileWorkerCallable.finish-43"><span class="linenos">43</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="FileWorkerCallable.finish-44"><a href="#FileWorkerCallable.finish-44"><span class="linenos">44</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </span></pre></div>
 
 
@@ -365,18 +382,18 @@ FileWorkerThread should execute.</p>
 
     </div>
     <a class="headerlink" href="#FileWorkerCallable.run"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="FileWorkerCallable.run-45"><a href="#FileWorkerCallable.run-45"><span class="linenos">45</span></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">FileWorkerContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-</span><span id="FileWorkerCallable.run-46"><a href="#FileWorkerCallable.run-46"><span class="linenos">46</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method will be executed by the FileWorkerThread.</span>
-</span><span id="FileWorkerCallable.run-47"><a href="#FileWorkerCallable.run-47"><span class="linenos">47</span></a>
-</span><span id="FileWorkerCallable.run-48"><a href="#FileWorkerCallable.run-48"><span class="linenos">48</span></a><span class="sd">        Args:</span>
-</span><span id="FileWorkerCallable.run-49"><a href="#FileWorkerCallable.run-49"><span class="linenos">49</span></a><span class="sd">            file_path (str): The file path as string.</span>
-</span><span id="FileWorkerCallable.run-50"><a href="#FileWorkerCallable.run-50"><span class="linenos">50</span></a><span class="sd">            context (FileWorkerContext): A context object, which contains</span>
-</span><span id="FileWorkerCallable.run-51"><a href="#FileWorkerCallable.run-51"><span class="linenos">51</span></a><span class="sd">            information passed between modules.</span>
-</span><span id="FileWorkerCallable.run-52"><a href="#FileWorkerCallable.run-52"><span class="linenos">52</span></a>
-</span><span id="FileWorkerCallable.run-53"><a href="#FileWorkerCallable.run-53"><span class="linenos">53</span></a><span class="sd">        Returns:</span>
-</span><span id="FileWorkerCallable.run-54"><a href="#FileWorkerCallable.run-54"><span class="linenos">54</span></a><span class="sd">            Any result of the file processing task. Can be `None`.</span>
-</span><span id="FileWorkerCallable.run-55"><a href="#FileWorkerCallable.run-55"><span class="linenos">55</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="FileWorkerCallable.run-56"><a href="#FileWorkerCallable.run-56"><span class="linenos">56</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="FileWorkerCallable.run-46"><a href="#FileWorkerCallable.run-46"><span class="linenos">46</span></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">FileWorkerContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="FileWorkerCallable.run-47"><a href="#FileWorkerCallable.run-47"><span class="linenos">47</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;This method will be executed by the FileWorkerThread.</span>
+</span><span id="FileWorkerCallable.run-48"><a href="#FileWorkerCallable.run-48"><span class="linenos">48</span></a>
+</span><span id="FileWorkerCallable.run-49"><a href="#FileWorkerCallable.run-49"><span class="linenos">49</span></a><span class="sd">        Args:</span>
+</span><span id="FileWorkerCallable.run-50"><a href="#FileWorkerCallable.run-50"><span class="linenos">50</span></a><span class="sd">            file_path (str): The file path as string.</span>
+</span><span id="FileWorkerCallable.run-51"><a href="#FileWorkerCallable.run-51"><span class="linenos">51</span></a><span class="sd">            context (FileWorkerContext): A context object, which contains</span>
+</span><span id="FileWorkerCallable.run-52"><a href="#FileWorkerCallable.run-52"><span class="linenos">52</span></a><span class="sd">            information passed between modules.</span>
+</span><span id="FileWorkerCallable.run-53"><a href="#FileWorkerCallable.run-53"><span class="linenos">53</span></a>
+</span><span id="FileWorkerCallable.run-54"><a href="#FileWorkerCallable.run-54"><span class="linenos">54</span></a><span class="sd">        Returns:</span>
+</span><span id="FileWorkerCallable.run-55"><a href="#FileWorkerCallable.run-55"><span class="linenos">55</span></a><span class="sd">            Any result of the file processing task. Can be `None`.</span>
+</span><span id="FileWorkerCallable.run-56"><a href="#FileWorkerCallable.run-56"><span class="linenos">56</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="FileWorkerCallable.run-57"><a href="#FileWorkerCallable.run-57"><span class="linenos">57</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </span></pre></div>
 
 
