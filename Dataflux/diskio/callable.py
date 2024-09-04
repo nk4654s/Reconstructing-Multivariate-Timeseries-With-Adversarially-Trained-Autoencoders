@@ -1,20 +1,22 @@
 """Contains the base class for a post-processing module."""
-from enum import Enum
+from enum import Enum, unique, auto
 from typing import Any, Dict
 from Dataflux.helper import Metadata
 from .context import FileWorkerContext
 
 
+@unique
 class CallableDependency(Enum):
     """Represents dependencies for callable objects.
     
     This enum represents different types of dependencies between
     callable objects.
     """
-    IMMEDIATELY_AFTER = "immediately_after"
-    IMMEDIATELY_BEFORE = "immediately_before"
-    EXISTS = "exists"
-    NOT_BEFORE = "not_before"
+    IMMEDIATELY_AFTER = auto()
+    IMMEDIATELY_BEFORE = auto()
+    EXISTS = auto()
+    NOT_BEFORE = auto()
+    FINAL = auto()
 
 
 class FileWorkerCallable:

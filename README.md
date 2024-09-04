@@ -19,6 +19,12 @@ pip install -e .
 
 > Note: The last output line should contain `Successfully installed Dataflux-1.0`.
 
+# Documentation
+The documentation can be generated with:
+```
+sh scripts/build-docs.sh
+```
+
 # Usage
 The application main script can be executed by typing `flux-pipeline`. In general, the `flux-pipeline` downloads a dataset from the Amazon S3 bucket, runs some preprocessing and stores the files on the local disk. Afterward, the data is further processed (e.g. normalize the dataset). The recommended way to execute the pipeline is by configuring a `yaml`-config file. An example for a config file is available under `configs/green_config.yaml`.
 

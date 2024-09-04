@@ -1,6 +1,7 @@
 # remove MacOS files
 .DS_Store
 .VSCodeCounter
+docs/
 
 # ignore python cache and log files
 logfile
