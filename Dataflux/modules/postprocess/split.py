@@ -11,7 +11,7 @@ from Dataflux import logger
 def deterministic_split_algorithm(meta: Metadata, percentage: float) -> Tuple[List, List]:
     """
     This function splits the days of a dataset's metadata into two lists. The first list contains
-    the first `1 - percentage` of days. The second list contains the remaining days.
+    the days which make up `1 - percentage` of total recordings. The second list contains the remaining days.
 
     Args:
         meta (Metadata): Metadata object containing the days.
