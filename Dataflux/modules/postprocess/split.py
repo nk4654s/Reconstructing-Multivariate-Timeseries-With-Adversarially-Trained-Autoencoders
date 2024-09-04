@@ -53,7 +53,7 @@ def deterministic_split_algorithm(meta: Metadata, percentage: float) -> Tuple[Li
 
     # log some data
     actual_percentage = round(iterative_recordings / total_recordings * 100, 2)
-    logger.debug("Targeted %s% and setteled on %s%", percentage * 100, actual_percentage)
+    logger.debug("Targeted %s%% and setteled on %s%%", percentage * 100, actual_percentage)
     logger.debug("Training set has %s days and validation set has %s", len(trimmed_days), len(selected_days))
 
     return trimmed_days, selected_days
