@@ -90,8 +90,8 @@ class SplitDataset(FileWorkerCallable):
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         # split the dataset according to each dataframes metadata
         trimmed_days, splitted_days = deterministic_split_algorithm(metadata, self._percentage)
-        trimmed_total = sum([_["recordings"] for _ in trimmed_days])
-        splitted_total = sum([_["recordings"] for _ in splitted_days])
+        trimmed_total = sum([d["recordings"] for d in trimmed_days])
+        splitted_total = sum([d["recordings"] for d in splitted_days])
 
         # update the total recordings and files in the metadata
         metadata.put(trimmed_total, Meta.TOTAL_RECORDINGS)
