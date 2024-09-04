@@ -121,6 +121,6 @@ class SplitDataset(FileWorkerCallable):
         # do not forget to move the normalizer
         trimmed_norm = os.path.join(metadata[Meta.PATH], "metadata", "normalizer.pkl")
         splitted_norm = os.path.join(self._name, "metadata", "normalizer.pkl")
-        shutil.move(trimmed_norm, splitted_norm)
+        shutil.copyfile(trimmed_norm, splitted_norm)
 
 
