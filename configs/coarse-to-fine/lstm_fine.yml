@@ -52,14 +52,13 @@ model:
         predict_key: sensors
 data:
   # configure dataset to load
-  path: /Users/jonas/Dataset/labeled/dataset-cat-green
-  input_sequence: 200
+  train: /Users/jonas/Dataset/labeled/dataset-cat-green
+  validate: /Users/jonas/Dataset/labeled/dataset-cat-gray
+  input_sequence: 100
   output_sequence: 0
   skip: 5
   # configure how to sample from the dataset
   batch_size: 256
   shuffle: true
-  train_size: 0.7
-  validation_size: 0.2
   # configure the workers sampling the dataset
   num_workers: 4
