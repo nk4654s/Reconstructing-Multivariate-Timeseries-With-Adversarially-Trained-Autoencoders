@@ -10,6 +10,7 @@ models/
 logs/
 logfile
 Dockerfile
+docs/
 
 # exclude temporary checkpoints
 *.ckpt
