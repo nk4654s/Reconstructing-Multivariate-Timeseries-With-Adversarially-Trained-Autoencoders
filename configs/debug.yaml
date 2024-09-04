@@ -1,4 +1,4 @@
-folder: dataset-cat-orange
+folder: dataset-debug
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
   - 2023-04-01 2023-04-10
@@ -60,6 +60,6 @@ postprocessing:
       from_other: dataset-cat-green
   - class_path: Dataflux.modules.postprocess.split.SplitDataset
     init_args:
-      name: debug-split
+      name: dataset-debug-split
       percentage: 0.2
       overwrite: true
