@@ -56,6 +56,10 @@ class FileWorkerPool:
                 elif mode == CallableDependency.NOT_BEFORE:
                     j, _ = all_modules[module_name]
                     assert i < j, f"{module_name} should come after {name}"
+                
+                elif mode == CallableDependency.FINAL:
+                    j, _ = all_modules[module_name]
+                    assert i == j, f"{module_name} should be the last module"
 
     def start_processing(self) -> Metadata:
         """The method starts processing all files of the dataset using the

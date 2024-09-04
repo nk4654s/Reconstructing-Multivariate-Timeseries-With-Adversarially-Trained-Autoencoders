@@ -15,6 +15,7 @@ class CallableDependency(Enum):
     IMMEDIATELY_BEFORE = "immediately_before"
     EXISTS = "exists"
     NOT_BEFORE = "not_before"
+    FINAL = "final"
 
 
 class FileWorkerCallable:
