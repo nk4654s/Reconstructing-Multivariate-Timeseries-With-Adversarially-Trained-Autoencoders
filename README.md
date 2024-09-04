@@ -2,6 +2,12 @@
 
 This repository contains the code for training a model, which predicts the future of a compressor. The dataset required for training can be downloaded an pre-process using the [Dataflux](https://github.com/neaxplore/xplore-ai-s3prep/tree/master) repository. Hence, this code relies on the `Dataflux` python package.
 
+# Documentation
+The documentation will be generated when building the `Comprisk` package. To do so, run:
+```
+sh scripts/build.sh
+```
+
 ## Folder Structure
 When starting a training, the folder `lightning_logs/` contains the model's weights, configuration used, tensorboard, and insights into the model's performance.
 
