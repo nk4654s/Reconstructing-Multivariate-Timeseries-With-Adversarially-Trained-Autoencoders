@@ -29,7 +29,7 @@ def cli_main():
     base_path = get_config_folder(cli)
 
     # load the dataset and configure it to work with the trained model
-    dataset = cli.datamodule.dataset
+    dataset = cli.datamodule.trainset
     if cli.config.dataset:
         meta = dataset.get_meta()
         dataset = Dataset(cli.config.dataset,

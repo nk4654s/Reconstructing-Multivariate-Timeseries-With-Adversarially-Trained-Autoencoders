@@ -98,7 +98,7 @@ def run_trainer(cli: CompriskCLI) -> str:
         logger.warning("ModelCheckpoint callback not defined in yaml-config.")
 
     # save model metadata to log folder
-    data = cli.datamodule.dataset
+    data = cli.datamodule.trainset
     metafolder = os.path.join(tb_logger.log_dir, "metadata")
     cli.trainer.callbacks.append(MeasurementCallback())
     save_training_meta(metafolder, data)
@@ -134,10 +134,10 @@ def run_trainer(cli: CompriskCLI) -> str:
 
     # load the (best) trained model back
     loader = ModelLoader(tb_logger.log_dir)
-    predicted, target = loader.predict_loop(data)
+    predicted, target = loader.predict_loop(cli.datamodule.valset)
 
     # fit and save the score transformer
-    score = ScoreTransformer()
+    score = ScoreTransformer(cli.datamodule.valset.get_meta().num_input_sequence)
     score.fit(predicted, target)
 
     score_path = os.path.join(metafolder, "score_transformer.pkl")

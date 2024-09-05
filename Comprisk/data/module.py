@@ -82,13 +82,22 @@ class DataModule(L.LightningDataModule):
         logger.debug("Dataset output sequence: %s", output_sequence)
 
     @property
-    def dataset(self) -> Dataset:
-        """Returns the loaded dataset of this data module.
+    def trainset(self) -> Dataset:
+        """Returns the loaded training dataset of this data module.
 
         Returns:
             Dataset: the loaded dataset.
         """
         return self._train
+
+    @property
+    def valset(self) -> Dataset:
+        """Returns the loaded validation dataset of this data module.
+
+        Returns:
+            Dataset: the loaded dataset.
+        """
+        return self._val
 
     def _reset_samplers(self) -> None:
         self._train_sampler = None
