@@ -4,17 +4,15 @@ from datetime import date
 import gzip
 from io import BytesIO
 from multiprocessing import Pool
-import os
 from typing import List, TextIO, Tuple
 from uuid import UUID
 import numpy as np
 import pandas as pd
-from enum import Enum
-import boto3
 
 from Dataflux.data.header import Header
 from Dataflux import logger
 from Dataflux.helper.utils import get_day_list, line_str_to_array
+from Dataflux.data.s3io import S3Bucket
 
 
 class EmptyStreamError(Exception):
@@ -23,14 +21,7 @@ class EmptyStreamError(Exception):
         super().__init__(f"Stream of '{day}' is empty")
 
 
-class DataType(Enum):
-    """This enum contains the bucket types."""
-
-    MEASUREMENTS = "xplore-measurements"
-    REPORTS = "xplore-reports"
-
-
-class DataDownloader:
+class DataDownloader(S3Bucket):
     """
     This class downloads the raw TSV files from the S3 bucket and converts them to a pandas dataframe.
 
@@ -38,43 +29,10 @@ class DataDownloader:
         machine_uuid (str): The unique ID of the machine to download data from.
     """
     def __init__(self, machine_uuid: str | UUID) -> None:
-        self._uuid = machine_uuid
+        super().__init__(machine_uuid)
+
         self._header = None
         self._pool = Pool(12)
-
-        self._bucket = None
-        self._bucket_type = None
-        self._client = boto3.client("s3")
-
-    @property
-    def data_type(self) -> DataType:
-        """
-        The data type of the bucket to download from.
-        """
-        return self._bucket_type
-
-    def set_data_type(self, data_type: DataType) -> None:
-        """
-        Sets the data type of the bucket to download from.
-
-        Args:
-            data_type (DataType): The data type of the bucket to download from.
-        """
-        self._bucket = os.getenv("S3_BUCKET", data_type.value)
-        self._bucket_type = data_type
-
-    @property
-    def machine_uuid(self) -> str:
-        """The machines uuid."""
-        return self._uuid
-
-    def set_machine(self, machine_uuid: str | UUID) -> None:
-        """Sets the machines uuid.
-
-        Args:
-            machine_uuid (str | UUID): The machines uuid
-        """
-        self._uuid = machine_uuid
 
     def get_stream(self, day: str | date) -> TextIO:
         """
