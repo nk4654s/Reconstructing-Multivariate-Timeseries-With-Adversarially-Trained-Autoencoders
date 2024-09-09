@@ -54,4 +54,6 @@ postprocessing:
   - class_path: Dataflux.modules.postprocess.normalize.NormalizeFit
     init_args:
       method: minmax
+      exclude_keys:
+        - ts
   - class_path: Dataflux.modules.postprocess.normalize.NormalizeTransform
