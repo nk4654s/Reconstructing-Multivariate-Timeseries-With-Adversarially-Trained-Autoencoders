@@ -133,6 +133,13 @@ class DataUpdater(S3Bucket):
         # create the S3 bucket connection and download the files for each day
         downloader = DataDownloader(self._uuid, file_postfix="virtual")
         for day in days:
+            # 0. calculate the correct time steps for the day to update
+            ts_1 = datetime.datetime.strptime(day, "%Y/%m/%d").timestamp()
+            ts_1 = ts_1 if ts_1 > start_ts else start_ts
+
+            ts_2 = datetime.datetime.strptime(day, "%Y/%m/%d").timestamp() + 86400
+            ts_2 = ts_2 if ts_2 < end_ts else end_ts
+
             # 1. download the DataFrame
             df = downloader.get_dataframe(day)
 
@@ -141,7 +148,7 @@ class DataUpdater(S3Bucket):
             original_hash = self._hash(df)
 
             # 4. modify the dataframe with the callable
-            result_df = self._callable(start_ts, end_ts)
+            result_df = self._callable(ts_1, ts_2)
             df = pd.merge(df, result_df, how="cross", left_index=True, right_index=True)
 
             # 5. check the hash of the new dataframe and the original one.
