@@ -131,7 +131,7 @@ class DataUpdater(S3Bucket):
         days = get_day_list((start, end))
 
         # create the S3 bucket connection and download the files for each day
-        downloader = DataDownloader(self._uuid)
+        downloader = DataDownloader(self._uuid, file_postfix="virtual")
         for day in days:
             # 1. download the DataFrame
             df = downloader.get_dataframe(day)

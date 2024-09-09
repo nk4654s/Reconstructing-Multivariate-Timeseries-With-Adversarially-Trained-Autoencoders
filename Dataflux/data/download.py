@@ -28,9 +28,10 @@ class DataDownloader(S3Bucket):
     Args:
         machine_uuid (str): The unique ID of the machine to download data from.
     """
-    def __init__(self, machine_uuid: str | UUID) -> None:
+    def __init__(self, machine_uuid: str | UUID, file_postfix: str = None) -> None:
         super().__init__(machine_uuid)
 
+        self._postfix = f"-{file_postfix}" if file_postfix else""
         self._header = None
         self._pool = Pool(12)
 
@@ -55,7 +56,7 @@ class DataDownloader(S3Bucket):
         else:
             day = day.strftime("%Y/%m/%d")
 
-        path = f"{self._uuid}/days/{day}/{self._uuid}.tsv"
+        path = f"{self._uuid}/days/{day}/{self._uuid}{self._postfix}.tsv"
         logger.debug("Retrieving '%s:%s' from S3", self._bucket, path)
 
         # open and unconmpress the s3 stream given the bucket and path
