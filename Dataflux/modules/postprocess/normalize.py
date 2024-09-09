@@ -1,14 +1,14 @@
 from argparse import ArgumentError
+from enum import auto
 import os
 from threading import Lock
-from typing import Any, List, Tuple
+from typing import Any, List
 import numpy as np
 import pandas as pd
 import pickle
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
-from Dataflux.helper import Meta, Metadata
+from Dataflux.helper import Meta, Metadata, FluxScaler, ScalerMethod
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
-from Dataflux import logger
 
 mutex = Lock()
 
@@ -19,9 +19,7 @@ class ContextParam:
     This class provides constants for values and headers used
     in normalization operations.
     """
-    SCALER = "TrainNormalize_recorder"
-    HEADER = "TrainNormalize_header"
-    METHOD = "TrainNormalize_method"
+    SCALER = auto()
 
 
 class NormalizeFit(FileWorkerCallable):
@@ -32,35 +30,31 @@ class NormalizeFit(FileWorkerCallable):
     class.
     
     Attributes:
-        METHODS (list): A list of supported normalization methods.
-        [`minmax`, `standard`]
+        METHODS (list): A list of supported normalization methods. For supported methods, see
+            `Dataflux.helper.ScalerMethod`.
+    
+    Args:
+        method (str): The normalization method to use. Defaults to `minmax`. For supported
+            methods, see `Dataflux.helper.ScalerMethod`.
+        exclude_keys (list): A list of keys to exclude from normalization.
     """
-    METHODS = ["minmax", "standard", "robust"]
+    METHODS = {m.value: m for m in ScalerMethod}
 
-    def __init__(self, method: str = "minmax"):
-        self._method = method
-        self._header = None
-        assert self._method in NormalizeFit.METHODS, f"{method} is not supported."
+    def __init__(self, method: str = "minmax", exclude_keys: List[str] = ["ts"]):
+        assert method in self.METHODS.keys(), f"Scaling method {method} is not supported."
+        self._method = self.METHODS[method]
+        self._exclude = exclude_keys
 
     def get_dependencies(self) -> List[str]:
         return {NormalizeTransform.__name__: CallableDependency.IMMEDIATELY_AFTER}
 
-    def _get_scaler(self, context: FileWorkerContext):
-        with mutex:
-            # get minimum and maximum values from previous files
-            recorder = context.get(ContextParam.SCALER)
-            if recorder is None:
-                if self._method == "minmax":
-                    recorder = MinMaxScaler(feature_range=(-1, 1))
-                if self._method == "standard":
-                    recorder = StandardScaler()
-                if self._method == "robust":
-                    recorder = RobustScaler()
+    def _get_scaler(self, context: FileWorkerContext) -> FluxScaler:
+        # get minimum and maximum values from previous files
+        scaler = context.get(ContextParam.SCALER)
+        if scaler is None:
+            scaler = FluxScaler(self._method, self._exclude)
 
-            fit = recorder.fit
-            if self._method != "robust":
-                fit = recorder.partial_fit
-            return recorder, fit
+        return scaler
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
         print("trainnorm:", file_path)
@@ -68,20 +62,16 @@ class NormalizeFit(FileWorkerCallable):
         # dataframe is consistent
         df = pd.read_hdf(file_path, key="data")
         df = df.reindex(sorted(df.columns), axis=1)
-        self._header = df.columns.values
-
-        # get minimum and maximum values from previous files
-        recorder, fit = self._get_scaler(context)
-        fit(df)
 
         with mutex:
-            context.put(ContextParam.SCALER, recorder)
+            # get minimum and maximum values from previous files
+            scaler = self._get_scaler(context)
+            scaler.fit(df)
+
+            context.put(ContextParam.SCALER, scaler)
 
     def finish(self, context: FileWorkerContext, _: Metadata) -> None:
-        # pass the fitted values to the next callable
-        with mutex:
-            context.put(ContextParam.METHOD, self._method)
-            context.put(ContextParam.HEADER, self._header)
+        pass
 
 
 class NormalizeTransform(FileWorkerCallable):
@@ -106,7 +96,6 @@ class NormalizeTransform(FileWorkerCallable):
 
             with open(path, "rb") as f:
                 self._scaler = pickle.load(f)
-                self._scaler.set_output(transform="pandas")
 
     def get_dependencies(self) -> List[str]:
         return {NormalizeFit.__name__: CallableDependency.IMMEDIATELY_BEFORE}
@@ -116,7 +105,6 @@ class NormalizeTransform(FileWorkerCallable):
             return self._scaler
 
         scaler = context.get(ContextParam.SCALER)
-        scaler.set_output(transform="pandas")
         return scaler
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
@@ -128,33 +116,26 @@ class NormalizeTransform(FileWorkerCallable):
 
         # get the used normalization method and the fitted values
         scaler = self._get_scaler(context)
+        normed = scaler.transform(df, dtype=np.float32)
 
-        # apply normalization
-        normed = scaler.transform(df)
-        normed.astype(np.float32).to_hdf(file_path, key="norm")
+        normed.to_hdf(file_path, key="norm")
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
-        with mutex:
-            # get the fitted values and method
-            scaler = self._get_scaler(context)
-            method = context.get(ContextParam.METHOD)
-            header = context.get(ContextParam.HEADER)
+        # get the fitted values and method
+        scaler: FluxScaler = self._get_scaler(context)
 
-            # clear the context parameters as they are not needed anymore
-            context.clear(ContextParam.METHOD)
-            context.clear(ContextParam.HEADER)
-            context.clear(ContextParam.SCALER)
+        # clear the context parameters as they are not needed anymore
+        context.clear(ContextParam.SCALER)
 
-            # save the normalizer
-            path = os.path.join(metadata[Meta.PATH], "metadata", "normalizer.pkl")
-            with open(path, "wb") as f:
-                pickle.dump(scaler, f)
+        # save the normalizer
+        path = os.path.join(metadata[Meta.PATH], "metadata", "normalizer.pkl")
+        with open(path, "wb") as f:
+            pickle.dump(scaler, f)
 
-            # save the used normalization method and fitted values to the
-            # dataset's metadata
-            data = {
-                Meta.NORM_METHOD.name: method,
-                Meta.NORM_KEYS.name: [str(_) for _ in header],
-                Meta.NORM_PATH.name: path,
-            }
-            metadata.put(data, Meta.NORMALIZER)
+        # save the used normalization method and fitted values to the
+        # dataset's metadata
+        data = {
+            Meta.NORM_METHOD.name: scaler.method.value,
+            Meta.NORM_PATH.name: path,
+        }
+        metadata.put(data, Meta.NORMALIZER)
