@@ -111,7 +111,7 @@ class Dataset(torch.utils.data.Dataset):
         data = {key: [] for key in names}
 
         for i in range(0, int(len(self) * percentage), self._num_input):
-            sensors, weather, _ = self[i]
+            sensors, weather, _ = self._get(i, include_ts=True)
 
             num_weather = weather.shape[-1]
             for j in range(num_weather):
@@ -193,16 +193,21 @@ class Dataset(torch.utils.data.Dataset):
         hour = minutes / 60
         return day, hour
 
-    def __len__(self) -> int:
-        return self.shape[0]
+    def get_timestamp(self, index: int) -> int:
+        """Returns the timestamp of the provided index value.
 
-    def __iter__(self):
-        index = 0
-        while index < len(self):
-            yield self[index]
-            index += 1
+        Args:
+            index (int): The index of the timestamp.
+        
+        Returns:
+            int: The timestamp of the provided index value.
+        """
+        sensors, _, _ = self._get(index, include_ts=True)
+        names = np.array(self.get_meta().column_names_sensor)
+        ts_index = np.argwhere(names == "ts")[0][0]
+        return int(sensors[:, ts_index][0])
 
-    def __getitem__(self, index: int) -> np.array:
+    def _get(self, index: int, include_ts: bool = False) -> Tuple[np.array, np.array, np.array]:
         # find the day and the correct index for that file
         # start of the sequence will be: index + self._num_input ...
         day, index = self._tree.search(index)
@@ -212,13 +217,25 @@ class Dataset(torch.utils.data.Dataset):
 
         # get sensor/weather data, the cache returns values sorted by the dataframe's
         # column names for consistency
-        sensors, weather = self._cache.get(file_path, key=self._key)
+        sensors, weather = self._cache.get(file_path, key=self._key, include_ts=include_ts)
 
         x_1 = sensors[index:start_idx, :]
         x_2 = np.array([], dtype=np.float32) if weather is None else weather[index:start_idx, :]
         y = sensors[start_idx:end_idx, :]
 
         return x_1, x_2, y
+
+    def __len__(self) -> int:
+        return self.shape[0]
+
+    def __iter__(self):
+        index = 0
+        while index < len(self):
+            yield self._get(index)
+            index += 1
+
+    def __getitem__(self, index: int) -> Tuple[np.array, np.array, np.array]:
+        return self._get(index)
 
 
 if __name__ == "__main__":
@@ -229,8 +246,7 @@ if __name__ == "__main__":
 
     # end of file one: index=22121
 
-    DAY = 24 * 60 * 60
-    dataset = Dataset("/Users/jonas/Dataset/dataset-2021-22", DAY, DAY // 4, cache_size=None, skip=4)
+    dataset = Dataset("dataset-debug", 50, 0, cache_size=None, skip=1)
     for _ in tqdm(dataset):
         pass
 

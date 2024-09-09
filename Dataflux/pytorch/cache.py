@@ -28,6 +28,7 @@ class DataFrameCache:
         self._samples_read = {}
         self._add_history = []
         self._column_names = None
+        self._ts_index = None
 
     def _register(self, key: str, matrix: np.array) -> None:
         self._loaded[key] = matrix
@@ -52,13 +53,15 @@ class DataFrameCache:
         """
         return [c for c in self._column_names  if c not in WEATHER_KEYS]
 
-    def get(self, path: str, key: str = "norm") -> Tuple[np.array, np.array]:
+    def get(self, path: str, key: str = "norm", include_ts: bool = False) -> Tuple[np.array, np.array]:
         """
         Retrieves a DataFrame from the cache.
 
         Args:
             path (str): The path to the HDF5 file containing the data.
             key (str): The key for the data in the HDF5 file. Defaults to 'norm'.
+            include_ts (bool): Whether to include the timestamp column in the returned array. 
+                Defaults to False.
 
         Returns:
             A tuple of two numpy arrays: sensors and weather data.
@@ -72,6 +75,7 @@ class DataFrameCache:
             df = df.reindex(sorted(df.columns), axis=1)
             if self._column_names is None:
                 self._column_names = list(df.columns.values)
+                self._ts_index = np.argwhere(np.array(self._column_names) == "ts")[0][0]
 
             # get every nth value for weather and sensor data
             weather = None
@@ -91,4 +95,9 @@ class DataFrameCache:
             self._add_history.remove(path)
             del self._loaded[path]
 
+        if not include_ts:
+            sensors = sensors.copy()
+            np.delete(sensors, self._ts_index, axis=1)
+            return np.delete(sensors, self._ts_index, axis=1), weather
+        
         return sensors, weather
