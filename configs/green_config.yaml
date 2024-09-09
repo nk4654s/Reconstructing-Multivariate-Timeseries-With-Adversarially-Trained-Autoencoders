@@ -63,7 +63,6 @@ postprocessing:
         - PositionBypassregelventilPCV74381 (%)
         - Sammelwarnung
         - Startbereit
-        - ts
         - VD2StörungGekommen
         - VD2StörungGekommenQuittiert
         - VerdichterAbschaltungMitEntspannung
