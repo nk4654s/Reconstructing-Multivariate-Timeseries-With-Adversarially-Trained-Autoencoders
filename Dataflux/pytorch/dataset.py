@@ -70,6 +70,12 @@ class Dataset(torch.utils.data.Dataset):
         self._meta_factory.set(MetadataTypes.WEATHER, weather.shape[-1])
 
     @property
+    def UUID(self) -> str:
+        """Returns the unique ID of this.
+        """
+        return self._id
+
+    @property
     def directory(self) -> str:
         """Returns the base directory of this dataset.
         """
