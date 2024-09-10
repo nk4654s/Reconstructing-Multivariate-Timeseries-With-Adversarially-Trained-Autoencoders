@@ -1,28 +1,12 @@
 from datetime import datetime
-import hashlib
 
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 
 from Dataflux.helper import get_day_list
 from Dataflux.data.download import DataDownloader
-from Dataflux.data.s3io import S3Bucket
-
-
-def ts_to_datetime(ts: int) -> str:
-    """
-    This function converts a time step integer value to the datetime as string in the
-    format YYYY-MM-DD.
-
-    Args:
-        ts (int): time step integer value.
-    
-    Returns:
-        str: datetime as string in the format YYYY-MM-DD.
-    """
-    # transforms the time step integer value to the datetime as string
-    # in the format YYYY-MM-DD
-    return datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+from Dataflux.data.s3io import S3Bucket, DataType
 
 
 def compress(data: pd.DataFrame) -> pd.DataFrame:
@@ -68,14 +52,6 @@ def compress(data: pd.DataFrame) -> pd.DataFrame:
     return compressed.dropna(how="all")
 
 
-class UpdateConsistencyError(Exception):
-    """
-    This class defines the error which occurs, when a TSV-file was changed at positions
-    which should not be touched.
-    """
-    def __init__(self):
-        super().__init__("Update is not consistent, only new columns should be added.")
-
 
 class UpdateCallable:
     """
@@ -95,8 +71,8 @@ class UpdateCallable:
         """
         raise NotImplementedError()
 
-    def __call__(self) -> pd.DataFrame:
-        return self.modify()
+    def __call__(self, start: int, end: int) -> pd.DataFrame:
+        return self.get_update(start, end)
 
 
 class DataUpdater(S3Bucket):
@@ -112,9 +88,6 @@ class DataUpdater(S3Bucket):
         super().__init__(machine_uuid)
         self._callable = update_callable
 
-    def _hash(self, df: pd.DataFrame) -> int:
-        return int(hashlib.sha256(pd.util.hash_pandas_object(df, index=True).values).hexdigest(), 16)
-
     def update(self, start_ts: int, end_ts: int) -> None:
         """
         This method updates the data in the S3 for the given time frame. This method downloads the
@@ -126,44 +99,44 @@ class DataUpdater(S3Bucket):
             end (int): The end time steps of the timeframe to be updated.
         """
         # get start and end days
-        start = ts_to_datetime(start_ts)
-        end = ts_to_datetime(end_ts)
+        start = datetime.fromtimestamp(start_ts)
+        end = datetime.fromtimestamp(end_ts)
         days = get_day_list((start, end))
 
         # create the S3 bucket connection and download the files for each day
         downloader = DataDownloader(self._uuid, file_postfix="virtual")
-        for day in days:
+        downloader.set_data_type(DataType.MEASUREMENTS)
+        for day in tqdm(days, desc="Score to Virtual Sensors"):
             # 0. calculate the correct time steps for the day to update
-            ts_1 = datetime.datetime.strptime(day, "%Y/%m/%d").timestamp()
+            ts_1 = day.timestamp()
             ts_1 = ts_1 if ts_1 > start_ts else start_ts
 
-            ts_2 = datetime.datetime.strptime(day, "%Y/%m/%d").timestamp() + 86400
+            ts_2 = day.timestamp() + 86400
             ts_2 = ts_2 if ts_2 < end_ts else end_ts
 
-            # 1. download the DataFrame
+            # 1. download the DataFrame and ensure homogeneous time steps
             df = downloader.get_dataframe(day)
+            new_index = pd.Index(np.arange(df["ts"].iloc[0], df["ts"].iloc[-1], 1), name="ts")
+            df = df.set_index("ts").reindex(new_index).reset_index("ts")
+            df["ts"] = df["ts"].astype(np.float64)
 
-            # 3. Before modifying, store the current hash
-            original_columns = df.columns.values
-            original_hash = self._hash(df)
+            # 2. modify the dataframe with the callable
+            result_df = self._callable(ts_1, ts_2).reset_index()
+            result_df["ts"] = result_df["ts"].astype(np.float64)
+            df = pd.merge(result_df, df, how="outer", on="ts")
+            df = df.ffill()
 
-            # 4. modify the dataframe with the callable
-            result_df = self._callable(ts_1, ts_2)
-            df = pd.merge(df, result_df, how="cross", left_index=True, right_index=True)
-
-            # 5. check the hash of the new dataframe and the original one.
-            # the numbers should be identical for the untouched parts of the dataframes.
-            new_hash = self._hash(df[original_columns])
-            if new_hash != original_hash:
-                raise UpdateConsistencyError()
-
-            # 6. sort the columns by uuid-name
-            df = df.reindex(sorted(df.columns), axis=1)
-
-            # 7. apply the same compressing rules 
+            # 3. round to 3 decimals, as the front-end can not show more, then apply the same compressing rules 
+            df = df.round(3)
             df = compress(df)
 
-            # 8. export dataframe as tsv-file
+            # 4. sort the columns by uuid-name
+            df = df.set_index("ts")
+            df = df.dropna(how="all")
+            df = df.reindex(sorted(df.columns), axis=1)
+            df = df.reset_index()
+
+            # 5. export dataframe as tsv-file
             tsv = df.to_csv(sep="\t")
             path = f"{self._uuid}/days/{day}/{self._uuid}.tsv"
             # self._client.set_object(Bucket=self._bucket, Key=f"{path}")["Body"].write()
