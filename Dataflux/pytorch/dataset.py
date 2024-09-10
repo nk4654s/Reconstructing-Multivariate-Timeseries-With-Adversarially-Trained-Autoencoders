@@ -26,6 +26,7 @@ class Dataset(torch.utils.data.Dataset):
         input_sequence (int): The number of time steps for the input sequence.
         output_sequence (int): The number of time steps for the output sequence.
         cache_size (int, optional): The size of the cache. Defaults to None.
+        key (str): The key of the HDF-file specifying the data to load. Defaults to "norm".
 
     Returns:
         None
@@ -52,19 +53,26 @@ class Dataset(torch.utils.data.Dataset):
         self._id = self._metadata[Meta.MACHINE_UUID]
         self._base_dir = path
 
+        # create the custom iterators to navigate through the many dataset files
+        # the cache is responsible for loading and storing dataframes in memory,
+        # the tree is used to find the correct file based on a given index.
         data = {"window_size": input_sequence + output_sequence, "skip": skip}
         self._cache = DataFrameCache(cache_size, **data)
         self._tree = IndexTree(self._metadata, **data)
 
         # build metadata describing the dataset's configuration
+        # first, get an element from the cache to make sure it is fully initialized
+        sensors, weather, targets = self[0]
+
         self._meta_factory = MetadataFactory()
         self._meta_factory.set(MetadataTypes.IN_SEQUENCE, self._num_input)
         self._meta_factory.set(MetadataTypes.OUT_SEQUENCE, self._num_output)
-
-        sensors, weather, targets = self[0]
         self._meta_factory.set(MetadataTypes.NAMES, self._cache.columns)
         self._meta_factory.set(MetadataTypes.NAMES_SENSOR, self._cache.columns_sensor)
+        self._meta_factory.set(MetadataTypes.NAMES_SENSOR, self._cache.columns_sensor)
         self._meta_factory.set(MetadataTypes.SKIP, skip)
+        self._meta_factory.set(MetadataTypes.TS_INDEX, self._cache.ts_index)
+
         self._meta_factory.set(MetadataTypes.SENSOR, sensors.shape[-1])
         self._meta_factory.set(MetadataTypes.TARGET, targets.shape[-1])
         self._meta_factory.set(MetadataTypes.WEATHER, weather.shape[-1])
@@ -107,9 +115,14 @@ class Dataset(torch.utils.data.Dataset):
         Returns:
             DataFrame: The dataset as dataframe.
         """
-        names = self.get_meta().column_names
-        data = {key: [] for key in names}
+        # get the feature names to build the dataframe with it's header
+        # do not forget to add the timestamp column, if it exists
+        names = self._cache.columns
+        if self._cache.ts_index:
+            names.insert(self._cache.ts_index, "ts")
 
+        # create a temporary data container and build the dataframe
+        data = {key: [] for key in names}
         for i in range(0, int(len(self) * percentage), self._num_input):
             sensors, weather, _ = self._get(i, include_ts=True)
 
@@ -203,9 +216,8 @@ class Dataset(torch.utils.data.Dataset):
             int: The timestamp of the provided index value.
         """
         sensors, _, _ = self._get(index, include_ts=True)
-        names = np.array(self.get_meta().column_names_sensor)
-        ts_index = np.argwhere(names == "ts")[0][0]
-        return int(sensors[:, ts_index][0])
+        index = self._cache.ts_index
+        return int(sensors[:, index][0])
 
     def _get(self, index: int, include_ts: bool = False) -> Tuple[np.array, np.array, np.array]:
         # find the day and the correct index for that file

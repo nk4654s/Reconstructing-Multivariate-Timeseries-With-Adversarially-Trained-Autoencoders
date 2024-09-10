@@ -53,6 +53,15 @@ class DataFrameCache:
         """
         return [c for c in self._column_names  if c not in WEATHER_KEYS]
 
+    @property
+    def ts_index(self) -> int:
+        """The time step index of the dataframe' time series.
+        """
+        if self._ts_index is None and "ts" in self.columns:
+            self._ts_index = np.argwhere(np.array(self.columns) == "ts")[0][0]
+
+        return self._ts_index
+
     def get(self, path: str, key: str = "norm", include_ts: bool = False) -> Tuple[np.array, np.array]:
         """
         Retrieves a DataFrame from the cache.
@@ -68,16 +77,24 @@ class DataFrameCache:
         """
         data = self._loaded.get(path, None)
 
-        # load and register a new dataframe
+        # load and register a new dataframe so it won't loaded again if the cache
+        # is not full
         if data is None:
             # read dataframe and sort columns by name for consistency
             df = pd.read_hdf(path, key=key, mode="r")
             df = df.reindex(sorted(df.columns), axis=1)
-            if self._column_names is None:
-                self._column_names = list(df.columns.values)
-                self._ts_index = np.argwhere(np.array(self._column_names) == "ts")[0][0]
 
-            # get every nth value for weather and sensor data
+            # initialize the column names and ts-index value
+            if self.columns is None:
+                self._column_names = list(df.columns.values)
+
+                # initialize the ts-index value then remove it from the list of
+                # feature names, as it is not a feature
+                if self.ts_index:
+                    self._column_names.remove("ts")
+
+            # get every nth value for weather and sensor data, this reduces the amount of samples
+            # held back in memory
             weather = None
             weather_keys = [wk for wk in WEATHER_KEYS if wk in df.columns.values]
             if len(weather_keys) > 0:
@@ -89,15 +106,17 @@ class DataFrameCache:
         else:
             sensors, weather = data
 
-        # remove a dataframe, which was fully read
+        # remove a dataframe from memory, which was fully read
         self._samples_read[path] += 1
         if self._samples_read[path] == sensors.shape[0] - self._window_size:
             self._add_history.remove(path)
             del self._loaded[path]
 
-        if not include_ts:
+        # remove the ts-column from the data if configured
+        # make sure to not modify original data, when removing the column
+        if not include_ts and self.ts_index:
             sensors = sensors.copy()
-            np.delete(sensors, self._ts_index, axis=1)
-            return np.delete(sensors, self._ts_index, axis=1), weather
+            np.delete(sensors, self.ts_index, axis=1)
+            return np.delete(sensors, self.ts_index, axis=1), weather
         
         return sensors, weather
