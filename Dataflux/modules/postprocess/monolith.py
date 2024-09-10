@@ -40,7 +40,6 @@ class ThreadSafeStore:
             if self._store is None:
                 self._path = path
                 self._store = pd.HDFStore(path, mode="w")
-                print("Created Store...")
 
     def add_dataframe(self, df: pd.DataFrame) -> None:
         """Adds a dataframe to the HDF5 store.
@@ -81,7 +80,6 @@ class MonoFile(FileWorkerCallable):
         if self._enable is not True or self._enable != "True":
             return None
 
-        print("monolith:", file_path)
         df = pd.read_hdf(file_path, key="norm")
         df = df.set_index("ts").reset_index()
 

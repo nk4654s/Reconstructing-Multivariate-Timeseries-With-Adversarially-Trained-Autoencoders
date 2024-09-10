@@ -45,7 +45,6 @@ class OutlierFit(FileWorkerCallable):
                 NormalizeTransform.__name__: CallableDependency.NOT_BEFORE}
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
-        print("findoutliers:", file_path)
         # Load the file into a pandas DataFrame
         df = pd.read_hdf(file_path, key="data")
         df = df.reindex(sorted(df.columns), axis=1)
@@ -94,7 +93,6 @@ class OutlierTransform(FileWorkerCallable):
         if self._enable is not True or self._enable != "True":
             return None
 
-        print("removeoutliers:", file_path)
         df = pd.read_hdf(file_path, key="data")
         df = df.reindex(sorted(df.columns), axis=1)
 
@@ -108,7 +106,6 @@ class OutlierTransform(FileWorkerCallable):
 
         day = file_path.split("_", maxsplit=1)[-1][:-3]
         if df.empty:
-            print("\tRemoving empty file", file_path)
             self._removed_files.append(day)
             os.remove(file_path)
         else:

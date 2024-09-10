@@ -57,7 +57,6 @@ class NormalizeFit(FileWorkerCallable):
         return scaler
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
-        print("trainnorm:", file_path)
         # Load the file into a pandas DataFrame, sort by column names to ensure that
         # dataframe is consistent
         df = pd.read_hdf(file_path, key="data")
@@ -108,7 +107,6 @@ class NormalizeTransform(FileWorkerCallable):
         return scaler
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
-        print("applynorm:", file_path)
         # read the file as pandas dataframe and sort by column names
         # to be consistent with the fitted values
         df = pd.read_hdf(file_path, key="data")

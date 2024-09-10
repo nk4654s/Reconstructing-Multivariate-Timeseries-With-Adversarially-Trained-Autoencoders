@@ -45,7 +45,6 @@ class FileWorkerThread(threading.Thread):
         self._result = []
         for f in self._files:
             if not os.path.exists(f):
-                print(f"\tSkip {f}, does not exist.")
                 continue
             res = self._module.run(f, self._context)
             if res:

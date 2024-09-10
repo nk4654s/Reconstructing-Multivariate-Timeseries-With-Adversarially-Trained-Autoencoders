@@ -23,7 +23,6 @@ class RemoveColumns(FileWorkerCallable):
         return {NormalizeFit.__name__: CallableDependency.NOT_BEFORE}
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
-        print("remove_col: " + file_path)
         df = pd.read_hdf(file_path, key="data")
         df = df.drop(columns=self._columns, errors="ignore")
         df.to_hdf(file_path, key="data", format="table", mode="w")

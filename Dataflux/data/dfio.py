@@ -78,8 +78,7 @@ class DFIO:
 
         # iterate over all streams and append their content to the dataframe
         init_save = True
-        desc = f"Fetching TSV daily data for machine {self._donwloader.machine_uuid}"
-        for i in trange(len(self._donwloader), desc=desc):
+        for i in trange(len(self._donwloader), desc="Pre-Processing Dataset"):
             # get the DataFrame of the  stream, skip if the stream could not be opened
             try:
                 df = self._donwloader[i]
