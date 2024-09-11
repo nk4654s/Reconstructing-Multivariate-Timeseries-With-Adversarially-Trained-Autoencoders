@@ -12,7 +12,13 @@ trainer:
 analyzer:
 # 4. generate data on the test dataset
   - dataset: /Users/jonas/Dataset/labeled/dataset-cat-orange
-    prefix: orange
-# 5. generate data on the train dataset
+    prefix: analysis/orange
+# 5. generate data on the test dataset
+  - dataset: /Users/jonas/Dataset/labeled/dataset-cat-purpur
+    prefix: analysis/purpur
+# 6. generate data on the validation dataset
+  - dataset: /Users/jonas/Dataset/labeled/dataset-cat-gray
+    prefix: analysis/gray
+# 7. generate data on the train dataset
   - dataset: /Users/jonas/Dataset/labeled/dataset-cat-green
-    prefix: green
+    prefix: analysis/green

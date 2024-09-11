@@ -100,6 +100,10 @@ def get_tensor_from_dataset(dataset: Dataset, i: int, device: str) -> Tuple[torc
     """
     sensors, weather, _ = dataset[i]
 
+    if device.type == "mps":
+        sensors = sensors.astype(np.float32)
+        weather = weather.astype(np.float32)
+
     sensors = torch.tensor(sensors, device=device)
     sensors = torch.unsqueeze(sensors, dim=0)
     weather = torch.tensor(weather, device=device)
@@ -179,8 +183,9 @@ class ModelLoader:
         # 1. iterate over dataset, with shuffle deactivated
         predicted = {key: [] for key in meta.column_names_sensor}
         inputs = {key: [] for key in meta.column_names_sensor}
+        ts_index = []
 
-        for i in tqdm(range(0, len(dataset), step)):
+        for i in tqdm(range(0, len(dataset), step), desc="Prediction with Model"):
             # 2. move the data to the correct device and pass the data to the model
             sensors, weather = get_tensor_from_dataset(dataset, i, self._model.device)
             target = self._model.predict({"sensors": sensors, "weather": weather}, True)[0]
@@ -188,13 +193,15 @@ class ModelLoader:
             # 3. store the model inputs/outputs to a temporary dict
             store_model_output(meta.column_names_sensor, predicted, target)
             store_model_output(meta.column_names_sensor, inputs, sensors.cpu().numpy()[0])
+            ts_index += [dataset.get_timestamp(i) for _ in range(step)]
 
         # 4. finalize dataframe, give columns names matching input dataframe column names
+        index = pd.Index(ts_index, name="ts")
         logger.debug("Creating 'prediction' Dataframe of gathered data")
-        predicted = pd.DataFrame(predicted)
+        predicted = pd.DataFrame(predicted, index=index)
 
         logger.debug("Creating 'inputs' Dataframe of gathered data")
-        inputs = pd.DataFrame(inputs)
+        inputs = pd.DataFrame(inputs, index=index)
         return predicted, inputs
 
     def get_score_transformer(self) -> ScoreTransformer:

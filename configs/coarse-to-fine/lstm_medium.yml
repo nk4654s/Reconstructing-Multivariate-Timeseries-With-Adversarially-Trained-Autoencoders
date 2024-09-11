@@ -6,7 +6,7 @@ trainer:
       init_args:
         monitor: validate/MSELoss
         min_delta: 0.0001
-        patience: 2
+        patience: 3
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
         every_n_epochs: 1
@@ -19,7 +19,7 @@ trainer:
         
   # define training configuration
   precision: 32
-  max_epochs: 10
+  max_epochs: 50
   gradient_clip_val: 1.0
 #  profiler: "simple"
   log_every_n_steps: 1
@@ -38,23 +38,23 @@ model:
       init_args:
         num_features: 20
         num_latent_dim: 10
-        num_hidden_dim: 32
-        num_hidden_layers: 2
-        dropout_prob: 0.3
+        num_hidden_dim: 128
+        num_hidden_layers: 3
+        dropout_prob: 0.5
     decoder:
       class_path: Comprisk.model.ae.rnn.LSTMDecoder
       init_args:
         num_features: 20
         num_latent_dim: 10
-        num_hidden_dim: 32
-        num_hidden_layers: 2
-        dropout_prob: 0.3
+        num_hidden_dim: 128
+        num_hidden_layers: 3
+        dropout_prob: 0.5
         predict_key: sensors
 data:
   # configure dataset to load
   train: /Users/jonas/Dataset/labeled/dataset-cat-green
   validate: /Users/jonas/Dataset/labeled/dataset-cat-gray
-  input_sequence: 400
+  input_sequence: 25
   output_sequence: 0
   skip: 20
   # configure how to sample from the dataset

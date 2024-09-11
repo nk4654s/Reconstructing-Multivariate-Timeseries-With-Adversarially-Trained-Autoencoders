@@ -1,0 +1,103 @@
+from argparse import ArgumentParser
+import os
+import shutil
+import subprocess
+from typing import Tuple
+
+import pandas as pd
+import yaml
+
+from Dataflux.pytorch import Dataset
+from Dataflux.data import DataUpdater, UpdateCallable
+from Comprisk.helper.model import ModelLoader
+
+
+def get_dataset_path(dataset: str) -> str:
+    """
+    This function gets the dataset root folder path of the pipeline config given.
+
+    Args:
+        dataset (str): The path to the dataset yaml file.
+    
+    Args:
+        dataset (str): The path to the dataset root folder.
+    """
+    with open(dataset, "r", encoding="utf-8") as f:
+        return yaml.load(f, yaml.BaseLoader)["folder"]
+
+
+def get_dataset_args(model_folder: str) -> Tuple[int, int, int]:
+    """
+    This function gets the dataset arguments of the pipeline config given. Namely,
+    the function locates and returns the `skip`, `in_sequence`, and `out_sequence`
+    values.
+
+    Args:
+        model_folder (str): The path to the model root folder. Here, the config
+            with which the model was trained must be located.
+    
+    Returns:
+        skip (int): The number of samples to skip in the dataset, the length of the
+            input sequence, and the length of the output sequence.
+    """
+    config_path = os.path.join(model_folder, "config.yaml")
+    with open(config_path, "r", encoding="utf-8") as f:
+        config = yaml.load(f, Loader=yaml.BaseLoader)["data"]
+        skip = int(config.get("skip", 1))
+        input_sequence = int(config.get("input_sequence", 1))
+        output_sequence = int(config.get("output_sequence", 0))
+        return (input_sequence, output_sequence, skip)
+
+
+class CompriskUpdateCallable(UpdateCallable):
+    """
+    This callable sends the score values of the model to the updater class.
+
+    Args:
+        malfunction (pd.DataFrame): The dataframe containing the score values of
+            the model.
+        critical (pd.DataFrame): The dataframe containing the critical values
+            of the model.
+    """
+    def __init__(self, malfunction: pd.DataFrame, critical: pd.DataFrame) -> None:
+        self._malfunction = malfunction
+        self._critical = critical
+
+    def get_update(self, start: int, end: int) -> pd.DataFrame:
+        df = self._malfunction[self._malfunction.index  >= start]
+        df = df[df.index <= end]
+        return df
+
+
+def cli_main():
+    # define program arguments
+    parser = ArgumentParser()
+    parser.add_argument("--model", "-m", type = str, required = True, help = "The model to load.")
+    parser.add_argument("--dataset", "-d", type = str, required = True, help = "The dataset to use.")
+    args = parser.parse_args()
+
+    # download and process the dataset, the config file contains the requested
+    # time frame to generate the scores for
+    subprocess.run(["flux-pipeline", "-c", args.dataset])
+
+    # load the trained model from disk and create the dataset object for the
+    # previously downloaded dataset
+    loader = ModelLoader(args.model)
+    data = Dataset(get_dataset_path(args.dataset), *get_dataset_args(args.model))
+
+    # execute the model on the dataset and calculate the scores
+    score_data = loader.predict_loop(data)
+    score = loader.get_score_transformer()
+    score_data = score.transform(*score_data)
+
+    # update the dataset's virtual sensors in the S3 buckets with the scores
+    time_steps = (data.get_timestamp(0), data.get_timestamp(len(data) - 1))
+    updater = DataUpdater(data.UUID, CompriskUpdateCallable(*score_data))
+    updater.update(*time_steps)
+
+    # remove the temporary downloaded dataset again
+    shutil.rmtree(get_dataset_path(args.dataset), ignore_errors = True)
+
+
+if __name__ == "__main__":
+    cli_main()
