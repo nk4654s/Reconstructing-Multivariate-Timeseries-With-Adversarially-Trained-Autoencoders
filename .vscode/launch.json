@@ -60,6 +60,19 @@
                 "configs/lstm_future.yml",
                 "--tag", "debug"
             ]
-        }
+        },
+        {
+            "name": "Python Debugger: Generate",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "Comprisk/entrypoints/generate.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "-m",
+                "models/AutoEncoder/coarse-to-fine/version_2",
+                "-d", "configs/regenerate-portal-data/dataset-pipe.yml"
+            ]
+        },
     ]
 }

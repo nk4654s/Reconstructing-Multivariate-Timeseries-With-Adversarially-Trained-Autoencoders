@@ -10,7 +10,6 @@ models/
 logs/
 logfile
 Dockerfile
-docs/
 
 # exclude temporary checkpoints
 *.ckpt
@@ -23,3 +22,4 @@ playground.ipynb
 # exclude optuna database
 *.sqlite3
 test.ipynb
+docs/

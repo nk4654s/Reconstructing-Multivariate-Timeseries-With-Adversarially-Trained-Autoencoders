@@ -98,7 +98,7 @@ class ScoreTransformer:
         # compute anomaly scores
         loss = loss_fn(predicted, target)
         loss_mean = loss.rolling(self._size, closed="left").mean()
-        loss_mean = loss_mean[(loss_mean.index % self._size) == 0]
+        loss_mean = loss_mean.iloc[::self._size]
         loss_mean = loss_mean.iloc[1:]
 
         anomaly_scores = self._error_scaler.transform(loss_mean)
@@ -119,8 +119,8 @@ class ScoreTransformer:
 
         # transfer all values to dataframes and return them
         names = predicted.columns.values
-        malfunction = pd.DataFrame(malfunction, columns=names)
-        critical = pd.DataFrame(critical, columns=names)
+        malfunction = pd.DataFrame(malfunction, columns=names, index=loss_mean.index)
+        critical = pd.DataFrame(critical, columns=names, index=loss_mean.index)
         loss_mean = pd.DataFrame(loss_mean.to_numpy(), columns=names)
 
         show_dataframe(names, [malfunction, loss_mean, critical],
