@@ -2,7 +2,7 @@ from typing import Dict, Tuple
 import requests
 
 
-def get_sensor_name_to_uuid(machine_uuid: str) -> Dict[str: str]:
+def get_sensor_name_to_uuid(machine_uuid: str) -> Dict[str, str]:
     """This function returns a dictionary of sensor uuids to sensor names.
     
     Args:
