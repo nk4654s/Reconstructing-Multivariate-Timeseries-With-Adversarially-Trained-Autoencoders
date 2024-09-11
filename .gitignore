@@ -23,3 +23,4 @@ playground.ipynb
 *.sqlite3
 test.ipynb
 docs/
+build/

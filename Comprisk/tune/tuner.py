@@ -32,8 +32,6 @@ class Tuner:
 
         self._config = config
         self._hparam_deps = None
-        self._train_size = None
-        self._val_size = None
 
     def objective(self, trial: Trial) -> float:
         """The objective function is used by the `self.optimize` method and contains
@@ -47,9 +45,7 @@ class Tuner:
         suggestion, datamodule = self._config.suggest(trial)
         test_model = self._model.__class__(**suggestion)
 
-        datamodule.setup(
-            stage="fit", train_size=self._train_size, val_size=self._val_size
-        )
+        datamodule.setup(stage="fit")
 
         # train the test model and validate it, the resulting loss is used to
         # set a new hparams suggestion
