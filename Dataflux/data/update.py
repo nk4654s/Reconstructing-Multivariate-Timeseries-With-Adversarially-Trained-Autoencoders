@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import gzip
 
 from tqdm import tqdm
@@ -55,8 +55,8 @@ class DataUpdater(S3Bucket):
             end (int): The end time steps of the timeframe to be updated.
         """
         # get start and end days
-        start = datetime.fromtimestamp(start_ts)
-        end = datetime.fromtimestamp(end_ts)
+        start = datetime.fromtimestamp(start_ts, timezone.utc)
+        end = datetime.fromtimestamp(end_ts, timezone.utc)
         days = get_day_list((start, end))
 
         score_uuids = get_sensor_name_to_uuid(self._uuid)
