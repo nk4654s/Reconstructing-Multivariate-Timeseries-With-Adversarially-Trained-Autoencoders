@@ -1,4 +1,5 @@
 from datetime import datetime
+import gzip
 
 from tqdm import tqdm
 import pandas as pd
@@ -58,7 +59,7 @@ class DataUpdater(S3Bucket):
         end = datetime.fromtimestamp(end_ts)
         days = get_day_list((start, end))
 
-        sensor_uuids = get_sensor_name_to_uuid(self._uuid)
+        score_uuids = get_sensor_name_to_uuid(self._uuid)
 
         # create the S3 bucket connection and download the files for each day
         downloader = DataDownloader(self._uuid, file_postfix="virtual")
@@ -73,6 +74,7 @@ class DataUpdater(S3Bucket):
 
             # 1. download the DataFrame and ensure homogeneous time steps
             df = downloader.get_dataframe(day)
+            df.drop(columns=score_uuids.values(), errors="ignore", inplace=True)
             df = decompress(df.reset_index())
 
             # 2. modify the dataframe with the callable
@@ -80,23 +82,23 @@ class DataUpdater(S3Bucket):
             result_df = self._callable(ts_1, ts_2)
             result_df = result_df.round(3)
 
+            # 3. rename human readable column names to be machine readable
+            names = {name: score_uuids.get(name, name) for name in list(result_df.columns.values)}
+            result_df.rename(columns=names, inplace=True)
+
+            # 4. merge, then apply the same compressing rules 
             df = pd.merge(result_df, df, how="outer", left_index=True, right_index=True)
-
-            # 3. apply the same compressing rules 
             df = compress(df.reset_index())
-
-            # 4 rename human readable column names to be machine readable
-            names = {name: sensor_uuids.get(name, name) for name in list(result_df.columns.values)}
-            df = df.rename(columns=names)
 
             # 5. sort the columns by uuid-names
             df = df.reindex(sorted(df.columns), axis=1)
-            df = df.reset_index()
+            df.reset_index(inplace=True)
 
             # 6. export dataframe as tsv-file
-            tsv = df.to_csv("test.csv", sep="\t", compression="gzip")
-            tsv_bytes = tsv.encode("utf-8")
-            path = f"{self._uuid}/days/{day}/{self._uuid}.tsv"
+            tsv = df.to_csv(sep="\t")
+            tsv_bytes = gzip.compress(tsv.encode("utf-8"))
+            day = day.strftime("%Y/%m/%d")
+            path = f"{self._uuid}/days/{day}/{self._uuid}-virtual-debug.tsv"
 
             # 7. upload dataframe to s3
             self._client.put_object(Bucket=self._bucket, Key=f"{path}", Body=tsv_bytes)
