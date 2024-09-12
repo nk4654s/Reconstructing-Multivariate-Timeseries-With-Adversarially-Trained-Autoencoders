@@ -66,10 +66,10 @@ class DataUpdater(S3Bucket):
         downloader.set_data_type(DataType.MEASUREMENTS)
         for day in tqdm(days, desc="Score to Virtual Sensors"):
             # 0. calculate the correct time steps for the day to update
-            ts_1 = day.timestamp()
+            ts_1 = int(day.date().strftime("%s"))
             ts_1 = ts_1 if ts_1 > start_ts else start_ts
 
-            ts_2 = day.timestamp() + 86400
+            ts_2 = int(day.date().strftime("%s")) + 86400
             ts_2 = ts_2 if ts_2 < end_ts else end_ts
 
             # 1. download the DataFrame and ensure homogeneous time steps
