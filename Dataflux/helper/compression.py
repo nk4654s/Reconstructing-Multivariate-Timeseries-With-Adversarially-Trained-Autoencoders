@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 
-def decompress(data: pd.DataFrame, copy: bool = False) -> pd.DataFrame:
+def decompress(data: pd.DataFrame, copy: bool = False, fill: bool = False) -> pd.DataFrame:
     """
     This function decompresses a dataframe which was compressed before. This is achieved by
     restoring each timeframe for each second and filling the added row with the values of
@@ -12,6 +12,8 @@ def decompress(data: pd.DataFrame, copy: bool = False) -> pd.DataFrame:
         data (pd.DataFrame): dataframe to decompress.
         copy (bool): Whether to copy or not the dataframe before decompressing. Decompressing
             changes the input object, as it works on the reference.
+        fill (bool): Whether to fill the added row with the values of the previous
+            row or not. If not, np.NANs will be set for an added row. Defaults to False.
     
     Returns:
         pd.DataFrame: decompressed dataframe.
@@ -35,7 +37,8 @@ def decompress(data: pd.DataFrame, copy: bool = False) -> pd.DataFrame:
     data = data.set_index("ts").reindex(new_index)
 
     # decompress the data by forward filling NAN values
-    data = data.ffill()
+    if fill:
+        data = data.ffill()
     return data
 
 

@@ -101,4 +101,5 @@ class DataUpdater(S3Bucket):
             path = f"{self._uuid}/days/{day}/{self._uuid}-virtual-debug.tsv"
 
             # 7. upload dataframe to s3
-            self._client.put_object(Bucket=self._bucket, Key=f"{path}", Body=tsv_bytes)
+            self._client.put_object(Bucket=self._bucket, Key=f"{path}", Body=tsv_bytes,
+                ContentType="text/tab-separated-values", ContentEncoding="gzip")
