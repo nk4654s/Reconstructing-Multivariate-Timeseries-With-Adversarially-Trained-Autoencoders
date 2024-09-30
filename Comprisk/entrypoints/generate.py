@@ -8,7 +8,7 @@ import pandas as pd
 import yaml
 
 from Dataflux.pytorch import Dataset
-from Dataflux.data import DataUpdater, UpdateCallable
+from Dataflux.data import DataUpdater, UpdateCallable, DataType
 from Comprisk.helper.model import ModelLoader
 
 
@@ -66,6 +66,9 @@ class CompriskUpdateCallable(UpdateCallable):
     def get_update(self, start: int, end: int) -> pd.DataFrame:
         df = self._malfunction[self._malfunction.index  >= start]
         df = df[df.index <= end]
+
+        # calculate the mean as total machine score, other metrics might be better
+        df["Total"] = df.mean(axis=1)
         return df
 
 
@@ -93,6 +96,7 @@ def cli_main():
     # update the dataset's virtual sensors in the S3 buckets with the scores
     time_steps = (data.get_timestamp(0), data.get_timestamp(len(data) - 1))
     updater = DataUpdater(data.UUID, CompriskUpdateCallable(*score_data))
+    updater.set_data_type(DataType.MEASUREMENTS)
     updater.update(*time_steps)
 
     # remove the temporary downloaded dataset again

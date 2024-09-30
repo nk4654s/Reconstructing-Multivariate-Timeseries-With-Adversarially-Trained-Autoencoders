@@ -72,6 +72,11 @@ def cli_main():
     # load the pipeline config
     with open(args.config, "r", encoding="utf-8") as f:
         pipeline = yaml.load(f, Loader=yaml.BaseLoader)
+    
+    # download the dataset
+    dataset_config = pipeline.get("dataset", [])
+    for config in dataset_config:
+        subprocess.run(["flux-pipeline", "-c", config["config"]])
 
     # tune the model, this will not have an effect on the model's output folder
     tuner = pipeline.get("tuner", None)
@@ -110,6 +115,12 @@ def cli_main():
     for analyzer in analyzer_list:
         subprocess.run(["comprisk-analyzer", "-c", latest_config, "--dataset",
                         analyzer["dataset"], "--prefix", analyzer["prefix"]])
+    
+    # generate the new score values and upload them
+    generate_config = pipeline.get("generate", None)
+    if generate_config:
+        subprocess.run(["comprisk-generate", "-m", generate_config["model"], "-d",
+                        generate_config["dataset"]])
 
 if __name__ == "__main__":
     cli_main()

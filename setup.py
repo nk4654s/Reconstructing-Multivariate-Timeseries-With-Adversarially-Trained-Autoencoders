@@ -43,6 +43,7 @@ setup(
             "comprisk-analyzer=Comprisk.entrypoints.analyzer:cli_main",
             "comprisk-pipeline=Comprisk.entrypoints.pipeline:cli_main",
             "comprisk-tuner=Comprisk.entrypoints.tuner:cli_main",
+            "comprisk-generate=Comprisk.entrypoints.generate:cli_main",
         ]
     },
     packages=find_packages(include=[
