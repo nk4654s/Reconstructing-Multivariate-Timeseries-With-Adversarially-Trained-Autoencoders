@@ -11,10 +11,9 @@ To get started, you'll need to create several `yaml` configs that work together.
     - machine_1/
         - dataset-pipeline-train.yml
         - dataset-pipeline-generate.yml
-        - training-config.yml
-        - tune-hyperparameters.yml
-        - pipeline-training.yml
-        - pipeline-generate.yml
+        - training.yml
+        - hyperparameter-search.yml
+        - pipeline.yml
     - machine_2/
         ...
 ```
