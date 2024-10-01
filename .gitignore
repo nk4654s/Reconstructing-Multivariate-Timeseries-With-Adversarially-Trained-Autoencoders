@@ -10,9 +10,10 @@ requirements.txt
 __pycache__/
 build/
 
-# ignore dataset filde
+# ignore dataset file
 *.h5
 *.png
+.env
 
 # ignore playgrounds
 *.ipynb

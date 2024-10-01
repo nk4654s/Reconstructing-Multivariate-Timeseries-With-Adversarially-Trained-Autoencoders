@@ -1,6 +1,19 @@
 from typing import Dict, Tuple
 from uuid import UUID
+import os
+import json
 import requests
+
+
+def get_secret() -> str | None:
+    """This method loads the authorization key for the database from the ".env" file, which
+    should be located next to this code.
+    """
+    if not os.path.exists(".env"):
+        return None
+
+    with open(".env", "r", encoding="UTF-8") as f:
+        return json.load(f)["DB_SECRET"]
 
 
 def get_sensor_name_to_uuid(machine_uuid: UUID) -> Dict[str, str]:
@@ -60,8 +73,7 @@ def get_machine_location(machine_uuid: UUID) -> Tuple[float, float] | None:
     )
     headers = {
         "Content-Type": "application/json",
-        "Authorization": "eyJhbGciOiIiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJ"
-        + "jN2VlN2ZmNi03ZTQ3LTRmMGItYWIxMy0xYjM5NWE1NjZlNmIifQ.",
+        "Authorization": get_secret(),
     }
 
     try:
@@ -90,8 +102,7 @@ def get_sensor_uuid_to_name(machine_uuid: UUID) -> Dict[str, str] | None:
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": "eyJhbGciOiIiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJ"
-        + "jN2VlN2ZmNi03ZTQ3LTRmMGItYWIxMy0xYjM5NWE1NjZlNmIifQ.",
+        "Authorization": get_secret(),
     }
     try:
         response = requests.request(
