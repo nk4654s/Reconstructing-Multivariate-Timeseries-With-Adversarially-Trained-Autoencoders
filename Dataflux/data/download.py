@@ -90,9 +90,7 @@ class DataDownloader(S3Bucket):
             self._header = incoming
             return self._header
 
-        # if the incoming header is longer than the previous one, drop the
-        # values which are unknown or missing in the previous one and
-        # return it
+        # just return the header if it equals the previous one
         if incoming.values == self._header.values:
             logger.debug("No change in header, returning previous one.")
             return self._header

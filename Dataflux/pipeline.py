@@ -10,7 +10,7 @@ from Dataflux.cli import CLIArgumentParser, TYPE_MODULES_PRE, TYPE_MODULES_POST
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
 from Dataflux.helper.metadata import Metadata
 import Dataflux.modules.preprocess as pre
-from Dataflux.data import DFIO, ContinuousDataDownloader, DataType
+from Dataflux.data import download, ContinuousDataDownloader, DataType
 
 from Dataflux import get_logger
 
@@ -55,8 +55,7 @@ def preprocessing(parser: CLIArgumentParser, modules: TYPE_MODULES_PRE) -> None:
     downloader.set_data_type(DataType.MEASUREMENTS)
 
     # download and process data
-    dfio = DFIO(downloader)
-    dfio.download(parser.args.folder, modules=modules)
+    download(downloader, parser.args.folder, modules=modules)
 
 
 def postprocessing(parser: CLIArgumentParser, modules: TYPE_MODULES_POST) -> None:
