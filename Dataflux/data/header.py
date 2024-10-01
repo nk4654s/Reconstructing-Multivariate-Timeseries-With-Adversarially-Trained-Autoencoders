@@ -1,11 +1,14 @@
 """This module contains the header class"""
 
 
+from typing import List
+
+
 class Header:
     """This class defines the header of a file."""
 
-    values = None
-    drop = None
+    values: List[str] = []
+    drop: List[str] = []
 
     def relative_complement(self, other: "Header", fail_safe: bool = True) -> None:
         """Calculates the relative complement of the header values of

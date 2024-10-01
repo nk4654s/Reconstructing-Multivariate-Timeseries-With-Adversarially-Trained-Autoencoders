@@ -27,7 +27,7 @@ class InterpolatePreProcessor(BasePreProcessor):
         ), f"{method} is not a valid method."
         self._method = method
 
-    def on_download_finished(self, df: DataFrame, _: Metadata = None) -> DataFrame:
+    def on_download_finished(self, df: DataFrame, metadata: Metadata) -> DataFrame:
         logger.debug("Interpolation method %s", self._method)
 
         if self._method == "ffill":
@@ -37,6 +37,6 @@ class InterpolatePreProcessor(BasePreProcessor):
             df.bfill(inplace=True)
 
         elif self._method in InterpolatePreProcessor.METHODS:
-            df.interpolate(method=self._method, inplace=True)
+            df.interpolate(method=self._method, inplace=True) # type: ignore
 
         return df.dropna(how="any")

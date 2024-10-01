@@ -13,8 +13,8 @@ from Dataflux.cli.config_helper import build_config, expand_module_list, get_mod
 from Dataflux.cli.defaults import DEFAULT_ARGUMENTS
 
 
-TYPE_MODULES_PRE = List[BasePreProcessor] | BasePreProcessor
-TYPE_MODULES_POST = List[FileWorkerCallable] | FileWorkerCallable
+TYPE_MODULES_PRE = List[BasePreProcessor]
+TYPE_MODULES_POST = List[FileWorkerCallable]
 
 
 class GroupedAction(Action):
@@ -64,11 +64,11 @@ class CLIArgumentParser(ArgumentParser):
 
         for key, modules in self._modules.items():
             for module in modules:
-                prefix = re.findall("[A-Z][^A-Z]*", module.__name__)[0]
+                prefix = re.findall("[A-Z][^A-Z]*", module.__name__)[0] # type: ignore
                 prefix = prefix.lower()
 
                 init_args = get_module_config_args(self.args.config, key, module)
-                assert isinstance(init_args, dict), f"{key}.{module.__name__}.init_args has to be dictionary in the config file."
+                assert isinstance(init_args, dict), f"{key}.{module.__name__}.init_args has to be dictionary in the config file." # type: ignore
 
                 # add arguments from pre-processor
                 signature = inspect.signature(module.__init__).parameters
@@ -82,8 +82,8 @@ class CLIArgumentParser(ArgumentParser):
                         type=signature[attr].annotation,
                         default=init_args.get(signature[attr].name, signature[attr].default),
                         action=GroupedAction,
-                        dest=f"{key}.{module.__name__.lower()}.{signature[attr].name}",
-                        help=f"{signature[attr].name.capitalize()} of {module.__name__}",
+                        dest=f"{key}.{module.__name__.lower()}.{signature[attr].name}", # type: ignore
+                        help=f"{signature[attr].name.capitalize()} of {module.__name__}", # type: ignore
                     )
 
         # parse arguments to have the namespace ready
@@ -97,7 +97,7 @@ class CLIArgumentParser(ArgumentParser):
         for key, modules in self._modules.items():
             for i, module in enumerate(modules):
                 # get the module's name
-                name = module.__name__.lower()
+                name = module.__name__.lower() # type: ignore
                 kwargs = {}
 
                 # get the attributes set by the user in the command line interface

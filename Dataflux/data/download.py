@@ -2,7 +2,7 @@
 the parsing."""
 from datetime import date
 import gzip
-from io import BytesIO
+from io import BytesIO, TextIOWrapper
 from multiprocessing import Pool
 from typing import List, TextIO, Tuple
 from uuid import UUID
@@ -28,14 +28,14 @@ class DataDownloader(S3Bucket):
     Args:
         machine_uuid (str): The unique ID of the machine to download data from.
     """
-    def __init__(self, machine_uuid: str | UUID, file_postfix: str = None) -> None:
+    def __init__(self, machine_uuid: str | UUID, file_postfix: str = "") -> None:
         super().__init__(machine_uuid)
 
-        self._postfix = f"-{file_postfix}" if file_postfix else""
+        self._postfix = f"-{file_postfix}" if file_postfix else ""
         self._header = None
         self._pool = Pool(12)
 
-    def get_stream(self, day: str | date) -> TextIO:
+    def get_stream(self, day: str | date) -> gzip.GzipFile | TextIO:
         """
         Opens and returns the stream from the S3 bucket given the day.
 
@@ -106,7 +106,7 @@ class DataDownloader(S3Bucket):
         logger.debug("Header length mismatch. Removing %s values.", len(incoming.drop))
         return incoming
 
-    def parse_stream(self, stream: TextIO = "dataset") -> pd.DataFrame:
+    def parse_stream(self, stream: gzip.GzipFile | TextIO) -> pd.DataFrame | None:
         """
         This method parses the stream into a pandas DataFrame. If the stream is empty,
         it will return `None`. Otherwise, each line is parsed into an array of float32
@@ -118,6 +118,8 @@ class DataDownloader(S3Bucket):
         Returns:
             pd.DataFrame: The parsed pandas DataFrame.
         """
+        assert isinstance(stream, TextIOWrapper), "Stream must be an uncompressed file-like."
+
         # check if the dataframe is empty and set it up accordingly
         # also check if the header is consistent with the stream's one
         # if not, save the progress so far and continue on a fresh dataframe instance
@@ -202,4 +204,4 @@ class ContinuousDataDownloader(DataDownloader):
     def __getitem__(self, index: int) -> pd.DataFrame:
         # create the s3 path from the current date
         day = self._days[index]
-        return self.get_dataframe(day)
+        return self.get_dataframe(day.strftime("%Y-%m-%d"))

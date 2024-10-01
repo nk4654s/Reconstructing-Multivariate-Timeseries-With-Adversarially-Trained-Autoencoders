@@ -42,7 +42,7 @@ def decompress(data: pd.DataFrame, copy: bool = False, fill: bool = False) -> pd
     return data
 
 
-def compress(data: pd.DataFrame) -> pd.DataFrame:
+def compress(dataframe: pd.DataFrame) -> pd.DataFrame:
     """
     This function compresses the time series data by removing duplicates in a safe way.
     If a value is repeated in the time series, it is replaced by np.NAN until there is
@@ -54,15 +54,16 @@ def compress(data: pd.DataFrame) -> pd.DataFrame:
     - Output `[1, 1, 3, 3, 4, 5, 4, 6]`
 
     Args:
-        data (pd.DataFrame): The time series data to compress.
+        dataframe (pd.DataFrame): The time series data to compress.
     
     Returns:
         pd.DataFrame: Compressed time series data.
     """
-    if data.empty:
-        return data
+    if dataframe.empty:
+        return dataframe
 
-    names, data = data.columns.values, data.to_numpy()
+    names = dataframe.columns.values
+    data = dataframe.to_numpy()
 
     # due to our basic approximation of the first derivative, the first and last value is missing.
     # To handle this, simply pad a 0 to the start and end of the data

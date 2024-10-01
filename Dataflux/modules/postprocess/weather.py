@@ -1,6 +1,6 @@
 import os
 from threading import Lock
-from typing import Any, List
+from typing import Any, Dict, List
 import numpy as np
 import pandas as pd
 from Dataflux.helper import Meta, Metadata, get_machine_location
@@ -44,7 +44,7 @@ class WeatherDataset(FileWorkerCallable):
         self._removed_files = []
         self._lengths_files = {}
 
-    def get_dependencies(self) -> List[str]:
+    def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {NormalizeFit.__name__: CallableDependency.NOT_BEFORE}
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:

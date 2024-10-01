@@ -1,16 +1,18 @@
 from typing import Dict, Tuple
+from uuid import UUID
 import requests
 
 
-def get_sensor_name_to_uuid(machine_uuid: str) -> Dict[str, str]:
+def get_sensor_name_to_uuid(machine_uuid: UUID) -> Dict[str, str]:
     """This function returns a dictionary of sensor uuids to sensor names.
     
     Args:
-        machine_uuid (str): The machine uuid to get the sensor names for.
+        machine_uuid (UUID): The machine uuid to get the sensor names for.
 
     Returns:
         Dict[str, str]: A dictionary of sensor name to sensor uuid.
     """
+    # TODO: get from backend
     return {
         "EnddruckErsteStufePIT74339 (bar)": "0094a079-ac28-3bd5-a694-414679f00a6e",
         "EnddruckZweiteStufePIT74397 (bar)": "be91c533-7376-3633-883b-a17b1d53f9ff",
@@ -36,11 +38,11 @@ def get_sensor_name_to_uuid(machine_uuid: str) -> Dict[str, str]:
     }
 
 
-def get_machine_location(machine_uuid: str) -> Tuple[float, float]:
+def get_machine_location(machine_uuid: UUID) -> Tuple[float, float] | None:
     """This function returns the latitude and logintude of a machine.
 
     Args:
-        machine_uuid (str): The machine's UUID from which the position is
+        machine_uuid (UUID): The machine's UUID from which the position is
         requested.
 
     Returns:
@@ -50,7 +52,7 @@ def get_machine_location(machine_uuid: str) -> Tuple[float, float]:
     payload = (
         '"query": "query getMachine '
         + '{\n\tmachine {\n\t\tgetMachine(machineId: \\"'
-        + machine_uuid
+        + str(machine_uuid)
         + '\\") {\n'
         + "\t\t\txrn\n\t\t\tname\n\t\t\tmission {\n\t\t\t\tlocation {\n"
         + '\t\t\t\t\tlat\n\t\t\t\t\tlng\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}"'
@@ -73,12 +75,12 @@ def get_machine_location(machine_uuid: str) -> Tuple[float, float]:
     return (coords["lat"], coords["lng"])
 
 
-def get_sensor_uuid_to_name(machine_uuid: str) -> Dict[str, str]:
+def get_sensor_uuid_to_name(machine_uuid: UUID) -> Dict[str, str] | None:
     """This function returns a dictionary of sensor uuids to sensor names."""
     url = "https://dev.graphql.api.xplore.ac/"
     payload = (
         '{"query":"query getMachine {\n  machine {\n    getMachine'
-        + f'(machineId: \\"{machine_uuid}\\") '
+        + f'(machineId: \\"{str(machine_uuid)}\\") '
         + "{\n      name\n \t\t\tsensors { properties\n\t\t\t\tid\n\t\t\t\tname\n"
         + "\t\t\t\ttype\n\t\t\t\tkind {\n\t\t\t\t\tis_plc\n\t\t\t\t\tis_hidden\n\t"
         + "\t\t\t\tis_virtual\n\t\t\t\t\tis_setpoint\n\t\t\t\t\tis_plc_alarm\n\t"

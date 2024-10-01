@@ -38,7 +38,6 @@ def preprocessing(parser: CLIArgumentParser, modules: TYPE_MODULES_PRE) -> None:
         modules (TYPE_MODULES_PRE): The list of classes which should be used for
             preprocessing.
     """
-    # clean up?
     if parser.args.overwrite and os.path.exists(parser.args.folder):
         shutil.rmtree(parser.args.folder)
 

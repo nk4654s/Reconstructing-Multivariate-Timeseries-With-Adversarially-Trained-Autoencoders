@@ -18,9 +18,9 @@ class Node:
         smaller (Node): The left child node, which represents a day with fewer samples.
         bigger (Node): The right child node, which represents a day with more samples.
     """
-    def __init__(self, day: str, index: int, size: int, parent: "Node" = None) -> None:
-        self.smaller = None
-        self.bigger = None
+    def __init__(self, day: str, index: int, size: int, parent: "Node | None" = None) -> None:
+        self.smaller: Node | None = None
+        self.bigger: Node | None = None
         self.parent = parent
         self._day = day
 
@@ -56,7 +56,7 @@ class Node:
         """
         return self._size
 
-    def __eq__(self, other: int) -> bool:
+    def __eq__(self, other: int) -> bool: # type: ignore
         return self.size == other
 
     def __ge__(self, other: "Node") -> bool:
@@ -77,7 +77,7 @@ class IndexTree:
         skip (int): The number of timestamps to skip. Defaults to 1 (do not skip any timestamps).
     """
     def __init__(self, metadata: Metadata, window_size: int = 1, skip: int = 1) -> None:
-        self._root: Node = None
+        self._root: Node | None = None
         self._win = window_size
         self._skip = skip
         logger.debug("Skip rows: %s", skip)
@@ -90,15 +90,15 @@ class IndexTree:
 
     def _build_tree(self, node_list: List[Dict]) -> None:
         # define middle node as root, sorted by 'recordings'
-        node_list = self._get_cumulative_size(node_list)
-        self._root = node_list.pop(len(node_list) // 2)
+        node_weighted_list = self._get_cumulative_size(node_list)
+        self._root = node_weighted_list.pop(len(node_weighted_list) // 2)
 
         # insert alternating the highes, lowest node
         i = 0
-        while len(node_list) != 0:
-            node = node_list.pop(i)
+        while len(node_weighted_list) != 0:
+            node = node_weighted_list.pop(i)
             self._sorted_insert(self._root, node)
-            i = 0 if i == len(node_list) - 1 else len(node_list) - 1
+            i = 0 if i == len(node_weighted_list) - 1 else len(node_weighted_list) - 1
 
     def _get_cumulative_size(self, node_list: List[Dict]) -> List[Node]:
         # sort the node_list first, as this hould help building
@@ -150,9 +150,10 @@ class IndexTree:
             else:
                 self._sorted_insert(root.bigger, node)
 
-    def _recursive_search(self, index: int, root: Node) -> Tuple[str, int]:
+    def _recursive_search(self, index: int, root: Node | None) -> Tuple[str, int]:
         if root is None:
             return "ERROR", index
+
         # Node too large
         if index < root.index:
             return self._recursive_search(index, root.smaller)

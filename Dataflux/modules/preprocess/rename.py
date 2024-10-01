@@ -24,6 +24,7 @@ class RenameColumns(BasePreProcessor):
             self._sensor_names = get_sensor_uuid_to_name(uuid)
 
         # apply dictionary to columns
+        assert self._sensor_names, "No sensor name dictionary available."
         names = {id: self._sensor_names.get(id, id) for id in list(df.columns.values)}
         df.rename(columns=names, inplace=True)
         logger.debug("Renamed columns.")

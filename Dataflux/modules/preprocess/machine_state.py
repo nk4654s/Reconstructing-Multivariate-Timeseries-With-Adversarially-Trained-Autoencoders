@@ -127,9 +127,7 @@ class MachineStateSplit(BasePreProcessor):
                     reduced.append(dfs[i].iloc[self._threshold:-self._threshold])
         return reduced
 
-    def on_download_finished(
-        self, df: DataFrame, metadata: Metadata = None
-    ) -> List[DataFrame]:
+    def on_download_finished(self, df: DataFrame, metadata: Metadata) -> List[DataFrame]:
         df_splits = multi_split(df.copy(), self._column_key, self._state == "on")
 
         if len(df_splits) == 0:

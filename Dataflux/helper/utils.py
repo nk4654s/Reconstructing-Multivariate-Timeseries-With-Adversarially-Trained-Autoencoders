@@ -34,7 +34,7 @@ def get_file(
     file_path: str,
     create_dirs: bool = True,
     overwrite: bool = False,
-    postfix: str = None,
+    postfix: str = "",
 ) -> str:
     """This function checks if a file_path is valid and creates directories if required.
     In case the file_path already exists, the file name receives an increasing postfix.
@@ -77,7 +77,7 @@ def get_file(
     return os.path.join(folder_path, name_postfix)
 
 
-def line_str_to_array(line: str) -> np.array:
+def line_str_to_array(line: str) -> np.ndarray:
     """Multiprocesses a line-str, splits into a list and converts to float.
 
     Args:

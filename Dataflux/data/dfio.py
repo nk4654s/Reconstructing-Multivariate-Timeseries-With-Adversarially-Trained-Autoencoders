@@ -30,7 +30,7 @@ class DFIO:
         self._sensor_names = get_sensor_uuid_to_name(self._donwloader.machine_uuid)
         self._store = None
 
-    def _create_storage(self, dir_name: str = None, day_index: int = 0) -> None:
+    def _create_storage(self, dir_name: str = "", day_index: int = 0) -> None:
         # close a store if there was one opened
         if self._store:
             self._store.close()
@@ -38,7 +38,7 @@ class DFIO:
         # get a valid file path based on the machine's UUID, the day_index and
         # increasing postfix-numbers (optional)
         day = self._donwloader.day(day_index).strftime("%Y-%m-%d")
-        file_name = self._donwloader.machine_uuid + ".h5"
+        file_name = str(self._donwloader.machine_uuid) + ".h5"
         file_name = get_file(os.path.join(dir_name, file_name), postfix=day)
         logger.debug("Saving DF to %s", file_name)
 
@@ -58,8 +58,7 @@ class DFIO:
             self._store.put("data", df, format="table", append=True)
 
     def download(
-        self, dir_name: str = "dataset", modules: List[BasePreProcessor] = None
-    ) -> None:
+        self, dir_name: str = "dataset", modules: List[BasePreProcessor] = []) -> None:
         """Downloads the dataframe from a S3 stream and downloads the dataframe as file.
 
         Args:
@@ -71,7 +70,7 @@ class DFIO:
         modules = modules if modules else []
         self._meta.put([module.__class__.__name__ for module in modules], Meta.MODULES)
         self._meta.put(dir_name, Meta.PATH)
-        self._meta.put(self._donwloader.machine_uuid, Meta.MACHINE_UUID)
+        self._meta.put(str(self._donwloader.machine_uuid), Meta.MACHINE_UUID)
 
         # keep track of machine state changes, store a DF after the state changed
         self._meta.put(True, Meta.MACHINE_STATE_CHANGE)
@@ -90,7 +89,8 @@ class DFIO:
             logger.info("Processing data using %s modules.", len(modules))
             self._meta.put(self._donwloader.day(i).strftime("%Y-%m-%d"), Meta.DAY)
             for module in modules:
-                df = module(df, EntryPoint.ON_DOWNLOAD_FINISHED, metadata=self._meta)
+                df = module(df, self._meta, EntryPoint.ON_DOWNLOAD_FINISHED)
+                assert df is not None, "A module returned None instead of a DataFrame or List"
                 shape = 0 if isinstance(df, list) else len(df)
                 if isinstance(df, list):
                     for _ in df:
@@ -128,7 +128,7 @@ class DFIO:
         # execute modules which require to be executed after processing
         # hence, there is no dataframe to process
         for module in modules:
-            module(metadata=self._meta, entry_point=EntryPoint.ON_PROCESSING_FINISHED)
+            module(df=None, metadata=self._meta, entry_point=EntryPoint.ON_PROCESSING_FINISHED)
 
         # make sure to drop (optional) graphs created by other modules
         self._meta.drop(Meta.ADDITIONAL_REPORT_GRAPHS)

@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 
-def collate_fn(batch: List[np.array]) -> Dict[str, torch.Tensor]:
+def collate_fn(batch: List[np.ndarray]) -> Dict[str, torch.Tensor]:
     """To be used in a torch DataLoader.
 
     Args:

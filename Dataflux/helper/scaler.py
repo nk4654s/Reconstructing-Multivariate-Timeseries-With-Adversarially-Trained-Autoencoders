@@ -22,17 +22,15 @@ class FluxScaler:
         method (ScalerMethod): The scaling method to use. Defaults to `NormalizerMethod.NORMALIZE`.
         exclude_keys (List[str], optional): A list of keys to exclude from scaling. Defaults to `None`.
     """
-    def __init__(self, method = ScalerMethod.NORMALIZE, exclude_keys: List[str] = None) -> None:
+    def __init__(self, method = ScalerMethod.NORMALIZE, exclude_keys: List[str] = []) -> None:
         self._exclude = set() if exclude_keys is None else set(exclude_keys)
-        self._internal_scaler = None
+        self._internal_scaler = MinMaxScaler(feature_range=(-1, 1))
         self._method = method
-        match method:
-            case ScalerMethod.NORMALIZE:
-                self._internal_scaler = MinMaxScaler(feature_range=(-1, 1))
-            case ScalerMethod.STANDARDIZE:
-                self._internal_scaler = StandardScaler()
-            case ScalerMethod.STANDARDIZE_ROBUST:
-                self._internal_scaler = RobustScaler()
+
+        if method == ScalerMethod.STANDARDIZE:
+            self._internal_scaler = StandardScaler()
+        if method == ScalerMethod.STANDARDIZE_ROBUST:
+            self._internal_scaler = RobustScaler()
 
     @property
     def method(self) -> ScalerMethod:
@@ -53,7 +51,7 @@ class FluxScaler:
             case ScalerMethod.STANDARDIZE_ROBUST:
                 # for some reason, the robust scaler requires the partial_fit() method to
                 # be used, when the provided data does not cover the whole dataset
-                self._internal_scaler.partial_fit(df[header])
+                self._internal_scaler.partial_fit(df[header]) # type: ignore
             case _:
                 self._internal_scaler.fit(df[header])
 
@@ -74,5 +72,5 @@ class FluxScaler:
         header = list(set(df.columns.values) - self._exclude)
         normed = df.copy()
         normed[header] = self._internal_scaler.transform(normed[header])
-        normed[header] = normed[header].astype(dtype)
+        normed[header] = normed[header].astype(dtype) # type: ignore
         return normed

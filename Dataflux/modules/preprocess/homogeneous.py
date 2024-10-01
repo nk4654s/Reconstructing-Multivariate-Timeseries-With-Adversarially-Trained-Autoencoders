@@ -65,7 +65,7 @@ class HomogeneousTimeSteps(BasePreProcessor):
 
         # interpolate added rows
         if self._interpolate:
-            df.interpolate(method=self._interpolate, inplace=True)
+            df.interpolate(method=self._interpolate, inplace=True) # type: ignore
 
         self._stats[metadata[Meta.DAY]] = round(
             (df.shape[0] - old_len) / df.shape[0] * 100, 3
@@ -89,7 +89,7 @@ class HomogeneousColumns(BasePreProcessor):
     """Ensures homogeneous columns."""
 
     def __init__(self, enable: bool = True):
-        self._header: Header = None
+        self._header: Header | None = None
         self._enable = enable
         self._stats = {}
 
@@ -108,7 +108,7 @@ class HomogeneousColumns(BasePreProcessor):
         df = self._drop_empty_cols(df)
 
         incoming = Header()
-        incoming.values = df.columns.values
+        incoming.values = list(df.columns.values)
 
         # initial dataframe is always homogeneous
         if self._header is None:

@@ -20,7 +20,7 @@ class TestCompressDecompress(unittest.TestCase):
         data = data.set_index("ts")
 
         compressed_data = compress(data.reset_index())
-        decompressed_data = decompress(compressed_data.reset_index())
+        decompressed_data = decompress(compressed_data.reset_index(), fill=True)
 
         self.assertTrue(decompressed_data.equals(data))
 
@@ -41,7 +41,7 @@ class TestCompressDecompress(unittest.TestCase):
         data = data.set_index("ts")
 
         compressed_data = compress(data.reset_index())
-        decompressed_data = decompress(compressed_data.reset_index())
+        decompressed_data = decompress(compressed_data.reset_index(), fill=True)
 
         self.assertTrue(decompressed_data.equals(data))
 
@@ -58,7 +58,7 @@ class TestCompressDecompress(unittest.TestCase):
         data = data.set_index("ts")
 
         compressed_data = compress(data.reset_index())
-        decompressed_data = decompress(compressed_data.reset_index())
+        decompressed_data = decompress(compressed_data.reset_index(), fill=True)
 
         self.assertGreater(len(data), len(compressed_data))
         self.assertTrue(decompressed_data.equals(data))
@@ -71,7 +71,7 @@ class TestCompressDecompress(unittest.TestCase):
         data = data.set_index("ts")
 
         compressed_data = compress(data.reset_index())
-        decompressed_data = decompress(compressed_data.reset_index())
+        decompressed_data = decompress(compressed_data.reset_index(), fill=True)
 
         self.assertTrue(decompressed_data.empty)
 
@@ -84,7 +84,7 @@ class TestCompressDecompress(unittest.TestCase):
         data = data.set_index("ts")
 
         compressed_data = compress(data.reset_index())
-        decompressed_data = decompress(compressed_data.reset_index())
+        decompressed_data = decompress(compressed_data.reset_index(), fill=True)
 
         self.assertTrue(decompressed_data.equals(data))
 
@@ -97,11 +97,7 @@ class TestCompressDecompress(unittest.TestCase):
         data = data.set_index("ts")
 
         compressed_data = compress(data.reset_index())
-        decompressed_data = decompress(compressed_data.reset_index())
-
-        print(data)
-        print(compressed_data)
-        print(decompressed_data)
+        decompressed_data = decompress(compressed_data.reset_index(), fill=True)
 
         self.assertTrue(decompressed_data.equals(data))
 

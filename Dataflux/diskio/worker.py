@@ -22,7 +22,7 @@ class FileWorkerThread(threading.Thread):
         self._context = context
 
         self._module = None
-        self._result = {}
+        self._result = []
 
     def set_module(self, module: FileWorkerCallable):
         """Sets the module used by this worker thread.
@@ -41,6 +41,7 @@ class FileWorkerThread(threading.Thread):
         return self._result
 
     def run(self) -> None:
+        assert self._module, "No module defined"
         # process the files using the current module
         self._result = []
         for f in self._files:

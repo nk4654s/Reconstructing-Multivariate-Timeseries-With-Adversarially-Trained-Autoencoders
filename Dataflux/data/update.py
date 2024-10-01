@@ -59,6 +59,7 @@ class DataUpdater(S3Bucket):
         end = datetime.fromtimestamp(end_ts, timezone.utc)
         days = get_day_list((start, end))
 
+        assert self._uuid, "A machine UUID must be defined."
         score_uuids = get_sensor_name_to_uuid(self._uuid)
 
         # create the S3 bucket connection and download the files for each day
@@ -73,7 +74,7 @@ class DataUpdater(S3Bucket):
             ts_2 = ts_2 if ts_2 < end_ts else end_ts
 
             # 1. download the DataFrame and ensure homogeneous time steps
-            df = downloader.get_dataframe(day)
+            df = downloader.get_dataframe(day.strftime("%Y-%m-%d"))
             df.drop(columns=score_uuids.values(), errors="ignore", inplace=True)
             df = decompress(df.reset_index())
 

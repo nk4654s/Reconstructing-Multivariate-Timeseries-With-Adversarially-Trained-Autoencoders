@@ -12,7 +12,7 @@ from Dataflux.pytorch.index_tree import IndexTree
 from Dataflux.pytorch.cache import DataFrameCache
 
 
-class Dataset(torch.utils.data.Dataset):
+class Dataset(torch.utils.data.Dataset): # type: ignore
     """
     A custom PyTorch dataset class that loads and processes data from HDF5 files. This class uses
     the DataFrameCache to load dataframes from memory, which can improve performance.
@@ -25,7 +25,7 @@ class Dataset(torch.utils.data.Dataset):
         folder `metadata` containing the `info.json` file.
         input_sequence (int): The number of time steps for the input sequence.
         output_sequence (int): The number of time steps for the output sequence.
-        cache_size (int, optional): The size of the cache. Defaults to None.
+        cache_size (int, optional): The size of the cache. Defaults to -1.
         key (str): The key of the HDF-file specifying the data to load. Defaults to "norm".
 
     Returns:
@@ -38,7 +38,7 @@ class Dataset(torch.utils.data.Dataset):
         input_sequence: int,
         output_sequence: int,
         skip: int = 1,
-        cache_size: int = None,
+        cache_size: int = -1,
         key: str = "norm"
     ) -> None:
         self._metadata = FileMetadata()
@@ -157,8 +157,8 @@ class Dataset(torch.utils.data.Dataset):
             data = np.expand_dims(data, axis=-1)
 
         if not isinstance(data, pd.DataFrame):
-            data = {key: data[:, i] for i, key in enumerate(self.get_meta().column_names)}
-            data = pd.DataFrame(data)
+            data_dict = {key: data[:, i] for i, key in enumerate(self.get_meta().column_names)}
+            data = pd.DataFrame(data_dict)
 
         return scaler.transform(data)
 
@@ -184,8 +184,8 @@ class Dataset(torch.utils.data.Dataset):
             data = np.expand_dims(data, axis=-1)
 
         if not isinstance(data, pd.DataFrame):
-            data = {key: data[:, i] for i, key in enumerate(self.get_meta().column_names)}
-            data = pd.DataFrame(data)
+            data_dict = {key: data[:, i] for i, key in enumerate(self.get_meta().column_names)}
+            data = pd.DataFrame(data_dict)
 
         scaled = scaler.inverse_transform(data)
         return pd.DataFrame(scaled, columns=self.get_meta().column_names)
@@ -219,7 +219,7 @@ class Dataset(torch.utils.data.Dataset):
         index = self._cache.ts_index
         return int(sensors[:, index][0])
 
-    def _get(self, index: int, include_ts: bool = False) -> Tuple[np.array, np.array, np.array]:
+    def _get(self, index: int, include_ts: bool = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         # find the day and the correct index for that file
         # start of the sequence will be: index + self._num_input ...
         day, index = self._tree.search(index)
@@ -246,7 +246,7 @@ class Dataset(torch.utils.data.Dataset):
             yield self._get(index)
             index += 1
 
-    def __getitem__(self, index: int) -> Tuple[np.array, np.array, np.array]:
+    def __getitem__(self, index: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         return self._get(index)
 
 
@@ -258,7 +258,7 @@ if __name__ == "__main__":
 
     # end of file one: index=22121
 
-    dataset = Dataset("dataset-debug", 50, 0, cache_size=None, skip=1)
+    dataset = Dataset("dataset-debug", 50, 0, cache_size=-1, skip=1)
     for _ in tqdm(dataset):
         pass
 

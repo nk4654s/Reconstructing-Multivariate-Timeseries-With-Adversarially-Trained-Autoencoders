@@ -13,10 +13,11 @@ class DataType(Enum):
 
 class S3Bucket:
     def __init__(self, machine_uuid: str | UUID) -> None:
-        self._uuid = machine_uuid
+        self._uuid: UUID | None = None
+        self.set_machine(machine_uuid)
 
-        self._bucket = None
-        self._bucket_type = None
+        self._bucket = os.getenv("S3_BUCKET", "xplore-measurements")
+        self._bucket_type: DataType = DataType.MEASUREMENTS
         self._client = boto3.client("s3")
 
     @property
@@ -37,14 +38,15 @@ class S3Bucket:
         self._bucket_type = data_type
 
     @property
-    def machine_uuid(self) -> str:
+    def machine_uuid(self) -> UUID:
         """The machines uuid."""
+        assert self._uuid
         return self._uuid
 
-    def set_machine(self, machine_uuid: str | UUID) -> None:
+    def set_machine(self, uuid: str | UUID) -> None:
         """Sets the machines uuid.
 
         Args:
             machine_uuid (str | UUID): The machines uuid
         """
-        self._uuid = machine_uuid
+        self._uuid = uuid if isinstance(uuid, UUID) else UUID(uuid)

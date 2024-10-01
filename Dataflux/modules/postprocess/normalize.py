@@ -1,12 +1,10 @@
-from argparse import ArgumentError
-from enum import auto
 import os
 from threading import Lock
-from typing import Any, List
+from typing import Any, Dict, List
 import numpy as np
 import pandas as pd
 import pickle
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
+
 from Dataflux.helper import Meta, Metadata, FluxScaler, ScalerMethod
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
 
@@ -19,7 +17,7 @@ class ContextParam:
     This class provides constants for values and headers used
     in normalization operations.
     """
-    SCALER = auto()
+    SCALER = "normalize-context"
 
 
 class NormalizeFit(FileWorkerCallable):
@@ -45,7 +43,7 @@ class NormalizeFit(FileWorkerCallable):
         self._method = self.METHODS[method]
         self._exclude = exclude_keys
 
-    def get_dependencies(self) -> List[str]:
+    def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {NormalizeTransform.__name__: CallableDependency.IMMEDIATELY_AFTER}
 
     def _get_scaler(self, context: FileWorkerContext) -> FluxScaler:
@@ -60,7 +58,7 @@ class NormalizeFit(FileWorkerCallable):
         # Load the file into a pandas DataFrame, sort by column names to ensure that
         # dataframe is consistent
         df = pd.read_hdf(file_path, key="data")
-        df = df.reindex(sorted(df.columns), axis=1)
+        df = df.reindex(sorted(df.columns), axis=1) # type: ignore
 
         with mutex:
             # get minimum and maximum values from previous files
@@ -69,7 +67,7 @@ class NormalizeFit(FileWorkerCallable):
 
             context.put(ContextParam.SCALER, scaler)
 
-    def finish(self, context: FileWorkerContext, _: Metadata) -> None:
+    def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         pass
 
 
@@ -84,7 +82,7 @@ class NormalizeTransform(FileWorkerCallable):
     Args:
         from_other (str): Another dataset to use the normalizer from.
     """
-    def __init__(self, from_other: str = None) -> None:
+    def __init__(self, from_other: str = "") -> None:
         self._scaler = None
         if from_other:
             m = Metadata()
@@ -96,7 +94,7 @@ class NormalizeTransform(FileWorkerCallable):
             with open(path, "rb") as f:
                 self._scaler = pickle.load(f)
 
-    def get_dependencies(self) -> List[str]:
+    def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {NormalizeFit.__name__: CallableDependency.IMMEDIATELY_BEFORE}
 
     def _get_scaler(self, context: FileWorkerContext):
@@ -110,7 +108,7 @@ class NormalizeTransform(FileWorkerCallable):
         # read the file as pandas dataframe and sort by column names
         # to be consistent with the fitted values
         df = pd.read_hdf(file_path, key="data")
-        df = df.reindex(sorted(df.columns), axis=1)
+        df = df.reindex(sorted(df.columns), axis=1) # type: ignore
 
         # get the used normalization method and the fitted values
         scaler = self._get_scaler(context)
