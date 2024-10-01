@@ -137,7 +137,7 @@ def simple_graph(data_x: List[str], data_y: List[float]) -> Callable:
     return graph
 
 
-def get_day_list(interval: Tuple[date, date]) -> List[date]:
+def get_day_list(interval: Tuple[date, date]) -> List[datetime]:
     """
     Get a list of days from an interval (tuple) of days (inclusive).
 

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import gzip
 
 from tqdm import tqdm
@@ -70,7 +70,7 @@ class DataUpdater(S3Bucket):
             ts_1 = int(day.date().strftime("%s"))
             ts_1 = ts_1 if ts_1 > start_ts else start_ts
 
-            ts_2 = int(day.date().strftime("%s")) + 86400
+            ts_2 = int((day.date() + timedelta(days=1)).strftime("%s"))
             ts_2 = ts_2 if ts_2 < end_ts else end_ts
 
             # 1. download the DataFrame and ensure homogeneous time steps
