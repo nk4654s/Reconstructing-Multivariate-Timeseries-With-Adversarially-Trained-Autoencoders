@@ -131,7 +131,14 @@ class DataDownloader(S3Bucket):
         values = self._pool.map(line_str_to_array, lines)
         values = np.array(values, dtype=np.float64)
         data = {key: val for (key, val) in zip(header.values, values.T)}
-        return pd.DataFrame(data)
+        df = pd.DataFrame(data)
+
+        # adjust types to save some storage space
+        df["ts"] = df["ts"].astype(np.int64)
+        not_ts = list(set(df.columns.values) - {"ts"})
+        df[not_ts] = df[not_ts].astype(np.float32)
+
+        return df
 
     def get_dataframe(self, day: str) -> pd.DataFrame:
         """
@@ -153,11 +160,6 @@ class DataDownloader(S3Bucket):
 
         if df is None:
             raise EmptyStreamError(day)
-
-        # adjust types to save some storage space
-        df["ts"] = df["ts"].astype(np.int64)
-        not_ts = list(set(df.columns.values) - {"ts"})
-        df[not_ts] = df[not_ts].astype(np.float32)
 
         logger.info("Finished streaming day %s", day)
         logger.info("Streamed %s lines in total", len(df))

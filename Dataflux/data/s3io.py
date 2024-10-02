@@ -1,7 +1,9 @@
 from enum import Enum
+
 import os
 from uuid import UUID
 import boto3
+import boto3.session
 
 
 class DataType(Enum):
@@ -16,26 +18,18 @@ class S3Bucket:
         self._uuid: UUID | None = None
         self.set_machine(machine_uuid)
 
-        self._bucket = os.getenv("S3_BUCKET", "xplore-measurements")
-        self._bucket_type: DataType = DataType.MEASUREMENTS
+        self._bucket = os.getenv("S3_BUCKET", DataType.MEASUREMENTS.value)
         self._client = boto3.client("s3")
-
-    @property
-    def data_type(self) -> DataType:
-        """
-        The data type of the bucket to download from.
-        """
-        return self._bucket_type
 
     def set_data_type(self, data_type: DataType) -> None:
         """
-        Sets the data type of the bucket to download from.
+        Usually, the bucket type will be retrieved from the environment variables.
+        Here, a different bucket can be selected.
 
         Args:
             data_type (DataType): The data type of the bucket to download from.
         """
-        self._bucket = os.getenv("S3_BUCKET", data_type.value)
-        self._bucket_type = data_type
+        self._bucket = data_type.value
 
     @property
     def machine_uuid(self) -> UUID:

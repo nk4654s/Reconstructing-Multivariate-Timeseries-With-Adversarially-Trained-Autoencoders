@@ -1,7 +1,6 @@
 from typing import Dict, Tuple
 from uuid import UUID
 import os
-import json
 import requests
 
 
