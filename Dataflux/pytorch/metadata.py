@@ -22,6 +22,7 @@ class MetadataTypes(Enum):
     IN_SEQUENCE = "num_input_sequence"
     OUT_SEQUENCE = "num_output_sequence"
     SKIP = "skip"
+    TS_INDEX = "ts_index"
 
 
 class Metadata:
@@ -34,7 +35,10 @@ class Metadata:
         num_features_targets (int): The number of target features.
         num_input_sequence (int): The number of input sequence features.
         num_output_sequence (int): The number of output sequence features.
+        skip (int): The number of skipped samples.
+        ts_index (int): The index of the timestamp.
         column_names (List[str]): The column names of a dataset (includes weather data).
+        column_names_sensors (List[str]): The column names of sensors.
     """
     def __init__(self,
                  num_features_sensors: int,
@@ -43,6 +47,7 @@ class Metadata:
                  num_input_sequence: int,
                  num_output_sequence: int,
                  skip: int,
+                 ts_index: int,
                  column_names: List[str],
                  column_names_sensors: List[str]) -> None:
         self._num_features_sensors = num_features_sensors
@@ -53,6 +58,17 @@ class Metadata:
         self._column_names = column_names
         self._column_names_sensors = column_names_sensors
         self._skip = skip
+        self._ts_index = ts_index
+
+    @property
+    def ts_index(self) -> int:
+        """The index of the time stamp feature, which should be excluded from training usually.
+
+        Returns:
+            int: Either the index of the time stamp or None if the time stamp value is not
+                part of the data.
+        """
+        return self._ts_index
 
     @property
     def skip(self) -> int:

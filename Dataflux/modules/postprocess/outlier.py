@@ -1,6 +1,6 @@
 import os
 from threading import Lock
-from typing import Any, List
+from typing import Any, Dict, List
 import numpy as np
 import pandas as pd
 from Dataflux.helper import Metadata, Meta
@@ -40,22 +40,21 @@ class OutlierFit(FileWorkerCallable):
 
         logger.debug("Ignoring following columns for outlier detection: %s", self._ignore)
 
-    def get_dependencies(self) -> List[str]:
+    def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {OutlierTransform.__name__: CallableDependency.IMMEDIATELY_AFTER,
                 NormalizeTransform.__name__: CallableDependency.NOT_BEFORE}
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
-        print("findoutliers:", file_path)
         # Load the file into a pandas DataFrame
         df = pd.read_hdf(file_path, key="data")
-        df = df.reindex(sorted(df.columns), axis=1)
+        df = df.reindex(sorted(df.columns), axis=1) # type: ignore
 
         include = list(set(df.columns.values) - self._ignore)
 
         self._means.append(df[include].mean())
         self._stds.append(df[include].std())
 
-    def finish(self, context: FileWorkerContext, _: Metadata) -> None:
+    def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         # pass the trained variables to the next callable
         with mutex:
             mean = sum(self._means) / len(self._means)
@@ -87,16 +86,15 @@ class OutlierTransform(FileWorkerCallable):
         self._lengths_files = {}
         logger.debug("Outlier detection uses sigma %s", sigma)
 
-    def get_dependencies(self) -> List[str]:
+    def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {OutlierFit.__name__: CallableDependency.IMMEDIATELY_BEFORE}
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
         if self._enable is not True or self._enable != "True":
             return None
 
-        print("removeoutliers:", file_path)
         df = pd.read_hdf(file_path, key="data")
-        df = df.reindex(sorted(df.columns), axis=1)
+        df = df.reindex(sorted(df.columns), axis=1) # type: ignore
 
         include = list(set(df.columns.values) - context.get(ContextParam.IGNORE))
 
@@ -108,7 +106,6 @@ class OutlierTransform(FileWorkerCallable):
 
         day = file_path.split("_", maxsplit=1)[-1][:-3]
         if df.empty:
-            print("\tRemoving empty file", file_path)
             self._removed_files.append(day)
             os.remove(file_path)
         else:

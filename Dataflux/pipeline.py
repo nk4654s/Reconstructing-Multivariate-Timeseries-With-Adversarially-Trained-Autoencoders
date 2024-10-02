@@ -10,7 +10,7 @@ from Dataflux.cli import CLIArgumentParser, TYPE_MODULES_PRE, TYPE_MODULES_POST
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
 from Dataflux.helper.metadata import Metadata
 import Dataflux.modules.preprocess as pre
-from Dataflux.data import S3, DFIO, BucketType
+from Dataflux.data import download, ContinuousDataDownloader, DataType
 
 from Dataflux import get_logger
 
@@ -21,7 +21,7 @@ modules_pre = [
     pre.HomogeneousColumns,
     pre.RenameColumns,
     pre.InterpolatePreProcessor,
-    pre.HomogeneousTimeSteps
+    pre.HomogeneousTimeSteps,
 ]
 
 modules_post = []
@@ -38,7 +38,6 @@ def preprocessing(parser: CLIArgumentParser, modules: TYPE_MODULES_PRE) -> None:
         modules (TYPE_MODULES_PRE): The list of classes which should be used for
             preprocessing.
     """
-    # clean up?
     if parser.args.overwrite and os.path.exists(parser.args.folder):
         shutil.rmtree(parser.args.folder)
 
@@ -52,12 +51,11 @@ def preprocessing(parser: CLIArgumentParser, modules: TYPE_MODULES_PRE) -> None:
             date.fromisoformat(interval[1])
         ))
 
-    s3 = S3(machine_uuid, interval_list)
-    s3.set_bucket(BucketType.MEASUREMENTS)
+    downloader = ContinuousDataDownloader(machine_uuid, interval_list)
+    downloader.set_data_type(DataType.MEASUREMENTS)
 
     # download and process data
-    dfio = DFIO(s3)
-    dfio.download(parser.args.folder, modules=modules)
+    download(downloader, parser.args.folder, modules=modules)
 
 
 def postprocessing(parser: CLIArgumentParser, modules: TYPE_MODULES_POST) -> None:

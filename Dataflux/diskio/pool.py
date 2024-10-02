@@ -66,7 +66,7 @@ class FileWorkerPool:
         registered workers. All workers wait until all files are processed,
         before applying the next module.
         """
-        for module in tqdm(self._modules):
+        for module in tqdm(self._modules, desc="Post-Processing Dataset"):
             module_name = module.__class__.__name__
             for w in self._workers[module_name]:
                 w.start()

@@ -44,7 +44,6 @@ postprocessing:
         - PositionBypassregelventilPCV74381 (%)
         - Sammelwarnung
         - Startbereit
-        - ts
         - VD2StörungGekommen
         - VD2StörungGekommenQuittiert
         - VerdichterAbschaltungMitEntspannung
@@ -55,9 +54,9 @@ postprocessing:
   - class_path: Dataflux.modules.postprocess.normalize.NormalizeFit
     init_args:
       method: minmax
+      exclude_keys:
+        - ts
   - class_path: Dataflux.modules.postprocess.normalize.NormalizeTransform
-    init_args:
-      from_other: dataset-cat-green
   - class_path: Dataflux.modules.postprocess.split.SplitDataset
     init_args:
       name: dataset-debug-split

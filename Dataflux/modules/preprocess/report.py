@@ -52,7 +52,7 @@ class Report(BasePreProcessor):
         return corr_name
 
     def _visualize_series(
-        self, df: DataFrame, col_name: str, avg_window_size: int = 30, path: str = None
+        self, df: DataFrame, col_name: str, avg_window_size: int = 30, path: str = ""
     ) -> None:
         # Get the column series
         series = df[col_name]
@@ -87,7 +87,7 @@ class Report(BasePreProcessor):
 
         plt.savefig(get_file(f"{self._folder}/boxplot_{path}"))
 
-    def _visualize_avg_corr(self, cmat: DataFrame, path: str = None) -> None:
+    def _visualize_avg_corr(self, cmat: DataFrame, path: str = "") -> None:
         cmat = cmat.copy().fillna(0)
         vals = zip(cmat.columns.values, np.mean(cmat, axis=0), np.std(cmat, axis=0))
         vals = sorted(list(vals), key=lambda x: (x[1], x[2], x[0]), reverse=True)
@@ -111,7 +111,7 @@ class Report(BasePreProcessor):
         plt.setp(ax.get_xticklabels(), rotation=90, ha="right")
         plt.savefig(get_file(f"{self._folder}/{path}"))
 
-    def _visualize_corr_matrix(self, cmat: DataFrame, path: str = None) -> None:
+    def _visualize_corr_matrix(self, cmat: DataFrame, path: str = "") -> None:
         fig, ax = plt.subplots(figsize=(12, 12))
         im = ax.imshow(cmat, cmap="coolwarm", interpolation="nearest")
 
@@ -129,6 +129,7 @@ class Report(BasePreProcessor):
 
     def _clean_corr_matrix(self) -> DataFrame:
         # remove the self-correlations
+        assert self._sum_correlation_matrix is not None, "Sum of correlation matrix not computed."
         corr_matrix = self._sum_correlation_matrix / self._counts
         eye = np.eye(corr_matrix.shape[0], corr_matrix.shape[0])
         corr_matrix[eye == 1] = 0
@@ -201,9 +202,9 @@ class Report(BasePreProcessor):
 
         return df
 
-    def on_processing_finished(self, metadata: Metadata) -> DataFrame | List[DataFrame]:
+    def on_processing_finished(self, metadata: Metadata) -> None:
         if not self._folder:
-            return
+            return None
         os.mkdir(self._folder)
 
         # plot the outlier removed statistics if available
@@ -234,7 +235,7 @@ class Report(BasePreProcessor):
         num_features = [x["features"] for x in self._file_register]
         days = [x["day"] for x in self._file_register]
         if len(days) < 2:
-            return
+            return None
 
         logging.debug("Logging feature per day on %s days", len(days))
 

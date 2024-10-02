@@ -1,6 +1,6 @@
 import os
 import shutil
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 from copy import deepcopy, copy
 
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
@@ -80,7 +80,7 @@ class SplitDataset(FileWorkerCallable):
 
         os.makedirs(os.path.join(name, "metadata"))
 
-    def get_dependencies(self) -> List[str]:
+    def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {SplitDataset.__name__: CallableDependency.FINAL}
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:

@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Callable, List
 from pandas import DataFrame
 from Dataflux.helper import Metadata
-from Dataflux import logger
 
 
 class EntryPoint(Enum):
@@ -11,6 +10,26 @@ class EntryPoint(Enum):
 
     ON_DOWNLOAD_FINISHED = "on download finished"
     ON_PROCESSING_FINISHED = "on processing finished"
+
+
+def parse(df: DataFrame | List[DataFrame] | None) -> List[DataFrame]:
+    """Ensures that the given dataframe is in a list. If the provided argument
+    was a list of dataframes, it will be returned. If the argument is None, an empty list
+    will be returned.
+    
+    Args:
+        df (DataFrame | List[DataFrame] | None): A representation of one or multiple dataframes.
+
+    Returns:
+        Provided dataframe in a list, or empty.
+    """
+    if isinstance(df, DataFrame):
+        return [df]
+    
+    if df is None:
+        return []
+    
+    return df
 
 
 class BasePreProcessor(object):
@@ -43,21 +62,22 @@ class BasePreProcessor(object):
         return None
 
     def _process(
-        self, df: DataFrame, func: Callable, metadata: Metadata
-    ) -> DataFrame | List[DataFrame]:
+        self, df: DataFrame | List[DataFrame] | None, func: Callable, metadata: Metadata
+    ) -> List[DataFrame] | None:
         if df is None:
             func(metadata)
             return None
 
         # set up the container of processed dataframes, remember the length of the container
         # as this will change during processing
-        processed = [df] if isinstance(df, DataFrame) else df
+        processed: List[DataFrame] = parse(df)
         pointer = len(processed)
 
         # process all dataframes in the container
         for i in range(pointer):
-            df = func(processed[i], metadata)
-            processed += [df] if isinstance(df, DataFrame) else df
+            result: DataFrame | None = func(processed[i], metadata)
+            if df is not None:
+                processed += parse(result)
 
         # remove old dataframes from the container
         processed = processed[pointer:]
@@ -65,14 +85,13 @@ class BasePreProcessor(object):
 
     def __call__(
         self,
-        df: DataFrame = None,
+        df: DataFrame | List[DataFrame] | None,
+        metadata: Metadata,
         entry_point: EntryPoint = EntryPoint.ON_PROCESSING_FINISHED,
-        metadata: Metadata = None,
-    ) -> List[DataFrame]:
+    ) -> List[DataFrame] | None:
         if entry_point == EntryPoint.ON_DOWNLOAD_FINISHED:
             df = self._process(df, self.on_download_finished, metadata)
+            return parse(df)
 
-        elif entry_point == EntryPoint.ON_PROCESSING_FINISHED:
-            self.on_processing_finished(metadata)
-
-        return [df] if isinstance(df, DataFrame) else df
+        self.on_processing_finished(metadata)
+        return None

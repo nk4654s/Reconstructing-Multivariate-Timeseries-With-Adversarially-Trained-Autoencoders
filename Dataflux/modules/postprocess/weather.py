@@ -1,6 +1,6 @@
 import os
 from threading import Lock
-from typing import Any, List
+from typing import Any, Dict, List
 import numpy as np
 import pandas as pd
 from Dataflux.helper import Meta, Metadata, get_machine_location
@@ -44,22 +44,20 @@ class WeatherDataset(FileWorkerCallable):
         self._removed_files = []
         self._lengths_files = {}
 
-    def get_dependencies(self) -> List[str]:
+    def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {NormalizeFit.__name__: CallableDependency.NOT_BEFORE}
 
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
-        print("weather:", file_path)
         day = file_path.split("_", maxsplit=1)[-1][:-3]
         try:
             df = pd.read_hdf(file_path, key="data")
-        except KeyError:
-            print("\tRemoving empty file", file_path)
+        except (KeyError, ValueError):
             os.remove(file_path)
             self._removed_files.append(day)
             return
 
         if self._enable is not True or self._enable != "True":
-            self._lengths_files[day] = len(df)
+            self._lengths_files[day] = df.shape
             return
 
         with mutex:
@@ -95,32 +93,15 @@ class WeatherDataset(FileWorkerCallable):
             df.interpolate(method="linear", inplace=True)
             df.bfill(inplace=True)
             df.ffill(inplace=True)
-            # df.interpolate(
-            #     method="spline",
-            #     order=2,
-            #     limit=None,
-            #     limit_direction="both",
-            #     inplace=True,
-            # )
 
         df.to_hdf(file_path, key="data", format="table", mode="w")
         if df.empty or temp_df.empty:
-            print("\tRemoving empty file", file_path)
             self._removed_files.append(day)
             os.remove(file_path)
         else:
-            self._lengths_files[day] = len(df)
+            self._lengths_files[day] = df.shape
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
-        new_files = []
-        for f in metadata[Meta.FILES]:
-            day = f["day"]
-            if day in self._removed_files:
-                continue
-
-            if day in self._lengths_files.keys():
-                f["recordings"] = self._lengths_files[day]
-                new_files.append(f)
-
         metadata.drop(Meta.FILES)
-        metadata.put(new_files, Meta.FILES)
+        for day, shape in self._lengths_files.items():
+            metadata.put_list({"day": day, "recordings": shape[0], "features": shape[1]}, Meta.FILES)

@@ -28,7 +28,7 @@ class PositionBypassRemoval(BasePreProcessor):
         self._stats = {}
         self._rm_rows = int(remove_timespan)
 
-    def on_download_finished(self, df: DataFrame, metadata: Metadata = None) -> DataFrame:
+    def on_download_finished(self, df: DataFrame, metadata: Metadata) -> DataFrame:
         logger.debug("Removing position bypass ventil from dataset file.")
         cols = [c for c in df.columns.values if "PositionBypassregelventilPCV74381 (%)" in c]
 

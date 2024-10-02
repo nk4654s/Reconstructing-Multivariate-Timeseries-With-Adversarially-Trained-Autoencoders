@@ -1,8 +1,8 @@
 import os
 from threading import Lock
-from typing import Any, Callable
+from typing import Any
 import pandas as pd
-from Dataflux.helper import Meta, Metadata
+from Dataflux.helper import Metadata
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext
 
 mutex = Lock()
@@ -12,20 +12,14 @@ class ThreadSafeStore:
     Thread safe store for the HDF5 file.
     """
     def __init__(self, key: str = "data") -> None:
-        self._store: pd.HDFStore = None
+        self._store: pd.HDFStore | None = None
         self._key = key
-        self._path = None
-
-    def is_open(self) -> bool:
-        """Returns True if the HDFStore is open."""
-        if not self._store:
-            return False
-
-        return self._store.is_open
+        self._path = ""
 
     def close(self) -> None:
         """Closes the HDF5 file."""
-        assert self.is_open()
+        assert self._store is not None
+        assert self._store.is_open
         with mutex:
             self._store.close()
             self._store = None
@@ -40,7 +34,6 @@ class ThreadSafeStore:
             if self._store is None:
                 self._path = path
                 self._store = pd.HDFStore(path, mode="w")
-                print("Created Store...")
 
     def add_dataframe(self, df: pd.DataFrame) -> None:
         """Adds a dataframe to the HDF5 store.
@@ -48,13 +41,14 @@ class ThreadSafeStore:
         Args:
             df (pd.DataFrame): Dataframe to add to the HDF5 store.
         """
-        #assert self.is_open()
+        assert self._store is not None
         with mutex:
             self._store.put(self._key, df, format="table", append=True)
 
     def finish(self) -> None:
         """Resets the index `ts` and closes the store.
         """
+        assert self._path, "No path set for HDF5 file"
         with mutex:
             if self._store is not None:
                 self._store.close()
@@ -81,7 +75,6 @@ class MonoFile(FileWorkerCallable):
         if self._enable is not True or self._enable != "True":
             return None
 
-        print("monolith:", file_path)
         df = pd.read_hdf(file_path, key="norm")
         df = df.set_index("ts").reset_index()
 
