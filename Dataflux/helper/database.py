@@ -5,15 +5,31 @@ import json
 import requests
 
 
+class MissingEnvironmentVariable(Exception):
+    """This class defines the exception to throw when trying to
+    access a missing envrionment variable. Provide the variable's name to
+    the constructior for displaying a correct message.
+
+    Args:
+        key_name (str): The missing variable's name.
+    """
+    def __init__(self, key_name: str, *args: object) -> None:
+        message = f"Make sure to define the '{key_name}' environment variable according to your system."
+        super().__init__(message, *args)
+
+
 def get_secret() -> str | None:
     """This method loads the authorization key for the database from the ".env" file, which
     should be located next to this code.
-    """
-    if not os.path.exists(".env"):
-        return None
 
-    with open(".env", "r", encoding="UTF-8") as f:
-        return json.load(f)["DB_SECRET"]
+    Raises:
+        MissingEnvironmentVariable: If the 'DB_SECRET' could not be found in the environment
+            variables.
+    """
+    if "DB_SECRET" not in os.environ:
+        raise MissingEnvironmentVariable("DB_SECRET")
+
+    return os.environ["DB_SECRET"]
 
 
 def get_sensor_name_to_uuid(machine_uuid: UUID) -> Dict[str, str]:
