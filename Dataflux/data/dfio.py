@@ -82,7 +82,7 @@ def download(
             # check if a new storage needs to be created, only after a machine state
             # change
             if j > 0 or meta[Meta.MACHINE_STATE_CHANGE]:
-                if store:
+                if store and store.is_open:
                     store.close()
 
                 logger.debug("Saving DF to %s", file_path)
@@ -95,7 +95,7 @@ def download(
 
         meta.put(False, Meta.MACHINE_STATE_CHANGE)
 
-    if store:
+    if store and store.is_open:
         store.close()
 
     # execute modules which require to be executed after processing
