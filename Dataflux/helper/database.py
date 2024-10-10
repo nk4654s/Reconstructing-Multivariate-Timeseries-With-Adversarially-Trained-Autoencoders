@@ -76,7 +76,7 @@ def get_machine_location(machine_uuid: UUID) -> Tuple[float, float] | None:
     Returns:
         Tuple[float, float]: Latitude and longitude.
     """
-    url = "https://dev.graphql.api.xplore.ac/"
+    url = "https://stage.graphql.api.xplore.ac/"
     payload = (
         '"query": "query getMachine '
         + '{\n\tmachine {\n\t\tgetMachine(machineId: \\"'
@@ -104,7 +104,7 @@ def get_machine_location(machine_uuid: UUID) -> Tuple[float, float] | None:
 
 def get_sensor_uuid_to_name(machine_uuid: UUID) -> Dict[str, str] | None:
     """This function returns a dictionary of sensor uuids to sensor names."""
-    url = "https://dev.graphql.api.xplore.ac/"
+    url = "https://stage.graphql.api.xplore.ac/"
     payload = (
         '{"query":"query getMachine {\n  machine {\n    getMachine'
         + f'(machineId: \\"{str(machine_uuid)}\\") '
@@ -132,4 +132,5 @@ def get_sensor_uuid_to_name(machine_uuid: UUID) -> Dict[str, str] | None:
         unit = sensor["properties"].get("unit", None)
         unit = f" ({unit})" if unit else ""
         sensor_dict[sensor["id"]] = sensor["name"] + unit
+
     return sensor_dict
