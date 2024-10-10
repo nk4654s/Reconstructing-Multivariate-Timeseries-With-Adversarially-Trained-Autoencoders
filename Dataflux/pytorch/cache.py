@@ -57,12 +57,12 @@ class DataFrameCache:
 
     @property
     def ts_index(self) -> int:
-        """The time step index of the dataframe' time series.
+        """The time step index of the dataframe's time series.
         """
         if self._ts_index is None and "ts" in self.columns:
             self._ts_index = np.argwhere(np.array(self.columns) == "ts")[0][0]
 
-        assert self._ts_index
+        assert self._ts_index, "'ts' not a column in dataset"
         return self._ts_index
 
     def get(self, path: str, key: str = "norm", include_ts: bool = False) -> Tuple[np.ndarray, np.ndarray | None]:
@@ -88,7 +88,7 @@ class DataFrameCache:
             df = df.reindex(sorted(df.columns), axis=1) # type: ignore
 
             # initialize the column names and ts-index value
-            if self.columns is None:
+            if self._column_names is None:
                 self._column_names = list(df.columns.values)
 
                 # initialize the ts-index value then remove it from the list of
