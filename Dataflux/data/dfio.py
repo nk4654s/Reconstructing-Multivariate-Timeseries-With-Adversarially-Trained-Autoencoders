@@ -38,7 +38,6 @@ def download(
     meta.put(True, Meta.MACHINE_STATE_CHANGE)
 
     # iterate over all streams and append their content to the dataframe
-    init_save = True
     for i in trange(len(downloader), desc="Pre-Processing Dataset"):
         day = downloader.day(i).strftime("%Y-%m-%d")
         file_path = get_file(os.path.join(dir_name, filename), postfix=day)
@@ -71,8 +70,7 @@ def download(
         if len(dfs) == 0:
             continue
 
-        if init_save:
-            init_save = False
+        if store is None:
             logger.debug("Saving DF to %s", file_path)
             store = pd.HDFStore(file_path, "w")
 
@@ -82,7 +80,7 @@ def download(
             # check if a new storage needs to be created, only after a machine state
             # change
             if j > 0 or meta[Meta.MACHINE_STATE_CHANGE]:
-                if store and store.is_open:
+                if store.is_open:
                     store.close()
 
                 logger.debug("Saving DF to %s", file_path)
@@ -95,7 +93,8 @@ def download(
 
         meta.put(False, Meta.MACHINE_STATE_CHANGE)
 
-    if store and store.is_open:
+    assert store
+    if store.is_open:
         store.close()
 
     # execute modules which require to be executed after processing
