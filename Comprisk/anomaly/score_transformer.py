@@ -8,8 +8,8 @@ from Dataflux.visualization import show_dataframe
 from Comprisk import logger
 
 
-def loss_fn(y: np.array, y_hat: np.array) -> np.array:
-    return np.sqrt(np.power(y - y_hat, 2))
+def loss_fn(y: pd.DataFrame, y_hat: pd.DataFrame) -> pd.DataFrame:
+    return np.sqrt(np.power(y - y_hat, 2)) # type: ignore
 
 
 class ScoreTransformer:
@@ -43,8 +43,8 @@ class ScoreTransformer:
         self._upper_bound = upper_bound
         self._factor = smoothing_amplifier
 
-        self._median_quantile = None
-        self._smoothing = None
+        self._median_quantile: np.ndarray | None = None
+        self._smoothing: np.ndarray | None = None
 
         self._critical_threshold = critical_threshold
 
@@ -77,7 +77,7 @@ class ScoreTransformer:
         self._smoothing = -(smoothing_target**2) / np.log(self._factor)
         logger.debug("Fitted ScoreTransformer with smoothing factor %s", self._smoothing)
 
-    def transform(self, predicted: pd.DataFrame, target: pd.DataFrame, visualize: str = None, show: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def transform(self, predicted: pd.DataFrame, target: pd.DataFrame, visualize: str = "", show: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """This method transforms the loss values in the range of 0 to 1 by applying the internal
         transformation function. Make sure to run `self.fit(predicted, target)` first, as the 
         transformation function's parameters must be found first. Only run `.fit()` on training data.
@@ -86,14 +86,14 @@ class ScoreTransformer:
             predicted (pd.DataFrame): The predicted values of the model.
             target (pd.DataFrame): The target values of the model.
             visualize (str): Whether to visualize the transformed loss values or not. Parameter defines
-                the output path of the visualization. Defaults to None, which does not generate a graph.
+                the output path of the visualization. Defaults to "", which does not generate a graph.
             show (bool): Whether to show the graph or not.
         
         Returns:
             (Tuple[pd.DataFrame, pd.DataFrame]): (1) The transformed loss values in the range of 0 to 1. 0 is best
                 and 1 is worst. (2) The scores which are critical as the loss values exceed the known region.
         """
-        assert self._smoothing is not None, "Fit the transformer first."
+        assert self._smoothing is not None and self._median_quantile is not None, "Fit the transformer first."
 
         # compute anomaly scores
         loss = loss_fn(predicted, target)
@@ -118,7 +118,7 @@ class ScoreTransformer:
         loss_mean[loss_mean < self._critical_threshold] = np.nan
 
         # transfer all values to dataframes and return them
-        names = predicted.columns.values
+        names = list(predicted.columns.values)
         malfunction = pd.DataFrame(malfunction, columns=names, index=loss_mean.index)
         critical = pd.DataFrame(critical, columns=names, index=loss_mean.index)
         loss_mean = pd.DataFrame(loss_mean.to_numpy(), columns=names)

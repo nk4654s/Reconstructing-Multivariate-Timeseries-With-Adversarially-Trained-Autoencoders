@@ -1,3 +1,4 @@
+
 if [ -z "$1" ]; then
     echo "Arg 1: Please specify a user."
     exit 1
