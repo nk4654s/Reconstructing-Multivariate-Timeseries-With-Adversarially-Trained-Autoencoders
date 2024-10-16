@@ -3,6 +3,7 @@ import os
 import json
 import pickle
 from typing import Any, Dict, Tuple, Type, List
+from lightning import LightningModule
 import numpy as np
 import pandas as pd
 import yaml
@@ -212,9 +213,9 @@ class ModelLoader:
         if os.path.exists(score_path):
             with open(score_path, "rb") as f:
                 return pickle.load(f)
-        return None
+        raise LookupError("Could not find 'score_transformer.pkl' in model metadata path.")
 
-    def get_model(self) -> Any:
+    def get_model(self) -> LightningModule:
         """A simple getter for the loaded model during object initialization.
         
         Returns:
@@ -222,10 +223,10 @@ class ModelLoader:
         """
         return self._model
 
-    def get_normalization(self) -> pd.DataFrame:
+    def get_normalization(self) -> pd.DataFrame | None:
         norm_path = os.path.join(self._path, "metadata", "normalizer.json")
         if not os.path.exists(norm_path):
-            return
+            return None
 
         norm_data = {}
         with open(norm_path, "r", encoding="UTF-8") as f:

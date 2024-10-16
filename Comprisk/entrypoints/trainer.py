@@ -3,15 +3,14 @@
 import os
 import pickle
 import shutil
-from lightning import Callback
+from lightning.pytorch.callbacks.callback import Callback
+from lightning import LightningModule
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
-import torch
 
 from Dataflux.pytorch import Dataset
 
 from Comprisk.anomaly import ScoreTransformer
-from Comprisk.callbacks import MeasurementCallback
 from Comprisk.helper import ModelLoader
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
@@ -19,20 +18,20 @@ from Comprisk.cli import CompriskCLI
 
 from Comprisk import logger
 
-def get_trainer_callback(trainer, callback_cls: Callback) -> Callback:
+def get_trainer_callback(trainer, callback_name: str) -> Callback | None:
     """
     Finds the fiven callback class in the trainer callbacks list. If the
     callback could not be found, then the returned value is None.
     
     Args:
         trainer (Any): The trainer object with the list of configured callbacks.
-        callback_cls (Callback): The `lightning.Callback` class.
+        callback_name (str): The `lightning.Callback` class.
     
     Returns:
         Callback: The callback object, if found.
     """
     for c in trainer.callbacks:
-        if isinstance(c, callback_cls):
+        if c.__name__ == callback_name:
             return c
     return None
 
@@ -89,7 +88,7 @@ def run_trainer(cli: CompriskCLI) -> str:
     # set up the model saving as configuring the checkpoint path in the yaml config does not
     # work. The config file does not know the model's output folder name with the increasing
     # suffix number
-    checkpoint = get_trainer_callback(cli.trainer, ModelCheckpoint)
+    checkpoint = get_trainer_callback(cli.trainer, ModelCheckpoint.__name__)
     if checkpoint:
         os.makedirs(tb_logger.log_dir + "/checkpoints/")
         checkpoint.dirpath = tb_logger.log_dir + "/checkpoints/"
@@ -100,21 +99,16 @@ def run_trainer(cli: CompriskCLI) -> str:
     # save model metadata to log folder
     data = cli.datamodule.trainset
     metafolder = os.path.join(tb_logger.log_dir, "metadata")
-    cli.trainer.callbacks.append(MeasurementCallback())
     save_training_meta(metafolder, data)
     
     # check iif a model should be finetuned
     if cli.config.finetune:
         config_path = os.path.dirname(cli.config.finetune)
         loader = ModelLoader(config_path)
-        loaded_model = loader.get_model()
-        model = loaded_model
+        model = loader.get_model()
         model.train()
     else:
-        model = cli.model
-        if model.device == "cuda":
-            logger.debug("Compile model for faster training speeds")
-            model = torch.compile(cli.model)
+        model: LightningModule = cli.model
 
     # train
     logger.debug("Starting training")
@@ -127,6 +121,7 @@ def run_trainer(cli: CompriskCLI) -> str:
     # output folder.
     # FIXME: this should not be a problem, this is a workaround
     if cli.config.finetune:
+        config_path = os.path.dirname(cli.config.finetune)
         if os.path.exists(os.path.join(tb_logger.log_dir, "hparams.yaml")):
             os.remove(os.path.join(tb_logger.log_dir, "hparams.yaml"))
         shutil.copyfile(os.path.join(config_path, "hparams.yaml"),
