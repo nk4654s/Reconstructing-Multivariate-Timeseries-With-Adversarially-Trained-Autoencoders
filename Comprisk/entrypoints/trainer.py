@@ -31,7 +31,7 @@ def get_trainer_callback(trainer, callback_name: str) -> Callback | None:
         Callback: The callback object, if found.
     """
     for c in trainer.callbacks:
-        if c.__name__ == callback_name:
+        if c.__class__.__name__ == callback_name:
             return c
     return None
 
