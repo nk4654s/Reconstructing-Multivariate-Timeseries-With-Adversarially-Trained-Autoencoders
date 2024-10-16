@@ -88,6 +88,7 @@ def cli_main():
 
     # train the model
     trainer_list = pipeline.get("trainer", [])
+    latest_config = ""
     for i, trainer in enumerate(trainer_list):
         # store the current folder structure of the model output root folder
         # after training, a new folder will be created, which must be passed to

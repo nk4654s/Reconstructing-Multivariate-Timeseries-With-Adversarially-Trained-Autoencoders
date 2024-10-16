@@ -150,7 +150,7 @@ class ConfigManager:
         del self._tune["rules"]
 
         self.check_config(self._model, self._tune["model"])
-        self.check_config(self._data, self._tune["data"])
+        self.check_config(self._data, self._tune.get("data", {}))
 
     def check_config(self, a: Dict[str, Any], b: Dict[str, Any]) -> None:
         """
@@ -184,6 +184,7 @@ class ConfigManager:
                     provider, train[key]["init_args"], tune[key], key
                 )
                 continue
+
             # use hyper parameters from the model config, if they will not be tuned
             if key not in tune.keys():
                 suggestion[key] = train[key]
@@ -256,7 +257,7 @@ class ConfigManager:
         params = self.apply_rules(params)
         base_config["model"]["init_args"] = params
 
-        base_config["data"] = self._suggest(provider, base_config["data"], self._tune["data"])
+        base_config["data"] = self._suggest(provider, base_config["data"], self._tune.get("data", {}))
         return base_config
 
     def suggest(self, trial: Trial) -> Tuple[Dict, DataModule]:
@@ -274,5 +275,5 @@ class ConfigManager:
         params = self._suggest(provider, self._model, self._tune["model"])
         params = self.apply_rules(params)
 
-        data_params = self._suggest(provider, self._data, self._tune["data"])
+        data_params = self._suggest(provider, self._data, self._tune.get("data", {}))
         return self.init_submodules(params), DataModule(**data_params)
