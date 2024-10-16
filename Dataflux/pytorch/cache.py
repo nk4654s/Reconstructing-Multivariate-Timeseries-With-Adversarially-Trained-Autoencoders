@@ -59,10 +59,7 @@ class DataFrameCache:
     def ts_index(self) -> int:
         """The time step index of the dataframe's time series.
         """
-        if self._ts_index is None and "ts" in self.columns:
-            self._ts_index = np.argwhere(np.array(self.columns) == "ts")[0][0]
-
-        assert self._ts_index, "'ts' not a column in dataset"
+        assert self._ts_index, "'ts' index available after calling .get() for the first time."
         return self._ts_index
 
     def get(self, path: str, key: str = "norm", include_ts: bool = False) -> Tuple[np.ndarray, np.ndarray | None]:
@@ -93,18 +90,20 @@ class DataFrameCache:
 
                 # initialize the ts-index value then remove it from the list of
                 # feature names, as it is not a feature
-                if self.ts_index:
-                    self._column_names.remove("ts")
+                if self._ts_index is None:
+                    assert "ts" in self._column_names, "'ts' not a column in dataset"
+                self._ts_index = np.argwhere(np.array(self.columns) == "ts")[0][0]
+                self._column_names.remove("ts")
 
             # get every nth value for weather and sensor data, this reduces the amount of samples
             # held back in memory
             weather = None
             weather_keys = [wk for wk in WEATHER_KEYS if wk in df.columns.values]
             if len(weather_keys) > 0:
-                weather = df[weather_keys].to_numpy()[::self._skip]
+                weather = df[weather_keys].to_numpy()[::self._skip].astype(np.float32)
                 sensors = df.drop(WEATHER_KEYS, axis=1)
             
-            sensors = df.to_numpy()[::self._skip]
+            sensors = df.to_numpy()[::self._skip].astype(np.float32)
             self._register(path, (sensors, weather))
         else:
             sensors, weather = data
