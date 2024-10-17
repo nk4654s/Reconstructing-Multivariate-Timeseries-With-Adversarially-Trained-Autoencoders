@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List
+import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
@@ -39,7 +40,7 @@ class FluxScaler:
         """
         return self._method
     
-    def fit(self, df: pd.DataFrame) -> None:
+    def fit(self, df: pd.DataFrame) -> "FluxScaler":
         """
         Fits the scaler to the data. Excluded keys are not considered for scaling.
 
@@ -47,13 +48,13 @@ class FluxScaler:
             df (pd.DataFrame): The dataframe to fit the scaler on.
         """
         header = list(set(df.columns.values) - self._exclude)
-        match self._method:
-            case ScalerMethod.STANDARDIZE_ROBUST:
+        if self._method == ScalerMethod.NORMALIZE or self._method == ScalerMethod.STANDARDIZE:
+            self._internal_scaler.partial_fit(df[header]) # type: ignore
+        else:
                 # for some reason, the robust scaler requires the partial_fit() method to
                 # be used, when the provided data does not cover the whole dataset
-                self._internal_scaler.partial_fit(df[header]) # type: ignore
-            case _:
                 self._internal_scaler.fit(df[header])
+        return self
 
     def transform(self, df: pd.DataFrame, dtype: str = "float32") -> pd.DataFrame:
         """
@@ -74,3 +75,6 @@ class FluxScaler:
         normed[header] = self._internal_scaler.transform(normed[header])
         normed[header] = normed[header].astype(dtype) # type: ignore
         return normed
+
+    def revert(self, array: np.ndarray) -> np.ndarray:
+        return self._internal_scaler.inverse_transform(array)
