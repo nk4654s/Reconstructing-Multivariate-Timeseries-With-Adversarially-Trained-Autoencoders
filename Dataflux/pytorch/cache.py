@@ -28,7 +28,7 @@ class DataFrameCache:
         self._samples_read = {}
         self._add_history = []
         self._column_names = None
-        self._ts_index = None
+        self._ts_index = -1
 
     def _register(self, key: str, matrix: Tuple[np.ndarray, np.ndarray | None]) -> None:
         self._loaded[key] = matrix
@@ -59,7 +59,7 @@ class DataFrameCache:
     def ts_index(self) -> int:
         """The time step index of the dataframe's time series.
         """
-        assert self._ts_index, "'ts' index available after calling .get() for the first time."
+        # assert self._ts_index, "'ts' index available after calling .get() for the first time."
         return self._ts_index
 
     def get(self, path: str, key: str = "norm", include_ts: bool = False) -> Tuple[np.ndarray, np.ndarray | None]:
@@ -90,10 +90,10 @@ class DataFrameCache:
 
                 # initialize the ts-index value then remove it from the list of
                 # feature names, as it is not a feature
-                if self._ts_index is None:
+                if not include_ts and self._ts_index == -1:
                     assert "ts" in self._column_names, "'ts' not a column in dataset"
-                self._ts_index = np.argwhere(np.array(self.columns) == "ts")[0][0]
-                self._column_names.remove("ts")
+                    self._ts_index = np.argwhere(np.array(self.columns) == "ts")[0][0]
+                    self._column_names.remove("ts")
 
             # get every nth value for weather and sensor data, this reduces the amount of samples
             # held back in memory
@@ -118,7 +118,6 @@ class DataFrameCache:
         # make sure to not modify original data, when removing the column
         if not include_ts and self.ts_index:
             sensors = sensors.copy()
-            np.delete(sensors, self.ts_index, axis=1)
             return np.delete(sensors, self.ts_index, axis=1), weather
         
         return sensors, weather
