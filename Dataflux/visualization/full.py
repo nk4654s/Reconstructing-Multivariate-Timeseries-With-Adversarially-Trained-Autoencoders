@@ -10,10 +10,10 @@ colors = ["teal", "orange", "blue", "red", "purple", "brown", "pink", "olive", "
 def show_dataframe(
     sensors: str | List[str],
     df: pd.DataFrame | List[pd.DataFrame],
-    names: List[str] = None,
+    names: List[str] = [],
     grid_size: int = 4,
-    y_label: str = None,
-    save: str = None,
+    y_label: str = "",
+    save: str = "",
     show: bool = False,
 ):
     """Shows and/or saves the visualization of one or multiple pandas DataFrames. In total, 9
@@ -32,7 +32,8 @@ def show_dataframe(
     """
     # configure graph
     df = [df] if isinstance(df, pd.DataFrame) else df
-    names = [f"DF{_}" for _ in range(len(df))] if names is None else names
+    df = [d.reset_index() for d in df]
+    names = [f"DF{_}" for _ in range(len(df))] if len(names) == 0 else names
     sensors = [sensors] if isinstance(sensors, str) else sensors
     num = len(sensors)
     num_rows = math.ceil(num / grid_size)
@@ -52,7 +53,7 @@ def show_dataframe(
     for i, sensor_test in enumerate(sensors):
         axs[i // num_cols][i % num_cols].title.set_text(sensor_test.split(" ")[0])
         axs[i // num_cols][i % num_cols].set_xlabel("Seconds")
-        if y_label is None:
+        if y_label == "":
             axs[i // num_cols][i % num_cols].set_ylabel(sensor_test.split(" ")[-1])
         else:
             axs[i // num_cols][i % num_cols].set_ylabel(y_label)
