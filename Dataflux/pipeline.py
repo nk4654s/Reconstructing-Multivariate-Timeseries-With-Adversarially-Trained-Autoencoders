@@ -85,6 +85,9 @@ def main() -> None:
     # initialize all modules
     parser = CLIArgumentParser(modules_pre, modules_post)
     modules = parser.get_modules()
+    if os.path.exists(parser.args.folder) and not parser.args.overwrite:
+        print("Dataset folder exists, overwrite is set to False.")
+        exit(0)
 
     # 1. run pre-processing step, which also downloads the dataset
     preprocessing(parser, modules[0])
