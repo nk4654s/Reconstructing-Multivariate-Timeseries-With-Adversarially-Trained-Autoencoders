@@ -75,10 +75,14 @@ class SplitDataset(FileWorkerCallable):
         self._name = name
 
         # build the dataset folder structure
-        if os.path.exists(name) and overwrite:
-            shutil.rmtree(name)
+        self.active = True
+        if os.path.exists(name):
+            if overwrite:
+                shutil.rmtree(name)
+                os.makedirs(os.path.join(name, "metadata"))
+            else:
+                self.active = False
 
-        os.makedirs(os.path.join(name, "metadata"))
 
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {SplitDataset.__name__: CallableDependency.FINAL}
@@ -88,6 +92,9 @@ class SplitDataset(FileWorkerCallable):
         pass
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
+        if not self.active:
+            return
+
         # split the dataset according to each dataframes metadata
         trimmed_days, splitted_days = deterministic_split_algorithm(metadata, self._percentage)
         trimmed_total = sum([d["recordings"] for d in trimmed_days])
