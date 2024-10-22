@@ -47,7 +47,7 @@ class FluxScaler:
         Args:
             df (pd.DataFrame): The dataframe to fit the scaler on.
         """
-        header = list(set(df.columns.values) - self._exclude)
+        header = sorted(list(set(df.columns.values) - self._exclude))
         if self._method == ScalerMethod.NORMALIZE or self._method == ScalerMethod.STANDARDIZE:
             self._internal_scaler.partial_fit(df[header]) # type: ignore
         else:
@@ -70,7 +70,7 @@ class FluxScaler:
         """
         self._internal_scaler.set_output(transform="pandas")
 
-        header = list(set(df.columns.values) - self._exclude)
+        header = sorted(list(set(df.columns.values) - self._exclude))
         normed = df.copy()
         normed[header] = self._internal_scaler.transform(normed[header])
         normed[header] = normed[header].astype(dtype) # type: ignore

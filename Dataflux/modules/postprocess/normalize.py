@@ -84,12 +84,14 @@ class NormalizeTransform(FileWorkerCallable):
     """
     def __init__(self, from_other: str = "") -> None:
         self._scaler = None
+        self._columns = list()
         if from_other:
             m = Metadata()
             m.load(from_other)
 
             norm_meta = m[Meta.NORMALIZER]
             path = norm_meta[Meta.NORM_PATH.name]
+            self._columns = norm_meta[Meta.NORM_KEYS.name]
 
             with open(path, "rb") as f:
                 self._scaler = pickle.load(f)
@@ -109,6 +111,12 @@ class NormalizeTransform(FileWorkerCallable):
         # to be consistent with the fitted values
         df = pd.read_hdf(file_path, key="data")
         df = df.reindex(sorted(df.columns), axis=1) # type: ignore
+
+        if not self._columns:
+            self._columns = list(df.columns.values)
+        else:
+            to_drop = list(set(df.columns.values) - set(self._columns))
+            df = df.drop(columns=to_drop, errors="ignore")
 
         # get the used normalization method and the fitted values
         scaler = self._get_scaler(context)
@@ -133,5 +141,6 @@ class NormalizeTransform(FileWorkerCallable):
         data = {
             Meta.NORM_METHOD.name: scaler.method.value,
             Meta.NORM_PATH.name: path,
+            Meta.NORM_KEYS.name: self._columns
         }
         metadata.put(data, Meta.NORMALIZER)
