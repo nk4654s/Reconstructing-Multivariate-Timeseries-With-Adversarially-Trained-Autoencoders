@@ -126,20 +126,22 @@ def run_trainer(cli: CompriskCLI) -> str:
             os.remove(os.path.join(tb_logger.log_dir, "hparams.yaml"))
         shutil.copyfile(os.path.join(config_path, "hparams.yaml"),
                         os.path.join(tb_logger.log_dir, "hparams.yaml"))
+    
+    train_score_transformer(tb_logger.log_dir, metafolder, cli.datamodule.valset)
+    return tb_logger.log_dir
 
+def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset):
     # load the (best) trained model back
-    loader = ModelLoader(tb_logger.log_dir)
-    predicted, target = loader.predict_loop(cli.datamodule.valset)
+    loader = ModelLoader(model_dir)
+    predicted, target = loader.predict_loop(dataset)
 
     # fit and save the score transformer
-    score = ScoreTransformer(cli.datamodule.valset.get_meta().num_input_sequence)
+    score = ScoreTransformer(dataset.get_meta().num_input_sequence)
     score.fit(predicted, target)
 
-    score_path = os.path.join(metafolder, "score_transformer.pkl")
+    score_path = os.path.join(meta_dir, "score_transformer.pkl")
     with open(score_path, "wb") as f:
         pickle.dump(score, f)
-    
-    return tb_logger.log_dir
 
 
 def cli_main():
