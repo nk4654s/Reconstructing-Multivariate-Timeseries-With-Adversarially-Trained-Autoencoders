@@ -13,6 +13,7 @@ class CompriskLoadCLI(CompriskCLI):
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         super().add_arguments_to_parser(parser)
+        parser.add_argument("--static-scores", type=bool, default=False)
         parser.add_argument("--prefix", type=str, default=None)
         parser.add_argument("--dataset", type=str, default=None)
         parser.add_argument("--anomaly.name", type=str, default=None)

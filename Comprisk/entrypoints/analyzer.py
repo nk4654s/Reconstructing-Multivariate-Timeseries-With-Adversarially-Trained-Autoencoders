@@ -99,7 +99,7 @@ def cli_main():
     # transformes the loss between prediction and target to a score between 0 and 1.
     score = loader.get_score_transformer()
     score_vis_path = os.path.join(base_path, "score-transformed.png")
-    score.transform(predicted, target, visualize=score_vis_path)
+    score.transform(predicted, target, visualize=score_vis_path, static=cli.config.static_scores)
 
 
 if __name__ == "__main__":

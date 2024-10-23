@@ -5,6 +5,8 @@ from argparse import ArgumentParser
 
 import yaml
 
+from Comprisk.entrypoints.trainer import train_score_transformer
+
 
 def model_folder_structure(path: str = "models", structure: List[str] = []) -> List[str]:
     """
@@ -115,7 +117,8 @@ def cli_main():
     analyzer_list = pipeline.get("analyzer", [])
     for analyzer in analyzer_list:
         subprocess.run(["comprisk-analyzer", "-c", latest_config, "--dataset",
-                        analyzer["dataset"], "--prefix", analyzer["prefix"]])
+                        analyzer["dataset"], "--prefix", analyzer["prefix"],
+                        "--static-scores", analyzer.get("static_scores", False)])
     
     # generate the new score values and upload them
     generate_config = pipeline.get("generate", None)

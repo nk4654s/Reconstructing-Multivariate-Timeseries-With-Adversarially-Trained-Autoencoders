@@ -36,7 +36,8 @@ class ScoreTransformer:
             Defaults to 1.
     """
     def __init__(self, window_size: int, upper_bound: float = 0.999,
-                 smoothing_amplifier: float = 0.9, critical_threshold: float = 1) -> None:
+                 smoothing_amplifier: float = 0.9, critical_threshold: float = 1,
+                 static_transformation: bool = False) -> None:
         self._error_scaler = StandardScaler()
         self._size = window_size
 
@@ -77,7 +78,8 @@ class ScoreTransformer:
         self._smoothing = -(smoothing_target**2) / np.log(self._factor)
         logger.debug("Fitted ScoreTransformer with smoothing factor %s", self._smoothing)
 
-    def transform(self, predicted: pd.DataFrame, target: pd.DataFrame, visualize: str = "", show: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def transform(self, predicted: pd.DataFrame, target: pd.DataFrame, visualize: str = "",
+                  show: bool = False, static: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """This method transforms the loss values in the range of 0 to 1 by applying the internal
         transformation function. Make sure to run `self.fit(predicted, target)` first, as the 
         transformation function's parameters must be found first. Only run `.fit()` on training data.
@@ -88,7 +90,9 @@ class ScoreTransformer:
             visualize (str): Whether to visualize the transformed loss values or not. Parameter defines
                 the output path of the visualization. Defaults to "", which does not generate a graph.
             show (bool): Whether to show the graph or not.
-        
+            static (bool): Enabling this option ignores other parameters and applies a
+                transformed sigmoid function instead.
+            
         Returns:
             (Tuple[pd.DataFrame, pd.DataFrame]): (1) The transformed loss values in the range of 0 to 1. 0 is best
                 and 1 is worst. (2) The scores which are critical as the loss values exceed the known region.
@@ -115,16 +119,30 @@ class ScoreTransformer:
 
         # apply the same to the loss itself, this will be used when visualizing 
         # the transformed values
+        names = list(predicted.columns.values)
+        critical = pd.DataFrame(critical, columns=names, index=loss_mean.index)
+        
+        if static:
+            loss_mean = pd.DataFrame(loss_mean.to_numpy(), columns=names)
+
+            static_transformer = lambda x: 2 / (1 + np.exp(-3.9 * (x - 0.1))) - 1
+            static_scores = static_transformer(loss_mean)
+            static_scores[static_scores < 0] = 0
+
+            show_dataframe(names, [static_scores],
+                            ["Malfunction (Static)"],
+                            y_label="% -  lower is better", grid_size=5,
+                            save=visualize, show=show)
+            return static_scores, critical
+
         loss_mean[loss_mean < self._critical_threshold] = np.nan
 
         # transfer all values to dataframes and return them
-        names = list(predicted.columns.values)
         malfunction = pd.DataFrame(malfunction, columns=names, index=loss_mean.index)
-        critical = pd.DataFrame(critical, columns=names, index=loss_mean.index)
         loss_mean = pd.DataFrame(loss_mean.to_numpy(), columns=names)
 
-        show_dataframe(names, [malfunction, loss_mean, critical],
-                        ["Malfunction", "Critical Evidence", "Critical"],
+        show_dataframe(names, [malfunction],
+                        ["Malfunction"],
                         y_label="% -  lower is better", grid_size=5,
                         save=visualize, show=show)
     
