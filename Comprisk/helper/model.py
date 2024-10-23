@@ -1,4 +1,5 @@
 """This module contains helper methods related to the models."""
+import operator
 import os
 import json
 import pickle
@@ -160,7 +161,8 @@ class ModelLoader:
 
         return pd.read_csv(correlation_path, index_col=0)
 
-    def predict_loop(self, dataset: Dataset, mode: str = "autoencoder") -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def predict_loop(self, dataset: Dataset, mode: str = "autoencoder",
+                     modifier: Tuple[str, float] = ("", 1.0)) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """This method applies a model on a given dataset. For an AutoEncoder, the reconstructed
         output will be returned. For future prediction models, the prediction of the future is
         output. In addition, the original input data will be temporarily stored and returned.
@@ -168,6 +170,8 @@ class ModelLoader:
         Args:
             dataset (Dataset): The dataset to use.
             mode (str): The mode to use for prediction. Defaults to 'autoencoder'.
+            modifier (Tuple[str, float]): The sensor name and factor to apply. This is handy to inject
+            some kind of anomaly.
         
         Returns
             Tuple[pd.DataFrame, pd.DataFrame]: Pandas dataframes containing the prediction and input.
@@ -181,6 +185,12 @@ class ModelLoader:
         logger.debug("Dataset output sequence: %s", meta.num_output_sequence)
         logger.debug("Predict loop step size: %s", step)
 
+        # 0. find the index of the sensor to modify with the given factor
+        modifier_name, factor = modifier
+        modifier_index = -1
+        if modifier_name:
+            modifier_index = operator.indexOf(meta.column_names_sensor, modifier_name)
+
         # 1. iterate over dataset, with shuffle deactivated
         predicted = {key: [] for key in meta.column_names_sensor}
         inputs = {key: [] for key in meta.column_names_sensor}
@@ -189,6 +199,9 @@ class ModelLoader:
         for i in tqdm(range(0, len(dataset), step), desc="Prediction with Model"):
             # 2. move the data to the correct device and pass the data to the model
             sensors, weather = get_tensor_from_dataset(dataset, i, self._model.device)
+            if modifier_index > -1:
+                sensors[:, :, modifier_index] *= factor
+
             target = self._model.predict({"sensors": sensors, "weather": weather}, True)[0]
 
             # 3. store the model inputs/outputs to a temporary dict

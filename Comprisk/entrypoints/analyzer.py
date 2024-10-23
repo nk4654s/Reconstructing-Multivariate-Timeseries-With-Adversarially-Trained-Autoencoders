@@ -39,7 +39,10 @@ def cli_main():
 
     # load the model with the helper class, then apply the model on the dataset
     loader = ModelLoader(base_path)
-    predicted, target = loader.predict_loop(dataset)
+    predicted, target = loader.predict_loop(dataset, modifier=(
+        cli.config.anomaly.name,
+        cli.config.anomaly.factor
+    ))
 
     # visualize the loaded dataset
     sensors = [
