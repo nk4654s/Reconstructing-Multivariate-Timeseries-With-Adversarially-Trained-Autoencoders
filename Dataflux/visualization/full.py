@@ -1,6 +1,6 @@
 """This module handles showing and saving graphs of a dataframe."""
 import math
-from typing import List
+from typing import List, Tuple
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -13,6 +13,7 @@ def show_dataframe(
     names: List[str] = [],
     grid_size: int = 4,
     y_label: str = "",
+    y_limit: Tuple[int, int] | None = None,
     save: str = "",
     show: bool = False,
 ):
@@ -27,6 +28,7 @@ def show_dataframe(
         names (List[str]): The name of each DataFrame to be visualized.
         grid_size (int): The number of DataFrames per row in the visualization figure.
         y_label (str): The label of the y-axis. Defaults to None, uses the unit of the label.
+        y_limit (Tuple): Lowest and highest number of values to be shown.
         save (str): The path where the visualization should be saved.
         show (bool): Whether to show the visualization or not.
     """
@@ -67,6 +69,9 @@ def show_dataframe(
     plt.legend(
         handles, labels, bbox_to_anchor=(1.04, 0), loc="lower left", borderaxespad=0
     )
+
+    if y_limit:
+        plt.setp(axs, ylim=y_limit)
 
     if save:
         plt.savefig(save, bbox_inches="tight")
