@@ -4,7 +4,7 @@ from typing import List, Tuple
 from pandas import DataFrame
 import numpy as np
 from Dataflux.modules import BasePreProcessor
-from Dataflux.helper import Meta, Metadata, simple_graph
+from Dataflux.helper import Meta, Metadata, simple_graph, DataWrapper, StoreMode
 from Dataflux import logger
 
 GRAPH_FILE_NAME = "split_statistics.png"
@@ -108,27 +108,32 @@ class MachineStateSplit(BasePreProcessor):
         self._threshold = state_change_threshold
         self._stats = {}
 
-    def _apply_threshold(self, dfs: List[DataFrame], state_change: bool) -> List[DataFrame]:
+    def _apply_threshold(self, wrapper: List[DataWrapper], state_change: bool) -> List[DataWrapper]:
         reduced = []
         # remove the first x datapoints of the first dataframe if there was a state change
         # otherwise, the machine was on and there is just another day recorded. Threshold
         # should not be applied in that case.
         if state_change:
-            if len(dfs[0]) > 2 * self._threshold:
-                reduced.append(dfs[0].iloc[self._threshold:-self._threshold])
+            if len(wrapper[0].df) > 2 * self._threshold:
+                wrapper[0].df = wrapper[0].df.iloc[self._threshold:-self._threshold]
+                reduced.append(wrapper[0])
         else:
-            reduced.append(dfs[0])
+            reduced.append(wrapper[0])
 
-        if len(dfs) > 0:
+        if len(wrapper) > 0:
             # remove the first x datapoints of all other dataframes, such dataframes
             # must have a state change
-            for i in range(1, len(dfs)):
-                if len(dfs[i]) > 2 * self._threshold:
-                    reduced.append(dfs[i].iloc[self._threshold:-self._threshold])
+            for i in range(1, len(wrapper)):
+                if len(wrapper[i].df) > 2 * self._threshold:
+                    wrapper[i].df = wrapper[i].df.iloc[self._threshold:-self._threshold]
+                    reduced.append(wrapper[i])
         return reduced
 
-    def on_download_finished(self, df: DataFrame, metadata: Metadata) -> List[DataFrame]:
-        df_splits = multi_split(df.copy(), self._column_key, self._state == "on")
+    def on_download_finished(self, wrapper: DataWrapper, metadata: Metadata) -> List[DataWrapper]:
+        initial_state = wrapper.df[self._column_key].iloc[0]
+        final_state = wrapper.df[self._column_key].iloc[-1]
+
+        df_splits = multi_split(wrapper.df.copy(), self._column_key, self._state == "on")
 
         if len(df_splits) == 0:
             return []
@@ -136,20 +141,33 @@ class MachineStateSplit(BasePreProcessor):
         logger.debug("Splited DataFrame into %s DataFrame(s)", len(df_splits))
         self._stats[metadata[Meta.DAY]] = len(df_splits)
 
-        # inform any handler, that the machine state did not change if there is a single
-        # dataframe in the splits array with the same length as the original
-        # not (True and )
-        state_change = not (len(df_splits) == 1 and df_splits[0].shape == df.shape)
-        logger.debug("Detected state change: %s", "yes" if state_change else "no")
+        # save the initial wrapper according to some basic rules
+        wrappers = [DataWrapper(df, wrapper.path, i) for i, df in enumerate(df_splits)]
+        if initial_state:
+            if final_state and len(wrappers) == 1:
+                wrappers[0].set_mode(StoreMode.APPEND_OPEN)
+            else:
+                wrappers[-1].set_mode(StoreMode.APPEND_CLOSE)
+        else:
+            if final_state and len(wrappers) == 1:
+                wrappers[0].set_mode(StoreMode.CREATE_OPEN)
+            else:
+                wrappers[-1].set_mode(StoreMode.CREATE_CLOSE)
 
-        reduced_splits = self._apply_threshold(df_splits, state_change)
-        state_change = state_change if len(reduced_splits) == len(df_splits) else True
-        logger.debug("Reduced number of DataFrame(s) after applying threshold to: %s",
-                     len(reduced_splits))
-        logger.debug("Detected state change after thresholding: %s", state_change)
+        # the last dataframe must either be closed or opened, but can not append to something
+        if len(wrappers) == 2:
+            if final_state:
+                wrappers[-1].set_mode(StoreMode.CREATE_OPEN)
+            else:
+                wrappers[-1].set_mode(StoreMode.CREATE_CLOSE)
 
-        metadata.put(state_change, Meta.MACHINE_STATE_CHANGE)
-        return reduced_splits
+        # simply save intermediate dataframes
+        if len(wrappers) > 2:
+            for split in wrappers[1:-1]:
+                split.set_mode(StoreMode.CREATE_CLOSE)
+
+        any_state_change = len(wrappers) == 1 and wrappers[0].df.shape[0] == wrapper.df.shape[0]
+        return self._apply_threshold(wrappers, any_state_change)
 
     def on_processing_finished(self, metadata: Metadata) -> None:
         days = list(self._stats.keys())

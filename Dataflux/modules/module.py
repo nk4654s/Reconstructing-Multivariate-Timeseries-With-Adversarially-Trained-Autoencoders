@@ -1,8 +1,7 @@
 """This module defines the interface for a pre-processor module."""
 from enum import Enum
 from typing import Callable, List
-from pandas import DataFrame
-from Dataflux.helper import Metadata
+from Dataflux.helper import Metadata, DataWrapper
 
 
 class EntryPoint(Enum):
@@ -12,7 +11,7 @@ class EntryPoint(Enum):
     ON_PROCESSING_FINISHED = "on processing finished"
 
 
-def parse(df: DataFrame | List[DataFrame] | None) -> List[DataFrame]:
+def parse(df: DataWrapper | List[DataWrapper] | None) -> List[DataWrapper]:
     """Ensures that the given dataframe is in a list. If the provided argument
     was a list of dataframes, it will be returned. If the argument is None, an empty list
     will be returned.
@@ -23,7 +22,7 @@ def parse(df: DataFrame | List[DataFrame] | None) -> List[DataFrame]:
     Returns:
         Provided dataframe in a list, or empty.
     """
-    if isinstance(df, DataFrame):
+    if isinstance(df, DataWrapper):
         return [df]
     
     if df is None:
@@ -36,19 +35,19 @@ class BasePreProcessor(object):
     """The base pre-processor class."""
 
     def on_download_finished(
-        self, df: DataFrame, metadata: Metadata
-    ) -> DataFrame | List[DataFrame]:
+        self, wrapper: DataWrapper, metadata: Metadata
+    ) -> DataWrapper | List[DataWrapper]:
         """Executes the pre-processor on download finished.
 
         Args:
-            df (pd.DataFrame): The dataframe to be processed
+            wrapper (pd.DataFrame): The dataframe to be processed
             metadata (Metadata): The metadata dictionary
 
         Returns:
             The processed dataframe or a list of dataframes
         """
         assert metadata
-        return df
+        return wrapper
 
     def on_processing_finished(self, metadata: Metadata) -> None:
         """Executes the pre-processor after all dataframes were downloaded
@@ -62,20 +61,20 @@ class BasePreProcessor(object):
         return None
 
     def _process(
-        self, df: DataFrame | List[DataFrame] | None, func: Callable, metadata: Metadata
-    ) -> List[DataFrame] | None:
+        self, df: DataWrapper | List[DataWrapper] | None, func: Callable, metadata: Metadata
+    ) -> List[DataWrapper] | None:
         if df is None:
             func(metadata)
             return None
 
         # set up the container of processed dataframes, remember the length of the container
         # as this will change during processing
-        processed: List[DataFrame] = parse(df)
+        processed: List[DataWrapper] = parse(df)
         pointer = len(processed)
 
         # process all dataframes in the container
         for i in range(pointer):
-            result: DataFrame | None = func(processed[i], metadata)
+            result: DataWrapper | None = func(processed[i], metadata)
             if df is not None:
                 processed += parse(result)
 
@@ -85,13 +84,13 @@ class BasePreProcessor(object):
 
     def __call__(
         self,
-        df: DataFrame | List[DataFrame] | None,
+        df: DataWrapper | List[DataWrapper] | None,
         metadata: Metadata,
         entry_point: EntryPoint = EntryPoint.ON_PROCESSING_FINISHED,
-    ) -> List[DataFrame] | None:
+    ) -> List[DataWrapper]:
         if entry_point == EntryPoint.ON_DOWNLOAD_FINISHED:
             df = self._process(df, self.on_download_finished, metadata)
             return parse(df)
 
         self.on_processing_finished(metadata)
-        return None
+        return []
