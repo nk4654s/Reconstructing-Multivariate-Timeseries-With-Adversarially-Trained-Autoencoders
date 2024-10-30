@@ -123,7 +123,8 @@ class SplitDataset(FileWorkerCallable):
         move = [f"{path}{os.path.sep}{uuid}_{day['day']}.h5" for day in splitted_days]
         for path in move:
             splitted_path = path.replace(metadata[Meta.PATH], self._name)
-            shutil.move(path, splitted_path)
+            if os.path.exists(path):
+                shutil.move(path, splitted_path)
         
         # do not forget to move the normalizer
         trimmed_norm = os.path.join(metadata[Meta.PATH], "metadata", "normalizer.pkl")
