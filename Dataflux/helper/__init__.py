@@ -4,3 +4,4 @@ from Dataflux.helper.compression import compress, decompress
 from Dataflux.helper.metadata import Meta, Metadata
 from Dataflux.helper.logger import get_logger, LOGGING_ENABLED
 from Dataflux.helper.scaler import FluxScaler, ScalerMethod
+from Dataflux.helper.wrapper import DataWrapper, StoreMode

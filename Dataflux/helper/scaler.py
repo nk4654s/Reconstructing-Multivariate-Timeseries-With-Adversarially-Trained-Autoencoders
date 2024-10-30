@@ -2,7 +2,26 @@ from enum import Enum
 from typing import List
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+
+
+class CustomRobustScaler:
+    def __init__(self) -> None:
+        self._all_q1 = []
+        self._all_q3 = []
+
+    def partial_fit(self, df: pd.DataFrame) -> None:
+        self._all_q1.append(df.quantile(0.10))
+        self._all_q3.append(df.quantile(0.90))
+    
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        q1_min = pd.concat(self._all_q1, axis=1).min(axis=1)
+        q3_max = pd.concat(self._all_q3, axis=1).max(axis=1)
+
+        return (df - q1_min) / (q3_max - q1_min)
+    
+    def set_output(self, transform: str) -> None:
+        pass
 
 
 class ScalerMethod(Enum):
@@ -11,7 +30,7 @@ class ScalerMethod(Enum):
     """
     NORMALIZE = "minmax"
     STANDARDIZE = "standard"
-    STANDARDIZE_ROBUST = "robust"
+    COSTUM_ROBUST = "custom-robust"
 
 
 class FluxScaler:
@@ -30,8 +49,8 @@ class FluxScaler:
 
         if method == ScalerMethod.STANDARDIZE:
             self._internal_scaler = StandardScaler()
-        if method == ScalerMethod.STANDARDIZE_ROBUST:
-            self._internal_scaler = RobustScaler()
+        if method == ScalerMethod.COSTUM_ROBUST:
+            self._internal_scaler = CustomRobustScaler()
 
     @property
     def method(self) -> ScalerMethod:
@@ -48,13 +67,7 @@ class FluxScaler:
             df (pd.DataFrame): The dataframe to fit the scaler on.
         """
         header = sorted(list(set(df.columns.values) - self._exclude))
-        if self._method == ScalerMethod.NORMALIZE or self._method == ScalerMethod.STANDARDIZE:
-            self._internal_scaler.partial_fit(df[header]) # type: ignore
-        else:
-                # for some reason, the robust scaler requires the partial_fit() method to
-                # be used, when the provided data does not cover the whole dataset
-                self._internal_scaler.fit(df[header])
-        return self
+        self._internal_scaler.partial_fit(df[header])
 
     def transform(self, df: pd.DataFrame, dtype: str = "float32") -> pd.DataFrame:
         """
