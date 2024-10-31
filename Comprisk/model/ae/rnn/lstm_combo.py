@@ -49,8 +49,9 @@ class LSTMEncoder(EncoderBase):
     def forward(self, batch: torch.tensor) -> torch.tensor:
         x, _ = self._lstm_1(batch)
         x = torch.relu(x)
+        x = self._linear_1(x)
 
-        return self._linear_1(x)
+        return x
 
 
 class LSTMDecoder(DecoderBase):

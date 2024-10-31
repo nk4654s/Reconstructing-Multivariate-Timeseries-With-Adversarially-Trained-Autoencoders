@@ -19,7 +19,7 @@ trainer:
         
   # define training configuration
   precision: 32
-  max_epochs: 5
+  max_epochs: 30
   gradient_clip_val: 1.0
 #  profiler: "simple"
   log_every_n_steps: 1
@@ -31,14 +31,14 @@ model:
     activation: tanh
     loss: MSELoss
     optimizer: Adam
-    lr: 0.00015
+    lr: 0.001
     # encoder/decoder
     encoder:
       class_path: Comprisk.model.ae.rnn.LSTMEncoderBypass
       init_args:
         num_features: 20
         num_latent_dim: 10
-        num_hidden_dim: 32
+        num_hidden_dim: 16
         num_hidden_layers: 2
         dropout_prob: 0.3
     decoder:
@@ -46,17 +46,17 @@ model:
       init_args:
         num_features: 20
         num_latent_dim: 10
-        num_hidden_dim: 32
+        num_hidden_dim: 16
         num_hidden_layers: 2
         dropout_prob: 0.3
         predict_key: sensors
 data:
   # configure dataset to load
-  train: /Users/jonas/Dataset/labeled/dataset-cat-green
-  validate: /Users/jonas/Dataset/labeled/dataset-cat-gray
-  input_sequence: 200
+  train: /Users/jonas/Dev/NEAX/Comprisk/dataset-clean-train
+  validate: /Users/jonas/Dev/NEAX/Comprisk/dataset-clean-validate
+  input_sequence: 10
   output_sequence: 0
-  skip: 10
+  skip: 50
   # configure how to sample from the dataset
   batch_size: 256
   shuffle: true

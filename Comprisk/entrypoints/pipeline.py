@@ -116,9 +116,14 @@ def cli_main():
     # analyze the model
     analyzer_list = pipeline.get("analyzer", [])
     for analyzer in analyzer_list:
-        subprocess.run(["comprisk-analyzer", "-c", latest_config, "--dataset",
-                        analyzer["dataset"], "--prefix", analyzer["prefix"],
-                        "--static-scores", analyzer.get("static_scores", False)])
+        command = ["comprisk-analyzer", "-c", latest_config, "--dataset",
+                    analyzer["dataset"], "--prefix", analyzer["prefix"]]
+        
+        if analyzer.get("static_scores", False):
+            command.append("--static-scores")
+
+        print(analyzer)
+        subprocess.run(command)    
     
     # generate the new score values and upload them
     generate_config = pipeline.get("generate", None)

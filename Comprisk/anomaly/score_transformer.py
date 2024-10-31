@@ -131,7 +131,7 @@ class ScoreTransformer:
 
             show_dataframe(names, [static_scores],
                             ["Malfunction (Static)"],
-                            y_label="% -  lower is better", grid_size=5,
+                            y_label="% -  lower is better", grid_size=5, y_limit=(0, 1),
                             save=visualize, show=show)
             return static_scores, critical
 
@@ -143,7 +143,7 @@ class ScoreTransformer:
 
         show_dataframe(names, [malfunction],
                         ["Malfunction"],
-                        y_label="% -  lower is better", grid_size=5,
+                        y_label="% -  lower is better", grid_size=5, y_limit=(0, 1),
                         save=visualize, show=show)
     
         return malfunction, critical

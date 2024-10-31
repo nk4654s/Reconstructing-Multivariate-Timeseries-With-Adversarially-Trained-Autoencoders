@@ -40,12 +40,12 @@
             "name": "Python Debugger: AE",
             "type": "debugpy",
             "request": "launch",
-            "program": "Comprisk/entrypoints/train.py",
+            "program": "Comprisk/entrypoints/trainer.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
                 "-c",
-                "configs/lstm_ae_no_weather.yml",
+                "configs/coarse-to-fine/lstm_coarse.yml",
                 "--tag", "debug"
             ]
         },

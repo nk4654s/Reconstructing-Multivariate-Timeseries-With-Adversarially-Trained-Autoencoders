@@ -1,0 +1,63 @@
+folder: dataset-test-after-service
+machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
+intervals:
+  - 2020-10-30 2020-11-05
+  - 2024-08-27 2024-09-07
+overwrite: false
+
+preprocessing:
+  - class_path: Dataflux.modules.preprocess.PositionBypassRemoval
+  - class_path: Dataflux.modules.preprocess.MachineStateSplit
+    init_args:
+      keep_state: "on"
+      state_change_threshold: 3600
+  - class_path: Dataflux.modules.preprocess.Report
+
+postprocessing:
+  - class_path: Dataflux.modules.postprocess.weather.WeatherDataset
+    init_args:
+      enable: false
+  - class_path: Dataflux.modules.postprocess.remove.RemoveColumns
+    init_args:
+      columns:
+        - Automatenfall/SpannungGestört
+        - Betriebsstunden (h)
+        - Biomethandurchfluss (m^3/min)
+        - DifferenzdruckTriebwerksölPDIT74553 (bar)
+        - DifferenzdruckanzeigeÖlfilterPDI74534 (bar)
+        - DifferenzdrucküberwachungErsteStufePDAHPDSHH74322 (bar)
+        - DifferenzdrucküberwachungzweiteStufePDAHPDSHH74370 (bar)
+        - Laeuft
+        - Motor (A)
+        - Motor (kW)
+        - Nachlauf
+        - NiveauschalterTriebwerksölLS74504
+        - NothaltVD2Betätigt
+        - PositionAustrittseitigeSicherheitsAbsperrarmaturSSV74369Auf
+        - PositionAustrittseitigeSicherheitsAbsperrarmaturSSV74369Zu
+        - PositionAustrittsseitigesSicherheitsentlüftungsventilSE74368Auf
+        - PositionAustrittsseitigesSicherheitsentlüftungsventilSE74368Zu
+        - PositionBypassregelventilPCV74381Auf
+        - PositionBypassregelventilPCV74381Zu
+        - PositionEintrittseitigeSicherheitsAbsperrarmaturSSV74306Auf
+        - PositionEintrittseitigeSicherheitsAbsperrarmaturSSV74306Zu
+        - PositionEintrittsseitigesSicherheitsentlüftungsventilSE74307Auf
+        - PositionEintrittsseitigesSicherheitsentlüftungsventilSE74307Zu
+        - PositionBypassregelventilPCV74381 (%)
+        - Sammelwarnung
+        - Startbereit
+        - VD2StörungGekommen
+        - VD2StörungGekommenQuittiert
+        - VerdichterAbschaltungMitEntspannung
+        - VerdichterAbschaltungOhneEntspannung
+        - VerdichterFern
+        - VerdichterOrt
+        - Vorlauf
+  - class_path: Dataflux.modules.postprocess.normalize.NormalizeFit
+    init_args:
+      method: minmax
+      exclude_keys:
+        - ts
+  - class_path: Dataflux.modules.postprocess.normalize.NormalizeTransform
+    init_args:
+      from_other: dataset-clean-train

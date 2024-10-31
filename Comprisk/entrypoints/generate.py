@@ -58,17 +58,18 @@ class CompriskUpdateCallable(UpdateCallable):
             the model.
         critical (pd.DataFrame): The dataframe containing the critical values
             of the model.
+        total_key (str): The total malfunction probability key name.
     """
     def __init__(self, malfunction: pd.DataFrame, critical: pd.DataFrame) -> None:
         self._malfunction = malfunction
         self._critical = critical
 
-    def get_update(self, start: int, end: int) -> pd.DataFrame:
+    def get_update(self, start: int, end: int, total_key: str) -> pd.DataFrame:
         df = self._malfunction[self._malfunction.index  >= start]
         df = df[df.index <= end]
 
         # calculate the mean as total machine score, other metrics might be better
-        df["Total"] = df.mean(axis=1)
+        df[total_key] = df.mean(axis=1)
         return df
 
 
@@ -95,12 +96,14 @@ def cli_main():
 
     # update the dataset's virtual sensors in the S3 buckets with the scores
     time_steps = (data.get_timestamp(0), data.get_timestamp(len(data) - 1))
-    updater = DataUpdater(data.UUID, CompriskUpdateCallable(*score_data))
+    # FIXME: use `data.UUID`
+    updater = DataUpdater("5ac7f03f-f4e6-4b15-9bc6-21db798f9d25", CompriskUpdateCallable(*score_data))
     updater.set_data_type(DataType.MEASUREMENTS)
     updater.update(*time_steps)
 
     # remove the temporary downloaded dataset again
     shutil.rmtree(get_dataset_path(args.dataset), ignore_errors = True)
+    print(f"Generated and uploaded scores from {data.get_day(0)} to {data.get_day(len(data) - 1)}")
 
 
 if __name__ == "__main__":

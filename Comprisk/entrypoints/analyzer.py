@@ -52,6 +52,7 @@ def cli_main():
         "SchwingungsmessungTriebwerkVT74280 (mm/s)",
         "KühlwassertemperaturnachKühlerTETIT74422 (°C)",
         "KühlwasserdurchflussmengeFIT74423 (m^3/min)",
+        "KühlwasserdrucknachPumpePIT74425 (bar)",
         "ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)",
         "Motorlager (°C)",
         "KompressordrehzahlSE74201 (rpm)",
