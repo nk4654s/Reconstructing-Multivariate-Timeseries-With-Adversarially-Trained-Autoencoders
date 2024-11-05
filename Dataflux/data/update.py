@@ -111,7 +111,6 @@ class DataUpdater(S3Bucket):
             # 6. export dataframe as tsv-file
             t0 = datetime.now()
             tsv = df.to_csv(sep="\t")
-            print(tsv)
             tsv_bytes = gzip.compress(tsv.encode("utf-8"))
             t1 = datetime.now()
 
