@@ -28,7 +28,7 @@ class DataFrameCache:
         self._samples_read = {}
         self._add_history = []
         self._column_names = None
-        self._ts_index = None
+        self._ts_index = -1
 
     def _register(self, key: str, matrix: Tuple[np.ndarray, np.ndarray | None]) -> None:
         self._loaded[key] = matrix
@@ -57,12 +57,9 @@ class DataFrameCache:
 
     @property
     def ts_index(self) -> int:
-        """The time step index of the dataframe' time series.
+        """The time step index of the dataframe's time series.
         """
-        if self._ts_index is None and "ts" in self.columns:
-            self._ts_index = np.argwhere(np.array(self.columns) == "ts")[0][0]
-
-        assert self._ts_index
+        # assert self._ts_index, "'ts' index available after calling .get() for the first time."
         return self._ts_index
 
     def get(self, path: str, key: str = "norm", include_ts: bool = False) -> Tuple[np.ndarray, np.ndarray | None]:
@@ -88,12 +85,14 @@ class DataFrameCache:
             df = df.reindex(sorted(df.columns), axis=1) # type: ignore
 
             # initialize the column names and ts-index value
-            if self.columns is None:
+            if self._column_names is None:
                 self._column_names = list(df.columns.values)
 
                 # initialize the ts-index value then remove it from the list of
                 # feature names, as it is not a feature
-                if self.ts_index:
+                if not include_ts and self._ts_index == -1:
+                    assert "ts" in self._column_names, "'ts' not a column in dataset"
+                    self._ts_index = np.argwhere(np.array(self.columns) == "ts")[0][0]
                     self._column_names.remove("ts")
 
             # get every nth value for weather and sensor data, this reduces the amount of samples
@@ -101,10 +100,10 @@ class DataFrameCache:
             weather = None
             weather_keys = [wk for wk in WEATHER_KEYS if wk in df.columns.values]
             if len(weather_keys) > 0:
-                weather = df[weather_keys].to_numpy()[::self._skip]
+                weather = df[weather_keys].to_numpy()[::self._skip].astype(np.float32)
                 sensors = df.drop(WEATHER_KEYS, axis=1)
             
-            sensors = df.to_numpy()[::self._skip]
+            sensors = df.to_numpy()[::self._skip].astype(np.float32)
             self._register(path, (sensors, weather))
         else:
             sensors, weather = data
@@ -119,7 +118,6 @@ class DataFrameCache:
         # make sure to not modify original data, when removing the column
         if not include_ts and self.ts_index:
             sensors = sensors.copy()
-            np.delete(sensors, self.ts_index, axis=1)
             return np.delete(sensors, self.ts_index, axis=1), weather
         
         return sensors, weather

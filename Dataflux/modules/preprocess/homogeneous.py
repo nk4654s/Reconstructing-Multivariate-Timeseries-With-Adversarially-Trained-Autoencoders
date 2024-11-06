@@ -6,7 +6,7 @@ from pandas import DataFrame, Index
 import numpy as np
 
 from Dataflux.data.header import Header
-from Dataflux.helper import Meta, Metadata, simple_graph
+from Dataflux.helper import Meta, Metadata, DataWrapper, simple_graph
 from Dataflux.modules import BasePreProcessor
 from Dataflux import logger
 
@@ -37,11 +37,13 @@ class HomogeneousTimeSteps(BasePreProcessor):
         self._stats = {}
 
     def on_download_finished(
-        self, df: DataFrame, metadata: Metadata
-    ) -> DataFrame | List[DataFrame]:
-        if df.empty:
+        self, wrapper: DataWrapper, metadata: Metadata
+    ) -> DataWrapper | List[DataWrapper]:
+        if wrapper.df.empty:
             logger.debug("HomogeneousTimeSteps got empty dataframe.")
-            return df
+            return wrapper
+        
+        df = wrapper.df
 
         # get time start and end
         range_start = df[self._index_key].iloc[0]
@@ -70,7 +72,9 @@ class HomogeneousTimeSteps(BasePreProcessor):
         self._stats[metadata[Meta.DAY]] = round(
             (df.shape[0] - old_len) / df.shape[0] * 100, 3
         )
-        return df
+
+        wrapper.df = df
+        return wrapper
 
     def on_processing_finished(self, metadata: Metadata) -> None:
         days = list(self._stats.keys())
@@ -98,13 +102,14 @@ class HomogeneousColumns(BasePreProcessor):
         return df.drop(columns=drop, errors="ignore")
 
     def on_download_finished(
-        self, df: DataFrame, metadata: Metadata
-    ) -> DataFrame | List[DataFrame]:
+        self, wrapper: DataWrapper, metadata: Metadata
+    ) -> DataWrapper | List[DataWrapper]:
         self._stats[metadata[Meta.DAY]] = 0
         if not self._enable:
-            return df
+            return wrapper
 
         # make sure to remove columns which are completely empty
+        df = wrapper.df
         df = self._drop_empty_cols(df)
 
         incoming = Header()
@@ -114,13 +119,15 @@ class HomogeneousColumns(BasePreProcessor):
         if self._header is None:
             logger.debug("Initial headers: %s", incoming.values)
             self._header = incoming
-            return df
+            wrapper.df = df
+            return wrapper
 
         logger.debug("Using headers %s", self._header.values)
 
         # initial and current dataframe are homogeneous
         if self._header.length == incoming.length:
-            return df
+            wrapper.df = df
+            return wrapper
 
         # too many columns, remove the relative complement
         assert self._header.length < incoming.length, (
@@ -134,7 +141,8 @@ class HomogeneousColumns(BasePreProcessor):
             logger.debug("Removed %s columns", len(incoming.drop))
 
         self._stats[metadata[Meta.DAY]] = len(incoming.drop)
-        return df
+        wrapper.df = df
+        return wrapper
 
     def on_processing_finished(self, metadata: Metadata) -> None:
         days = list(self._stats.keys())

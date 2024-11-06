@@ -10,7 +10,7 @@ from matplotlib import rcParams
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from Dataflux.modules import BasePreProcessor
-from Dataflux.helper import Metadata, Meta, get_file
+from Dataflux.helper import Metadata, Meta, DataWrapper, get_file
 from Dataflux import logger
 
 rcParams.update({"figure.autolayout": True})
@@ -151,8 +151,9 @@ class Report(BasePreProcessor):
         return corr_matrix
 
     def on_download_finished(
-        self, df: DataFrame, metadata: Metadata
-    ) -> DataFrame | List[DataFrame]:
+        self, wrapper: DataWrapper, metadata: Metadata
+    ) -> DataWrapper | List[DataWrapper]:
+        df = wrapper.df
         # define the output folder
         if not self._folder:
             self._folder = os.path.join(metadata[Meta.PATH], self._sub_folder)
@@ -171,7 +172,7 @@ class Report(BasePreProcessor):
             logger.warning(
                 "No date found in metadata, plot 'feature_per_day.png' might be wrong."
             )
-            return df
+            return wrapper
 
         # find the next empty key for the current date
         if df.shape[0] > 0:
@@ -200,7 +201,7 @@ class Report(BasePreProcessor):
             self._total_recordings += df.shape[0]
             self._counts += 1
 
-        return df
+        return wrapper
 
     def on_processing_finished(self, metadata: Metadata) -> None:
         if not self._folder:

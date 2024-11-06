@@ -3,12 +3,54 @@ from threading import Lock
 from typing import Any, Dict, List
 import numpy as np
 import pandas as pd
+from scipy import stats
 import pickle
 
+from Dataflux import logger
 from Dataflux.helper import Meta, Metadata, FluxScaler, ScalerMethod
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
 
 mutex = Lock()
+
+
+def remove_outlier(df: pd.DataFrame) -> pd.DataFrame:
+    indicies = []
+    data = np.random.normal(loc=0, scale=1, size=100)
+    for key in df.columns.values:
+        series = df[key].to_numpy()
+
+        # get boxplot length of data series
+        q75, q25 = np.percentile(series, [75, 25])
+        box_length = q75 - q25
+
+        # calculate the outlier boundaries of the boxplot
+        lower = q25 - (box_length * 1.5)
+        upper = q75 + (box_length * 1.5)
+
+        # calculate the histogram of the series and compare values to
+        # a sample normal distribution
+        data = np.random.normal(loc=series.mean(), scale=1, size=100)
+        _, bin_edges = np.histogram(series, bins=50, density=True)
+        kernel_density = stats.gaussian_kde(data)
+
+        # based on the previous math, calculate the lower and upper boundaries
+        # to remove outliers. This should make sure to only delete outliers and
+        # not delete based on quantiles.
+        lower_cut_off = kernel_density.integrate_box_1d(bin_edges[0], upper)
+        upper_cut_off = kernel_density.integrate_box_1d(lower, bin_edges[-1])
+        lower = lower - lower_cut_off
+        upper = upper + upper_cut_off
+
+        # find indicies to remove
+        indicies += list(np.argwhere(series < lower).flatten())
+        indicies += list(np.argwhere(series > upper).flatten())
+    
+    # remove from the dataset, reset the index first to also remove "ts" values
+    df.reset_index(inplace=True)
+    df.drop(index=list(set(indicies)), inplace=True)
+    df.drop(columns=["index"], inplace=True, errors="ignore")
+
+    return df
 
 
 class ContextParam:
@@ -38,10 +80,14 @@ class NormalizeFit(FileWorkerCallable):
     """
     METHODS = {m.value: m for m in ScalerMethod}
 
-    def __init__(self, method: str = "minmax", exclude_keys: List[str] = ["ts"]):
+    def __init__(self, method: str = "minmax", exclude_keys: List[str] = ["ts"], remove_outliers: bool = False) -> None:
         assert method in self.METHODS.keys(), f"Scaling method {method} is not supported."
         self._method = self.METHODS[method]
         self._exclude = exclude_keys
+        self._remove = remove_outliers
+
+        self._files = {}
+        logger.debug("Fitting normalizer on dataset, set remove outliers to %s", remove_outliers)
 
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {NormalizeTransform.__name__: CallableDependency.IMMEDIATELY_AFTER}
@@ -59,8 +105,20 @@ class NormalizeFit(FileWorkerCallable):
         # dataframe is consistent
         df = pd.read_hdf(file_path, key="data")
         df = df.reindex(sorted(df.columns), axis=1) # type: ignore
+        logger.debug("Fitting file %s", file_path)
 
         with mutex:
+            # find and remove outliers
+            if self._remove:
+                initial = len(df)
+                df = remove_outlier(df)
+                df.to_hdf(file_path, key="clean")
+
+                day = file_path.rsplit(os.path.sep, maxsplit=1)[-1].split("_", maxsplit=1)[1][:-3]
+                logger.debug("Removed Outliers of (day) file (%s) %s", day, file_path)
+                logger.debug("Removed %s values from original length %s", initial - len(df), initial)
+                self._files[day] = len(df)
+
             # get minimum and maximum values from previous files
             scaler = self._get_scaler(context)
             scaler.fit(df)
@@ -68,7 +126,21 @@ class NormalizeFit(FileWorkerCallable):
             context.put(ContextParam.SCALER, scaler)
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
-        pass
+        logger.debug("Finished fitting the normalizer. Used method %s", self._method)
+        for file_dict in metadata[Meta.FILES]:
+            day = file_dict["day"]
+            changes = self._files.get(day, None)
+
+            if changes:
+                file_dict["recordings"] = changes
+
+        # if outliers were removed, make sure to update the metadata's info.json file
+        if len(self._files) > 0:
+            metadata.drop(Meta.TOTAL_RECORDINGS)
+            total = sum([d["recordings"] for d in metadata[Meta.FILES]])
+            metadata.put(total, Meta.TOTAL_RECORDINGS)
+            logger.debug("Removing outliers resulted in a new dataset length of %s samples", total)
+            logger.debug("Modified day info after outlier removal %s", metadata[Meta.FILES])
 
 
 class NormalizeTransform(FileWorkerCallable):
@@ -84,15 +156,18 @@ class NormalizeTransform(FileWorkerCallable):
     """
     def __init__(self, from_other: str = "") -> None:
         self._scaler = None
+        self._columns = list()
         if from_other:
             m = Metadata()
             m.load(from_other)
 
             norm_meta = m[Meta.NORMALIZER]
             path = norm_meta[Meta.NORM_PATH.name]
+            self._columns = norm_meta[Meta.NORM_KEYS.name]
 
             with open(path, "rb") as f:
                 self._scaler = pickle.load(f)
+                logger.debug("Loaded normalization of other dataset.")
 
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {NormalizeFit.__name__: CallableDependency.IMMEDIATELY_BEFORE}
@@ -107,8 +182,23 @@ class NormalizeTransform(FileWorkerCallable):
     def run(self, file_path: str, context: FileWorkerContext) -> Any:
         # read the file as pandas dataframe and sort by column names
         # to be consistent with the fitted values
-        df = pd.read_hdf(file_path, key="data")
+        store = pd.HDFStore(file_path)
+        if "/clean" in store.keys():
+            df = store.get("clean")
+            logger.debug("Loaded cleaned file %s", file_path)
+        else:
+            df = store.get("data")
+            logger.debug("Loaded regular file %s", file_path)
+
+        store.close()
         df = df.reindex(sorted(df.columns), axis=1) # type: ignore
+
+        if not self._columns:
+            self._columns = list(df.columns.values)
+        else:
+            to_drop = list(set(df.columns.values) - set(self._columns))
+            logger.debug("Ignored %s when normalizing (%s)", to_drop, self._columns)
+            df = df.drop(columns=to_drop, errors="ignore")
 
         # get the used normalization method and the fitted values
         scaler = self._get_scaler(context)
@@ -133,5 +223,7 @@ class NormalizeTransform(FileWorkerCallable):
         data = {
             Meta.NORM_METHOD.name: scaler.method.value,
             Meta.NORM_PATH.name: path,
+            Meta.NORM_KEYS.name: self._columns
         }
         metadata.put(data, Meta.NORMALIZER)
+        logger.debug("Finished noramlizing the dataset.")

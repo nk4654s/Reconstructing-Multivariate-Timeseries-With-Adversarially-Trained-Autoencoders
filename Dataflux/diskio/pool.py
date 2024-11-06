@@ -66,8 +66,11 @@ class FileWorkerPool:
         registered workers. All workers wait until all files are processed,
         before applying the next module.
         """
-        for module in tqdm(self._modules, desc="Post-Processing Dataset"):
+        pbar = tqdm(self._modules, desc="Post-Processing Dataset")
+        for module in pbar:
             module_name = module.__class__.__name__
+            pbar.set_description(f"Post-Processing Dataset: {module_name}")
+
             for w in self._workers[module_name]:
                 w.start()
 
@@ -77,4 +80,6 @@ class FileWorkerPool:
                 w_results += w.get_result()
 
             module.finish(self._context, self._metadata)
+
+        pbar.set_description(f"Post-Processing Dataset: Done")
         return self._metadata

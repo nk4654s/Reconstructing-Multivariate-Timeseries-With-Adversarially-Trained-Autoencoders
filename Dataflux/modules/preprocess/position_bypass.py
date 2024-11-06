@@ -4,7 +4,7 @@ from pandas import DataFrame, Series
 
 from Dataflux.helper import simple_graph, Meta
 from Dataflux.modules import BasePreProcessor
-from Dataflux.helper import Metadata
+from Dataflux.helper import Metadata, DataWrapper
 from Dataflux import logger
 
 
@@ -28,15 +28,17 @@ class PositionBypassRemoval(BasePreProcessor):
         self._stats = {}
         self._rm_rows = int(remove_timespan)
 
-    def on_download_finished(self, df: DataFrame, metadata: Metadata) -> DataFrame:
+    def on_download_finished(self, wrapper: DataWrapper, metadata: Metadata) -> DataWrapper:
         logger.debug("Removing position bypass ventil from dataset file.")
+        df = wrapper.df
         cols = [c for c in df.columns.values if "PositionBypassregelventilPCV74381 (%)" in c]
 
         # copied from Anacision, malfunctions possible
         lower = np.argwhere(df[cols].to_numpy())[:, 0]
         if len(lower) == 0:
             self._stats[metadata[Meta.DAY]] = 0
-            return df
+            wrapper.df = df
+            return wrapper
 
         upper = lower + self._rm_rows
 
@@ -74,7 +76,8 @@ class PositionBypassRemoval(BasePreProcessor):
             (len(df) - len(filtered_data)) / len(df) * 100, 3
         )
 
-        return filtered_data
+        wrapper.df = filtered_data
+        return wrapper
 
     def on_processing_finished(self, metadata: Metadata) -> None:
         days = list(self._stats.keys())

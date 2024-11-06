@@ -1,6 +1,6 @@
 """This module handles showing and saving graphs of a dataframe."""
 import math
-from typing import List
+from typing import List, Tuple
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -10,10 +10,11 @@ colors = ["teal", "orange", "blue", "red", "purple", "brown", "pink", "olive", "
 def show_dataframe(
     sensors: str | List[str],
     df: pd.DataFrame | List[pd.DataFrame],
-    names: List[str] = None,
+    names: List[str] = [],
     grid_size: int = 4,
-    y_label: str = None,
-    save: str = None,
+    y_label: str = "",
+    y_limit: Tuple[int, int] | None = None,
+    save: str = "",
     show: bool = False,
 ):
     """Shows and/or saves the visualization of one or multiple pandas DataFrames. In total, 9
@@ -27,12 +28,14 @@ def show_dataframe(
         names (List[str]): The name of each DataFrame to be visualized.
         grid_size (int): The number of DataFrames per row in the visualization figure.
         y_label (str): The label of the y-axis. Defaults to None, uses the unit of the label.
+        y_limit (Tuple): Lowest and highest number of values to be shown.
         save (str): The path where the visualization should be saved.
         show (bool): Whether to show the visualization or not.
     """
     # configure graph
     df = [df] if isinstance(df, pd.DataFrame) else df
-    names = [f"DF{_}" for _ in range(len(df))] if names is None else names
+    df = [d.reset_index() for d in df]
+    names = [f"DF{_}" for _ in range(len(df))] if len(names) == 0 else names
     sensors = [sensors] if isinstance(sensors, str) else sensors
     num = len(sensors)
     num_rows = math.ceil(num / grid_size)
@@ -52,7 +55,7 @@ def show_dataframe(
     for i, sensor_test in enumerate(sensors):
         axs[i // num_cols][i % num_cols].title.set_text(sensor_test.split(" ")[0])
         axs[i // num_cols][i % num_cols].set_xlabel("Seconds")
-        if y_label is None:
+        if y_label == "":
             axs[i // num_cols][i % num_cols].set_ylabel(sensor_test.split(" ")[-1])
         else:
             axs[i // num_cols][i % num_cols].set_ylabel(y_label)
@@ -66,6 +69,9 @@ def show_dataframe(
     plt.legend(
         handles, labels, bbox_to_anchor=(1.04, 0), loc="lower left", borderaxespad=0
     )
+
+    if y_limit:
+        plt.setp(axs, ylim=y_limit)
 
     if save:
         plt.savefig(save, bbox_inches="tight")

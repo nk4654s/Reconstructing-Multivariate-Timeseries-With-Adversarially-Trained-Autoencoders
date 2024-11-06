@@ -1,8 +1,7 @@
 """This module pre-processes a dataframe and insters values to NAN."""
 
-from pandas import DataFrame
 from Dataflux.modules import BasePreProcessor
-from Dataflux.helper import Metadata
+from Dataflux.helper import Metadata, DataWrapper
 from Dataflux import logger
 
 
@@ -27,16 +26,17 @@ class InterpolatePreProcessor(BasePreProcessor):
         ), f"{method} is not a valid method."
         self._method = method
 
-    def on_download_finished(self, df: DataFrame, metadata: Metadata) -> DataFrame:
+    def on_download_finished(self, wrapper: DataWrapper, metadata: Metadata) -> DataWrapper:
         logger.debug("Interpolation method %s", self._method)
 
         if self._method == "ffill":
-            df.ffill(inplace=True)
+            wrapper.df.ffill(inplace=True)
 
         elif self._method == "bfill":
-            df.bfill(inplace=True)
+            wrapper.df.bfill(inplace=True)
 
         elif self._method in InterpolatePreProcessor.METHODS:
-            df.interpolate(method=self._method, inplace=True) # type: ignore
+            wrapper.df.interpolate(method=self._method, inplace=True) # type: ignore
 
-        return df.dropna(how="any")
+        wrapper.df.dropna(how="any", inplace=True)
+        return wrapper

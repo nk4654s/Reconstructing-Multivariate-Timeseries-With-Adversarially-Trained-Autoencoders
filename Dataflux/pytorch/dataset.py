@@ -1,5 +1,6 @@
 """This module contains the Dataset class, required to train a NN."""
 
+import os
 import pickle
 from typing import List, Tuple
 import numpy as np
@@ -39,7 +40,8 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         output_sequence: int,
         skip: int = 1,
         cache_size: int = -1,
-        key: str = "norm"
+        key: str = "norm",
+        include_ts: bool = False
     ) -> None:
         self._metadata = FileMetadata()
         self._metadata.load(path)
@@ -57,6 +59,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         # the cache is responsible for loading and storing dataframes in memory,
         # the tree is used to find the correct file based on a given index.
         data = {"window_size": input_sequence + output_sequence, "skip": skip}
+        self._include_ts = include_ts
         self._cache = DataFrameCache(cache_size, **data)
         self._tree = IndexTree(self._metadata, **data)
 
@@ -173,7 +176,8 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
             pd.DataFrame: The scaled back data.
         """
         m = self._metadata[Meta.NORMALIZER]
-        path = m[Meta.NORM_PATH.name]
+        path = m[Meta.NORM_PATH.name].split(os.path.sep, maxsplit=1)[-1]
+        path = os.path.join(self._base_dir, path)
         with open(path, "rb") as f:
             scaler = pickle.load(f)
 
@@ -229,7 +233,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
 
         # get sensor/weather data, the cache returns values sorted by the dataframe's
         # column names for consistency
-        sensors, weather = self._cache.get(file_path, key=self._key, include_ts=include_ts)
+        sensors, weather = self._cache.get(file_path, key=self._key, include_ts=self._include_ts or include_ts)
 
         x_1 = sensors[index:start_idx, :]
         x_2 = np.array([], dtype=np.float32) if weather is None else weather[index:start_idx, :]
