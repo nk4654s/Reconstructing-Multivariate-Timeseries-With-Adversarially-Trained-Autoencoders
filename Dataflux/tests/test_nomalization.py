@@ -39,8 +39,8 @@ class TestMachineSplit(unittest.TestCase):
         normed = [scaler.transform(df) for df in self.input_list]
         reverted = [scaler.revert(n.to_numpy()) for n in normed]
 
-        self.assertTrue(np.min(normed) == -1, "Minimum after normalization is not `-1`")
-        self.assertTrue(np.max(normed) == 1, "Maxiumum after normalization is not `+1`")
+        self.assertTrue(np.min(normed) == -1, "Minimum after normalization is `-1`")
+        self.assertTrue(np.max(normed) == 1, "Maximum after normalization is `1`")
 
         for i, r in enumerate(reverted):
             np.testing.assert_allclose(self.output_list[i], r, rtol=TOLERANCE, err_msg="MinMax normalization/revert does not match input")
