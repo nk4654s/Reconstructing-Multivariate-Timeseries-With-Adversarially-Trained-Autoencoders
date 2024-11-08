@@ -3,7 +3,7 @@ import shutil
 from typing import Any, Dict, List, Tuple
 from copy import deepcopy, copy
 
-from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
+from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
 from Dataflux.helper import Metadata, Meta
 from Dataflux import logger
 

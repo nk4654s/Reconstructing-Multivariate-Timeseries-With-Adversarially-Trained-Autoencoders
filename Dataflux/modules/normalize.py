@@ -8,7 +8,7 @@ import pickle
 
 from Dataflux import logger
 from Dataflux.helper import Meta, Metadata, FluxScaler, ScalerMethod
-from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
+from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
 
 mutex = Lock()
 
@@ -100,12 +100,11 @@ class NormalizeFit(FileWorkerCallable):
 
         return scaler
 
-    def run(self, file_path: str, context: FileWorkerContext) -> Any:
+    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         # Load the file into a pandas DataFrame, sort by column names to ensure that
         # dataframe is consistent
         df = pd.read_hdf(file_path, key="data")
         df = df.reindex(sorted(df.columns), axis=1) # type: ignore
-        logger.debug("Fitting file %s", file_path)
 
         with mutex:
             # find and remove outliers
@@ -115,8 +114,6 @@ class NormalizeFit(FileWorkerCallable):
                 df.to_hdf(file_path, key="clean")
 
                 day = file_path.rsplit(os.path.sep, maxsplit=1)[-1].split("_", maxsplit=1)[1][:-3]
-                logger.debug("Removed Outliers of (day) file (%s) %s", day, file_path)
-                logger.debug("Removed %s values from original length %s", initial - len(df), initial)
                 self._files[day] = len(df)
 
             # get minimum and maximum values from previous files
@@ -124,6 +121,7 @@ class NormalizeFit(FileWorkerCallable):
             scaler.fit(df)
 
             context.put(ContextParam.SCALER, scaler)
+        return None, None
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         logger.debug("Finished fitting the normalizer. Used method %s", self._method)
@@ -179,25 +177,16 @@ class NormalizeTransform(FileWorkerCallable):
         scaler = context.get(ContextParam.SCALER)
         return scaler
 
-    def run(self, file_path: str, context: FileWorkerContext) -> Any:
+    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         # read the file as pandas dataframe and sort by column names
         # to be consistent with the fitted values
-        store = pd.HDFStore(file_path)
-        if "/clean" in store.keys():
-            df = store.get("clean")
-            logger.debug("Loaded cleaned file %s", file_path)
-        else:
-            df = store.get("data")
-            logger.debug("Loaded regular file %s", file_path)
-
-        store.close()
+        df = pd.read_hdf(file_path, key="data")
         df = df.reindex(sorted(df.columns), axis=1) # type: ignore
 
         if not self._columns:
             self._columns = list(df.columns.values)
         else:
             to_drop = list(set(df.columns.values) - set(self._columns))
-            logger.debug("Ignored %s when normalizing (%s)", to_drop, self._columns)
             df = df.drop(columns=to_drop, errors="ignore")
 
         # get the used normalization method and the fitted values
@@ -205,6 +194,7 @@ class NormalizeTransform(FileWorkerCallable):
         normed = scaler.transform(df, dtype=np.float32)
 
         normed.to_hdf(file_path, key="norm")
+        return None, None
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         # get the fitted values and method

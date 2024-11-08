@@ -25,7 +25,7 @@ modules = [
 ]
 
 
-def download(parser: CLIArgumentParser) -> None:
+def download(parser: CLIArgumentParser, folder: str) -> None:
     """
     This function handles the command-line interface (CLI) arguments to download
     and store a dataset.
@@ -33,10 +33,8 @@ def download(parser: CLIArgumentParser) -> None:
     Args:
         parser (CLIArgumentParser): The CLIArgumentParser which contains all arguments
             parsed from the command line interface.
+        folder (str): The output folder of the dataset.
     """
-    if parser.args.overwrite and os.path.exists(parser.args.folder):
-        shutil.rmtree(parser.args.folder)
-
     # define the s3 data source
     machine_uuid = parser.args.machine_uuid
     interval_list = []
@@ -51,7 +49,7 @@ def download(parser: CLIArgumentParser) -> None:
     downloader.set_data_type(DataType.MEASUREMENTS)
 
     # download and process data
-    downloader.run(parser.args.folder)
+    downloader.run(folder)
 
 
 def process(parser: CLIArgumentParser, modules: List) -> None:
@@ -67,10 +65,10 @@ def process(parser: CLIArgumentParser, modules: List) -> None:
     """
     # create multi-threaded file-hanlder
     factory = FileWorkerFactory(parser.args.folder, parser.args.num_workers)
-    pool: FileWorkerPool = factory.initialize_workers(modules)
+    pool: FileWorkerPool = factory.initialize_workers()
+    pool.ensure_module_dependency(modules)
 
     # start processing files and provided file-handler
-    pool.ensure_module_dependency(modules)
     metadata: Metadata = pool.start_processing()
     metadata.save(parser.args.folder)
 
@@ -87,14 +85,22 @@ def main() -> None:
         logger.debug("Dataset folder exists, overwrite is set to False.")
         exit(0)
 
+    if parser.args.overwrite and os.path.exists(parser.args.folder):
+        shutil.rmtree(parser.args.folder)
+
     # 1. run pre-processing step, which also downloads the dataset
-    download(parser)
+    if parser.args.disk_backup:
+        if not os.path.exists(parser.args.disk_backup):
+            download(parser, parser.args.disk_backup)
+        shutil.copytree(parser.args.disk_backup, parser.args.folder)
+    else:
+        download(parser, parser.args.folder)        
 
     # 2. run post-processing step, which requires the pre-processed data
     process(parser, modules) 
 
     # 3. copy the pipeline configuration used for consistency
-    config_path = os.path.join(parser.args.folder, "metadata", "config.yaml")
+    config_path = os.path.join(parser.args.folder, "metadata", "config.yaml") # type: ignore
     shutil.copyfile(parser.args.config, config_path)
 
 

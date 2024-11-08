@@ -6,7 +6,7 @@ import pandas as pd
 
 from Dataflux.data.header import Header
 from Dataflux.helper import Meta, Metadata
-from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
+from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
 from Dataflux.modules.normalize import NormalizeFit
 from Dataflux.modules.rename import Rename, ColumnContext
 
@@ -31,11 +31,11 @@ class Consistency(FileWorkerCallable):
         drop = [c for c in df.columns.values if df[c].isnull().all()]
         return df.drop(columns=drop, errors="ignore")
 
-    def run(self, file_path: str, context: FileWorkerContext) -> Any:
+    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         # make sure to remove columns which are completely empty
         df = pd.read_hdf(file_path, key="data")
         if df.empty or isinstance(df, pd.Series):
-            return
+            return None, None
         
         df = self._drop_empty_cols(df)
 
@@ -48,6 +48,7 @@ class Consistency(FileWorkerCallable):
             logger.debug("Removed %s columns", len(incoming.drop))
 
         df.to_hdf(file_path, key="data")
+        return None, None
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         header = context.get(ColumnContext.HEADER)

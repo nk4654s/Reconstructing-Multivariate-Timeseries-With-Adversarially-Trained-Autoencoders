@@ -22,7 +22,10 @@ def homogeneous_decompress(df: pd.DataFrame, index_key: str = "ts") -> pd.DataFr
     df.ffill(inplace=True)
     df.dropna(how="any", inplace=True)
 
-        # get time start and end
+    if df.empty:
+        return df
+
+    # get time start and end
     range_start = df[index_key].iloc[0]
     range_end = df[index_key].iloc[-1]
 
@@ -91,15 +94,10 @@ class DataDownloader(S3Bucket):
 
         return stream
 
-    def parse_header(self, line: str, ignore_header: bool = False) -> Header:
-        """This method parses a line into a header and checks for validity. If
-        there is a change in number of header.values, this method will define a
-        relative complement of the previous header and the new header. This set
-        of values will be dropped from the DataFrame.
-
+    def parse_header(self, line: str) -> Header:
+        """This method parses a line into a header.
         Args:
             line (str): The line to parse into a header.
-            ignore_header (bool): Ignore header lengths. Defaults to False.
 
         Returns:
             Header: The parsed header.
@@ -107,30 +105,9 @@ class DataDownloader(S3Bucket):
         # build the header instance
         incoming = Header()
         incoming.values = line.rstrip("\n").split("\t")
-        if ignore_header:
-            return incoming
-
-        # if no header is registered so far, just use the latest income
-        if self._header is None:
-            logger.debug("Set initial header with %s values", incoming.length)
-            self._header = incoming
-            return self._header
-
-        # just return the header if it equals the previous one
-        if incoming.values == self._header.values:
-            logger.debug("No change in header, returning previous one.")
-            return self._header
-
-        # calculate the headers to remove
-        assert (
-            self._header.length < incoming.length
-        ), "Header length mismatch. Incoming header length is smaller than known header length."
-
-        incoming.relative_complement(self._header, fail_safe=True)
-        logger.debug("Header length mismatch. Removing %s values.", len(incoming.drop))
         return incoming
 
-    def parse_stream(self, stream: gzip.GzipFile | TextIO, ignore_header: bool = False) -> pd.DataFrame | None:
+    def parse_stream(self, stream: gzip.GzipFile | TextIO) -> pd.DataFrame | None:
         """
         This method parses the stream into a pandas DataFrame. If the stream is empty,
         it will return `None`. Otherwise, each line is parsed into an array of float32
@@ -152,7 +129,7 @@ class DataDownloader(S3Bucket):
         if len(lines) <= 1:
             return None
 
-        header = self.parse_header(lines.pop(0), ignore_header)
+        header = self.parse_header(lines.pop(0))
 
         # read all values from the incoming sensor data
         values = self._pool.map(line_str_to_array, lines)
@@ -167,7 +144,7 @@ class DataDownloader(S3Bucket):
 
         return df
 
-    def get_dataframe(self, day: str, ignore_header: bool = False) -> pd.DataFrame:
+    def get_dataframe(self, day: str) -> pd.DataFrame:
         """
         This method combines the `self.get_stream()` and `self.parse_stream()` methods to
         parse the stream into a pandas DataFrame. If the stream is empty, it will raise an
@@ -184,7 +161,7 @@ class DataDownloader(S3Bucket):
             pd.DataFrame: The parsed pandas DataFrame.
         """
         stream = self.get_stream(day)
-        df = self.parse_stream(stream, ignore_header)
+        df = self.parse_stream(stream)
 
         if df is None:
             raise EmptyStreamError(day)
@@ -253,6 +230,8 @@ class ContinuousDataDownloader(DataDownloader):
                 # save the dataframe if it is not None or empty
                 if df is not None and not df.empty:
                     df = homogeneous_decompress(df)
+                    if df.empty:
+                        continue
 
                     meta.put(self.day(i).strftime("%Y-%m-%d"), Meta.DAY)
                     df.to_hdf(file_path, key="data", format="table")

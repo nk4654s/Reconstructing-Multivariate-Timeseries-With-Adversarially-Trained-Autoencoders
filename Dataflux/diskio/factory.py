@@ -31,7 +31,7 @@ class FileWorkerFactory:
         self._num_workers = num_workers
         self._pool = FileWorkerPool(self._context, self._metadata)
 
-    def initialize_workers(self, modules: List[FileWorkerCallable]) -> FileWorkerPool:
+    def initialize_workers(self) -> FileWorkerPool:
         """The method initializes the workers in the pool and provides a list of files
         to process to each worker.
 
@@ -51,10 +51,10 @@ class FileWorkerFactory:
         s = max(math.ceil(n / self._num_workers), 1) # e.g. threads=4 -> s=25
         logger.debug("One worker processes %d files", s)
         logger.debug("Using %d workers", self._num_workers)
-        for j, m in enumerate(modules):
-            for i in range(0, n, s): # i=0, i=25, i=75, ...
-                logger.debug("Adding files %s to worker %d", files[i:i + s], i)
-                worker = FileWorkerThread(files[i:i + s], self._context)
-                self._pool.register_worker(worker, m, j)
+        for i in range(0, n, s): # i=0, i=25, i=75, ...
+            logger.debug("Adding files %s to worker %d", files[i:i + s], i)
+            worker = {"files": files[i:i + s], "context": self._context}
+            self._pool.register_worker(worker)
 
+        logger.debug("Finished worker initialization for %s files", n)
         return self._pool

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Tuple, Union
 from pandas import DataFrame
 import pandas as pd
 import numpy as np
-from Dataflux.diskio import FileWorkerCallable, CallableDependency
+from Dataflux.diskio import FileWorkerCallable, CallableDependency, CALLABLE_RETURN_TYPE
 from Dataflux.diskio import FileWorkerContext as Context
 from Dataflux.helper import Meta, Metadata
 from Dataflux import logger
@@ -152,14 +152,14 @@ class State(FileWorkerCallable):
                 Remove.__name__: CallableDependency.NOT_BEFORE,
             }
     
-    def run(self, file_path: str, context: Context) -> Any:
+    def run(self, file_path: str, context: Context) -> CALLABLE_RETURN_TYPE:
         # read and remove the dataset file, if everyting is fine, it will eb created again
         df = pd.read_hdf(file_path, key="data")
         day = os.path.basename(file_path).split("_", maxsplit=1)[-1][:-3]
+        os.remove(file_path)
+        self._update[day] = None
         if df.empty or isinstance(df, pd.Series):
-            os.remove(file_path)
-            self._update[day] = None
-            return
+            return None, [file_path]
 
         # split the dataset into multiple smaller ones by removing values
         # smaller or greater than the boundaries
@@ -167,15 +167,14 @@ class State(FileWorkerCallable):
 
         # if the resulting amount of splits is 0, then remove the file
         if len(df_splits) == 0:
-            os.remove(file_path)
-            self._update[day] = None
-            return
+            return None, [file_path]
         
         # get the current file's date and create the new filenames
         base_path = context.get(Context.DIRECTORY)
         uuid = context.get(Context.UUID)
 
         # save all dataframes
+        new_files = []
         for i, df in enumerate(remove_threshold(df_splits, self._threshold)):
             postfix = "" if i == 0 else f"_{i}"
             path = os.path.join(base_path, f"{uuid}_{day}{postfix}.h5")
@@ -185,6 +184,11 @@ class State(FileWorkerCallable):
                 "recordings": df.shape[0],
                 "features": df.shape[1]
             }
+
+            if i > 0:
+                new_files.append(path)
+        
+        return new_files, None
 
     def finish(self, context: Context, metadata: Metadata) -> None:
         metadata.drop(Meta.TOTAL_RECORDINGS)
@@ -196,7 +200,12 @@ class State(FileWorkerCallable):
                 update[Meta.DAY.name] = day
                 files_update.append(update)
         
+        logger.debug("State splitter (key=%s) introduced %s splits", self._key, len(self._update))
+        logger.debug("Files are %s", self._update)
         for day, info in self._update.items():
+            if not info:
+                continue
+
             update = {
                 Meta.DAY.name: day,
                 "recordings": info["recordings"],

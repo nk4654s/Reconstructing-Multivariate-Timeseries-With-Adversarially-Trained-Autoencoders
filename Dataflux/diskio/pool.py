@@ -1,10 +1,12 @@
 """This module contains the FileWorkerPool"""
+import time
 from typing import List, Dict
 from tqdm import tqdm
 from Dataflux.helper import Metadata
 from .callable import FileWorkerCallable, CallableDependency
 from .worker import FileWorkerThread
 from .context import FileWorkerContext as Context
+from Dataflux import logger
 
 
 class FileWorkerPool:
@@ -12,21 +14,14 @@ class FileWorkerPool:
     """
     def __init__(self, context: Context, metadata: Metadata) -> None:
         self._modules = []
-        self._workers: List[List[FileWorkerThread]] = []
+        self._workers: List[Dict] = []
         self._metadata = metadata
         self._context = context
 
-    def register_worker(self, worker: FileWorkerThread, module: FileWorkerCallable, index: int):
+    def register_worker(self, worker_args: Dict):
         """The method registers a new worker to the pool of workers
         """
-        if len(self._workers) == index:
-            self._workers.append([])
-
-        if len(self._workers[index]) == 0:
-            self._modules.append(module)
-
-        worker.set_module(module)
-        self._workers[index].append(worker)
+        self._workers.append(worker_args)
 
     def ensure_module_dependency(self, modules: List[FileWorkerCallable]) -> None:
         """The method ensures the dependencies of the modules.
@@ -65,6 +60,8 @@ class FileWorkerPool:
                 elif mode == CallableDependency.FINAL:
                     j, _ = all_modules[module_name]
                     assert i == j, f"{module_name} should be the last module"
+        
+        self._modules = modules
 
     def start_processing(self) -> Metadata:
         """The method starts processing all files of the dataset using the
@@ -72,19 +69,30 @@ class FileWorkerPool:
         before applying the next module.
         """
         with tqdm(total=len(self._modules), desc="Post-Processing Dataset") as pbar:
-            for i in range(len(self._modules)):
-                module_name = self._modules[i].__class__.__name__
+            for module in self._modules:
+                module_name = module.__class__.__name__
                 pbar.set_description(f"Post-Processing Dataset: {module_name}")
 
-                for w in self._workers[i]:
-                    w.start()
+                active: List[FileWorkerThread] = []
+                for i, kwargs in enumerate(self._workers):
+                    # modify the thread's arguments to define the correct module to use
+                    kwargs["name"] = f"{module}_{i}"
+                    kwargs["module"] = module
+                    
+                    thread = FileWorkerThread(**kwargs)
+                    thread.start()
 
-                w_results = []
-                for w in self._workers[i]:
-                    w.join()
-                    w_results += w.get_result()
+                    active.append(thread)
 
-                self._modules[i].finish(self._context, self._metadata)
+                for thread in active:
+                    thread.join()
+
+                    # update the files as some might be added or deleted by the thread
+                    thread_id = int(thread.name.split("_")[-1])
+                    self._workers[thread_id]["files"] = thread.files
+
+                # run finish the the main thread again
+                module.finish(self._context, self._metadata)
                 pbar.update(1)
 
             pbar.set_description(f"Post-Processing Dataset: Done")

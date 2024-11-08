@@ -1,22 +1,40 @@
 folder: dataset-debug
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-  - 2021-10-13 2021-10-30
+  - 2021-04-24 2021-04-26
 overwrite: true
 
 modules:
-  - class_path: Dataflux.modules.state.State
+  - class_path: Dataflux.modules.State
     init_args:
-      key: Laeuft
-      lower: 1
-      upper: 1
+      key: "Laeuft"
+      lower: 0.9
+      upper: 1.1
       delete_ts: 1800
   - class_path: Dataflux.modules.state.State
     init_args:
-      key: KompressordrehzahlSE74201 (rpm)
+      key: "KompressordrehzahlSE74201 (rpm)"
       lower: 400
       upper: 1200
       delete_ts: 1800
+  - class_path: Dataflux.modules.state.State
+    init_args:
+      key: "VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)"
+      lower: 100
+      upper: 145
+      delete_ts: 1800
+  - class_path: Dataflux.modules.state.State
+    init_args:
+      key: "EnddruckErsteStufePIT74339 (bar)"
+      lower: 12.5
+      upper: 17.5
+      delete_ts: 1800
+  - class_path: Dataflux.modules.Filter
+    init_args:
+      filters:
+        - name: "SchwingungsmessungTriebwerkVT74280 (mm/s)"
+          lower: 0
+          upper: 10
   - class_path: Dataflux.modules.remove.Remove
     init_args:
       columns:

@@ -3,7 +3,7 @@
 from typing import Any, Dict, List
 
 import pandas as pd
-from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
+from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
 from Dataflux.helper import Metadata
 
 from Dataflux import logger
@@ -28,7 +28,7 @@ class Filter(FileWorkerCallable):
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {Rename.__name__: CallableDependency.BEFORE}
 
-    def run(self, file_path: str, context: FileWorkerContext) -> Any:
+    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         df = pd.read_hdf(file_path, key="data")
         
         for filter_dict in self._filters:
@@ -38,6 +38,7 @@ class Filter(FileWorkerCallable):
 
             if df[key].min() < lower or df[key].max() > upper:
                 self._to_remove.append(file_path)
+        return None, None
             
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         # TODO: remove files in to_remove, then delete coresponding parts in metadata

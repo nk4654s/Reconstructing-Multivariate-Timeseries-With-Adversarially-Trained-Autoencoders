@@ -4,7 +4,7 @@ from typing import Any, Dict
 import numpy as np
 import pandas as pd
 
-from Dataflux.diskio import FileWorkerCallable, FileWorkerContext as Context
+from Dataflux.diskio import FileWorkerCallable, CALLABLE_RETURN_TYPE, FileWorkerContext as Context
 from Dataflux.diskio.callable import CallableDependency
 from Dataflux.helper import Meta
 from Dataflux.helper import Metadata
@@ -33,14 +33,14 @@ class PositionBypassValve(FileWorkerCallable):
             NormalizeFit.__name__: CallableDependency.NOT_BEFORE
         }
 
-    def run(self, file_path: str, context: Context) -> Any:
+    def run(self, file_path: str, context: Context) -> CALLABLE_RETURN_TYPE:
         df = pd.read_hdf(file_path, keys="data")
         cols = [c for c in df.columns.values if "PositionBypassregelventilPCV74381 (%)" in c]
 
         # copied from Anacision, malfunctions possible
         lower = np.argwhere(df[cols].to_numpy())[:, 0]
         if len(lower) == 0:
-            return
+            return None, None
 
         upper = lower + self._threshold
 
@@ -74,6 +74,7 @@ class PositionBypassValve(FileWorkerCallable):
 
         day = os.path.basename(file_path).split("_", maxsplit=1)[-1][:-3]
         self._update[day] = len(filtered_data)
+        return None, None
 
     def finish(self, context: Context, metadata: Metadata) -> None:
         for file_info in metadata[Meta.FILES]:
@@ -81,4 +82,4 @@ class PositionBypassValve(FileWorkerCallable):
             recordings = self._update.get(day, None)
             if recordings:
                 file_info["recordings"] = recordings
-                logger.debug("PositionBypassValve on day %s resulted in %s samples left", day, recordings)
+        logger.debug("Finished PositionBypassValve module.")

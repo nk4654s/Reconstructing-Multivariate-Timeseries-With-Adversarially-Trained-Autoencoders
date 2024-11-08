@@ -3,7 +3,7 @@ from threading import Lock
 from typing import Any
 import pandas as pd
 from Dataflux.helper import Metadata
-from Dataflux.diskio import FileWorkerCallable, FileWorkerContext
+from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CALLABLE_RETURN_TYPE
 
 mutex = Lock()
 
@@ -71,7 +71,7 @@ class MonoFile(FileWorkerCallable):
         self._store = ThreadSafeStore(key="norm")
         self._enable = enable
 
-    def run(self, file_path: str, context: FileWorkerContext) -> Any:
+    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         if self._enable is not True or self._enable != "True":
             return None
 

@@ -4,7 +4,7 @@ import os
 from typing import Any, Dict
 import pandas as pd
 
-from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
+from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
 from Dataflux.helper import Metadata, Meta, get_sensor_uuid_to_name
 from Dataflux.modules.normalize import NormalizeFit
 
@@ -30,10 +30,10 @@ class Rename(FileWorkerCallable):
             NormalizeFit.__name__: CallableDependency.NOT_BEFORE
         }
 
-    def run(self, file_path: str, context: FileWorkerContext) -> Any:
+    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         df = pd.read_hdf(file_path, key="data")
         if df.empty or isinstance(df, pd.Series):
-            return
+            return None, [file_path]
 
         if self._sensor_names is None:
             # initial call of this module, download uuid -> name dictionary
@@ -46,13 +46,13 @@ class Rename(FileWorkerCallable):
 
         names: Dict[str, str] = {id: self._sensor_names.get(id, id) for id in list(df.columns.values)}
         df.rename(columns=names, inplace=True)
-        logger.debug("Renamed columns.")
         
         df.to_hdf(file_path, key="data", format="table")
         if len(self._names) == 0:
             self._names = set(df.columns.values)
         else:
             self._names = self._names.intersection(set(df.columns.values))
+        return None, None
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         context.put(ColumnContext.HEADER, self._names)
