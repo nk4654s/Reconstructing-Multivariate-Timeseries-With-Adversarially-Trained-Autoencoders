@@ -68,6 +68,7 @@ class FluxScaler:
         """
         header = sorted(list(set(df.columns.values) - self._exclude))
         self._internal_scaler.partial_fit(df[header])
+        return self
 
     def transform(self, df: pd.DataFrame, dtype: str = "float32") -> pd.DataFrame:
         """

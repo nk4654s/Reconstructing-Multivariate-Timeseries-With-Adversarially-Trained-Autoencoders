@@ -13,7 +13,6 @@ from Dataflux.modules.normalize import NormalizeFit
 from Dataflux.modules.remove import Remove
 
 
-# TODO: unittests for trim, split and multisplit
 def trim(df: DataFrame, key: str, value: int | float, lower: bool = True) -> DataFrame:
     """
     This method removes all indicies at the start of the given dataframes,
@@ -57,13 +56,17 @@ def split(df: DataFrame, key: str, value: int | float, lower: bool = True) -> Tu
         return df, df
 
     running = df[key].to_numpy()
+    lower_vals = running < value
+    upper_vals = running > value
 
     if lower:
-        end_idx = np.argmax(running < value)
-        end_idx = end_idx if not end_idx and (running < value).all() else len(running) - 1
+        end_idx = np.argmax(lower_vals)
+        end_idx = 0 if not end_idx and (lower_vals).all() else end_idx
+        end_idx = len(running) - 1 if not end_idx and (upper_vals).all() else end_idx
     else:
-        end_idx = np.argmax(running > value)
-        end_idx = end_idx if not end_idx and (running > value).all() else len(running) - 1
+        end_idx = np.argmax(upper_vals)
+        end_idx = 0 if not end_idx and (upper_vals).all() else end_idx
+        end_idx = len(running) - 1 if not end_idx and (lower_vals).all() else end_idx
 
     # if the end index is 0, return two empty dataset.
     if not end_idx:
@@ -141,7 +144,7 @@ class State(FileWorkerCallable):
         self._lower = lower
         self._upper = upper
         self._threshold = delete_ts
-        self._stats = []
+        self._update = {}
 
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {
@@ -152,8 +155,10 @@ class State(FileWorkerCallable):
     def run(self, file_path: str, context: Context) -> Any:
         # read and remove the dataset file, if everyting is fine, it will eb created again
         df = pd.read_hdf(file_path, key="data")
+        day = os.path.basename(file_path).split("_", maxsplit=1)[-1][:-3]
         if df.empty or isinstance(df, pd.Series):
             os.remove(file_path)
+            self._update[day] = None
             return
 
         # split the dataset into multiple smaller ones by removing values
@@ -163,12 +168,12 @@ class State(FileWorkerCallable):
         # if the resulting amount of splits is 0, then remove the file
         if len(df_splits) == 0:
             os.remove(file_path)
+            self._update[day] = None
             return
         
         # get the current file's date and create the new filenames
         base_path = context.get(Context.DIRECTORY)
         uuid = context.get(Context.UUID)
-        day = os.path.basename(file_path).split("_", maxsplit=1)[-1][:-3]
 
         # save all dataframes
         for i, df in enumerate(remove_threshold(df_splits, self._threshold)):
@@ -176,16 +181,31 @@ class State(FileWorkerCallable):
             path = os.path.join(base_path, f"{uuid}_{day}{postfix}.h5")
             df.to_hdf(path, key="data")
 
-            self._stats.append({
-                Meta.DAY.name: f"{day}{postfix}",
+            self._update[f"{day}{postfix}"] = {
                 "recordings": df.shape[0],
                 "features": df.shape[1]
-            })
+            }
 
     def finish(self, context: Context, metadata: Metadata) -> None:
-        metadata.drop(Meta.FILES)
         metadata.drop(Meta.TOTAL_RECORDINGS)
+        files_update = []
+        for file_info in metadata[Meta.FILES]:
+            day = file_info[Meta.DAY.name]
+            update = self._update.pop(day, file_info)
+            if update:
+                update[Meta.DAY.name] = day
+                files_update.append(update)
+        
+        for day, info in self._update.items():
+            update = {
+                Meta.DAY.name: day,
+                "recordings": info["recordings"],
+                "features": info["features"]
+            }
 
-        metadata.put(self._stats, Meta.FILES)
-        metadata.put(sum([i["recordings"] for i in self._stats]), Meta.TOTAL_RECORDINGS)
+            files_update.append(update)
+
+        metadata.drop(Meta.FILES)
+        metadata.put(files_update, Meta.FILES)
+        metadata.put(sum([i["recordings"] for i in metadata[Meta.FILES]]), Meta.TOTAL_RECORDINGS)
 
