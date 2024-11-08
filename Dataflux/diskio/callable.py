@@ -16,6 +16,7 @@ class CallableDependency(Enum):
     IMMEDIATELY_BEFORE = auto()
     EXISTS = auto()
     NOT_BEFORE = auto()
+    BEFORE = auto()
     FINAL = auto()
 
 

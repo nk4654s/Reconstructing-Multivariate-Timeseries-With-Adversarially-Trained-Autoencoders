@@ -128,7 +128,7 @@ class NormalizeFit(FileWorkerCallable):
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         logger.debug("Finished fitting the normalizer. Used method %s", self._method)
         for file_dict in metadata[Meta.FILES]:
-            day = file_dict["day"]
+            day = file_dict[Meta.DAY.name]
             changes = self._files.get(day, None)
 
             if changes:

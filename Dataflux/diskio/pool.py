@@ -4,28 +4,29 @@ from tqdm import tqdm
 from Dataflux.helper import Metadata
 from .callable import FileWorkerCallable, CallableDependency
 from .worker import FileWorkerThread
-from .context import FileWorkerContext
+from .context import FileWorkerContext as Context
 
 
 class FileWorkerPool:
     """This class manages a list of FileWorkerThread objects.
     """
-    def __init__(self, context: FileWorkerContext, metadata: Metadata) -> None:
+    def __init__(self, context: Context, metadata: Metadata) -> None:
         self._modules = []
-        self._workers: Dict[str, List[FileWorkerThread]] = {}
+        self._workers: List[List[FileWorkerThread]] = []
         self._metadata = metadata
         self._context = context
 
-    def register_worker(self, worker: FileWorkerThread, module: FileWorkerCallable):
+    def register_worker(self, worker: FileWorkerThread, module: FileWorkerCallable, index: int):
         """The method registers a new worker to the pool of workers
         """
-        workers = self._workers.get(module.__class__.__name__, [])
-        if len(workers) == 0:
+        if len(self._workers) == index:
+            self._workers.append([])
+
+        if len(self._workers[index]) == 0:
             self._modules.append(module)
 
         worker.set_module(module)
-        workers.append(worker)
-        self._workers[module.__class__.__name__] = workers
+        self._workers[index].append(worker)
 
     def ensure_module_dependency(self, modules: List[FileWorkerCallable]) -> None:
         """The method ensures the dependencies of the modules.
@@ -47,15 +48,19 @@ class FileWorkerPool:
                 # assert module_name in all_modules.keys(), f"{module_name} should exist"
                 if mode == CallableDependency.IMMEDIATELY_AFTER:
                     j, _ = all_modules[module_name]
-                    assert i + 1 == j, f"{module_name} should come after {name}"
+                    assert i + 1 == j, f"{module_name} should come immediately after {name}"
 
                 elif mode == CallableDependency.IMMEDIATELY_BEFORE:
                     j, _ = all_modules[module_name]
-                    assert i - 1 == j, f"{name} should come before {module_name}"
+                    assert i - 1 == j, f"{name} should come immediately before {module_name}"
                 
                 elif mode == CallableDependency.NOT_BEFORE:
                     j, _ = all_modules[module_name]
-                    assert i < j, f"{module_name} should come after {name}"
+                    assert i < j, f"{module_name} should come anytime before {name}"
+
+                elif mode == CallableDependency.BEFORE:
+                    j, _ = all_modules[module_name]
+                    assert i > j, f"{module_name} should come anytime after {name}"
                 
                 elif mode == CallableDependency.FINAL:
                     j, _ = all_modules[module_name]
@@ -66,20 +71,21 @@ class FileWorkerPool:
         registered workers. All workers wait until all files are processed,
         before applying the next module.
         """
-        pbar = tqdm(self._modules, desc="Post-Processing Dataset")
-        for module in pbar:
-            module_name = module.__class__.__name__
-            pbar.set_description(f"Post-Processing Dataset: {module_name}")
+        with tqdm(total=len(self._modules), desc="Post-Processing Dataset") as pbar:
+            for i in range(len(self._modules)):
+                module_name = self._modules[i].__class__.__name__
+                pbar.set_description(f"Post-Processing Dataset: {module_name}")
 
-            for w in self._workers[module_name]:
-                w.start()
+                for w in self._workers[i]:
+                    w.start()
 
-            w_results = []
-            for w in self._workers[module_name]:
-                w.join()
-                w_results += w.get_result()
+                w_results = []
+                for w in self._workers[i]:
+                    w.join()
+                    w_results += w.get_result()
 
-            module.finish(self._context, self._metadata)
+                self._modules[i].finish(self._context, self._metadata)
+                pbar.update(1)
 
-        pbar.set_description(f"Post-Processing Dataset: Done")
+            pbar.set_description(f"Post-Processing Dataset: Done")
         return self._metadata

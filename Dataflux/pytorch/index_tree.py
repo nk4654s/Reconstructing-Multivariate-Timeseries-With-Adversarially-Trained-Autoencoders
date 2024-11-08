@@ -103,7 +103,7 @@ class IndexTree:
     def _get_cumulative_size(self, node_list: List[Dict]) -> List[Node]:
         # sort the node_list first, as this hould help building
         # a balanced binary search tree
-        node_list = sorted(node_list, key=lambda _: _["day"])
+        node_list = sorted(node_list, key=lambda _: _[Meta.DAY.name])
         cum_weights = 0
         weights = []
 
@@ -114,7 +114,7 @@ class IndexTree:
         for node in node_list:
             # create a new node
             node_size = node["recordings"] // self._skip
-            node = Node(node["day"], cum_weights, node_size)
+            node = Node(node[Meta.DAY.name], cum_weights, node_size)
 
             # skip dataframes which are smaller than the window size
             if node_size < self._win:

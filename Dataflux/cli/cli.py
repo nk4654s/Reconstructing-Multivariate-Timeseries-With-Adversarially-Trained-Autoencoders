@@ -3,18 +3,12 @@
 import inspect
 import re
 from argparse import ArgumentParser, Namespace, Action
-from typing import Dict, List, Tuple
+from typing import List
 
-from Dataflux.diskio import FileWorkerCallable
 from Dataflux.helper import fullname, class_for_name
-from Dataflux.modules import BasePreProcessor
 
 from Dataflux.cli.config_helper import build_config, expand_module_list, get_module_config_args
 from Dataflux.cli.defaults import DEFAULT_ARGUMENTS
-
-
-TYPE_MODULES_PRE = List[BasePreProcessor]
-TYPE_MODULES_POST = List[FileWorkerCallable]
 
 
 class GroupedAction(Action):
@@ -34,8 +28,7 @@ class CLIArgumentParser(ArgumentParser):
 
     def __init__(
         self,
-        modules_pre: TYPE_MODULES_PRE,
-        modules_post: TYPE_MODULES_POST,
+        modules: List,
         *args,
         **kwargs
     ):
@@ -56,82 +49,47 @@ class CLIArgumentParser(ArgumentParser):
         # store all processing modules as classes and inspect their attributes
         # each attribute required by the classes constructer will be added as argument to
         # the parser. The namespace of the argument will be `class.attribute_name`
-        self._modules = {
-            "preprocessing": modules_pre if isinstance(modules_pre, list) else [modules_pre], 
-            "postprocessing": modules_post if isinstance(modules_post, list) else [modules_post]
-        }
+        self._modules = modules if isinstance(modules, list) else [modules]
         self._modules = expand_module_list(self._modules, self.args.config)
-
-        for key, modules in self._modules.items():
-            for module in modules:
-                prefix = re.findall("[A-Z][^A-Z]*", module.__name__)[0] # type: ignore
-                prefix = prefix.lower()
-
-                init_args = get_module_config_args(self.args.config, key, module)
-                assert isinstance(init_args, dict), f"{key}.{module.__name__}.init_args has to be dictionary in the config file." # type: ignore
-
-                # add arguments from pre-processor
-                signature = inspect.signature(module.__init__).parameters
-                for attr in signature.keys():
-                    if attr == "self":
-                        continue
-                    
-                    attr_arg = attr.replace("_", "-")
-                    self.add_argument(
-                        f"--{prefix}-{attr_arg}",
-                        type=signature[attr].annotation,
-                        default=init_args.get(signature[attr].name, signature[attr].default),
-                        action=GroupedAction,
-                        dest=f"{key}.{module.__name__.lower()}.{signature[attr].name}", # type: ignore
-                        help=f"{signature[attr].name.capitalize()} of {module.__name__}", # type: ignore
-                    )
 
         # parse arguments to have the namespace ready
         self._args = self.parse_args()
 
         # build the config dictionary holding modules and init_args
-        self._config = {"preprocessing": [], "postprocessing": []}
+        self._config = []
         self._load_modules_from_args()
     
     def _load_modules_from_args(self) -> None:
-        for key, modules in self._modules.items():
-            for i, module in enumerate(modules):
-                # get the module's name
-                name = module.__name__.lower() # type: ignore
-                kwargs = {}
+        for i, module in enumerate(self._modules):
+            # get the module's name
+            name = module["class_path"].__name__.lower() # type: ignore
+            kwargs = module["init_args"]
 
-                # get the attributes set by the user in the command line interface
-                namespace = self.args.__dict__.get(name, None)
-                if namespace is not None:
-                    kwargs = kwargs | namespace.__dict__
+            # add defaults to kwargs, without overwriting the user's input
+            for arg_key, val in self.args.__dict__.items():
+                arg_split = arg_key.split(".")
+                if len(arg_split) == 3 and "modules" == arg_split[0] and name == arg_split[1]:
+                    if arg_split[2] not in kwargs.keys():
+                        kwargs[arg_split[2]] = val
 
-                # add defaults to kwargs, without overwriting the user's input
-                if namespace is None:
-                    for arg_key, val in self.args.__dict__.items():
-                        arg_split = arg_key.split(".")
-                        if len(arg_split) == 3 and key == arg_split[0] and name == arg_split[1]:
-                            if arg_split[2] not in kwargs.keys():
-                                kwargs[arg_split[2]] = val
+            self._config.append({"class_path": module["class_path"], "order": i, "init_args": kwargs})
 
-                self._config[key].append({"class_path": fullname(module), "order": i, "init_args": kwargs})
-
-    def get_modules(self) -> Tuple[TYPE_MODULES_PRE, TYPE_MODULES_POST]:
+    def get_modules(self) -> List:
         """The method instatiates the processing modules. To call this method, arguments must
         define attributes of processing modules, if a default is not defined.
         """
         # initiate the each processing module with its arguments
-        modules = {"preprocessing": [], "postprocessing": []}
-        for key, config_modules in self._config.items():
-            for data in config_modules:
-                # instantiate the class
-                class_path, order, init_args = data["class_path"], data["order"], data["init_args"]
-                module = class_for_name(*class_path.rsplit(".", maxsplit=1))(**init_args)
-                modules[key].append((module, order))
+        modules = []
+        for data in self._config:
+            # instantiate the class
+            class_path, order, init_args = data["class_path"], data["order"], data["init_args"]
+            module = class_path(**init_args)
+            modules.append((module, order))
 
-            modules[key] = sorted(modules[key], key=lambda x: x[1])
-            modules[key] = [module[0] for module in modules[key]]
+        modules = sorted(modules, key=lambda x: x[1])
+        modules = [module[0] for module in modules]
 
-        return modules["preprocessing"], modules["postprocessing"]
+        return modules
 
     def prepare_arguments(self):
         """Adds the arguments to the parser, before creating the namespace. Overwrite this

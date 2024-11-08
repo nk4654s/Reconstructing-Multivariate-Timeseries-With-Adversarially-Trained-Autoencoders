@@ -6,37 +6,33 @@ import os
 import shutil
 import logging
 from datetime import date
-from Dataflux.cli import CLIArgumentParser, TYPE_MODULES_PRE, TYPE_MODULES_POST
+from typing import List
+from Dataflux.cli import CLIArgumentParser
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
 from Dataflux.helper.metadata import Metadata
-import Dataflux.modules.preprocess as pre
-from Dataflux.data import download, ContinuousDataDownloader, DataType
+from Dataflux.data import ContinuousDataDownloader, DataType
+from Dataflux.modules import Consistency, Rename, PositionBypassValve
 
 from Dataflux import get_logger
 
 logger = get_logger(__name__, path="logfile", level=logging.DEBUG)
 
 # define modules here which should always be applied, regardless of the yaml config file!
-modules_pre = [
-    pre.HomogeneousColumns,
-    pre.RenameColumns,
-    pre.InterpolatePreProcessor,
-    pre.HomogeneousTimeSteps,
+modules = [
+    Rename,
+    Consistency,
+    PositionBypassValve
 ]
 
-modules_post = []
 
-
-def preprocessing(parser: CLIArgumentParser, modules: TYPE_MODULES_PRE) -> None:
+def download(parser: CLIArgumentParser) -> None:
     """
-    The pre-processing operations. This function initializes the CLIArgumentParser with
-    the module classes and handles command-line interface (CLI) arguments.
+    This function handles the command-line interface (CLI) arguments to download
+    and store a dataset.
 
     Args:
         parser (CLIArgumentParser): The CLIArgumentParser which contains all arguments
             parsed from the command line interface.
-        modules (TYPE_MODULES_PRE): The list of classes which should be used for
-            preprocessing.
     """
     if parser.args.overwrite and os.path.exists(parser.args.folder):
         shutil.rmtree(parser.args.folder)
@@ -55,19 +51,19 @@ def preprocessing(parser: CLIArgumentParser, modules: TYPE_MODULES_PRE) -> None:
     downloader.set_data_type(DataType.MEASUREMENTS)
 
     # download and process data
-    download(downloader, parser.args.folder, modules=modules)
+    downloader.run(parser.args.folder)
 
 
-def postprocessing(parser: CLIArgumentParser, modules: TYPE_MODULES_POST) -> None:
+def process(parser: CLIArgumentParser, modules: List) -> None:
     """
-    The post-processing operations. This function initializes the CLIArgumentParser
+    The processing operations. This function initializes the CLIArgumentParser
     with the module classes and handles command-line interface (CLI) arguments.
 
     Args:
         parser (CLIArgumentParser): The CLIArgumentParser which contains all arguments
             parsed from the command line interface.
-        modules (TYPE_MODULES_POST): The list of classes which should be used for
-            postprocessing.
+        modules (List): The list of classes which should be used for
+            processing.
     """
     # create multi-threaded file-hanlder
     factory = FileWorkerFactory(parser.args.folder, parser.args.num_workers)
@@ -82,18 +78,20 @@ def postprocessing(parser: CLIArgumentParser, modules: TYPE_MODULES_POST) -> Non
 def main() -> None:
     """The main entry point for the pipeline which executes the pre-processing
     and post-processing steps."""
+    global modules
+
     # initialize all modules
-    parser = CLIArgumentParser(modules_pre, modules_post)
+    parser = CLIArgumentParser(modules)
     modules = parser.get_modules()
     if os.path.exists(parser.args.folder) and not parser.args.overwrite:
         logger.debug("Dataset folder exists, overwrite is set to False.")
         exit(0)
 
     # 1. run pre-processing step, which also downloads the dataset
-    preprocessing(parser, modules[0])
+    download(parser)
 
     # 2. run post-processing step, which requires the pre-processed data
-    postprocessing(parser, modules[1])
+    process(parser, modules) 
 
     # 3. copy the pipeline configuration used for consistency
     config_path = os.path.join(parser.args.folder, "metadata", "config.yaml")

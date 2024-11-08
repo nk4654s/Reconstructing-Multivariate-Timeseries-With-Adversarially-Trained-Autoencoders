@@ -10,7 +10,7 @@ class Header:
     values: List[str] = []
     drop: List[str] = []
 
-    def relative_complement(self, other: "Header", fail_safe: bool = True) -> None:
+    def relative_complement(self, other: set, fail_safe: bool = True) -> None:
         """Calculates the relative complement of the header values of
         this class and another header class.
 
@@ -19,11 +19,11 @@ class Header:
             fail_safe (bool): Whether to raise an error if the relative
             complement is not a subset of other header.
         """
-        self.drop = list(set(self.values) - set(other.values))
+        self.drop = list(set(self.values) - other)
 
         if fail_safe:
             assert self.length - len(self.drop) == len(
-                other.values
+                other
             ), "The relative complement is not a subset of the other header."
 
     @property

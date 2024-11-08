@@ -3,11 +3,11 @@ from typing import Any, Dict, List
 import pandas as pd
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
 from Dataflux.helper import Metadata, Meta
-from Dataflux.modules.postprocess.normalize import NormalizeFit
+from Dataflux.modules.normalize import NormalizeFit
 from Dataflux import logger
 
 
-class RemoveColumns(FileWorkerCallable):
+class Remove(FileWorkerCallable):
     """This module removes specified columns from the dataframe.
     
     Args:

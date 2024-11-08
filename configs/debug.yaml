@@ -4,24 +4,20 @@ intervals:
   - 2021-10-13 2021-10-30
 overwrite: true
 
-preprocessing:
-  - class_path: Dataflux.modules.preprocess.PositionBypassRemoval
-  - class_path: Dataflux.modules.preprocess.MachineStateSplit
+modules:
+  - class_path: Dataflux.modules.state.State
     init_args:
-      keep_state: "on"
-  - class_path: Dataflux.modules.preprocess.Filter
+      key: Laeuft
+      lower: 1
+      upper: 1
+      delete_ts: 1800
+  - class_path: Dataflux.modules.state.State
     init_args:
-      filters:
-        - name: "VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)"
-          lower: 80
-          upper: 145
-  - class_path: Dataflux.modules.preprocess.Report
-
-postprocessing:
-  - class_path: Dataflux.modules.postprocess.weather.WeatherDataset
-    init_args:
-      enable: false
-  - class_path: Dataflux.modules.postprocess.remove.RemoveColumns
+      key: KompressordrehzahlSE74201 (rpm)
+      lower: 400
+      upper: 1200
+      delete_ts: 1800
+  - class_path: Dataflux.modules.remove.Remove
     init_args:
       columns:
         - Automatenfall/SpannungGestört
@@ -57,10 +53,10 @@ postprocessing:
         - VerdichterFern
         - VerdichterOrt
         - Vorlauf
-  - class_path: Dataflux.modules.postprocess.normalize.NormalizeFit
+  - class_path: Dataflux.modules.normalize.NormalizeFit
     init_args:
       method: minmax
       remove_outliers: true
       exclude_keys:
         - ts
-  - class_path: Dataflux.modules.postprocess.normalize.NormalizeTransform
+  - class_path: Dataflux.modules.normalize.NormalizeTransform

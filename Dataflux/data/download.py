@@ -1,18 +1,41 @@
 """This module contains classes to download the raw TSV-files from the S3 bucket and handles
 the parsing."""
-from datetime import date
 import gzip
+import os
+from datetime import date
 from io import BytesIO, TextIOWrapper
 from multiprocessing import Pool
 from typing import List, TextIO, Tuple
 from uuid import UUID
+from tqdm import trange
 import numpy as np
 import pandas as pd
 
 from Dataflux.data.header import Header
-from Dataflux import logger
-from Dataflux.helper.utils import get_day_list, line_str_to_array
 from Dataflux.data.s3io import S3Bucket
+from Dataflux.helper import Meta, Metadata, get_file, get_day_list, line_str_to_array
+from Dataflux import logger
+
+
+def homogeneous_decompress(df: pd.DataFrame, index_key: str = "ts") -> pd.DataFrame:
+    # decompress the dataframe using forward-fill interpolation
+    df.ffill(inplace=True)
+    df.dropna(how="any", inplace=True)
+
+        # get time start and end
+    range_start = df[index_key].iloc[0]
+    range_end = df[index_key].iloc[-1]
+
+    # create a new index based on the start and end range
+    new_index = pd.Index(np.arange(range_start, range_end, 1), name=index_key)
+
+    # reindex the dataframe, inserted rows will be filled with NaNs
+    df = df.set_index(index_key).reindex(new_index).reset_index(index_key)
+
+    # interpolate added rows
+    df.interpolate(method="linear", inplace=True)
+    return df
+
 
 
 class EmptyStreamError(Exception):
@@ -202,6 +225,52 @@ class ContinuousDataDownloader(DataDownloader):
             i (int): The index of the day
         """
         return self._days[i]
+    
+    def run(self, dir_name: str = "dataset") -> None:
+        """Downloads the dataframe from a S3 stream and downloads the dataframe as file.
+
+        Args:
+            dir_name (str): Path of the HDF5 file to be saved. If not provided, the current
+            folder will be used. Defaults to "dataset".
+        """
+        filename = str(self.machine_uuid) + ".h5"
+
+        # organize modules and build metadata as information for modules
+        meta = Metadata()
+        meta.put(dir_name, Meta.PATH)
+        meta.put(str(self.machine_uuid), Meta.MACHINE_UUID)
+        files = []
+
+        # iterate over all streams and append their content to the dataframe
+        for i in trange(len(self), desc="Downloading Dataset"):
+            day = self.day(i).strftime("%Y-%m-%d")
+            file_path = get_file(os.path.join(dir_name, filename), postfix=day)
+
+            # get the DataFrame of the  stream, skip if the stream could not be opened
+            try:
+                df: pd.DataFrame = self[i]
+
+                # save the dataframe if it is not None or empty
+                if df is not None and not df.empty:
+                    df = homogeneous_decompress(df)
+
+                    meta.put(self.day(i).strftime("%Y-%m-%d"), Meta.DAY)
+                    df.to_hdf(file_path, key="data", format="table")
+                    files.append({
+                        Meta.DAY.name: day,
+                        "recordings": len(df),
+                        "features": df.shape[1]
+                    })
+
+            except EmptyStreamError:
+                continue
+
+        logger.info("Finished downloading.")
+        logger.debug("Saving metadata info to %s", dir_name)
+
+        meta.put(sum([f["recordings"] for f in files]), Meta.TOTAL_RECORDINGS)
+        meta.put(files, Meta.FILES)
+        meta.save(dir_name)
 
     def __len__(self) -> int:
         return len(self._days)
