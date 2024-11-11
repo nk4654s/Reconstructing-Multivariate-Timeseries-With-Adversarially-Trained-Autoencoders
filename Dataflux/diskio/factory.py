@@ -52,7 +52,6 @@ class FileWorkerFactory:
         logger.debug("One worker processes %d files", s)
         logger.debug("Using %d workers", self._num_workers)
         for i in range(0, n, s): # i=0, i=25, i=75, ...
-            logger.debug("Adding files %s to worker %d", files[i:i + s], i)
             worker = {"files": files[i:i + s], "context": self._context}
             self._pool.register_worker(worker)
 

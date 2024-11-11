@@ -84,7 +84,6 @@ class DataDownloader(S3Bucket):
             day = day.strftime("%Y/%m/%d")
 
         path = f"{self._uuid}/days/{day}/{self._uuid}{self._postfix}.tsv"
-        logger.debug("Retrieving '%s:%s' from S3", self._bucket, path)
 
         # open and unconmpress the s3 stream given the bucket and path
         data = self._client.get_object(Bucket=self._bucket, Key=f"{path}")[
@@ -166,9 +165,6 @@ class DataDownloader(S3Bucket):
 
         if df is None:
             raise EmptyStreamError(day)
-
-        logger.info("Finished streaming day %s", day)
-        logger.info("Streamed %s lines in total", len(df))
 
         return df
 

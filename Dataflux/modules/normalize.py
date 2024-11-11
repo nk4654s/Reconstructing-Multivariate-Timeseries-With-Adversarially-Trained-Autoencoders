@@ -138,7 +138,6 @@ class NormalizeFit(FileWorkerCallable):
             total = sum([d["recordings"] for d in metadata[Meta.FILES]])
             metadata.put(total, Meta.TOTAL_RECORDINGS)
             logger.debug("Removing outliers resulted in a new dataset length of %s samples", total)
-            logger.debug("Modified day info after outlier removal %s", metadata[Meta.FILES])
 
 
 class NormalizeTransform(FileWorkerCallable):
@@ -211,7 +210,7 @@ class NormalizeTransform(FileWorkerCallable):
         # save the used normalization method and fitted values to the
         # dataset's metadata
         data = {
-            Meta.NORM_METHOD.name: scaler.method.value,
+            Meta.NORM_METHOD.name: scaler.method.value if scaler else None,
             Meta.NORM_PATH.name: path,
             Meta.NORM_KEYS.name: self._columns
         }

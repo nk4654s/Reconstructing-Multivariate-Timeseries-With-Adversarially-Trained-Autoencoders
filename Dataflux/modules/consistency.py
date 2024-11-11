@@ -45,7 +45,6 @@ class Consistency(FileWorkerCallable):
 
         if incoming.drop:
             df.drop(columns=incoming.drop, axis=1, inplace=True, errors="ignore")
-            logger.debug("Removed %s columns", len(incoming.drop))
 
         df.to_hdf(file_path, key="data")
         return None, None

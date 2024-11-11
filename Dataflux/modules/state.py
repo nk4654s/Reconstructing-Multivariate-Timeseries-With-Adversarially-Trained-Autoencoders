@@ -201,7 +201,6 @@ class State(FileWorkerCallable):
                 files_update.append(update)
         
         logger.debug("State splitter (key=%s) introduced %s splits", self._key, len(self._update))
-        logger.debug("Files are %s", self._update)
         for day, info in self._update.items():
             if not info:
                 continue

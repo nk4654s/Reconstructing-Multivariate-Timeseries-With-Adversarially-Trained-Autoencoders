@@ -34,5 +34,3 @@ class Remove(FileWorkerCallable):
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         for file_dict in metadata[Meta.FILES]:
             file_dict["features"] = self._num_columns
-        
-        logger.debug("Removed columns from %s", self._operated)
