@@ -9,7 +9,7 @@ from datetime import date
 from typing import List
 from Dataflux.cli import CLIArgumentParser
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
-from Dataflux.helper.metadata import Metadata
+from Dataflux.helper.metadata import Meta, Metadata
 from Dataflux.data import ContinuousDataDownloader, DataType
 from Dataflux.modules import Consistency, Rename, PositionBypassValve
 
@@ -94,7 +94,13 @@ def main() -> None:
             download(parser, parser.args.disk_backup)
         shutil.copytree(parser.args.disk_backup, parser.args.folder)
     else:
-        download(parser, parser.args.folder)        
+        download(parser, parser.args.folder)  
+
+    # adjust the metadata, e.g. overwrite the dataset base dir
+    metadata = Metadata()
+    metadata.load(parser.args.folder)
+    metadata.put(parser.args.folder, Meta.PATH)
+    metadata.save(parser.args.folder)      
 
     # 2. run post-processing step, which requires the pre-processed data
     process(parser, modules) 
