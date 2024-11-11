@@ -7,7 +7,7 @@ from io import BytesIO, TextIOWrapper
 from multiprocessing import Pool
 from typing import List, TextIO, Tuple
 from uuid import UUID
-from tqdm import trange
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 
@@ -20,6 +20,7 @@ from Dataflux import logger
 def homogeneous_decompress(df: pd.DataFrame, index_key: str = "ts") -> pd.DataFrame:
     # decompress the dataframe using forward-fill interpolation
     df.ffill(inplace=True)
+    df.dropna(axis=1, how="all", inplace=True)
     df.dropna(how="any", inplace=True)
 
     if df.empty:
@@ -219,9 +220,11 @@ class ContinuousDataDownloader(DataDownloader):
         files = []
 
         # iterate over all streams and append their content to the dataframe
-        for i in trange(len(self), desc="Downloading Dataset"):
+        pbar = tqdm(total=len(self), desc="Downloading Dataset")
+        for i in range(len(self)):
             day = self.day(i).strftime("%Y-%m-%d")
             file_path = get_file(os.path.join(dir_name, filename), postfix=day)
+            pbar.set_description(f"Downloading {day}")
 
             # get the DataFrame of the  stream, skip if the stream could not be opened
             try:
@@ -231,6 +234,7 @@ class ContinuousDataDownloader(DataDownloader):
                 if df is not None and not df.empty:
                     df = homogeneous_decompress(df)
                     if df.empty:
+                        pbar.update(1)
                         continue
 
                     meta.put(self.day(i).strftime("%Y-%m-%d"), Meta.DAY)
@@ -240,9 +244,12 @@ class ContinuousDataDownloader(DataDownloader):
                         "recordings": len(df),
                         "features": df.shape[1]
                     })
-
+                pbar.update(1)
             except EmptyStreamError:
+                logger.debug("Stream for day %s is empty, skipping file download.", day)
+                pbar.update(1)
                 continue
+
 
         logger.info("Finished downloading.")
         logger.debug("Saving metadata info to %s", dir_name)
