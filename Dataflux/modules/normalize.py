@@ -109,7 +109,6 @@ class NormalizeFit(FileWorkerCallable):
         with mutex:
             # find and remove outliers
             if self._remove:
-                initial = len(df)
                 df = remove_outlier(df)
                 df.to_hdf(file_path, key="clean")
 

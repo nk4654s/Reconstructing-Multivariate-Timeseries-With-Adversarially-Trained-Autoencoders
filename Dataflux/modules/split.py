@@ -3,6 +3,8 @@ import shutil
 from typing import Any, Dict, List, Tuple
 from copy import deepcopy, copy
 
+import pandas as pd
+
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
 from Dataflux.helper import Metadata, Meta
 from Dataflux import logger
@@ -82,20 +84,36 @@ class SplitDataset(FileWorkerCallable):
                 os.makedirs(os.path.join(name, "metadata"))
             else:
                 self.active = False
+        else:
+            os.makedirs(os.path.join(name, "metadata"))
+
+        self._files = []
+        self._total = 0
 
 
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {SplitDataset.__name__: CallableDependency.FINAL}
 
     def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
-        # this module does not need to operate the dataframes themselves
+        df = pd.read_hdf(file_path, key="norm")
+        info = {
+            Meta.DAY.name: file_path.split("_", maxsplit=1)[-1][:-3],
+            "recordings": df.shape[0],
+            "features": df.shape[1]
+        }
+
+        self._files.append(info)
+        self._total += df.shape[0]
+
         return None, None
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         if not self.active:
             return
-
-        logger.debug("Splitting dataset of size %s", metadata[Meta.TOTAL_RECORDINGS])
+        
+        # make sure to have the correct metadata before performing a split
+        metadata.put(self._total, Meta.TOTAL_RECORDINGS)
+        metadata.put(self._files, Meta.FILES)
 
         # split the dataset according to each dataframes metadata
         trimmed_days, splitted_days = deterministic_split_algorithm(metadata, self._percentage)

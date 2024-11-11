@@ -215,5 +215,6 @@ class State(FileWorkerCallable):
 
         metadata.drop(Meta.FILES)
         metadata.put(files_update, Meta.FILES)
-        metadata.put(sum([i["recordings"] for i in metadata[Meta.FILES]]), Meta.TOTAL_RECORDINGS)
+        metadata.put(sum([i["recordings"] for i in files_update]), Meta.TOTAL_RECORDINGS)
+        logger.debug("Total length now %s", metadata[Meta.TOTAL_RECORDINGS])
 
