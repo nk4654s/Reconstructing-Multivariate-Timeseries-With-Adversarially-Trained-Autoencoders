@@ -34,10 +34,14 @@ class FileWorkerThread(threading.Thread):
         Args:
             path (str): Path to file.
         """
-        assert os.path.exists(path), "Can not add an invalid path to a thread."
+        if not os.path.exists(path):
+            logger.debug("Can not add an invalid path to a thread (%s).", path)
+            return
+    
         self._files.append(path)
 
     def run(self) -> None:
+        logger.debug("Thread %s processes %s files", self.name, len(self._files))
         # process the files using the current module
         new_files, del_files = [], []
         for f in self._files:
@@ -46,19 +50,19 @@ class FileWorkerThread(threading.Thread):
 
             to_add, to_delete = self._module.run(f, self._context)
             if to_add:
-                paths = to_add if isinstance(to_add, list) else [to_add]
-                new_files += paths
+                new_files += to_add if isinstance(to_add, list) else [to_add]
             
             if to_delete:
-                paths = to_delete if isinstance(to_delete, list) else [to_delete]
-                for path in to_delete:
-                    self._files.remove(path)
-                    if os.path.exists(path):
-                        os.remove(path)
-                    del_files.append(path)
+                del_files += to_delete if isinstance(to_delete, list) else [to_delete]
         
-        logger.debug("Thread of %s deleted %s files", self._module.__class__.__name__, len(del_files))
+        if len(del_files) > 0:
+            logger.debug("Thread of %s deleted %s files", self.name, len(del_files))
+            for path in del_files:
+                self._files.remove(path)
+                if os.path.exists(path):
+                    os.remove(path)
+
         if len(new_files) > 0:
-            logger.debug("Thread of %s self-extended by %s files", self._module.__class__.__name__, len(new_files))
+            logger.debug("Thread of %s self-extended by %s files", self.name, len(new_files))
             for path in new_files:
                 self.add_file(path)

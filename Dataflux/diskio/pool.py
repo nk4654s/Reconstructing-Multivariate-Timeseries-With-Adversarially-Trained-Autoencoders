@@ -68,15 +68,18 @@ class FileWorkerPool:
         registered workers. All workers wait until all files are processed,
         before applying the next module.
         """
-        with tqdm(total=len(self._modules), desc="Post-Processing Dataset") as pbar:
+        logger.debug("=" * 100)
+        logger.debug("=" + " " * 41 + "Start Processing" + " " * 41 + "=")
+        logger.debug("=" * 100)
+        with tqdm(total=len(self._modules), desc="Processing Dataset") as pbar:
             for module in self._modules:
                 module_name = module.__class__.__name__
-                pbar.set_description(f"Post-Processing Dataset: {module_name}")
+                pbar.set_description(f"Processing (module={module_name})")
 
                 active: List[FileWorkerThread] = []
                 for i, kwargs in enumerate(self._workers):
                     # modify the thread's arguments to define the correct module to use
-                    kwargs["name"] = f"{module}_{i}"
+                    kwargs["name"] = f"{module.__class__.__name__}_{i}"
                     kwargs["module"] = module
                     
                     thread = FileWorkerThread(**kwargs)
@@ -95,5 +98,5 @@ class FileWorkerPool:
                 module.finish(self._context, self._metadata)
                 pbar.update(1)
 
-            pbar.set_description(f"Post-Processing Dataset: Done")
+            pbar.set_description(f"Processing Done")
         return self._metadata
