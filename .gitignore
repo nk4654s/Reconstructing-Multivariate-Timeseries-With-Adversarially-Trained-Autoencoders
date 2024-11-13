@@ -11,6 +11,10 @@ __pycache__/
 build/
 
 # ignore dataset file
+*/metadata/*.yaml
+*/metadata/*.yml
+*/metadata/*.json
+*/metadata/*.pkl
 *.h5
 *.png
 .env
