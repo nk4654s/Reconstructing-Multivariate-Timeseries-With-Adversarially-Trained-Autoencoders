@@ -161,7 +161,8 @@ class DataDownloader(S3Bucket):
         """
         stream = self.get_stream(day)
         df = self.parse_stream(stream)
-        return df or pd.DataFrame()
+        df = df if df is not None else pd.DataFrame()
+        return df
 
 
 class ContinuousDataDownloader(DataDownloader):
@@ -255,4 +256,4 @@ class ContinuousDataDownloader(DataDownloader):
     def __getitem__(self, index: int) -> pd.DataFrame:
         # create the s3 path from the current date
         day = self._days[index]
-        return self.get_dataframe(day.strftime("%Y-%m-%d")) or pd.DataFrame()
+        return self.get_dataframe(day.strftime("%Y-%m-%d"))
