@@ -82,7 +82,7 @@ class DataUpdater(S3Bucket):
             # 1. download the DataFrame and ensure homogeneous time steps
             day_str = day.strftime("%Y-%m-%d")
             try:
-                df = downloader.get_dataframe(day_str, ignore_header=True)
+                df = downloader.get_dataframe(day_str)
                 df.drop(columns=score_uuids.values(), errors="ignore", inplace=True)
                 df = decompress(df)
             except ClientError as _:

@@ -1,7 +1,8 @@
 """This module removes rows from the dataframe if the machine is off."""
 
 import os
-from typing import Any, Dict, List, Tuple, Union
+from threading import Lock
+from typing import Dict, List, Tuple, Union
 from pandas import DataFrame
 import pandas as pd
 import numpy as np
@@ -11,6 +12,7 @@ from Dataflux.helper import Meta, Metadata
 from Dataflux import logger
 from Dataflux.modules.normalize import NormalizeFit
 from Dataflux.modules.remove import Remove
+mutex = Lock()
 
 
 def trim(df: DataFrame, key: str, value: int | float, lower: bool = True) -> DataFrame:
@@ -140,7 +142,8 @@ class State(FileWorkerCallable):
 
     def __init__(self, key: str = "Laeuft", lower: Union[int, float] = 1, upper: Union[int, float] = 1,
                  delete_ts: int = 900):
-        self._key = key
+        self._key_substring = key
+        self._key = ""
         self._lower = lower
         self._upper = upper
         self._threshold = delete_ts
@@ -152,6 +155,23 @@ class State(FileWorkerCallable):
                 Remove.__name__: CallableDependency.NOT_BEFORE,
             }
     
+    def _find_corresponding_key(self, column_names) -> bool:
+        if not self._key:
+            # the variable self._key might be accessed by multiple threads, prevent racing
+            # condition when setting this variable
+            with mutex:
+                # find the key matching the substring given
+                keys = [k for k in column_names if self._key_substring in k]
+                if len(keys) > 0:
+                    logger.debug("Found %s matching key(s) in header", len(keys))
+                    self._key = keys[0]
+                    return True
+                else:
+                    logger.debug("Can not find key %s, no splitting applied", self._key)
+                    return False
+        
+        return True
+    
     def run(self, file_path: str, context: Context) -> CALLABLE_RETURN_TYPE:
         # read and remove the dataset file, if everyting is fine, it will eb created again
         df = pd.read_hdf(file_path, key="data")
@@ -160,6 +180,10 @@ class State(FileWorkerCallable):
         self._update[day] = None
         if df.empty or isinstance(df, pd.Series):
             return None, [file_path]
+        
+        # find similar key
+        if not self._find_corresponding_key(column_names=df.columns.values):
+            return None, None
 
         # split the dataset into multiple smaller ones by removing values
         # smaller or greater than the boundaries

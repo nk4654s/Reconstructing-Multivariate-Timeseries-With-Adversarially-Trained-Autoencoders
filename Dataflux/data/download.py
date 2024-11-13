@@ -41,7 +41,6 @@ def homogeneous_decompress(df: pd.DataFrame, index_key: str = "ts") -> pd.DataFr
     return df
 
 
-
 class EmptyStreamError(Exception):
     """Raised when the stream is empty."""
     def __init__(self, day: str) -> None:
@@ -162,11 +161,7 @@ class DataDownloader(S3Bucket):
         """
         stream = self.get_stream(day)
         df = self.parse_stream(stream)
-
-        if df is None:
-            raise EmptyStreamError(day)
-
-        return df
+        return df or pd.DataFrame()
 
 
 class ContinuousDataDownloader(DataDownloader):
@@ -260,4 +255,4 @@ class ContinuousDataDownloader(DataDownloader):
     def __getitem__(self, index: int) -> pd.DataFrame:
         # create the s3 path from the current date
         day = self._days[index]
-        return self.get_dataframe(day.strftime("%Y-%m-%d"))
+        return self.get_dataframe(day.strftime("%Y-%m-%d")) or pd.DataFrame()

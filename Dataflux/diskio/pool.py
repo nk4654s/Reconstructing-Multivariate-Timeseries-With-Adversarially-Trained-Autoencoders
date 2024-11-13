@@ -76,6 +76,9 @@ class FileWorkerPool:
                 module_name = module.__class__.__name__
                 pbar.set_description(f"Processing (module={module_name})")
 
+                padding = (100 - len(module_name)) // 2
+                logger.debug("=" * padding + f"{module_name}" + "=" * padding)
+
                 active: List[FileWorkerThread] = []
                 for i, kwargs in enumerate(self._workers):
                     # modify the thread's arguments to define the correct module to use
@@ -99,4 +102,9 @@ class FileWorkerPool:
                 pbar.update(1)
 
             pbar.set_description(f"Processing Done")
+
+        logger.debug("=" * 100)
+        logger.debug("=" + " " * 42 + "End Processing" + " " * 42 + "=")
+        logger.debug("=" * 100)
+        logger.debug("-" * 100)
         return self._metadata
