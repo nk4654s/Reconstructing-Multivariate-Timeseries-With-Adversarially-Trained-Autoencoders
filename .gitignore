@@ -26,3 +26,7 @@ docs/
 build/
 
 dataset-*
+*/metadata/
+*.json
+*.pkl
+*/*.h5

@@ -1,23 +1,17 @@
-folder: dataset-test-suspicious
-machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
+folder: dataset-test-june-anacision
+machine_uuid: a6252582-01dd-49cb-8dbe-0742b28bc007 #0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-  - 2023-04-01 2023-04-27
-  - 2023-07-01 2023-07-17
-overwrite: false
+  - 2024-06-10 2024-06-12
+overwrite: true
 
-preprocessing:
-  - class_path: Dataflux.modules.preprocess.PositionBypassRemoval
-  - class_path: Dataflux.modules.preprocess.MachineStateSplit
+modules:
+  - class_path: Dataflux.modules.State
     init_args:
-      keep_state: "on"
-      state_change_threshold: 3600
-  - class_path: Dataflux.modules.preprocess.Report
-
-postprocessing:
-  - class_path: Dataflux.modules.postprocess.weather.WeatherDataset
-    init_args:
-      enable: false
-  - class_path: Dataflux.modules.postprocess.remove.RemoveColumns
+      key: "Laeuft"
+      lower: 0.9
+      upper: 1.1
+      delete_ts: 1800
+  - class_path: Dataflux.modules.remove.Remove
     init_args:
       columns:
         - Automatenfall/SpannungGestört
@@ -53,11 +47,11 @@ postprocessing:
         - VerdichterFern
         - VerdichterOrt
         - Vorlauf
-  - class_path: Dataflux.modules.postprocess.normalize.NormalizeFit
+  - class_path: Dataflux.modules.normalize.NormalizeFit
     init_args:
       method: minmax
       exclude_keys:
         - ts
-  - class_path: Dataflux.modules.postprocess.normalize.NormalizeTransform
+  - class_path: Dataflux.modules.normalize.NormalizeTransform
     init_args:
-      from_other: dataset-clean-train
+      from_other: thyssen-vd2-trainset

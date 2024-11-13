@@ -52,11 +52,11 @@ model:
         predict_key: sensors
 data:
   # configure dataset to load
-  train: /Users/jonas/Dev/NEAX/Comprisk/dataset-clean-train
-  validate: /Users/jonas/Dev/NEAX/Comprisk/dataset-clean-validate
-  input_sequence: 50
+  train: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-trainset
+  validate: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-valset
+  input_sequence: 100
   output_sequence: 0
-  skip: 10
+  skip: 5
   # configure how to sample from the dataset
   batch_size: 256
   shuffle: true

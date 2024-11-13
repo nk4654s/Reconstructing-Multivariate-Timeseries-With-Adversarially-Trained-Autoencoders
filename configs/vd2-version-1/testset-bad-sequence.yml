@@ -1,49 +1,18 @@
-folder: dataset-clean-train
+folder: thyssen-vd2-suspicious
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-# - start      end
-  - 2020-11-01 2021-03-09
-  - 2021-03-21 2022-08-04
-  - 2022-08-11 2022-08-30
-  - 2022-09-21 2022-10-02
-  - 2022-10-13 2022-10-27
-  - 2022-11-02 2023-04-01
-  - 2023-04-27 2023-07-01
-  - 2023-07-17 2024-08-27 
-  - 2024-09-07 2024-10-01
+  - 2023-04-01 2023-04-27
+  - 2023-07-01 2023-07-17
 overwrite: false
 
-preprocessing:
-  - class_path: Dataflux.modules.preprocess.PositionBypassRemoval
-  - class_path: Dataflux.modules.preprocess.MachineStateSplit
+modules:
+  - class_path: Dataflux.modules.State
     init_args:
-      keep_state: "on"
-      state_change_threshold: 3600
-  - class_path: Dataflux.modules.preprocess.Filter
-    init_args:
-      filters:
-        - name: "VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)"
-          lower: 80
-          upper: 145
-        # - name: "EndtemperaturZweiteStufenachKühlerTETIT74378 (°C)"
-        #   lower: 0
-        #   upper: 36
-        # - name: "PackungsleckageFIT74389 (Nm3h)"
-        #   lower: 0
-        #   upper: 4
-        # - name: "SaugdruckErsteStufePIT74319 (bar)"
-        #   lower: 4.0
-        #   upper: 50
-        - name: "SchwingungsmessungTriebwerkVT74280 (mm/s)"
-          lower: 0
-          upper: 10
-  - class_path: Dataflux.modules.preprocess.Report
-
-postprocessing:
-  - class_path: Dataflux.modules.postprocess.weather.WeatherDataset
-    init_args:
-      enable: false
-  - class_path: Dataflux.modules.postprocess.remove.RemoveColumns
+      key: "Laeuft"
+      lower: 0.9
+      upper: 1.1
+      delete_ts: 1800
+  - class_path: Dataflux.modules.remove.Remove
     init_args:
       columns:
         - Automatenfall/SpannungGestört
@@ -79,15 +48,11 @@ postprocessing:
         - VerdichterFern
         - VerdichterOrt
         - Vorlauf
-  - class_path: Dataflux.modules.postprocess.normalize.NormalizeFit
+  - class_path: Dataflux.modules.normalize.NormalizeFit
     init_args:
       method: minmax
-      remove_outliers: true
       exclude_keys:
         - ts
-  - class_path: Dataflux.modules.postprocess.normalize.NormalizeTransform
-  - class_path: Dataflux.modules.postprocess.split.SplitDataset
+  - class_path: Dataflux.modules.normalize.NormalizeTransform
     init_args:
-      name: dataset-clean-validate
-      percentage: 0.3
-      overwrite: false
+      from_other: thyssen-vd2-trainset
