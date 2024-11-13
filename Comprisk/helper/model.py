@@ -75,7 +75,7 @@ def load_model(path: str, eval_mode: bool = True) -> Any:
     return model
 
 
-def store_model_output(names: List[str], container: Dict[str, List], values: np.array) -> None:
+def store_model_output(names: List[str], container: Dict[str, np.ndarray], values: np.ndarray) -> None:
     """Store the provided values to the container dictionary with the keys equal to the 
     names list.
 
@@ -88,7 +88,7 @@ def store_model_output(names: List[str], container: Dict[str, List], values: np.
         container[key] += list(values[:, j])
 
 
-def get_tensor_from_dataset(dataset: Dataset, i: int, device: str) -> Tuple[torch.Tensor, torch.Tensor]:
+def get_tensor_from_dataset(dataset: Dataset, i: int, device: Any) -> Tuple[torch.Tensor, torch.Tensor]:
     """This method gets a sample from a dataset given the index and transforms it
     to a tensor including moving the tensor to the provided device.
 
@@ -130,24 +130,6 @@ class ModelLoader:
         """
         return self._path
 
-    def get_loss_statistics(self) -> pd.DataFrame:
-        """The loss statistics of the model collected during training phase. This will
-        be usefull when deploying a model to detect anomalies.
-
-        Returns:
-            pd.DataFrame: A pandas dataframe containing the loss statistics.
-        """
-        loss_path = os.path.join(self._path, "metadata", "loss.csv")
-        if not os.path.exists(loss_path):
-            return pd.DataFrame()
-        loss = pd.read_csv(loss_path, index_col=0)
-        data = []
-        for i in range(len(loss)):
-            mean = np.array([_ for _ in loss["mean"][i][1:-1].split(" ") if len(_) > 0], dtype=np.float32)
-            std = np.array([_ for _ in loss["std"][i][1:-1].split(" ") if len(_) > 0], dtype=np.float32)
-            data.append((int(loss["epoch"][i]), mean, std))
-        return data
-
     def get_correlations(self) -> pd.DataFrame:
         """Loads the correlations of input features from the model metadata folder. These
         correlations are computed from the training data.
@@ -162,7 +144,7 @@ class ModelLoader:
         return pd.read_csv(correlation_path, index_col=0)
 
     def predict_loop(self, dataset: Dataset, mode: str = "autoencoder",
-                     modifier: Tuple[str, float] = ("", 1.0)) -> Tuple[pd.DataFrame, pd.DataFrame]:
+                     modifier: Tuple[str, float] = ("", 1.0), step: int | None = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """This method applies a model on a given dataset. For an AutoEncoder, the reconstructed
         output will be returned. For future prediction models, the prediction of the future is
         output. In addition, the original input data will be temporarily stored and returned.
@@ -171,14 +153,16 @@ class ModelLoader:
             dataset (Dataset): The dataset to use.
             mode (str): The mode to use for prediction. Defaults to 'autoencoder'.
             modifier (Tuple[str, float]): The sensor name and factor to apply. This is handy to inject
-            some kind of anomaly.
+                some kind of anomaly.
+            step (int | None): The step size of the window to slide over the dataset.
         
         Returns
             Tuple[pd.DataFrame, pd.DataFrame]: Pandas dataframes containing the prediction and input.
         """
         self._model.eval()
         meta = dataset.get_meta()
-        step = meta.num_input_sequence if mode == "autoencoder" else meta.num_output_sequence
+        if not step:
+            step = meta.num_input_sequence if mode == "autoencoder" else meta.num_output_sequence
 
         logger.debug("Predict on dataset, length=%s", len(dataset))
         logger.debug("Dataset input sequence: %s", meta.num_input_sequence)
@@ -192,8 +176,10 @@ class ModelLoader:
             modifier_index = operator.indexOf(meta.column_names_sensor, modifier_name)
 
         # 1. iterate over dataset, with shuffle deactivated
-        predicted = {key: [] for key in meta.column_names_sensor}
-        inputs = {key: [] for key in meta.column_names_sensor}
+        counts = np.zeros(shape=(len(dataset), len(meta.column_names_sensor)))
+        predicted = np.zeros(shape=(len(dataset), len(meta.column_names_sensor)))
+        inputs = np.zeros(shape=(len(dataset), len(meta.column_names_sensor)))
+
         ts_index = []
 
         for i in tqdm(range(0, len(dataset), step), desc="Prediction with Model"):
@@ -205,17 +191,23 @@ class ModelLoader:
             target = self._model.predict({"sensors": sensors, "weather": weather}, True)[0]
 
             # 3. store the model inputs/outputs to a temporary dict
-            store_model_output(meta.column_names_sensor, predicted, target)
-            store_model_output(meta.column_names_sensor, inputs, sensors.cpu().numpy()[0])
-            ts_index += [dataset.get_timestamp(i) for _ in range(step)]
+            window = len(target) if i + len(target) < len(dataset) else len(dataset) - i
+            counts[i:i + window] += np.ones_like(target)[:window]
+            predicted[i:i + window] = target[:window]
+            inputs[i:i + window] = sensors.cpu().numpy()[0][:window]
+
+            ts_index += [dataset.get_timestamp(i) for _ in range(min(step, window))]
+        
+        predicted /= counts
+        inputs /= counts
 
         # 4. finalize dataframe, give columns names matching input dataframe column names
         index = pd.Index(ts_index, name="ts")
         logger.debug("Creating 'prediction' Dataframe of gathered data")
-        predicted = pd.DataFrame(predicted, index=index)
+        predicted = pd.DataFrame({key: predicted[:, j] for j, key in enumerate(meta.column_names_sensor)}, index=index)
 
         logger.debug("Creating 'inputs' Dataframe of gathered data")
-        inputs = pd.DataFrame(inputs, index=index)
+        inputs = pd.DataFrame({key: inputs[:, j] for j, key in enumerate(meta.column_names_sensor)}, index=index)
         return predicted, inputs
 
     def get_score_transformer(self) -> ScoreTransformer:
