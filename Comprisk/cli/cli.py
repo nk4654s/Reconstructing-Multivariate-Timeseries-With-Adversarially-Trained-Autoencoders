@@ -26,6 +26,7 @@ class CompriskCLI(LightningCLI):
         parser.add_argument("--save-every", default=1)
         parser.add_argument("--tuner-config", nargs="?")
         parser.add_argument("--tuner-trials", type=int, default=1)
+        parser.add_argument("--scoring_step", type=int, default=-1)
 
     def before_fit(self):
         """Method executes before fit automatically."""

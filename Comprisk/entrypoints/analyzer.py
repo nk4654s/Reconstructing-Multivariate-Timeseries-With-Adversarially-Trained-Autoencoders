@@ -39,10 +39,11 @@ def cli_main():
 
     # load the model with the helper class, then apply the model on the dataset
     loader = ModelLoader(base_path)
+    score = loader.get_score_transformer()
     predicted, target = loader.predict_loop(dataset, modifier=(
         cli.config.anomaly.name,
         cli.config.anomaly.factor
-    ))
+    ), step=cli.config.step or score.step)
 
     # visualize the loaded dataset
     sensors = [
@@ -98,7 +99,6 @@ def cli_main():
     )
 
     # transformes the loss between prediction and target to a score between 0 and 1.
-    score = loader.get_score_transformer()
     score_vis_path = os.path.join(base_path, "score-transformed.png")
     score.transform(predicted, target, visualize=score_vis_path, static=cli.config.static_scores)
 

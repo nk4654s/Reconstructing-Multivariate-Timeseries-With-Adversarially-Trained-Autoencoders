@@ -39,7 +39,8 @@ def cli_main():
 
     # load the model with the helper class, then apply the model on the dataset
     meta_path = os.path.join(base_path, "metadata")
-    train_score_transformer(base_path, meta_path, dataset)
+    step = cli.config.step or dataset.get_meta().skip
+    train_score_transformer(base_path, meta_path, dataset, step)
 
 
 if __name__ == "__main__":

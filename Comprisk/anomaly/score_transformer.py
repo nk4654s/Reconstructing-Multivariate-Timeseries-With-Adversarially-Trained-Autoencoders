@@ -34,10 +34,11 @@ class ScoreTransformer:
             0.9.
         critical_threshold (float): The threshold value for a loss value to be considered as critical.
             Defaults to 1.
+        step (int): The amount of steps to slide the window over the dataset. Defaults to 10.
     """
     def __init__(self, window_size: int, upper_bound: float = 0.999,
                  smoothing_amplifier: float = 0.9, critical_threshold: float = 1,
-                 static_transformation: bool = False) -> None:
+                 step: int = 1) -> None:
         self._error_scaler = StandardScaler()
         self._size = window_size
 
@@ -48,6 +49,11 @@ class ScoreTransformer:
         self._smoothing: np.ndarray | None = None
 
         self._critical_threshold = critical_threshold
+        self._step = step
+    
+    @property
+    def step(self) -> int:
+        return self._step
 
     def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -> None:
         """This method fits the parameters of the ScoreTransformer to create a function based on f(x)=e^x
@@ -102,7 +108,6 @@ class ScoreTransformer:
         # compute anomaly scores
         loss = loss_fn(predicted, target)
         loss_mean = loss.rolling(self._size, closed="left").mean()
-        loss_mean = loss_mean.iloc[::self._size]
         loss_mean = loss_mean.iloc[1:]
 
         anomaly_scores = self._error_scaler.transform(loss_mean)

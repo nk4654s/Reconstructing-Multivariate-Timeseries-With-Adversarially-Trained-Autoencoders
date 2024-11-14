@@ -69,7 +69,7 @@ class CompriskUpdateCallable(UpdateCallable):
         df = df[df.index <= end]
 
         # calculate the mean as total machine score, other metrics might be better
-        df[total_key] = df.mean(axis=1)
+        df[total_key] = df.max(axis=1)
         return df
 
 
@@ -90,8 +90,8 @@ def cli_main():
     data = Dataset(get_dataset_path(args.dataset), *get_dataset_args(args.model))
 
     # execute the model on the dataset and calculate the scores
-    score_data = loader.predict_loop(data)
     score = loader.get_score_transformer()
+    score_data = loader.predict_loop(data, step=score.step)
     score_data = score.transform(*score_data)
 
     # update the dataset's virtual sensors in the S3 buckets with the scores
@@ -99,7 +99,7 @@ def cli_main():
     # FIXME: use `data.UUID`
     updater = DataUpdater("5ac7f03f-f4e6-4b15-9bc6-21db798f9d25", CompriskUpdateCallable(*score_data))
     updater.set_data_type(DataType.MEASUREMENTS)
-    updater.update(*time_steps)
+    updater.update(*time_steps, data.get_meta().skip)
 
     # remove the temporary downloaded dataset again
     shutil.rmtree(get_dataset_path(args.dataset), ignore_errors = True)

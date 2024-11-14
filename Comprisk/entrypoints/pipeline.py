@@ -69,6 +69,7 @@ def find_tuned_config(path: str) -> str:
 def cli_main():
     parser = ArgumentParser(description="The Comprisk training pipeline")
     parser.add_argument("--config", "-c", type=str, help="The config describing the pipeline.")
+    parser.add_argument("--load", "-l", type=str, help="Load a config describing the pipeline.")
     args = parser.parse_args()
 
     # load the pipeline config
@@ -90,39 +91,45 @@ def cli_main():
 
     # train the model
     trainer_list = pipeline.get("trainer", [])
-    latest_config = ""
-    for i, trainer in enumerate(trainer_list):
-        # store the current folder structure of the model output root folder
-        # after training, a new folder will be created, which must be passed to
-        # the analyzer node
-        initial_structure = model_folder_structure()
-        
-        # use the tuned config if available and wanted, this only applies for the first
-        # trainer. Each next trainer will use the one of the previously trained model
-        config = trainer["config"]
-        if tuned_config and trainer["prefer_tuned"]:
-            config = tuned_config
-        
-        # train the model
-        args = ["comprisk-trainer", "-c", config, "--tag", trainer["tag"]]
-        args += [] if i == 0 else ["-f", latest_config]
-        subprocess.run(args)
+    latest_config = args.load if args.load else ""
+    if not latest_config:
+        for i, trainer in enumerate(trainer_list):
+            # store the current folder structure of the model output root folder
+            # after training, a new folder will be created, which must be passed to
+            # the analyzer node
+            initial_structure = model_folder_structure()
+            
+            # use the tuned config if available and wanted, this only applies for the first
+            # trainer. Each next trainer will use the one of the previously trained model
+            config = trainer["config"]
+            if tuned_config and trainer["prefer_tuned"]:
+                config = tuned_config
+            
+            # train the model
+            args = ["comprisk-trainer", "-c", config, "--tag", trainer["tag"]]
+            args += [] if i == 0 else ["-f", latest_config]
+            subprocess.run(args)
 
-        # find the output folder of the recently trained model
-        modified_structure = model_folder_structure()
-        recently_added = find_recent_folders(initial_structure, modified_structure)[0]
-        latest_config = os.path.join(recently_added, "config.yaml")
+            # find the output folder of the recently trained model
+            modified_structure = model_folder_structure()
+            recently_added = find_recent_folders(initial_structure, modified_structure)[0]
+            latest_config = os.path.join(recently_added, "config.yaml")
+    
+    # train the scoring transformer
+    score_train = pipeline.get("score_trainer", None)
+    if score_train:
+        subprocess.run(["comprisk-train-score", "-c", latest_config, "-s", score_train["step"]])
 
     # analyze the model
     analyzer_list = pipeline.get("analyzer", [])
     for analyzer in analyzer_list:
         command = ["comprisk-analyzer", "-c", latest_config, "--dataset",
-                    analyzer["dataset"], "--prefix", analyzer["prefix"]]
+                    analyzer["dataset"], "--prefix", analyzer["prefix"], 
+                    "--step", analyzer.get("step", "10")]
         
         if analyzer.get("static_scores", False):
             command.append("--static-scores")
 
-        print(analyzer)
         subprocess.run(command)    
     
     # generate the new score values and upload them

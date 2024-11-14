@@ -127,16 +127,21 @@ def run_trainer(cli: CompriskCLI) -> str:
         shutil.copyfile(os.path.join(config_path, "hparams.yaml"),
                         os.path.join(tb_logger.log_dir, "hparams.yaml"))
     
-    train_score_transformer(tb_logger.log_dir, metafolder, cli.datamodule.valset)
+    valset: Dataset = cli.datamodule.valset
+    step = cli.config.scoring_step if cli.config.scoring_step > 0 else valset.get_meta().skip
+    train_score_transformer(tb_logger.log_dir, metafolder, valset, step)
     return tb_logger.log_dir
 
-def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset):
+def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset, step: int):
+    assert step <= dataset.get_meta().skip, "Step should not be greater than the dataset's skip" + \
+        f"value to prevent samples skipping: {step} > {dataset.get_meta().skip}"
+    
     # load the (best) trained model back
     loader = ModelLoader(model_dir)
-    predicted, target = loader.predict_loop(dataset)
+    predicted, target = loader.predict_loop(dataset, step=step)
 
     # fit and save the score transformer
-    score = ScoreTransformer(dataset.get_meta().num_input_sequence)
+    score = ScoreTransformer(dataset.get_meta().num_input_sequence, step=step)
     score.fit(predicted, target)
 
     score_path = os.path.join(meta_dir, "score_transformer.pkl")
