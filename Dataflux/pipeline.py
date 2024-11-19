@@ -18,11 +18,7 @@ from Dataflux import get_logger
 logger = get_logger(__name__, path="logfile", level=logging.DEBUG)
 
 # define modules here which should always be applied, regardless of the yaml config file!
-modules = [
-    Rename,
-    Consistency,
-    PositionBypassValve
-]
+modules = []
 
 
 def download(parser: CLIArgumentParser, folder: str) -> None:

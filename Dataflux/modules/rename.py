@@ -20,10 +20,15 @@ class Rename(FileWorkerCallable):
     A pre-processing step for renaming columns in a dataset. This class provides
     methods and attributes for renaming columns based on specific rules or
     configurations.
+
+    Args:
+        enable (bool): Enable renaming, defaults to True.
     """
-    def __init__(self) -> None:
+    def __init__(self, enable: bool = True) -> None:
         self._sensor_names = None
         self._names = set()
+
+        self._enable = enable
 
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {
@@ -44,8 +49,9 @@ class Rename(FileWorkerCallable):
             self._sensor_names = get_sensor_uuid_to_name(uuid)
             assert self._sensor_names, "No sensor name dictionary available."
 
-        names: Dict[str, str] = {id: self._sensor_names.get(id, id) for id in list(df.columns.values)}
-        df.rename(columns=names, inplace=True)
+        if self._enable:
+            names: Dict[str, str] = {id: self._sensor_names.get(id, id) for id in list(df.columns.values)}
+            df.rename(columns=names, inplace=True)
         
         df.to_hdf(file_path, key="data", format="table")
         if len(self._names) == 0:
