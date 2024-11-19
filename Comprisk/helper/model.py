@@ -114,6 +114,14 @@ def get_tensor_from_dataset(dataset: Dataset, i: int, device: Any) -> Tuple[torc
 
 
 class DayPrediction:
+    """This class manages the predicted values, e.g. handle overlapping windows and
+    build the final DataFrame.
+    
+    Args:
+        ts (List): The timestamps of which the sensor values will be predicted.
+        step (int): The step size between two timestamps.
+        n_features (int): The amount of features per step.
+    """
     def __init__(self, ts: List, step: int, n_features: int) -> None:
         self._ts = ts
         self._step = step
@@ -124,6 +132,13 @@ class DayPrediction:
         self._counts = np.zeros((len(ts), n_features))
     
     def add_values(self, target: np.ndarray, prediction: np.ndarray) -> None:
+        """This method adds values to this class. Also, this method keeps track about the
+         amount of additions in the overlapping sections.
+
+        Args:
+            target (np.ndarray): The model's input.
+            prediction (np.ndarray): The model's output.
+        """
         end = min(self._start + len(target), len(self._ts))
         size = end - self._start
 
@@ -134,6 +149,21 @@ class DayPrediction:
         self._start += self._step
     
     def calculate(self, names: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """This method calculates the average of the overlapping values using the previously
+        created array, which counts the amount of additions. Then, this method creates the
+        DataFrames of the arrays.
+
+        Args:
+            names (List): The column names of the DataFrame.
+        
+        Returns:
+            Tuple[pd.DataFrame, pd.DataFrame]: Target and Prediction.
+        """
+        # fix zero division
+        self._target[self._counts == 0] = 0
+        self._prediction[self._counts == 0] = 0
+        self._counts[self._counts == 0] = 1
+
         target = self._target / self._counts
         data = {names[i]: target[:, i] for i in range(len(names))}
         target = pd.DataFrame(data, index=pd.Index(self._ts, name="ts"))
@@ -248,6 +278,8 @@ class ModelLoader:
         for i in tqdm(range(0, safe_length, step * batch_size), desc="Prediction with Model"):
             sensors = torch.zeros(batch_size, meta.num_input_sequence, meta.num_features_sensors, device=self._model.device)
             weather = torch.zeros(batch_size, meta.num_input_sequence, meta.num_features_weather, device=self._model.device)
+            if modifier_name:
+                sensors[:, :, modifier_index] *= factor
 
             # read from the dataset into a batch
             broke = False
