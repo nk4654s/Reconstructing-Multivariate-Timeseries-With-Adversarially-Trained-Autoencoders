@@ -8,7 +8,6 @@ colors = ["teal", "orange", "blue", "red", "purple", "brown", "pink", "olive", "
 
 
 def show_dataframe(
-    sensors: str | List[str],
     df: pd.DataFrame | List[pd.DataFrame],
     names: List[str] = [],
     grid_size: int = 4,
@@ -21,8 +20,6 @@ def show_dataframe(
     concurrent DataFrames can be visualized in one figure.
 
     Args:
-        sensors (str | List[str]): The name of the sensor or a list of sensor names to be
-            visualized.
         df (pd.DataFrame | List[pd.DataFrame]): The pandas DataFrame or a list of pandas
             DataFrames to be visualized.
         names (List[str]): The name of each DataFrame to be visualized.
@@ -36,7 +33,8 @@ def show_dataframe(
     df = [df] if isinstance(df, pd.DataFrame) else df
     df = [d.reset_index() for d in df]
     names = [f"DF{_}" for _ in range(len(df))] if len(names) == 0 else names
-    sensors = [sensors] if isinstance(sensors, str) else sensors
+    sensors = [c for c in df[0].columns.values]
+
     num = len(sensors)
     num_rows = math.ceil(num / grid_size)
     num_cols = grid_size if grid_size / num < 1 else num

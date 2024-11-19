@@ -1,0 +1,89 @@
+folder: thyssen-vd2-trainset
+machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
+intervals:
+# - start      end
+  - 2020-11-01 2024-10-30
+num_workers: 4
+disk_backup: dataset-vd2-backup
+overwrite: true
+
+modules:
+  - class_path: Dataflux.modules.State
+    init_args:
+      key: "Laeuft"
+      lower: 0.9
+      upper: 1.1
+      delete_ts: 1800
+  - class_path: Dataflux.modules.state.State
+    init_args:
+      key: "KompressordrehzahlSE74201 (rpm)"
+      lower: 400
+      upper: 980
+      delete_ts: 1800
+  - class_path: Dataflux.modules.state.State
+    init_args:
+      key: "VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)"
+      lower: 100
+      upper: 145
+      delete_ts: 900
+  - class_path: Dataflux.modules.state.State
+    init_args:
+      key: "VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)"
+      lower: 100
+      upper: 145
+      delete_ts: 900
+  - class_path: Dataflux.modules.state.State
+    init_args:
+      key: "EndtemperaturZweiteStufeTETIT74371 (°C)"
+      lower: 100
+      upper: 148
+      delete_ts: 900
+  - class_path: Dataflux.modules.state.State
+    init_args:
+      key: "Wicklungstemperatur (°C)"
+      lower: 50
+      upper: 120
+      delete_ts: 900
+  - class_path: Dataflux.modules.state.State
+    init_args:
+      key: "KühlwasserdurchflussmengeFIT74423 (m^3/min)"
+      lower: 5.1
+      upper: 5.2
+      delete_ts: 900
+  - class_path: Dataflux.modules.state.State
+    init_args:
+      key: "SchwingungsmessungTriebwerkVT74280 (mm/s)"
+      lower: 0
+      upper: 3
+      delete_ts: 300
+  - class_path: Dataflux.modules.remove.Remove
+    init_args:
+      columns:
+        - Automatenfall/SpannungGestört
+        - Betriebsstunden
+        - Biomethandurchfluss
+        - Differenzdruck
+        - Laeuft
+        - Motor ( # remove with units A or kW but keep 'Motorlager'
+        - Nachlauf
+        - NiveauschalterTriebwerksöl
+        - Nothalt
+        - Positio # Typo in sensor names
+        - Sammelwarnung
+        - Startbereit
+        - StörungGekommen
+        - Verdichter
+        - Vorlauf
+        - VD2
+  - class_path: Dataflux.modules.normalize.NormalizeFit
+    init_args:
+      method: minmax
+      remove_outliers: false
+      exclude_keys:
+        - ts
+  - class_path: Dataflux.modules.normalize.NormalizeTransform
+  - class_path: Dataflux.modules.split.SplitDataset
+    init_args:
+      name: thyssen-vd2-valset
+      percentage: 0.3
+      overwrite: true
