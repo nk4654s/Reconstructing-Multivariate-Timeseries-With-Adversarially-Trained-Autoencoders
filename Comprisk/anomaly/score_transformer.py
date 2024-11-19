@@ -134,9 +134,8 @@ class ScoreTransformer:
             static_scores = static_transformer(loss_mean)
             static_scores[static_scores < 0] = 0
 
-            show_dataframe(names, [static_scores],
-                            ["Malfunction (Static)"],
-                            y_label="% -  lower is better", grid_size=5, y_limit=(0, 1),
+            show_dataframe([static_scores], ["Malfunction (Static)"], y_label="% -  lower is better",
+                           grid_size=5, y_limit=(0, 1),
                             save=visualize, show=show)
             return static_scores, critical
 
@@ -146,9 +145,7 @@ class ScoreTransformer:
         malfunction = pd.DataFrame(malfunction, columns=names, index=loss_mean.index)
         loss_mean = pd.DataFrame(loss_mean.to_numpy(), columns=names)
 
-        show_dataframe(names, [malfunction],
-                        ["Malfunction"],
-                        y_label="% -  lower is better", grid_size=5, y_limit=(0, 1),
-                        save=visualize, show=show)
+        show_dataframe([malfunction], ["Malfunction"], y_label="% -  lower is better",
+                       grid_size=5, y_limit=(0, 1), save=visualize, show=show)
     
         return malfunction, critical

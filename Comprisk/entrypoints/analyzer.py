@@ -46,23 +46,6 @@ def cli_main():
     ), step=cli.config.step or score.step)
 
     # visualize the loaded dataset
-    sensors = [
-        "SaugdruckErsteStufePIT74319 (bar)",
-        "EndtemperaturErsteStufeTETIT74334 (°C)",
-        "PackungsleckageFIT74389 (Nm3h)",
-        "SchwingungsmessungTriebwerkVT74280 (mm/s)",
-        "KühlwassertemperaturnachKühlerTETIT74422 (°C)",
-        "KühlwasserdurchflussmengeFIT74423 (m^3/min)",
-        "KühlwasserdrucknachPumpePIT74425 (bar)",
-        "ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)",
-        "Motorlager (°C)",
-        "KompressordrehzahlSE74201 (rpm)",
-        "SaugtemperaturZweiteStufeTETIT74341 (°C)",
-        "EndtemperaturZweiteStufeTETIT74371 (°C)",
-        "VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)"
-    ]
-
-
     prefix = "prediction"
     base_path = os.path.join(get_config_folder(cli), prefix)
 
@@ -80,7 +63,6 @@ def cli_main():
     days = round(len(dataset) * meta.skip // 60 // 60 // 24)
     logger.debug("Visualizing whole dataset (samples=%s)", len(dataset))
     show_dataframe(
-        sensors,
         [predicted, target],
         ["Prediction", "Target"],
         grid_size=5,
@@ -91,7 +73,6 @@ def cli_main():
     three_days = (24 * 60 * 60) // meta.skip * 3
     logger.debug("Visualizing reduced dataset (samples=%s)", 3 * three_days)
     show_dataframe(
-        sensors,
         [predicted[:three_days], target[:three_days]],
         ["Prediction", "Target"],
         grid_size=5,
