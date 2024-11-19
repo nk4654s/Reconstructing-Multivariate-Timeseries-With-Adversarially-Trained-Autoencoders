@@ -48,7 +48,7 @@ class DataUpdater(S3Bucket):
         self._callable = update_callable
 
 
-    def update(self, start_ts: int, end_ts: int) -> None:
+    def update(self, start_ts: int, end_ts: int, time_delta: int) -> None:
         """
         This method updates the data in the S3 for the given time frame. This method downloads the
         data from the S3 and then calls the callable to generate the new data. The newly generated
@@ -57,6 +57,7 @@ class DataUpdater(S3Bucket):
         Args:
             start (int): The start time steps of the timeframe to be updated.
             end (int): The end time steps of the timeframe to be updated.
+            time_delta (int): The delta in seconds between two timestamps.
         """
         # get start and end days
         start = datetime.fromtimestamp(start_ts, timezone.utc)
@@ -99,25 +100,44 @@ class DataUpdater(S3Bucket):
             result_df.rename(columns=names, inplace=True)
 
             # 4. merge, then apply the same compressing rules 
-            df = pd.merge(result_df, df, how="outer", left_index=True, right_index=True)
-            df = compress(df.reset_index())
-
-            # 5. sort the columns by uuid-names
-            df = df.reindex(sorted(df.columns), axis=1)
-            df.reset_index(inplace=True)
-            df = df.astype({"ts": "int64"})
-            df.set_index("ts", inplace=True)
-
-            # 6. export dataframe as tsv-file
-            t0 = datetime.now()
-            tsv = df.to_csv(sep="\t")
-            tsv_bytes = gzip.compress(tsv.encode("utf-8"))
-            t1 = datetime.now()
-
             day = day.strftime("%Y/%m/%d")
-            path = f"{self._uuid}/days/{day}/{self._uuid}-virtual.tsv"
-            logger.debug("Write", len(df), "lines to ", path, "which took", (t1 - t0).total_seconds())
 
-            # 7. upload dataframe to s3
-            self._client.put_object(Bucket=self._bucket, Key=f"{path}", Body=tsv_bytes,
-                ContentType="text/tab-separated-values", ContentEncoding="gzip")
+            # 5. calculate the averages for the 2- and 10-minutes files
+            for avg in [600, 120]:
+                if avg < time_delta:
+                    continue
+
+                # apply the mean as a rolling window with the step size beeing the window's size
+                # the window's size is calculated by the time delta between two datapoints and
+                # the resolution to be achieved
+                pool = avg // time_delta
+                df_avg = result_df.rolling(window=pool, step=pool, center=True).mean()
+                df_avg = df_avg.iloc[1:-1]
+
+                postfix = "average" if avg == 120 else "average-10m"
+                path = f"{self._uuid}/days/{day}/{self._uuid}-virtual.tsv-{postfix}"
+
+                df_avg = pd.merge(df_avg, df, how="outer", left_index=True, right_index=True)
+                self.upload(df_avg, path)
+
+            # 6. upload the original for the 1 second data
+            path = f"{self._uuid}/days/{day}/{self._uuid}-virtual.tsv"
+            df = pd.merge(result_df, df, how="outer", left_index=True, right_index=True)
+            self.upload(df, path)
+
+    def upload(self, df: pd.DataFrame, path: str) -> None:
+        df = compress(df.reset_index())
+
+        # 1. sort the columns by uuid-names
+        df = df.reindex(sorted(df.columns), axis=1)
+        df.reset_index(inplace=True)
+        df = df.astype({"ts": "int64"})
+        df.set_index("ts", inplace=True)
+
+        # 2. export dataframe as tsv-file
+        tsv = df.to_csv(sep="\t")
+        tsv_bytes = gzip.compress(tsv.encode("utf-8"))
+
+        # 3. upload dataframe to s3
+        self._client.put_object(Bucket=self._bucket, Key=f"{path}", Body=tsv_bytes,
+            ContentType="text/tab-separated-values", ContentEncoding="gzip")
