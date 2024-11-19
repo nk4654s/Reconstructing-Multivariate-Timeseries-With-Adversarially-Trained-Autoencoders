@@ -11,7 +11,7 @@ from Dataflux.diskio import FileWorkerContext as Context
 from Dataflux.helper import Meta, Metadata
 from Dataflux import logger
 from Dataflux.modules.normalize import NormalizeFit
-from Dataflux.modules.remove import Remove
+from Dataflux.modules.features import Features
 mutex = Lock()
 
 
@@ -152,7 +152,7 @@ class State(FileWorkerCallable):
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {
                 NormalizeFit.__name__: CallableDependency.NOT_BEFORE,
-                Remove.__name__: CallableDependency.NOT_BEFORE,
+                Features.__name__: CallableDependency.NOT_BEFORE,
             }
     
     def _find_corresponding_key(self, column_names) -> bool:

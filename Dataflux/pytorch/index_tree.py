@@ -1,9 +1,12 @@
 """This module contains a search tree to find the file to load corresponding
 to the sampling index."""
+import sys
 from typing import Dict, List, Tuple
 
 from Dataflux.helper import Meta, Metadata
 from Dataflux import logger
+
+sys.setrecursionlimit(1500)
 
 
 class Node:
