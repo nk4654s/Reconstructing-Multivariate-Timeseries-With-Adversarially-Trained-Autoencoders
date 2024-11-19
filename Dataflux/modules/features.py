@@ -1,5 +1,4 @@
-from typing import Any, Dict, List
-from itertools import product
+from typing import Dict, List
 from threading import Lock
 import pandas as pd
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
@@ -11,16 +10,16 @@ from Dataflux import logger
 mutex = Lock()
 
 
-class Remove(FileWorkerCallable):
+class Features(FileWorkerCallable):
     """This module removes specified columns from the dataframe.
     
     Args:
-        columns (str): The list of column names to remove, provided as string
+        include (str): The list of column names to keep, provided as string
             where each list entry is separated by a ','.
     """
-    def __init__(self, columns: List[str] = []) -> None:
-        self._column_substrings = columns
-        self._columns = []
+    def __init__(self, include: List[str] = []) -> None:
+        self._include = include + ["ts"]
+        self._drop = []
 
         self._num_columns = 0
         self._operated = []
@@ -29,20 +28,19 @@ class Remove(FileWorkerCallable):
         return {NormalizeFit.__name__: CallableDependency.NOT_BEFORE}
 
     def _find_corresponding_columns(self, context: FileWorkerContext) -> None:
-        if not self._columns and self._column_substrings:
+        if not self._drop:
             with mutex:
                 header = context.get(ColumnContext.HEADER)
                 assert header, "Something went wrong when passing the header to Remove-module."
 
-                combinations = product(self._column_substrings, header)
-                self._columns = [name for sub, name in combinations if name.startswith(sub)]
-                logger.debug("RemoveColumns will remove %s", self._columns)
+                self._drop = [name for name in header if name not in self._include]
+                logger.debug("FeatureModule will remove %s", self._drop)
 
     def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         self._find_corresponding_columns(context)
 
         df = pd.read_hdf(file_path, key="data")
-        df = df.drop(columns=self._columns, errors="ignore")
+        df = df.drop(columns=self._drop, errors="ignore")
         df.to_hdf(file_path, key="data", format="table", mode="w")
 
         self._num_columns = df.columns.size

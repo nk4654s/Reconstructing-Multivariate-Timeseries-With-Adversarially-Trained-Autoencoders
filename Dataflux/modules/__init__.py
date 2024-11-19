@@ -13,6 +13,6 @@ from Dataflux.modules.state import State
 from Dataflux.modules.position_bypass import PositionBypassValve
 # from Dataflux.modules.weather import WeatherDataset
 
-from Dataflux.modules.remove import Remove
+from Dataflux.modules.features import Features
 from Dataflux.modules.normalize import NormalizeFit, NormalizeTransform
 from Dataflux.modules.monolith import MonoFile
