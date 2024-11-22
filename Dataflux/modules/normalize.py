@@ -166,6 +166,7 @@ class NormalizeTransform(FileWorkerCallable):
                 logger.debug("Loaded normalization of other dataset.")
         
         self._custom = [[e.strip() for e in c.split(",")] for c in custom] if custom else []
+        self._custom = sorted(self._custom, key=lambda x: x[0])
 
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {NormalizeFit.__name__: CallableDependency.IMMEDIATELY_BEFORE}
