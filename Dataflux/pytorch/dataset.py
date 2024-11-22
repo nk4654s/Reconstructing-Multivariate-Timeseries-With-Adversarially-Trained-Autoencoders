@@ -127,13 +127,10 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         # create a temporary data container and build the dataframe
         data = {key: [] for key in names}
         for i in range(0, int(len(self) * percentage), self._num_input):
-            sensors, weather, _ = self._get(i, include_ts=True)
+            sensors, _, _ = self._get(i, include_ts=True)
 
-            num_weather = weather.shape[-1]
-            for j in range(num_weather):
-                data[names[j]] += list(weather[:, j])
-            for j in range(num_weather, num_weather + sensors.shape[-1]):
-                data[names[j]] += list(sensors[:, j - num_weather])
+            for j, name in enumerate(names):
+                data[name] += list(sensors[:, j])
 
         return pd.DataFrame(data)
 
