@@ -92,7 +92,7 @@ def cli_main():
     # execute the model on the dataset and calculate the scores
     score = loader.get_score_transformer()
     score_data = loader.predict_loop(data, step=score.step)
-    score_data = score.transform(*score_data)
+    score_data = score.transform(*score_data, static=False)
 
     # update the dataset's virtual sensors in the S3 buckets with the scores
     time_steps = (data.get_timestamp(0), data.get_timestamp(len(data) - 1))

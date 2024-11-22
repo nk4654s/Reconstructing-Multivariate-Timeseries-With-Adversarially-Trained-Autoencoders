@@ -62,6 +62,21 @@
             ]
         },
         {
+            "name": "Python Debugger: Analyzer",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "Comprisk/entrypoints/analyzer.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "-c",
+                "models/AutoEncoder/thyssen-vd1/version_2/config.yaml",
+                "--dataset", "thyssen-vd1-test-june",
+                "--prefix", "analyzer/debug",
+                "--step", "5"
+            ]
+        },
+        {
             "name": "Python Debugger: Generate",
             "type": "debugpy",
             "request": "launch",
@@ -70,8 +85,8 @@
             "justMyCode": false,
             "args": [
                 "-m",
-                "models/AutoEncoder/coarse-to-fine/version_2",
-                "-d", "configs/regenerate-portal-data/dataset-pipe.yml"
+                "models/AutoEncoder/thyssen-vd2/version_2",
+                "--dataset", "configs/vd2-version-1/dataset-upload.yml"
             ]
         },
     ]
