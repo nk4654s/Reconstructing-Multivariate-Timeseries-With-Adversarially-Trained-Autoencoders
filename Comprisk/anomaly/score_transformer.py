@@ -69,9 +69,9 @@ class ScoreTransformer:
 
         # compute anomaly scores
         loss = loss_fn(predicted, target)
-        # loss_mean = loss.rolling(self._size, closed="left").mean()
-        # loss_mean = loss_mean[(loss_mean.index % self._size) == 0]
-        # loss_mean = loss_mean.iloc[1:]
+        loss_mean = loss.rolling(self._size, closed="left").mean()
+        loss_mean = loss_mean[(loss_mean.index % self._size) == 0]
+        loss_mean = loss_mean.iloc[1:]
 
         anomaly_scores = self._error_scaler.fit_transform(loss)
 
@@ -107,8 +107,9 @@ class ScoreTransformer:
 
         # compute anomaly scores
         loss = loss_fn(predicted, target)
-        loss_mean = loss.rolling(self._size, closed="left").mean()
-        loss_mean = loss_mean.iloc[1:]
+        #loss_mean = loss.rolling(self._size, closed="left").mean()
+        #loss_mean = loss_mean.iloc[1:]
+        loss_mean = loss
 
         anomaly_scores = self._error_scaler.transform(loss_mean)
 
@@ -128,9 +129,9 @@ class ScoreTransformer:
         critical = pd.DataFrame(critical, columns=names, index=loss_mean.index)
         
         if static:
-            loss_mean = pd.DataFrame(loss_mean.to_numpy(), columns=names)
+            loss_mean = pd.DataFrame(loss_mean.to_numpy(), columns=names, index=loss_mean.index)
 
-            static_transformer = lambda x: 2 / (1 + np.exp(-3.9 * (x - 0.1))) - 1
+            static_transformer = lambda x: 1 / (1 + np.exp(-x * 8 + 4))
             static_scores = static_transformer(loss_mean)
             static_scores[static_scores < 0] = 0
 
