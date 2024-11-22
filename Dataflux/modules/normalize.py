@@ -150,7 +150,7 @@ class NormalizeTransform(FileWorkerCallable):
     Args:
         from_other (str): Another dataset to use the normalizer from.
     """
-    def __init__(self, from_other: str = "") -> None:
+    def __init__(self, from_other: str = "", custom: List[str] = []) -> None:
         self._scaler = None
         self._columns = list()
         if from_other:
@@ -164,6 +164,8 @@ class NormalizeTransform(FileWorkerCallable):
             with open(path, "rb") as f:
                 self._scaler = pickle.load(f)
                 logger.debug("Loaded normalization of other dataset.")
+        
+        self._custom = [[e.strip() for e in c.split(",")] for c in custom] if custom else []
 
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {NormalizeFit.__name__: CallableDependency.IMMEDIATELY_BEFORE}
@@ -172,7 +174,21 @@ class NormalizeTransform(FileWorkerCallable):
         if self._scaler:
             return self._scaler
 
-        scaler = context.get(ContextParam.SCALER)
+        scaler: FluxScaler = context.get(ContextParam.SCALER)
+        logger.debug("Got scaler from 'NormalizeFit'.")
+
+        # modify the scaler if a custom one was defined
+        if self._custom:
+            assert scaler.method == ScalerMethod.NORMALIZE, "Custom scalings are supported on 'MinMax' scaler only."
+
+            for i, feature in enumerate(sorted(scaler._internal_scaler.feature_names_in_)):
+                name, min_, max_ = self._custom[i]
+                assert name == feature, f"Expected defined name ({name}) to match scaling feature ({feature})"
+                
+                scaler.overwrite_column(i, float(min_), float(max_))
+            logger.debug("Modified scaler with custom values.")
+
+        self._scaler = scaler
         return scaler
 
     def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
