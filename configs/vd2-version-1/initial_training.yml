@@ -5,7 +5,7 @@ trainer:
     - class_path: lightning.pytorch.callbacks.EarlyStopping
       init_args:
         monitor: validate/MSELoss
-        min_delta: 0.0001
+        min_delta: 0.000001
         patience: 2
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
@@ -19,7 +19,7 @@ trainer:
         
   # define training configuration
   precision: 32
-  max_epochs: 30
+  max_epochs: 45
   gradient_clip_val: 1.0
 #  profiler: "simple"
   log_every_n_steps: 1
@@ -36,19 +36,19 @@ model:
     encoder:
       class_path: Comprisk.model.ae.rnn.LSTMEncoderBypass
       init_args:
-        num_features: 20
+        num_features: 21
         num_latent_dim: 10
-        num_hidden_dim: 16
+        num_hidden_dim: 32
         num_hidden_layers: 2
-        dropout_prob: 0.3
+        dropout_prob: 0.4
     decoder:
       class_path: Comprisk.model.ae.rnn.LSTMDecoder
       init_args:
-        num_features: 20
+        num_features: 21
         num_latent_dim: 10
-        num_hidden_dim: 16
+        num_hidden_dim: 32
         num_hidden_layers: 2
-        dropout_prob: 0.3
+        dropout_prob: 0.4
         predict_key: sensors
 data:
   # configure dataset to load
@@ -56,7 +56,7 @@ data:
   validate: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-valset
   input_sequence: 10
   output_sequence: 0
-  skip: 50
+  skip: 10
   # configure how to sample from the dataset
   batch_size: 256
   shuffle: true

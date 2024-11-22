@@ -5,48 +5,41 @@ intervals:
 overwrite: false
 
 modules:
+  - class_path: Dataflux.modules.Rename
+    init_args:
+      enable: True
+  - class_path: Dataflux.modules.Consistency
   - class_path: Dataflux.modules.State
     init_args:
       key: "Laeuft"
       lower: 0.9
       upper: 1.1
-      delete_ts: 1800
-  - class_path: Dataflux.modules.remove.Remove
+      delete_ts: 5400
+  - class_path: Dataflux.modules.features.Features
     init_args:
-      columns:
-        - Automatenfall/SpannungGestört
-        - Betriebsstunden (h)
-        - Biomethandurchfluss (m^3/min)
+      include:
+        - ts
+        - SaugtemperaturZweiteStufeTETIT74341 (°C)
+        - SaugdruckZweiteStufePIT74340 (bar)
+        - SchwingungsmessungTriebwerkVT74280 (mm/s)
+        - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)
+        - KühlwassertemperaturnachKühlerTETIT74422 (°C)
+        - EnddruckZweiteStufePIT74397 (bar)
+        - KühlwasserdurchflussmengeFIT74423 (m^3/min)
+        - KühlwasserdrucknachPumpePIT74425 (bar)
+        - PackungsleckageFIT74389 (Nm3h)
+        - SaugtemperaturErsteStufeTETIT74328 (°C)
+        - EnddruckErsteStufePIT74339 (bar)
+        - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
+        - Wicklungstemperatur (°C)
+        - Motorlager (°C)
+        - SaugdruckErsteStufePIT74319 (bar)
+        - VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)
+        - EndtemperaturZweiteStufenachKühlerTETIT74378 (°C)
+        - KompressordrehzahlSE74201 (rpm)
+        - EndtemperaturZweiteStufeTETIT74371 (°C)
+        - EndtemperaturErsteStufeTETIT74334 (°C)
         - DifferenzdruckTriebwerksölPDIT74553 (bar)
-        - DifferenzdruckanzeigeÖlfilterPDI74534 (bar)
-        - DifferenzdrucküberwachungErsteStufePDAHPDSHH74322 (bar)
-        - DifferenzdrucküberwachungzweiteStufePDAHPDSHH74370 (bar)
-        - Laeuft
-        - Motor (A)
-        - Motor (kW)
-        - Nachlauf
-        - NiveauschalterTriebwerksölLS74504
-        - NothaltVD2Betätigt
-        - PositionAustrittseitigeSicherheitsAbsperrarmaturSSV74369Auf
-        - PositionAustrittseitigeSicherheitsAbsperrarmaturSSV74369Zu
-        - PositionAustrittsseitigesSicherheitsentlüftungsventilSE74368Auf
-        - PositionAustrittsseitigesSicherheitsentlüftungsventilSE74368Zu
-        - PositionBypassregelventilPCV74381Auf
-        - PositionBypassregelventilPCV74381Zu
-        - PositionEintrittseitigeSicherheitsAbsperrarmaturSSV74306Auf
-        - PositionEintrittseitigeSicherheitsAbsperrarmaturSSV74306Zu
-        - PositionEintrittsseitigesSicherheitsentlüftungsventilSE74307Auf
-        - PositionEintrittsseitigesSicherheitsentlüftungsventilSE74307Zu
-        - PositionBypassregelventilPCV74381 (%)
-        - Sammelwarnung
-        - Startbereit
-        - VD2StörungGekommen
-        - VD2StörungGekommenQuittiert
-        - VerdichterAbschaltungMitEntspannung
-        - VerdichterAbschaltungOhneEntspannung
-        - VerdichterFern
-        - VerdichterOrt
-        - Vorlauf
   - class_path: Dataflux.modules.normalize.NormalizeFit
     init_args:
       method: minmax

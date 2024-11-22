@@ -2,17 +2,21 @@ folder: thyssen-vd2-trainset
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
   - 2020-11-01 2024-10-30
-num_workers: 4
+num_workers: 8
 disk_backup: dataset-backup
 overwrite: false
 
 modules:
+  - class_path: Dataflux.modules.Rename
+    init_args:
+      enable: True
+  - class_path: Dataflux.modules.Consistency
   - class_path: Dataflux.modules.State
     init_args:
       key: "Laeuft"
       lower: 0.9
       upper: 1.1
-      delete_ts: 1800
+      delete_ts: 5400
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "KompressordrehzahlSE74201 (rpm)"
@@ -55,42 +59,31 @@ modules:
       lower: 0
       upper: 3
       delete_ts: 300
-  - class_path: Dataflux.modules.remove.Remove
+  - class_path: Dataflux.modules.features.Features
     init_args:
-      columns:
-        - Automatenfall/SpannungGestört
-        - Betriebsstunden (h)
-        - Biomethandurchfluss (m^3/min)
+      include:
+        - ts
+        - SaugtemperaturZweiteStufeTETIT74341 (°C)
+        - SaugdruckZweiteStufePIT74340 (bar)
+        - SchwingungsmessungTriebwerkVT74280 (mm/s)
+        - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)
+        - KühlwassertemperaturnachKühlerTETIT74422 (°C)
+        - EnddruckZweiteStufePIT74397 (bar)
+        - KühlwasserdurchflussmengeFIT74423 (m^3/min)
+        - KühlwasserdrucknachPumpePIT74425 (bar)
+        - PackungsleckageFIT74389 (Nm3h)
+        - SaugtemperaturErsteStufeTETIT74328 (°C)
+        - EnddruckErsteStufePIT74339 (bar)
+        - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
+        - Wicklungstemperatur (°C)
+        - Motorlager (°C)
+        - SaugdruckErsteStufePIT74319 (bar)
+        - VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)
+        - EndtemperaturZweiteStufenachKühlerTETIT74378 (°C)
+        - KompressordrehzahlSE74201 (rpm)
+        - EndtemperaturZweiteStufeTETIT74371 (°C)
+        - EndtemperaturErsteStufeTETIT74334 (°C)
         - DifferenzdruckTriebwerksölPDIT74553 (bar)
-        - DifferenzdruckanzeigeÖlfilterPDI74534 (bar)
-        - DifferenzdrucküberwachungErsteStufePDAHPDSHH74322 (bar)
-        - DifferenzdrucküberwachungzweiteStufePDAHPDSHH74370 (bar)
-        - Laeuft
-        - Motor (A)
-        - Motor (kW)
-        - Nachlauf
-        - NiveauschalterTriebwerksölLS74504
-        - NothaltVD2Betätigt
-        - PositionAustrittseitigeSicherheitsAbsperrarmaturSSV74369Auf
-        - PositionAustrittseitigeSicherheitsAbsperrarmaturSSV74369Zu
-        - PositionAustrittsseitigesSicherheitsentlüftungsventilSE74368Auf
-        - PositionAustrittsseitigesSicherheitsentlüftungsventilSE74368Zu
-        - PositionBypassregelventilPCV74381Auf
-        - PositionBypassregelventilPCV74381Zu
-        - PositionEintrittseitigeSicherheitsAbsperrarmaturSSV74306Auf
-        - PositionEintrittseitigeSicherheitsAbsperrarmaturSSV74306Zu
-        - PositionEintrittsseitigesSicherheitsentlüftungsventilSE74307Auf
-        - PositionEintrittsseitigesSicherheitsentlüftungsventilSE74307Zu
-        - PositionBypassregelventilPCV74381 (%)
-        - Sammelwarnung
-        - Startbereit
-        - VD2StörungGekommen
-        - VD2StörungGekommenQuittiert
-        - VerdichterAbschaltungMitEntspannung
-        - VerdichterAbschaltungOhneEntspannung
-        - VerdichterFern
-        - VerdichterOrt
-        - Vorlauf
   - class_path: Dataflux.modules.normalize.NormalizeFit
     init_args:
       method: minmax
@@ -98,6 +91,29 @@ modules:
       exclude_keys:
         - ts
   - class_path: Dataflux.modules.normalize.NormalizeTransform
+    init_args:
+      custom:
+      - DifferenzdruckTriebwerksölPDIT74553 (bar), 0, 8
+      - EnddruckErsteStufePIT74339 (bar), 0, 50
+      - EnddruckZweiteStufePIT74397 (bar), 0, 100
+      - EndtemperaturErsteStufeTETIT74334 (°C), -20, 200
+      - EndtemperaturZweiteStufeTETIT74371 (°C), -20, 200
+      - EndtemperaturZweiteStufenachKühlerTETIT74378 (°C), -20, 200
+      - KompressordrehzahlSE74201 (rpm), 0, 1000
+      - KühlwasserdrucknachPumpePIT74425 (bar), -10, 100.0
+      - KühlwasserdurchflussmengeFIT74423 (m^3/min), 0, 6
+      - KühlwassertemperaturnachKühlerTETIT74422 (°C), -20.0, 200.0
+      - Motorlager (°C), -55.0, 180.0
+      - PackungsleckageFIT74389 (Nm3h), 0, 50.0
+      - SaugdruckErsteStufePIT74319 (bar), 0, 50
+      - SaugdruckZweiteStufePIT74340 (bar), 0, 50
+      - SaugtemperaturErsteStufeTETIT74328 (°C), -20, 200.0
+      - SaugtemperaturZweiteStufeTETIT74341 (°C), -20.0, 200.0
+      - SchwingungsmessungTriebwerkVT74280 (mm/s), 0, 50.0
+      - VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C), -20.0, 200.0
+      - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C), -20.0, 200.0
+      - Wicklungstemperatur (°C), -55.0, 200.0
+      - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C), -20.0, 200.0
   - class_path: Dataflux.modules.split.SplitDataset
     init_args:
       name: thyssen-vd2-valset

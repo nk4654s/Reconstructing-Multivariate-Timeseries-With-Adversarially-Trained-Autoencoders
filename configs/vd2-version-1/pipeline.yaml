@@ -3,7 +3,7 @@ dataset:
  - config: configs/vd2-version-1/dataset.yml
  - config: configs/vd2-version-1/testset-bad-sequence.yml
  - config: configs/vd2-version-1/testset-after-service.yml
-#  - config: configs/vd2-version-1/testset-june.yml
+ - config: configs/vd2-version-1/testset-coolant-anomaly.yml
 
 # 1. tune the model given a search space for the hyperparameters
 # tuner:
@@ -15,13 +15,13 @@ dataset:
 trainer:
   - config: configs/vd2-version-1/initial_training.yml
     tag: thyssen-vd2
-    disable: false
+    step: 5
   - config: configs/vd2-version-1/final_training.yml
     tag: thyssen-vd2
-    disable: false
+    step: 5
   - config: configs/vd2-version-1/final_final_training.yml
     tag: thyssen-vd2
-    disable: false
+    step: 5
 
 analyzer:
 # 1. generate data on the test dataset
@@ -36,6 +36,10 @@ analyzer:
 # 4. generate data on the train dataset
   - dataset: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-valset
     prefix: analysis/transformer/validate
+# 5. generate data on the last test dataset which includes the timespan
+# where someone limited the coolant flow
+  - dataset: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-coolant-anomaly
+    prefix: analysis/transformer/coolant
 #
 # do not use score transformer
 #
@@ -53,6 +57,5 @@ analyzer:
     static_scores: true
 # 4. generate data on the train dataset
   - dataset: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-valset
-    prefix: analysis/validate
+    prefix: analysis/static/validate
     static_scores: true
-  
