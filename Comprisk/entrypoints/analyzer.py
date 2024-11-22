@@ -40,7 +40,7 @@ def cli_main():
     # load the model with the helper class, then apply the model on the dataset
     loader = ModelLoader(base_path)
     score = loader.get_score_transformer()
-    predicted, target = loader.predict_loop(dataset, modifier=(
+    target, predicted = loader.predict_loop(dataset, modifier=(
         cli.config.anomaly.name,
         cli.config.anomaly.factor
     ), step=cli.config.step or score.step)
@@ -70,13 +70,13 @@ def cli_main():
     )
 
     # save the prediction of three days of the dataset
-    three_days = (24 * 60 * 60) // meta.skip * 3
-    logger.debug("Visualizing reduced dataset (samples=%s)", 3 * three_days)
+    twelve_hrs = (12 * 60 * 60) // meta.skip
+    logger.debug("Visualizing reduced dataset (samples=%s)", 3 * twelve_hrs)
     show_dataframe(
-        [predicted[:three_days], target[:three_days]],
+        [predicted[:twelve_hrs], target[:twelve_hrs]],
         ["Prediction", "Target"],
         grid_size=5,
-        save=os.path.join(base_path, "days=3.png"),
+        save=os.path.join(base_path, "hrs=12.png"),
     )
 
     # transformes the loss between prediction and target to a score between 0 and 1.
