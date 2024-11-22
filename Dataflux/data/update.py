@@ -96,6 +96,11 @@ class DataUpdater(S3Bucket):
             result_df = result_df.round(3)
 
             # 3. rename human readable column names to be machine readable
+            drop = [name for name in result_df.columns.values if not score_uuids.get(name.split(" ")[0]  + " (Malfunction AI) (%)", None)]
+            if len(drop) > 0:
+                logger.debug("Did not expect %s in header, removing from upload.", drop)
+                result_df.drop(columns=drop, inplace=True)
+
             names = {name: score_uuids.get(name.split(" ")[0] + " (Malfunction AI) (%)", name) for name in list(result_df.columns.values)}
             result_df.rename(columns=names, inplace=True)
 
@@ -111,8 +116,9 @@ class DataUpdater(S3Bucket):
                 # the window's size is calculated by the time delta between two datapoints and
                 # the resolution to be achieved
                 pool = avg // time_delta
-                df_avg = result_df.rolling(window=pool, step=pool, center=True).mean()
-                df_avg = df_avg.iloc[1:-1]
+                df_avg = result_df.rolling(window=pool, step=pool, center=False).mean()
+                df_avg = df_avg.iloc[1:]
+                df_avg = df_avg.round(3)
 
                 postfix = "average" if avg == 120 else "average-10m"
                 path = f"{self._uuid}/days/{day}/{self._uuid}-virtual.tsv-{postfix}"
