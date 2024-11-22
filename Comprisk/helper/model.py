@@ -287,7 +287,7 @@ class ModelLoader:
                 if len(dataset) <= i + j * step:
                     broke = True
 
-                s, w = get_tensor_from_dataset(dataset, i + (j * step), self._model.device)
+                s, w = get_tensor_from_dataset(dataset, i + j, self._model.device)
                 sensors[j] = s[0]
                 weather[j] = w[0]
 
@@ -295,15 +295,12 @@ class ModelLoader:
                 break
 
             # get average prediction
-            target = np.zeros(shape=(batch_size, meta.num_input_sequence, meta.num_features_sensors))
-            for _ in range(0, 5):
-                target += self._model.predict({"sensors": sensors, "weather": weather}, True)
-            target /= 5
+            target = self._model.predict({"sensors": sensors, "weather": weather}, True)
             _, w, _ = target.shape
             
             # add predictions to the prepared
             for j, elem in enumerate(target):
-                idx = i + (j * step)
+                idx = i + j * step
                 if idx + len(elem) > safe_length:
                     break
 
