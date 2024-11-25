@@ -1,7 +1,7 @@
 """This module replaces the sensor UUID with a human readable text."""
 from enum import Enum, auto
 import os
-from typing import Any, Dict
+from typing import Dict
 import pandas as pd
 
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE

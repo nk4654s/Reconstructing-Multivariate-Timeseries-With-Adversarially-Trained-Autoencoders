@@ -15,4 +15,3 @@ from Dataflux.modules.position_bypass import PositionBypassValve
 
 from Dataflux.modules.features import Features
 from Dataflux.modules.normalize import NormalizeFit, NormalizeTransform
-from Dataflux.modules.monolith import MonoFile

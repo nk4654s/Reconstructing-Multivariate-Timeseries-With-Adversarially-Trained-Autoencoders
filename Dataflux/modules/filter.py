@@ -1,6 +1,6 @@
 """This module pre-processes a dataframe and insters values to NAN."""
 
-from typing import Any, Dict, List
+from typing import Dict, List
 
 import pandas as pd
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
@@ -38,8 +38,8 @@ class Filter(FileWorkerCallable):
 
             if df[key].min() < lower or df[key].max() > upper:
                 self._to_remove.append(file_path)
+                return None, [file_path]
         return None, None
             
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
-        # TODO: remove files in to_remove, then delete coresponding parts in metadata
         pass

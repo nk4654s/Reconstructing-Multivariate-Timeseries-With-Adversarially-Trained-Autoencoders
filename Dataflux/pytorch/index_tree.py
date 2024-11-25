@@ -80,6 +80,7 @@ class IndexTree:
         skip (int): The number of timestamps to skip. Defaults to 1 (do not skip any timestamps).
     """
     def __init__(self, metadata: Metadata, window_size: int = 1, skip: int = 1) -> None:
+        logger.debug("Initialize indexing")
         self._root: Node | None = None
         self._win = window_size
         self._skip = skip
@@ -87,6 +88,7 @@ class IndexTree:
 
         self._size = 0
         self._build_tree(metadata[Meta.FILES])
+        logger.debug("Finished indexing")
 
     def __len__(self) -> int:
         return self._size

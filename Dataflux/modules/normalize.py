@@ -176,6 +176,7 @@ class NormalizeTransform(FileWorkerCallable):
             return self._scaler
 
         scaler: FluxScaler = context.get(ContextParam.SCALER)
+        assert scaler, "Scaler is 'None', maybe the dataset is empty?"
         logger.debug("Got scaler from 'NormalizeFit'.")
 
         # modify the scaler if a custom one was defined

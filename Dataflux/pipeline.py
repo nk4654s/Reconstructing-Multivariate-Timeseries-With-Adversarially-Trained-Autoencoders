@@ -1,7 +1,6 @@
 """The pipeline combines both, the preprocessing.py and postprocessing.py which comes in handy
 when processing a dataset using a defined yaml-config.
 """
-
 import os
 import shutil
 import logging
@@ -11,7 +10,6 @@ from Dataflux.cli import CLIArgumentParser
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
 from Dataflux.helper.metadata import Meta, Metadata
 from Dataflux.data import ContinuousDataDownloader, DataType
-from Dataflux.modules import Consistency, Rename, PositionBypassValve
 
 from Dataflux import get_logger
 
