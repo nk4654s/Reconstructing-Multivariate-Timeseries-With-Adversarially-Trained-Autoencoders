@@ -167,10 +167,10 @@ class State(FileWorkerCallable):
                     self._key = keys[0]
                     return True
                 else:
-                    logger.debug("Can not find key %s, no splitting applied", self._key)
+                    logger.debug("Can not find key %s", self._key_substring)
                     return False
         
-        return True
+        return self._key in column_names
     
     def run(self, file_path: str, context: Context) -> CALLABLE_RETURN_TYPE:
         # read and remove the dataset file, if everyting is fine, it will eb created again

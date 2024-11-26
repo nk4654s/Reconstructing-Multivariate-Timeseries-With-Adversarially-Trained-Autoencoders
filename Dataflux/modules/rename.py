@@ -41,6 +41,8 @@ class Rename(FileWorkerCallable):
             return None, [file_path]
 
         if self._sensor_names is None:
+            logger.debug("Module enabled: %s", "yes" if self._enable else "no")
+
             # initial call of this module, download uuid -> name dictionary
             metadata = Metadata()
             metadata.load(os.path.dirname(file_path))
@@ -49,9 +51,10 @@ class Rename(FileWorkerCallable):
             self._sensor_names = get_sensor_uuid_to_name(uuid)
             assert self._sensor_names, "No sensor name dictionary available."
 
+            logger.debug("Loaded sensor names %s", [n for _, n in self._sensor_names.items()])
+
         if self._enable:
-            names: Dict[str, str] = {id: self._sensor_names.get(id, id) for id in list(df.columns.values)}
-            df.rename(columns=names, inplace=True)
+            df.rename(columns=self._sensor_names, inplace=True)
         
         df.to_hdf(file_path, key="data", format="table")
         if len(self._names) == 0:

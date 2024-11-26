@@ -33,7 +33,6 @@ class Features(FileWorkerCallable):
             return None, [file_path]
         
         df = df[self._include]
-        df.set_index(keys=["ts"], inplace=True)
         df.to_hdf(file_path, key="data", format="table", mode="w")
 
         return None, None
