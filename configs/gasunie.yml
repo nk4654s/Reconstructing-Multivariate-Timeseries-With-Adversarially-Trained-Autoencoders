@@ -1,0 +1,65 @@
+folder: gasunie-testset
+machine_uuid: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
+intervals:
+  - 2023-09-01 2024-11-25
+num_workers: 8
+disk_backup: gasunie-testset-backup
+overwrite: true
+
+modules:
+  # - class_path: Dataflux.modules.Rename
+  #   init_args:
+  #     enable: false
+  # - class_path: Dataflux.modules.Consistency
+  # split wherever the motor is below 400 RPM
+  - class_path: Dataflux.modules.State
+    init_args:
+      key: b494f0c0-4446-4626-9eed-b8a8bba4f65d
+      lower: 400
+      upper: 900
+      delete_ts: 900
+  - class_path: Dataflux.modules.features.Features
+    init_args:
+      include:
+        - ts
+        - f72fe32a-7537-4651-91af-91116ef20475
+        - 4927d58d-b7ac-4bb5-9fd7-1257bb92b340
+        - f9523a90-71ae-48d2-8e8b-f1288138eb28
+        - fe7589f6-67c9-4f12-a262-549f4bb1d83b
+        - 3f9cf382-2e66-4805-9f44-8afe4ad6ba29
+        - 5ff57d3f-24e9-4897-9335-a1c8ef2e0d8b
+        - 449595df-042d-41d7-be45-bda695bc271d
+        - 7a84feb3-e6a0-4c3f-ac37-5269f6ca5390
+        - 00a246dd-4ae4-452e-b026-b39c5f486889
+        - 4174ecf6-af4b-44f3-bd2c-d3a7a2c68ece
+        - 0820ab74-ab48-456a-acae-0c21b78cc45e
+        - d67bd4d9-7568-4452-a81c-84029a2f10b9
+        - 77f861c4-1b1b-44e4-839f-188fc76e328e
+        - c32ea3cb-2ba3-4411-955a-7585050a462c
+        - 25b9ace2-8ca3-4ac1-8efd-495b1b8ac845
+        - 35aaaa87-5803-44fe-abc0-e17bdca072c4
+        - e44c6aca-cf06-434e-9257-4d15839c29ce
+        - 46376c21-1509-4e7d-81e7-c1f0bd574a41
+        - 5be01343-45c0-40af-a93f-9368aff5e73d
+        - 4a8833ef-fd17-49b4-99b0-585e7aac49f0
+        - 13b3719a-2358-4a69-8895-41ee030100d3
+        - 29129d0a-7898-49f5-b139-e9154f173278
+        - 3a116153-ce98-4139-b2e8-61faf5ec8329
+        - 75247d9f-29e8-4140-8a3a-aa04d55483e5
+        - 90e96137-2b1c-4d1b-a4eb-68471b0cf829
+        - 35e974db-1ed9-414d-b39f-fa584443f559
+        - c27dc520-081e-4876-a7b3-0f2efbf61ca3
+        - 61707ebf-48ae-474f-a82d-067f5709ca26
+        - a7df6efc-91f1-423c-9896-69e7ef27692f
+        - b494f0c0-4446-4626-9eed-b8a8bba4f65d
+        - 5162d2e6-b28b-48d7-a1d4-a86a51aec348
+        - 5c4a7fab-23e7-4d0c-8420-5a826f0fa27f
+  - class_path: Dataflux.modules.normalize.NormalizeFit
+    init_args:
+      method: minmax
+      remove_outliers: false
+      exclude_keys:
+        - ts
+  - class_path: Dataflux.modules.normalize.NormalizeTransform
+    init_args:
+      from_other: /Users/jonas/Dev/Prod/gasunie-trainset
