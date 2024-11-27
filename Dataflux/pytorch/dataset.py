@@ -39,6 +39,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         input_sequence: int,
         output_sequence: int,
         skip: int = 1,
+        stride: int = 1,
         cache_size: int = -1,
         key: str = "norm",
         include_ts: bool = False
@@ -46,6 +47,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         self._metadata = FileMetadata()
         self._metadata.load(path)
         self._skip = skip
+        self._stride = stride
         self._key = key
 
         self._num_input = input_sequence
@@ -74,6 +76,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         self._meta_factory.set(MetadataTypes.NAMES_SENSOR, self._cache.columns_sensor)
         self._meta_factory.set(MetadataTypes.NAMES_SENSOR, self._cache.columns_sensor)
         self._meta_factory.set(MetadataTypes.SKIP, skip)
+        self._meta_factory.set(MetadataTypes.STRIDE, stride)
         self._meta_factory.set(MetadataTypes.TS_INDEX, self._cache.ts_index)
 
         self._meta_factory.set(MetadataTypes.SENSOR, sensors.shape[-1])
@@ -97,7 +100,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         """Outputs the shape of this dataset as `number_of_samples`,
         `input_window_size`, `number_of_features`.
         """
-        return (len(self._tree), self._num_input, self._num_features)
+        return (len(self._tree) // self._stride, self._num_input, self._num_features)
 
     def get_meta(self) -> Metadata:
         """Outputs the metadata of the dataset.
@@ -221,6 +224,8 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         return int(sensors[:, index][0])
 
     def _get(self, index: int, include_ts: bool = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        index *= self._stride
+
         # find the day and the correct index for that file
         # start of the sequence will be: index + self._num_input ...
         day, index = self._tree.search(index)
