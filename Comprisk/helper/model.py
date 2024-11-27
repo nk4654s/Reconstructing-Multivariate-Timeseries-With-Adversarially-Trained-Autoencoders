@@ -3,7 +3,8 @@ import operator
 import os
 import json
 import pickle
-from typing import Any, Dict, Tuple, Type, List
+from typing import Any, Dict, Tuple, Type, List, Union
+from uuid import UUID
 from lightning import LightningModule
 import numpy as np
 import pandas as pd
@@ -13,13 +14,26 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm, trange
 
-from Dataflux.helper import get_logger
+from Dataflux.helper import get_logger, get_sensor_uuid_to_name
 from Dataflux.pytorch import Dataset
 
 from Comprisk.anomaly import ScoreTransformer
 from Comprisk.helper.file_structure import class_for_name, get_checkpoints
+from Comprisk.model.base import BaseModel
 
 logger = get_logger(__name__, path="./logs/logfile")
+
+
+def set_model_features(model, dataset: Dataset):
+    # set correct feature names to model, the feature names of the dataset should be
+    # sorted according to the sample's feature indicies
+    feature_dict = get_sensor_uuid_to_name(UUID(dataset.UUID))
+    feature_names = dataset.get_meta().column_names
+    if feature_dict:
+        feature_names = [feature_dict.get(n, n) for n in feature_names]
+
+    model.set_feature_names(feature_names)
+
 
 
 def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
@@ -49,7 +63,7 @@ def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
         return model_class, sub_modules
 
 
-def load_model(path: str, eval_mode: bool = True) -> Any:
+def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
     """This method loads the best checkpoint of a model. Requires checkpoints of model to have
     the filename structure `...val=<validation_loss>.ckpt`.
 
@@ -184,7 +198,9 @@ class ModelLoader:
     """
     def __init__(self, path: str) -> None:
         self._path = path
-        self._model = load_model(path, eval_mode=False)
+        model = load_model(path, eval_mode=False)
+        assert model, f"Unable to load model, no checkpoints found for {path}."
+        self._model: BaseModel = model
 
     @property
     def path(self) -> str:
@@ -205,7 +221,7 @@ class ModelLoader:
 
         return pd.read_csv(correlation_path, index_col=0)
 
-    def _prepare_container(self, dataset: Dataset, safe_length: int, step: int) -> Dict[str, DayPrediction]:
+    def _prepare_container(self, dataset: Dataset, safe_length: int, step: int, verbose: bool = True) -> Dict[str, DayPrediction]:
         meta = dataset.get_meta()
 
         # prepare timestep recording
@@ -216,7 +232,7 @@ class ModelLoader:
 
         days = {}
 
-        for i in trange(0, safe_length, desc="Prepare Prediction"):
+        for i in trange(0, safe_length, desc="Prepare Prediction", disable=not verbose):
             day, _ = dataset.get_day(i)
             read_len += 1
             if day != last_day or i == safe_length - 1:
@@ -235,7 +251,8 @@ class ModelLoader:
 
     def predict_loop(self, dataset: Dataset, mode: str = "autoencoder",
                      modifier: Tuple[str, float] = ("", 1.0), batch_size: int = 64,
-                     step: int | None = None, init_step: int = 0) -> Tuple[pd.DataFrame, pd.DataFrame]:
+                     step: int | None = None, init_step: int = 0,
+                     verbose: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """This method applies a model on a given dataset. For an AutoEncoder, the reconstructed
         output will be returned. For future prediction models, the prediction of the future is
         output. In addition, the original input data will be temporarily stored and returned.
@@ -272,14 +289,12 @@ class ModelLoader:
             modifier_index = operator.indexOf(meta.column_names_sensor, modifier_name)
         
         # prepare timestep recording
-        day_predictions = self._prepare_container(dataset, safe_length, step)
+        day_predictions = self._prepare_container(dataset, safe_length, step, verbose)
 
         # 1. iterate over dataset, with shuffle deactivated
-        for i in tqdm(range(0, safe_length, step * batch_size), desc="Prediction with Model"):
+        for i in tqdm(range(0, safe_length, step * batch_size), desc="Prediction with Model", disable=not verbose):
             sensors = torch.zeros(batch_size, meta.num_input_sequence, meta.num_features_sensors, device=self._model.device)
             weather = torch.zeros(batch_size, meta.num_input_sequence, meta.num_features_weather, device=self._model.device)
-            if modifier_name:
-                sensors[:, :, modifier_index] *= factor
 
             # read from the dataset into a batch
             broke = False
@@ -294,18 +309,21 @@ class ModelLoader:
             if broke:
                 break
 
+            if modifier_name:
+                sensors[:, :, modifier_index] = factor
+
             # get average prediction
-            target = self._model.predict({"sensors": sensors, "weather": weather}, True)
-            _, w, _ = target.shape
+            prediction = self._model.predict({"sensors": sensors, "weather": weather}, True)
+            _, w, _ = prediction.shape
             
             # add predictions to the prepared
-            for j, elem in enumerate(target):
+            for j, elem in enumerate(prediction):
                 idx = i + j * step
                 if idx + len(elem) > safe_length:
                     break
 
                 day, _ = dataset.get_day(idx)
-                day_predictions[day].add_values(sensors.cpu().numpy()[0], target[j])
+                day_predictions[day].add_values(sensors.cpu().numpy()[0], prediction[j]) # type: ignore
         
         # 4. finalize dataframe, give columns names matching input dataframe column names
         inputs = pd.DataFrame()
