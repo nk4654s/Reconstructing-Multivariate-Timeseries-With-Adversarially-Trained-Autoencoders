@@ -22,6 +22,7 @@ class MetadataTypes(Enum):
     IN_SEQUENCE = "num_input_sequence"
     OUT_SEQUENCE = "num_output_sequence"
     SKIP = "skip"
+    STRIDE = "stride"
     TS_INDEX = "ts_index"
 
 
@@ -47,6 +48,7 @@ class Metadata:
                  num_input_sequence: int,
                  num_output_sequence: int,
                  skip: int,
+                 stride: int,
                  ts_index: int,
                  column_names: List[str],
                  column_names_sensors: List[str]) -> None:
@@ -58,6 +60,7 @@ class Metadata:
         self._column_names = column_names
         self._column_names_sensors = column_names_sensors
         self._skip = skip
+        self._stride = stride
         self._ts_index = ts_index
 
     @property
@@ -78,6 +81,15 @@ class Metadata:
             int: The skipped seconds.
         """
         return self._skip
+
+    @property
+    def stride(self) -> int:
+        """The number of seconds between each sample window.
+
+        Returns:
+            int: The stride value.
+         """
+        return self._stride
 
     @property
     def column_names(self) -> List[str]:
