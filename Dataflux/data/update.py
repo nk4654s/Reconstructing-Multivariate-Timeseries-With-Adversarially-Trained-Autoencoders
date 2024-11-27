@@ -116,8 +116,8 @@ class DataUpdater(S3Bucket):
                 # the window's size is calculated by the time delta between two datapoints and
                 # the resolution to be achieved
                 pool = avg // time_delta
-                df_avg = result_df.rolling(window=pool, step=pool, center=False).mean()
-                df_avg = df_avg.iloc[1:]
+                df_avg = result_df.rolling(window=pool, step=pool, center=True).mean()
+                df_avg = df_avg.iloc[1:-1]
                 df_avg = df_avg.round(3)
 
                 postfix = "average" if avg == 120 else "average-10m"
