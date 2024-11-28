@@ -12,8 +12,10 @@ import yaml
 
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
+from Dataflux.pytorch import collate_fn
 from Dataflux.helper import get_logger, get_sensor_uuid_to_name
 from Dataflux.pytorch import Dataset
 
@@ -127,68 +129,6 @@ def get_tensor_from_dataset(dataset: Dataset, i: int, device: Any) -> Tuple[torc
     return sensors, weather
 
 
-class DayPrediction:
-    """This class manages the predicted values, e.g. handle overlapping windows and
-    build the final DataFrame.
-    
-    Args:
-        ts (List): The timestamps of which the sensor values will be predicted.
-        step (int): The step size between two timestamps.
-        n_features (int): The amount of features per step.
-    """
-    def __init__(self, ts: List, step: int, n_features: int) -> None:
-        self._ts = ts
-        self._step = step
-
-        self._start = 0
-        self._prediction = np.zeros((len(ts), n_features))
-        self._target = np.zeros((len(ts), n_features))
-        self._counts = np.zeros((len(ts), n_features))
-    
-    def add_values(self, target: np.ndarray, prediction: np.ndarray) -> None:
-        """This method adds values to this class. Also, this method keeps track about the
-         amount of additions in the overlapping sections.
-
-        Args:
-            target (np.ndarray): The model's input.
-            prediction (np.ndarray): The model's output.
-        """
-        end = min(self._start + len(target), len(self._ts))
-        size = end - self._start
-
-        self._target[self._start:end] += target[:size]
-        self._prediction[self._start:end] += prediction[:size]
-        self._counts[self._start:end] += np.ones_like(prediction[:size])
-
-        self._start += self._step
-    
-    def calculate(self, names: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """This method calculates the average of the overlapping values using the previously
-        created array, which counts the amount of additions. Then, this method creates the
-        DataFrames of the arrays.
-
-        Args:
-            names (List): The column names of the DataFrame.
-        
-        Returns:
-            Tuple[pd.DataFrame, pd.DataFrame]: Target and Prediction.
-        """
-        # fix zero division
-        self._target[self._counts == 0] = 0
-        self._prediction[self._counts == 0] = 0
-        self._counts[self._counts == 0] = 1
-
-        target = self._target / self._counts
-        data = {names[i]: target[:, i] for i in range(len(names))}
-        target = pd.DataFrame(data, index=pd.Index(self._ts, name="ts"))
-
-        prediction = self._prediction / self._counts
-        data = {names[i]: prediction[:, i] for i in range(len(names))}
-        prediction = pd.DataFrame(data, index=pd.Index(self._ts, name="ts"))
-
-        return target, prediction
-
-
 class ModelLoader:
     """This class handles loading the model and related objects/configurations from the model's
     output directory.
@@ -221,37 +161,9 @@ class ModelLoader:
 
         return pd.read_csv(correlation_path, index_col=0)
 
-    def _prepare_container(self, dataset: Dataset, safe_length: int, step: int, verbose: bool = True) -> Dict[str, DayPrediction]:
-        meta = dataset.get_meta()
-
-        # prepare timestep recording
-        last_day = dataset.get_day(0)[0]
-        ts_start = dataset.get_timestamp(0)
-        ts_index = []
-        read_len = 0
-
-        days = {}
-
-        for i in trange(0, safe_length, desc="Prepare Prediction", disable=not verbose):
-            day, _ = dataset.get_day(i)
-            read_len += 1
-            if day != last_day or i == safe_length - 1:
-                offset = ts_start + (meta.num_input_sequence * meta.skip) // 2
-                day_indicies = [_ for _ in range(offset, int(offset + read_len * meta.skip), meta.skip)]
-
-                day_info = DayPrediction(day_indicies, step, meta.num_features_sensors)
-                days[last_day] = day_info
-
-                ts_index += day_indicies
-                ts_start = dataset.get_timestamp(i)
-                last_day = day
-                read_len = 0
-        
-        return days
-
     def predict_loop(self, dataset: Dataset, mode: str = "autoencoder",
                      modifier: Tuple[str, float] = ("", 1.0), batch_size: int = 64,
-                     step: int | None = None, init_step: int = 0,
+                     step: int | None = None, init_step: int = 0, num_workers: int = 4,
                      verbose: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """This method applies a model on a given dataset. For an AutoEncoder, the reconstructed
         output will be returned. For future prediction models, the prediction of the future is
@@ -262,7 +174,6 @@ class ModelLoader:
             mode (str): The mode to use for prediction. Defaults to 'autoencoder'.
             modifier (Tuple[str, float]): The sensor name and factor to apply. This is handy to inject
                 some kind of anomaly.
-            step (int | None): The step size of the window to slide over the dataset.
             init_step (int): The initial step when running the predict loop. Default to 0.
             batch_size (int): The amount of sample to process at a time
         
@@ -270,16 +181,15 @@ class ModelLoader:
             Tuple[pd.DataFrame, pd.DataFrame]: Pandas dataframes containing the prediction and input.
         """
         self._model.eval()
+        device = self._model.device
         meta = dataset.get_meta()
-        if not step:
-            step = meta.num_input_sequence if mode == "autoencoder" else meta.num_output_sequence
-        
-        # calculate the pool and iterable sizes
-        pool = step * batch_size
-        safe_length = len(dataset) // pool * pool
-        leftover = (len(dataset) - safe_length) // step
+        skip = meta.skip
+        stride = meta.stride
+        window = meta.num_input_sequence
+        features = meta.num_features_sensors
+        assert window == stride, "Something went wrong, the dataset's stride should equal the window size."
 
-        logger.debug("Predict on dataset %s | %s (Iterated | Original)", safe_length, len(dataset))
+        logger.debug("Predict on dataset %s (Original)", len(dataset))
         logger.debug("Predict loop step size %s and batch size %s", step, batch_size)
 
         # 0. find the index of the sensor to modify with the given factor
@@ -287,59 +197,58 @@ class ModelLoader:
         modifier_index = -1
         if modifier_name:
             modifier_index = operator.indexOf(meta.column_names_sensor, modifier_name)
-        
-        # prepare timestep recording
-        day_predictions = self._prepare_container(dataset, safe_length, step, verbose)
 
         # 1. iterate over dataset, with shuffle deactivated
-        for i in tqdm(range(0, safe_length, step * batch_size), desc="Prediction with Model", disable=not verbose):
-            sensors = torch.zeros(batch_size, meta.num_input_sequence, meta.num_features_sensors, device=self._model.device)
-            weather = torch.zeros(batch_size, meta.num_input_sequence, meta.num_features_weather, device=self._model.device)
+        day_of_index = None
+        index = 0
+        ts, targets, prediction = [], [], []
 
-            # read from the dataset into a batch
-            broke = False
-            for j in range(0, batch_size):
-                if len(dataset) <= i + j * step:
-                    broke = True
+        loader = DataLoader(dataset, batch_size, collate_fn=collate_fn, num_workers=num_workers, drop_last=False)
+        for inputs in tqdm(loader, desc="Prediction with Model", disable=not verbose):
+            inputs = {k: v.to(device) for k, v in inputs.items()}
 
-                s, w = get_tensor_from_dataset(dataset, i + j, self._model.device)
-                sensors[j] = s[0]
-                weather[j] = w[0]
-
-            if broke:
-                break
-
+            # modify the sensor if required
             if modifier_name:
-                sensors[:, :, modifier_index] = factor
+                inputs["sensors"][:, :, modifier_index] = factor
 
-            # get average prediction
-            prediction = self._model.predict({"sensors": sensors, "weather": weather}, True)
-            _, w, _ = prediction.shape
+            # run the prediction, the input equals the target for auto encoders
+            model_pred = self._model.predict(inputs, as_array=True)
+            inputs = inputs["sensors"].cpu().numpy()
+            batch_size_, window_, _ = model_pred.shape
+
+            targets += list(inputs.reshape(batch_size_ * window_, features))
+            prediction += list(model_pred.reshape(batch_size_ * window_, features))
             
-            # add predictions to the prepared
-            for j, elem in enumerate(prediction):
-                idx = i + j * step
-                if idx + len(elem) > safe_length:
-                    break
+            # keep track of the timesteps, on a day change, the timesteps may shift
+            current_day = dataset.get_day(index)[0]
+            if current_day != day_of_index:
+                for j in range(batch_size_):
+                    current_day = dataset.get_day(index + j)[0]
+                    if current_day != day_of_index:
+                        day_of_index = current_day
+                        ts.append(dataset.get_timestamp(index + j))
+                    ts += [ts[-1] + k + skip for k in range(0, window_ * skip, skip)]
+            
+            else:
+                ts += [ts[-1] + j + skip for j in range(0, batch_size_ * window_ * skip, skip)]
 
-                day, _ = dataset.get_day(idx)
-                day_predictions[day].add_values(sensors.cpu().numpy()[0], prediction[j]) # type: ignore
-        
-        # 4. finalize dataframe, give columns names matching input dataframe column names
-        inputs = pd.DataFrame()
-        predicted = pd.DataFrame()
+            index += batch_size
 
+        # finalize the index
+        limit = len(targets)
+        ts = list(set(ts))
+        ts_index = pd.Index(ts[:limit])
+
+        targets = np.array(targets)
+        prediction = np.array(prediction)
+
+        # create the output DataFrames
         names = meta.column_names_sensor
-        for key, day in day_predictions.items():
-            i, p = day.calculate(names)
-            inputs = pd.concat([inputs, i])
-            predicted = pd.concat([predicted, p])
-
-        inputs.sort_values(by="ts")
-        predicted.sort_values(by="ts")
+        targets = pd.DataFrame({n: targets[:, i] for i, n in enumerate(names)}, index=ts_index)
+        prediction = pd.DataFrame({n: prediction[:, i] for i, n in enumerate(names)}, index=ts_index)
 
         # todo: recursive call to iterate over leftover then merge dataframes
-        return inputs, predicted
+        return targets, prediction
 
     def get_score_transformer(self) -> ScoreTransformer:
         """A simple getter for the score transformer. This method loads the transformer from
