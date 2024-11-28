@@ -1,11 +1,12 @@
 """This module contains the base model implementing widely-used functions. Layers
 of a nerual network are not implemented."""
 
-from typing import List
+from typing import Dict, List, Union
 import numpy as np
 import lightning as L
 import torch
 from torch.optim.lr_scheduler import ExponentialLR
+from torch.optim.optimizer import Optimizer
 from Dataflux.pytorch.metadata import Metadata
 from Comprisk.helper import (
     get_loss_by_name,
@@ -40,6 +41,7 @@ class BaseModel(L.LightningModule):
         lr: float = 1e-3,
         lr_decay: float = 0.99,
         monte_carlo: int = 0,
+        feature_names: List[str] = []
     ) -> None:
         super().__init__()
 
@@ -47,8 +49,8 @@ class BaseModel(L.LightningModule):
         self._loss_name = loss
         self._loss = get_loss_by_name(loss)
         self._activation = get_activation_from_string(activation)
-        self._optim = optimizer
-        self._lr_scheduler = ExponentialLR
+        self._optim: Optimizer | str = optimizer
+        self._lr_scheduler: ExponentialLR | None = None
         self._lr_decay = lr_decay
         self.lr = lr
 
@@ -57,6 +59,11 @@ class BaseModel(L.LightningModule):
         self._mc_iteration = monte_carlo
         if self._mc_iteration > 0:
             logger.debug("Predict step uses Monte-Carlo (num samples: %s)", self._mc_iteration)
+        
+        self._feature_names = feature_names
+    
+    def set_feature_names(self, feature_names: List[str]) -> None:
+        self._feature_names = feature_names
 
     def set_monte_carlo(self, num_iterations: int) -> None:
         """Overwrites the constructor monte-carlo iteration number. Setting this value to 0
@@ -89,7 +96,7 @@ class BaseModel(L.LightningModule):
         """The target name of inputs to predict."""
         return ["targets"]
 
-    def _get_target_batch(self, batch: torch.Tensor) -> torch.Tensor:
+    def _get_target_batch(self, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
         """Returns the target batch from the given batch."""
         if len(self.target) == 1:
             return batch[self.target[0]]
@@ -99,7 +106,7 @@ class BaseModel(L.LightningModule):
             x = torch.cat((x, batch[t]), dim=-1)
         return x
 
-    def _get_feature_loss(self, y_hat, y) -> np.array:
+    def _get_feature_loss(self, y_hat, y) -> np.ndarray:
         y_hat = y_hat.detach().cpu().numpy()
         y = y.detach().cpu().numpy()
 
@@ -114,9 +121,10 @@ class BaseModel(L.LightningModule):
 
     def on_train_epoch_start(self) -> None:
         super().on_train_epoch_start()
+        assert self._lr_scheduler, "Learning rate scheduler not initialized."
         self.log("epoch/lr", self._lr_scheduler.get_last_lr()[-1])
 
-    def training_step(self, batch: torch.Tensor, **kwargs) -> torch.Tensor:
+    def training_step(self, batch: Dict[str, torch.Tensor], **kwargs) -> torch.Tensor:
         y_hat = self(batch)
         y = self._get_target_batch(batch)
         loss = self._loss(y_hat, y)
@@ -124,31 +132,33 @@ class BaseModel(L.LightningModule):
 
         # the feature loss is required by the LossMeasurement callback to calculate
         # the model's performance during training.
-        return {"loss": loss, "f_loss": self._get_feature_loss(y_hat, y)}
+        for name_, loss_ in zip(self._feature_names, self._get_feature_loss(y_hat, y)):
+            self.log(f"train/{name_}", loss_)
+        return loss
 
-    def test_step(self, batch: torch.Tensor, **kwargs) -> torch.Tensor:
+    def test_step(self, batch: Dict[str, torch.Tensor], **kwargs) -> torch.Tensor:
         y_hat = self(batch)
         loss = self._loss(y_hat, self._get_target_batch(batch))
         self.log(f"test/{self._loss_name}", loss)
         return loss
 
-    def validation_step(self, batch: torch.Tensor, **kwargs) -> torch.Tensor:
+    def validation_step(self, batch: Dict[str, torch.Tensor], **kwargs) -> torch.Tensor:
         y_hat = self(batch)
         loss = self._loss(y_hat, self._get_target_batch(batch))
         self.log(f"validate/{self._loss_name}", loss)
         return loss
 
-    def configure_optimizers(self) -> torch.optim.Optimizer:
+    def configure_optimizers(self) -> Optimizer:
         # init optimizer if it's a string
         if isinstance(self._optim, str):
             logger.debug("Initialize optimizer: %s", self._optim)
-            self._optim = get_optimizer_by_name(self._optim)(
-                self.parameters(), lr=self.lr
-            )
-            self._lr_scheduler = self._lr_scheduler(self._optim, gamma=0.99)
-        return [self._optim], [{"scheduler": self._lr_scheduler, "interval": "epoch"}]
+            optim_cls = get_optimizer_by_name(self._optim)
+            self._optim = optim_cls(self.parameters(), lr=self.lr)
+            self._lr_scheduler = ExponentialLR(self._optim, gamma=self._lr_decay)
 
-    def predict_step(self, batch: torch.Tensor) -> torch.Tensor:
+        return [self._optim], [{"scheduler": self._lr_scheduler, "interval": "epoch"}] # type: ignore
+
+    def predict_step(self, batch:  Dict[str, torch.Tensor]) -> torch.Tensor:
         """
         This method is used to make predictions on a batch of data during inference. It
         employs a Monte Carlo Dropout (MCD) approach, which involves randomly disabling
@@ -156,7 +166,7 @@ class BaseModel(L.LightningModule):
         averaged over multiple runs with different to output a more stable prediction.
 
         Args:
-            batch (torch.Tensor): A tensor containing the input data.
+            batch ( Dict[str, torch.Tensor]): A tensor containing the input data.
 
         Returns:
             torch.Tensor: The predicted output for the given batch, averaged over multiple MCD runs.
@@ -173,18 +183,19 @@ class BaseModel(L.LightningModule):
             return pred
         return self(batch)
 
-    def predict(self, x: torch.tensor, as_array: bool = False) -> List:
+    def predict(self,  x: Dict[str, torch.Tensor], as_array: bool = False) -> Union[np.ndarray, torch.Tensor]:
         """This method only predicts future steps based on the given curve described by
         the datapoints `x`. Each step will be predicted using `self.predict_step(x)` which
         employs Monte Carlo Dropout.
 
         Args:
-            x (torch.tensor): The datapoints.
+            x (Dict[str, torch.Tensor]): The datapoints given as dict of tensors with the keys "sensors" and "weather".
             as_array (bool, optional): Returns the prediction as np.array. Defaults to False.
 
         Returns:
-            List: The prediction.
+            np.ndarray, torch.Tensor: The prediction.
         """
+        out = np.array([])
         with torch.no_grad():
             out = self.predict_step(x)
             if as_array:

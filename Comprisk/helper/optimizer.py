@@ -1,20 +1,35 @@
 """This module handles string to optimizer conversion."""
-from torch import optim
-from torch.optim.optimizer import Optimizer
+from typing import Type, Union
+from torch.optim import *  # type: ignore is fine, as optim only includes Optimizers
+
 
 _optimizer_register = {
-    "Adam": optim.Adam,
-    "Adagrad": optim.Adagrad,
-    "SparseAdam": optim.SparseAdam,
-    "RMSprop": optim.RMSprop,
-    "ASGD": optim.ASGD,
-    "SGD": optim.SGD,
-    "Adadelta": optim.Adadelta,
-    "Adamax": optim.Adamax,
-    "AdamW": optim.AdamW,
+    "Adam": Adam,
+    "Adagrad": Adagrad,
+    "SparseAdam": SparseAdam,
+    "RMSprop": RMSprop,
+    "ASGD": ASGD,
+    "SGD": SGD,
+    "Adadelta": Adadelta,
+    "Adamax": Adamax,
+    "AdamW": AdamW,
 }
 
-def get_optimizer_by_name(name: str) -> Optimizer:
+
+OPTIM_CLASS = Union[
+        Type[Adam],
+        Type[Adagrad],
+        Type[SparseAdam],
+        Type[RMSprop],
+        Type[ASGD],
+        Type[SGD],
+        Type[Adadelta],
+        Type[Adamax],
+        Type[AdamW]
+    ]
+
+
+def get_optimizer_by_name(name: str) -> OPTIM_CLASS:
     """Get optimizer by name.
 
     Args:
