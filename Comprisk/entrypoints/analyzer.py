@@ -4,10 +4,11 @@ safed next to the model's log folder as graph comparing prediction
 vs. target."""
 import os
 import shutil
+from uuid import UUID
 
 from Dataflux.pytorch import Metadata, Dataset
 from Dataflux.visualization import show_dataframe
-from Dataflux.helper import get_logger
+from Dataflux.helper import get_logger, get_sensor_uuid_to_name
 
 from Comprisk.helper import get_config_folder, ModelLoader
 from Comprisk.model import BaseModel
@@ -58,6 +59,15 @@ def cli_main():
         shutil.rmtree(base_path)
     os.makedirs(base_path)
 
+    # transformes the loss between prediction and target to a score between 0 and 1.
+    score_vis_path = os.path.join(base_path, "score-transformed.png")
+    score.transform(predicted, target, visualize=score_vis_path, static=cli.config.static_scores)
+
+    # rename the columns, which might be required
+    sensors_name_dict = get_sensor_uuid_to_name(UUID(dataset.UUID))
+    predicted = predicted.rename(columns=sensors_name_dict, errors="ignore")
+    target = target.rename(columns=sensors_name_dict, errors="ignore")
+
     # save the whole prediction of the dataset
     meta: Metadata = dataset.get_meta()
     days = round(len(dataset) * meta.skip // 60 // 60 // 24)
@@ -78,10 +88,6 @@ def cli_main():
         grid_size=5,
         save=os.path.join(base_path, "hrs=12.png"),
     )
-
-    # transformes the loss between prediction and target to a score between 0 and 1.
-    score_vis_path = os.path.join(base_path, "score-transformed.png")
-    score.transform(predicted, target, visualize=score_vis_path, static=cli.config.static_scores)
 
 
 if __name__ == "__main__":
