@@ -107,13 +107,14 @@ def multi_split(df: DataFrame, key: str, lower: int | float, upper: int | float)
     return df_final
 
 
-def remove_threshold(df: DataFrame | List[DataFrame], threshold: int) -> List[DataFrame]:
+def remove_threshold(df: DataFrame | List[DataFrame], alpha: int, beta: int = 0) -> List[DataFrame]:
     """This method removes a given amount of timesteps from the start and end of a DataFrame.
 
     Args:
         df (DataFrame | List[DataFrame]): The DataFrame to delete some timesteps from.
-        threshold (int): The amount of steps to remove.
-    
+        alpha (int): The amount of steps to remove from the DataFrame's start.
+        beta (int): The amount of trailing steps to remove from the DataFrame.
+
     Returns:
         List [DataFrame]: Returns the list of modified DataFrames.
     """
@@ -123,8 +124,8 @@ def remove_threshold(df: DataFrame | List[DataFrame], threshold: int) -> List[Da
     # remove the first x datapoints of all dataframes
     if len(df) > 0:
         for i in range(0, len(df)):
-            if len(df[i]) > 2 * threshold:
-                df[i] = df[i].iloc[threshold:-threshold]
+            if len(df[i]) > alpha + beta:
+                df[i] = df[i].iloc[alpha:len(df[i]) - beta]
                 reduced.append(df[i])
     return reduced
 
@@ -133,20 +134,22 @@ class State(FileWorkerCallable):
     """This class splits a dataset's file according to the provided configuration.
     
         Args:
-        on_key (str): The key of the column that contains the machine state.
+        key (str): The key of the column that contains the machine state.
             Defaults to "Laeuft".
-        keep_state (str): Wether to split when machine is on/off. Defaults to 'on'.
-        state_change_threshold (int): Remove the first x seconds of a dataframe, if there
-            was a statechange. Defaults to 900 which equals to 15 minutes.
+        lower (float | int): The lower boundary under which a state is defined as invalid.
+        upper (float | int): The upper boundary above which a state is defined as invalid.
+        alpha_threshold (int): The amount of steps to remove from the DataFrame's start.
+        beta_threshold (int): The amount of trailing steps to remove from the DataFrame.
     """
 
     def __init__(self, key: str = "Laeuft", lower: Union[int, float] = 1, upper: Union[int, float] = 1,
-                 delete_ts: int = 900):
+                 alpha_threshold: int = 10800, beta_threshold: int = 900):
         self._key_substring = key
         self._key = ""
         self._lower = lower
         self._upper = upper
-        self._threshold = delete_ts
+        self._alpha = alpha_threshold
+        self._beta = beta_threshold
         self._update = {}
 
     def get_dependencies(self) -> Dict[str, CallableDependency]:
@@ -199,7 +202,7 @@ class State(FileWorkerCallable):
 
         # save all dataframes
         new_files = []
-        for i, df in enumerate(remove_threshold(df_splits, self._threshold)):
+        for i, df in enumerate(remove_threshold(df_splits, self._alpha, self._beta)):
             postfix = "" if i == 0 else f"_{i}"
             path = os.path.join(base_path, f"{uuid}_{day}{postfix}.h5")
             df.to_hdf(path, key="data")

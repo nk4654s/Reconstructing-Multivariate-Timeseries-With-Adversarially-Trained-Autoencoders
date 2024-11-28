@@ -17,7 +17,8 @@ modules:
       key: "Laeuft"
       lower: 0.9
       upper: 1.1
-      delete_ts: 5400
+      alpha_threshold: 10800
+      beta_threshold: 900
   # - class_path: Dataflux.modules.State
   #   init_args:
   #     key: "PositionBypassregelventilPCV73381 (AV)"
@@ -29,31 +30,31 @@ modules:
       key: "Kompressordrehzahl"
       lower: 400
       upper: 980
-      delete_ts: 1800
+      alpha_threshold: 1800
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "VentilnesttemperaturZweiteStufeKurbelseite"
       lower: 100
       upper: 145
-      delete_ts: 900
+      alpha_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "VentilnesttemperaturZweiteStufeDeckelseite"
       lower: 100
       upper: 145
-      delete_ts: 900
+      alpha_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "EndtemperaturZweiteStufe"
       lower: 100
       upper: 148
-      delete_ts: 900
+      alpha_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "Wicklungstemperatur"
       lower: 50
       upper: 120
-      delete_ts: 900
+      alpha_threshold: 900
   # this will heavily cut the dataset
   # - class_path: Dataflux.modules.state.State
   #   init_args:
@@ -66,13 +67,13 @@ modules:
       key: "Packungsleckage"
       lower: 0
       upper: 45
-      delete_ts: 300
+      alpha_threshold: 300
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "SchwingungsmessungTriebwerk"
       lower: 0
       upper: 3
-      delete_ts: 300
+      alpha_threshold: 300
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:

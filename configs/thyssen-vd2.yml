@@ -17,49 +17,50 @@ modules:
       key: "Laeuft"
       lower: 0.9
       upper: 1.1
-      delete_ts: 5400
+      alpha_threshold: 10800
+      beta_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "KompressordrehzahlSE74201 (rpm)"
       lower: 400
       upper: 980
-      delete_ts: 1800
+      alpha_threshold: 1800
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)"
       lower: 100
       upper: 145
-      delete_ts: 900
+      alpha_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)"
       lower: 100
       upper: 145
-      delete_ts: 900
+      alpha_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "EndtemperaturZweiteStufeTETIT74371 (°C)"
       lower: 100
       upper: 148
-      delete_ts: 900
+      alpha_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "Wicklungstemperatur (°C)"
       lower: 50
       upper: 120
-      delete_ts: 900
+      alpha_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "KühlwasserdurchflussmengeFIT74423 (m^3/min)"
       lower: 5.1
       upper: 5.2
-      delete_ts: 900
+      alpha_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "SchwingungsmessungTriebwerkVT74280 (mm/s)"
       lower: 0
       upper: 3
-      delete_ts: 300
+      alpha_threshold: 300
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:

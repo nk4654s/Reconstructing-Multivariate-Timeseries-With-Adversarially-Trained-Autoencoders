@@ -17,7 +17,8 @@ modules:
       key: b494f0c0-4446-4626-9eed-b8a8bba4f65d
       lower: 400
       upper: 900
-      delete_ts: 900
+      alpha_threshold: 10800
+      beta_threshold: 900
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:
