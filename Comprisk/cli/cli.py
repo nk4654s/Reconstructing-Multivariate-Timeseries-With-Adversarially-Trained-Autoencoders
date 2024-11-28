@@ -2,13 +2,16 @@
 a model. Moreover, the module expands the CLI by **lightning.ai**."""
 
 import datetime
+from uuid import UUID
 from lightning import Trainer
 from lightning.pytorch.cli import (
     LightningArgumentParser,
     LightningCLI,
 )
 from lightning.pytorch.tuner.tuning import Tuner
-from lightning.pytorch.callbacks import ModelCheckpoint
+from Dataflux.pytorch import Dataset
+from Dataflux.helper import get_sensor_uuid_to_name
+from Comprisk.helper import set_model_features
 from Comprisk import logger
 
 
@@ -35,6 +38,11 @@ class CompriskCLI(LightningCLI):
         logger.debug(header_str)
         logger.debug(start_str)
         logger.debug("Starting CompriskCLI for training")
+
+        # set correct feature names to model, the feature names of the dataset should be
+        # sorted according to the sample's feature indicies
+        dataset: Dataset = self.datamodule.trainset
+        set_model_features(self.model, dataset)
         
         # if the package should tune the model's hyperparameters, then reset the number
         # of training iterations

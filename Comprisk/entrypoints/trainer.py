@@ -11,7 +11,7 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from Dataflux.pytorch import Dataset
 
 from Comprisk.anomaly import ScoreTransformer
-from Comprisk.helper import ModelLoader
+from Comprisk.helper import ModelLoader, set_model_features
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
@@ -107,6 +107,7 @@ def run_trainer(cli: CompriskCLI) -> str:
         loader = ModelLoader(config_path)
         model = loader.get_model()
         model.train()
+        set_model_features(model, data)
     else:
         model: LightningModule = cli.model
 
