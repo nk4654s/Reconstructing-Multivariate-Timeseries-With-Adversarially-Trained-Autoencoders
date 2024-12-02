@@ -161,20 +161,16 @@ class ModelLoader:
 
         return pd.read_csv(correlation_path, index_col=0)
 
-    def predict_loop(self, dataset: Dataset, mode: str = "autoencoder",
-                     modifier: Tuple[str, float] = ("", 1.0), batch_size: int = 64,
-                     step: int | None = None, init_step: int = 0, num_workers: int = 4,
-                     verbose: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def predict_loop(self, dataset: Dataset, modifier: Tuple[str, float] = ("", 1.0), batch_size: int = 64,
+                     step: int | None = None, num_workers: int = 4, verbose: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """This method applies a model on a given dataset. For an AutoEncoder, the reconstructed
         output will be returned. For future prediction models, the prediction of the future is
         output. In addition, the original input data will be temporarily stored and returned.
 
         Args:
             dataset (Dataset): The dataset to use.
-            mode (str): The mode to use for prediction. Defaults to 'autoencoder'.
             modifier (Tuple[str, float]): The sensor name and factor to apply. This is handy to inject
                 some kind of anomaly.
-            init_step (int): The initial step when running the predict loop. Default to 0.
             batch_size (int): The amount of sample to process at a time
         
         Returns
@@ -187,7 +183,8 @@ class ModelLoader:
         stride = meta.stride
         window = meta.num_input_sequence
         features = meta.num_features_sensors
-        assert window == stride, "Something went wrong, the dataset's stride should equal the window size."
+        # output_length = batch_size * window - batch_size * stride + window // 2
+        # assert window == stride, f"Something went wrong, the dataset's stride {stride} should equal the window size {window}."
 
         logger.debug("Predict on dataset %s (Original)", len(dataset))
         logger.debug("Predict loop step size %s and batch size %s", step, batch_size)
@@ -199,15 +196,17 @@ class ModelLoader:
             modifier_index = operator.indexOf(meta.column_names_sensor, modifier_name)
 
         # 1. iterate over dataset, with shuffle deactivated
-        day_of_index = None
-        index = 0
-        ts, targets, prediction = [], [], []
+        targets = np.zeros(shape=(len(dataset) * stride + window, features), dtype=np.float32)
+        predict = np.zeros(shape=(len(dataset) * stride + window, features), dtype=np.float32)
+        counter = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float32)
+        ts_indx = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float32)
 
         loader = DataLoader(dataset, batch_size, collate_fn=collate_fn, num_workers=num_workers, drop_last=False)
-        for inputs in tqdm(loader, desc="Prediction with Model", disable=not verbose):
+        for i, inputs in enumerate(tqdm(loader, desc="Prediction with Model", disable=not verbose)):
+            # move the inputs to the correct (model's) device
             inputs = {k: v.to(device) for k, v in inputs.items()}
 
-            # modify the sensor if required
+            # modify the sensor if required, e.g. if an anomaly should be injected
             if modifier_name:
                 inputs["sensors"][:, :, modifier_index] = factor
 
@@ -215,40 +214,32 @@ class ModelLoader:
             model_pred = self._model.predict(inputs, as_array=True)
             inputs = inputs["sensors"].cpu().numpy()
             batch_size_, window_, _ = model_pred.shape
-
-            targets += list(inputs.reshape(batch_size_ * window_, features))
-            prediction += list(model_pred.reshape(batch_size_ * window_, features))
             
-            # keep track of the timesteps, on a day change, the timesteps may shift
-            current_day = dataset.get_day(index)[0]
-            if current_day != day_of_index:
-                for j in range(batch_size_):
-                    current_day = dataset.get_day(index + j)[0]
-                    if current_day != day_of_index:
-                        day_of_index = current_day
-                        ts.append(dataset.get_timestamp(index + j))
-                    ts += [ts[-1] + k + skip for k in range(0, window_ * skip, skip)]
-            
-            else:
-                ts += [ts[-1] + j + skip for j in range(0, batch_size_ * window_ * skip, skip)]
+            for j in range(0, batch_size_):
+                idx = 0 if i == 0 else i * batch_size * stride
+                idx = idx + j * stride
 
-            index += batch_size
+                targets[idx:idx + window_] += inputs[j]
+                predict[idx:idx + window_] += model_pred[j]
+                counter[idx:idx + window_] += np.ones(shape=(window, ))
 
-        # finalize the index
-        limit = len(targets)
-        ts = list(set(ts))
-        ts_index = pd.Index(ts[:limit])
+                ts = dataset.get_timestamp(i * batch_size + j)
+                ts_indx[idx:idx + window_] = [ts + k * skip for k in range(window_)]
 
-        targets = np.array(targets)
-        prediction = np.array(prediction)
+        limit = counter.argmin()
+        ts_index = pd.Index(ts_indx[:limit], name="ts")
+
+        counter = counter[:limit]
+        targets = targets[:limit]
+        predict = predict[:limit]
 
         # create the output DataFrames
         names = meta.column_names_sensor
-        targets = pd.DataFrame({n: targets[:, i] for i, n in enumerate(names)}, index=ts_index)
-        prediction = pd.DataFrame({n: prediction[:, i] for i, n in enumerate(names)}, index=ts_index)
+        targets = pd.DataFrame({n: targets[:, i] / counter for i, n in enumerate(names)}, index=ts_index)
+        predict = pd.DataFrame({n: predict[:, i] / counter for i, n in enumerate(names)}, index=ts_index)
 
         # todo: recursive call to iterate over leftover then merge dataframes
-        return targets, prediction
+        return targets, predict
 
     def get_score_transformer(self) -> ScoreTransformer:
         """A simple getter for the score transformer. This method loads the transformer from
