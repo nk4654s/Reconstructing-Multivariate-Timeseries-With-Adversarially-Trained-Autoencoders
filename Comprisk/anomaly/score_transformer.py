@@ -1,5 +1,4 @@
 """This module contains the score transformer which maps a loss value into a region of 0 to 1."""
-from typing import Tuple
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
@@ -12,48 +11,38 @@ def loss_fn(y: pd.DataFrame, y_hat: pd.DataFrame) -> pd.DataFrame:
     return np.sqrt(np.power(y - y_hat, 2)) # type: ignore
 
 
+def sigmoid(x: pd.DataFrame, smooth: np.ndarray, factor: np.ndarray | float = 1.0) -> pd.DataFrame:
+    factor = np.ones_like(smooth) * factor if isinstance(factor, float) else factor
+    x = x.copy()
+    for i, name in enumerate(x.columns):
+        x[name] = 2 / (1 + np.exp(-factor[i] * (x[name] - smooth[i]))) - 1 # type: ignore
+    return x
+
+
 class ScoreTransformer:
     """The ScoreTransformer learns the loss distribution of a trained model over the training data
     to translate a loss value into a score between 0 and 1. Here, 0 means the model is working fine,
     while 1 means something is wrong with the input data.
 
-    The ScoreTransformer uses f(x)=e^x to map the loss values into a score between 0 and 1. First,
+    The ScoreTransformer uses a sigmoidf(x)=1/(1+e^-x) to map the loss values into a score between 0 and 1. First,
     the loss values are standardized using sklearn's StandardScaler. Then, the median of
-    the standardized loss values is computed and used to transform the function f(x)=e^x on the
-    x-axis. Hence, a loss value of 0 will be transformed into 1 and a loss values greater than
-    0 will result in a lower score. Finally, a computed smoothing factor defines how high a loss can
-    get before the ScoreTransformer outputs a score of 1
+    the standardized loss values is computed and used to transform the sigmoid on the
+    x-axis. To controll how sensitive the transformer behaves, the x-value is multiplied with a given factor.
 
     Args:
-        window_size (int): The window size of a sample, which the model takes as an input.
         upper_bound (float): The upper quantile in percent, required to calculate a smoothing factor.
             The smoothing factor defines how high a loss can get before the ScoreTransformer outputs 
             a score of 1. Defaults to 0.999.
-        smoothing_amplifier (float): The smoothing amplifier increases the smoothing factor based on
-            the base logarithm log(x). So smaller value result in higher amplifications. Defaults to
-            0.9.
-        critical_threshold (float): The threshold value for a loss value to be considered as critical.
-            Defaults to 1.
-        step (int): The amount of steps to slide the window over the dataset. Defaults to 10.
+        sensitivity (float): The factor controls how fast the underlying sigmoid function increases
+            from 0 to 1. Hence, it can be called the sensitivity of the transformer and A lower value
+            results in less sensitivity, defaults to 0.3.
     """
-    def __init__(self, window_size: int, upper_bound: float = 0.999,
-                 smoothing_amplifier: float = 0.9, critical_threshold: float = 1,
-                 step: int = 1) -> None:
+    def __init__(self, upper_bound: float = 0.999, sensitivity: float = 0.3) -> None:
         self._error_scaler = StandardScaler()
-        self._size = window_size
+        self._sensitivity = sensitivity
 
         self._upper_bound = upper_bound
-        self._factor = smoothing_amplifier
-
-        self._median_quantile: np.ndarray | None = None
         self._smoothing: np.ndarray | None = None
-
-        self._critical_threshold = critical_threshold
-        self._step = step
-    
-    @property
-    def step(self) -> int:
-        return self._step
 
     def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -> None:
         """This method fits the parameters of the ScoreTransformer to create a function based on f(x)=e^x
@@ -66,26 +55,24 @@ class ScoreTransformer:
             target (np.array): The target values of the model.
         """
         assert self._smoothing is None, "Smoothing already fitted."
+        predicted = predicted.reindex(sorted(predicted.columns), axis=1)
+        target = target.reindex(sorted(target.columns), axis=1)
 
-        # compute anomaly scores
+        # compute loss
         loss = loss_fn(predicted, target)
-        loss_mean = loss.rolling(self._size, closed="left").mean()
-        loss_mean = loss_mean[(loss_mean.index % self._size) == 0]
-        loss_mean = loss_mean.iloc[1:]
 
-        anomaly_scores = self._error_scaler.fit_transform(loss)
+        # standardize loss
+        scores = self._error_scaler.fit_transform(loss)
 
-        # Compute the thresholds for the given percentages.
-        # If zero is given, we do not want to compute the quantile but just use zero as the threshold.
-        self._median_quantile = np.quantile(anomaly_scores, 0.5, axis=0)
-        smoothing_target = np.quantile(anomaly_scores, self._upper_bound, axis=0)
-        smoothing_target -= self._median_quantile
-
-        self._smoothing = -(smoothing_target**2) / np.log(self._factor)
+        # use median and the upper quantile to find the smoothing parameter per feature
+        quantiles = np.quantile(scores, self._upper_bound, axis=0)
+        medians = np.quantile(scores, 0.5, axis=0)
+        self._smoothing = (quantiles - medians)
+        
         logger.debug("Fitted ScoreTransformer with smoothing factor %s", self._smoothing)
 
     def transform(self, predicted: pd.DataFrame, target: pd.DataFrame, visualize: str = "",
-                  show: bool = False, static: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
+                  show: bool = False) -> pd.DataFrame:
         """This method transforms the loss values in the range of 0 to 1 by applying the internal
         transformation function. Make sure to run `self.fit(predicted, target)` first, as the 
         transformation function's parameters must be found first. Only run `.fit()` on training data.
@@ -96,57 +83,27 @@ class ScoreTransformer:
             visualize (str): Whether to visualize the transformed loss values or not. Parameter defines
                 the output path of the visualization. Defaults to "", which does not generate a graph.
             show (bool): Whether to show the graph or not.
-            static (bool): Enabling this option ignores other parameters and applies a
-                transformed sigmoid function instead.
             
         Returns:
-            (Tuple[pd.DataFrame, pd.DataFrame]): (1) The transformed loss values in the range of 0 to 1. 0 is best
-                and 1 is worst. (2) The scores which are critical as the loss values exceed the known region.
+            (pd.DataFrame): The transformed loss values in the range of 0 to 1. 0 is best
+                and 1 is worst.
         """
-        assert self._smoothing is not None and self._median_quantile is not None, "Fit the transformer first."
+        assert self._smoothing is not None, "Fit the transformer first."
+        predicted = predicted.reindex(sorted(predicted.columns), axis=1)
+        target = target.reindex(sorted(target.columns), axis=1)
 
         # compute anomaly scores
         loss = loss_fn(predicted, target)
-        #loss_mean = loss.rolling(self._size, closed="left").mean()
-        #loss_mean = loss_mean.iloc[1:]
-        loss_mean = loss
+        anomaly_scores = self._error_scaler.transform(loss)
+        anomaly_scores = pd.DataFrame(anomaly_scores, columns=loss.columns, index=loss.index)
+        anomaly_scores = anomaly_scores.reindex(sorted(anomaly_scores.columns), axis=1)
 
-        anomaly_scores = self._error_scaler.transform(loss_mean)
-
-        # compute the malfunction probability in the region 0 to 1
-        medians = self._median_quantile
-        malfunction = 1 - np.exp(
-            -((anomaly_scores - medians).clip(0, None) ** 2) / self._smoothing
-        )
-
-        # get the loss values to find wether a score is critical or not
-        critical = malfunction.copy()
-        critical[loss_mean < self._critical_threshold] = np.nan
-
-        # apply the same to the loss itself, this will be used when visualizing 
-        # the transformed values
-        names = list(predicted.columns.values)
-        critical = pd.DataFrame(critical, columns=names, index=loss_mean.index)
-        
-        if static:
-            loss_mean = pd.DataFrame(loss_mean.to_numpy(), columns=names, index=loss_mean.index)
-
-            static_transformer = lambda x: 1 / (1 + np.exp(-x * 8 + 4))
-            static_scores = static_transformer(loss_mean)
-            static_scores[static_scores < 0] = 0
-
-            show_dataframe([static_scores], ["Malfunction (Static)"], y_label="% -  lower is better",
-                           grid_size=5, y_limit=(0, 1),
-                            save=visualize, show=show)
-            return static_scores, critical
-
-        loss_mean[loss_mean < self._critical_threshold] = np.nan
+        malfunction = sigmoid(anomaly_scores, self._smoothing, factor=1 / self._smoothing**2)
+        malfunction.clip(0, None, inplace=True)
 
         # transfer all values to dataframes and return them
-        malfunction = pd.DataFrame(malfunction, columns=names, index=loss_mean.index)
-        loss_mean = pd.DataFrame(loss_mean.to_numpy(), columns=names)
-
-        show_dataframe([malfunction], ["Malfunction"], y_label="% -  lower is better",
-                       grid_size=5, y_limit=(0, 1), save=visualize, show=show)
+        if show or visualize:
+            show_dataframe([malfunction], ["Malfunction"], y_label="% -  lower is better",
+                        grid_size=5, y_limit=(0, 1), save=visualize, show=show)
     
-        return malfunction, critical
+        return malfunction
