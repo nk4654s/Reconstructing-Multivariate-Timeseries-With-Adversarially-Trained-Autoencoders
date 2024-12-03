@@ -38,11 +38,12 @@ class DataModule(L.LightningDataModule):
 
     def __init__(
         self,
-        train: str = None,
-        validate: str = None,
+        train: str = "",
+        validate: str = "",
         input_sequence: int = 1,
         output_sequence: int = 1,
         skip: int = 1,
+        stride: int = 0,
         batch_size: int = 1,
         shuffle: bool = True,
         num_workers: int = 1,
@@ -61,10 +62,13 @@ class DataModule(L.LightningDataModule):
             "shuffle": shuffle,
         }
 
+        stride = stride if stride != 0 else input_sequence
+
         self._train = Dataset(
             path=train,
             input_sequence=input_sequence,
             output_sequence=output_sequence,
+            stride=stride,
             skip=skip,
         )
 
@@ -72,12 +76,14 @@ class DataModule(L.LightningDataModule):
             path=validate,
             input_sequence=input_sequence,
             output_sequence=output_sequence,
+            stride=stride,
             skip=skip,
         )
 
         logger.debug("Dataset (train) consists of %s samples", len(self._train))
         logger.debug("Dataset (validate) consists of %s samples", len(self._val))
-        logger.debug("Dataset skip is set to %s", skip)
+        logger.debug("Dataset datapoint skip is set to %s", skip)
+        logger.debug("Dataset window stride is set to %s", stride)
         logger.debug("Dataset input sequence: %s", input_sequence)
         logger.debug("Dataset output sequence: %s", output_sequence)
 
@@ -121,7 +127,7 @@ class DataModule(L.LightningDataModule):
         if stage == "test":
             raise NotImplemented
 
-    def train_dataloader(self) -> CombinedLoader:
+    def train_dataloader(self) -> DataLoader:
         return DataLoader(
             self._train,
             batch_sampler=self._train_sampler,
@@ -129,7 +135,7 @@ class DataModule(L.LightningDataModule):
             **self._loader_kwargs
         )
 
-    def val_dataloader(self) -> CombinedLoader:
+    def val_dataloader(self) -> DataLoader:
         return DataLoader(
             self._val,
             batch_sampler=self._val_sampler,
@@ -137,5 +143,5 @@ class DataModule(L.LightningDataModule):
             **self._loader_kwargs
         )
 
-    def test_dataloader(self) -> CombinedLoader:
+    def test_dataloader(self) -> DataLoader:
         return None
