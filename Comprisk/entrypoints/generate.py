@@ -26,7 +26,7 @@ def get_dataset_path(dataset: str) -> str:
         return yaml.load(f, yaml.BaseLoader)["folder"]
 
 
-def get_dataset_args(model_folder: str) -> Tuple[int, int, int]:
+def get_dataset_args(model_folder: str) -> Tuple[int, int, int, int]:
     """
     This function gets the dataset arguments of the pipeline config given. Namely,
     the function locates and returns the `skip`, `in_sequence`, and `out_sequence`
@@ -45,8 +45,9 @@ def get_dataset_args(model_folder: str) -> Tuple[int, int, int]:
         config = yaml.load(f, Loader=yaml.BaseLoader)["data"]
         skip = int(config.get("skip", 1))
         input_sequence = int(config.get("input_sequence", 1))
-        output_sequence = int(config.get("output_sequence", 0))
-        return (input_sequence, output_sequence, skip)
+        output_sequence = int(config.get("output_sequence", 1))
+        stride = int(config.get("stride", output_sequence))
+        return (input_sequence, output_sequence, skip, stride)
 
 
 class CompriskUpdateCallable(UpdateCallable):
@@ -56,13 +57,10 @@ class CompriskUpdateCallable(UpdateCallable):
     Args:
         malfunction (pd.DataFrame): The dataframe containing the score values of
             the model.
-        critical (pd.DataFrame): The dataframe containing the critical values
-            of the model.
         total_key (str): The total malfunction probability key name.
     """
-    def __init__(self, malfunction: pd.DataFrame, critical: pd.DataFrame) -> None:
+    def __init__(self, malfunction: pd.DataFrame) -> None:
         self._malfunction = malfunction
-        self._critical = critical
 
     def get_update(self, start: int, end: int, total_key: str) -> pd.DataFrame:
         df = self._malfunction[self._malfunction.index  >= start]
@@ -91,18 +89,18 @@ def cli_main():
 
     # execute the model on the dataset and calculate the scores
     score = loader.get_score_transformer()
-    score_data = loader.predict_loop(data, step=score.step)
-    score_data = score.transform(*score_data, static=False)
+    score_data = loader.predict_loop(data)
+    score_data = score.transform(*score_data)
 
     # update the dataset's virtual sensors in the S3 buckets with the scores
     time_steps = (data.get_timestamp(0), data.get_timestamp(len(data) - 1))
     # FIXME: use `data.UUID`
-    updater = DataUpdater("5ac7f03f-f4e6-4b15-9bc6-21db798f9d25", CompriskUpdateCallable(*score_data))
+    updater = DataUpdater("5ac7f03f-f4e6-4b15-9bc6-21db798f9d25", CompriskUpdateCallable(score_data))
     updater.set_data_type(DataType.MEASUREMENTS)
     updater.update(*time_steps, data.get_meta().skip)
 
     # remove the temporary downloaded dataset again
-    shutil.rmtree(get_dataset_path(args.dataset), ignore_errors = True)
+    # shutil.rmtree(get_dataset_path(args.dataset), ignore_errors = True)
     print(f"Generated and uploaded scores from {data.get_day(0)} to {data.get_day(len(data) - 1)}")
 
 

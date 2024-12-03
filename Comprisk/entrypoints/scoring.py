@@ -25,7 +25,7 @@ def cli_main():
     logger.debug("Starting CompriskCLI")
     cli = CompriskLoadCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
 
-    logger.debug("Loging model: %s", cli.model.__class__.__name__)
+    logger.debug("Logging model: %s", cli.model.__class__.__name__)
     base_path = get_config_folder(cli)
 
     # load the dataset and configure it to work with the trained model
@@ -35,12 +35,12 @@ def cli_main():
         dataset = Dataset(cli.config.dataset,
                           meta.num_input_sequence,
                           meta.num_output_sequence,
-                          meta.skip)
+                          meta.skip,
+                          meta.stride)
 
     # load the model with the helper class, then apply the model on the dataset
     meta_path = os.path.join(base_path, "metadata")
-    step = cli.config.step or dataset.get_meta().skip
-    train_score_transformer(base_path, meta_path, dataset, step)
+    train_score_transformer(base_path, meta_path, dataset)
 
 
 if __name__ == "__main__":

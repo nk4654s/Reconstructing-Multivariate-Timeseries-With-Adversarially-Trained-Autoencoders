@@ -126,9 +126,6 @@ def cli_main():
         command = ["comprisk-analyzer", "-c", latest_config, "--dataset",
                     analyzer["dataset"], "--prefix", analyzer["prefix"], 
                     "--step", analyzer.get("step", "10")]
-        
-        if analyzer.get("static_scores", False):
-            command.append("--static-scores")
 
         subprocess.run(command)    
     

@@ -36,7 +36,8 @@ def cli_main():
         dataset = Dataset(cli.config.dataset,
                           meta.num_input_sequence,
                           meta.num_output_sequence,
-                          meta.skip)
+                          meta.skip,
+                          meta.stride)
 
     # load the model with the helper class, then apply the model on the dataset
     loader = ModelLoader(base_path)
@@ -44,7 +45,7 @@ def cli_main():
     target, predicted = loader.predict_loop(dataset, modifier=(
         cli.config.anomaly.name,
         cli.config.anomaly.factor
-    ), step=cli.config.step or score.step)
+    ))
 
     # visualize the loaded dataset
     prefix = "prediction"
@@ -61,7 +62,7 @@ def cli_main():
 
     # transformes the loss between prediction and target to a score between 0 and 1.
     score_vis_path = os.path.join(base_path, "score-transformed.png")
-    score.transform(predicted, target, visualize=score_vis_path, static=cli.config.static_scores)
+    score.transform(predicted, target, visualize=score_vis_path)
 
     # rename the columns, which might be required
     sensors_name_dict = get_sensor_uuid_to_name(UUID(dataset.UUID))
@@ -83,7 +84,7 @@ def cli_main():
     twelve_hrs = (12 * 60 * 60) // meta.skip
     logger.debug("Visualizing reduced dataset (samples=%s)", 3 * twelve_hrs)
     show_dataframe(
-        [predicted[:twelve_hrs], target[:twelve_hrs]],
+        [predicted.iloc[:twelve_hrs], target.iloc[:twelve_hrs]],
         ["Prediction", "Target"],
         grid_size=5,
         save=os.path.join(base_path, "hrs=12.png"),
