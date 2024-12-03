@@ -1,7 +1,7 @@
 """This module implements a basic AutoEncoder class and the base classes for an
 encoder and decoder."""
 
-from typing import Dict, List
+from typing import Tuple
 import numpy as np
 import torch
 import torch.nn as nn
@@ -21,14 +21,9 @@ class EncoderBase(nn.Module):
     def __init__(self, *args, **kwargs) -> None:
         super(EncoderBase, self).__init__()
 
-    def forward(self, batch: torch.tensor) -> torch.Tensor:
+    def forward(self, batch: torch.Tensor) -> torch.Tensor:
         """Implements the forward pass of the encoder."""
         raise NotImplementedError()
-
-    @property
-    def input_keys(self) -> List[str]:
-        """Returns a list of input keys for the encoder."""
-        return ["sensors", "weather"]
 
 
 class DecoderBase(nn.Module):
@@ -40,14 +35,9 @@ class DecoderBase(nn.Module):
     def __init__(self, *args, **kwargs) -> None:
         super(DecoderBase, self).__init__()
 
-    def forward(self, z: torch.Tensor, inputs: Dict[str, torch.tensor]) -> torch.Tensor:
+    def forward(self, z: torch.Tensor) -> torch.Tensor:
         """Implements the forward pass of the decoder."""
         raise NotImplementedError()
-
-    @property
-    def output_keys(self) -> List[str]:
-        """The output keys to know what the target is."""
-        return ["sensors", "weather"]
 
 
 class AutoEncoder(BaseModel):
@@ -71,7 +61,6 @@ class AutoEncoder(BaseModel):
         optimizer: str = "Adam",
         lr: float = 0.001,
         lr_decay: float = 0.999,
-        monte_carlo: int = 0,
     ) -> None:
         super().__init__(
             loss=loss,
@@ -79,7 +68,6 @@ class AutoEncoder(BaseModel):
             optimizer=optimizer,
             lr=lr,
             lr_decay=lr_decay,
-            monte_carlo=monte_carlo,
         )
 
         # build encoder/decoder
@@ -88,28 +76,12 @@ class AutoEncoder(BaseModel):
 
         self.save_hyperparameters(ignore=["encoder", "decoder"])
 
-    def summary(self, meta: Metadata) -> str:
-        samples = meta.num_input_sequence
-        sensors = meta.num_features_sensors
-        weather = meta.num_features_weather
-
-        input_data = {
-            "sensors": torch.tensor(
-                np.zeros((1, samples, sensors), dtype=np.float32)
-            ),
-            "weather": torch.tensor(
-                np.zeros((1, samples, weather), dtype=np.float32)
-            ),
-        }
-
-        return str(torchsummary(self, input_data={"batch": input_data}))
-
     @property
     def target(self) -> str:
         """The target name of inputs to predict."""
         return self._decoder.output_keys
 
-    def forward(self, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(self, batch: torch.Tensor) -> torch.Tensor:
         """
         Passes the input through both the encoder and decoder.
 
@@ -120,31 +92,23 @@ class AutoEncoder(BaseModel):
             torch.Tensor: The output of the autoencoder.
         """
         x = self.encode(batch)
-        x = self._decoder(x, batch)
+        x = self._decoder(x)
         return self._activation(x)
 
-    def encode(self, inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def encode(self, x: torch.Tensor) -> torch.Tensor:
         """
         Encodes the input using the encoder network.
 
         Args:
-            inputs (Dict[str, torch.Tensor]): The input tensor.
+            x (torch.Tensor): The input tensor.
 
         Returns:
             torch.Tensor: The encoded output.
         """
-        keys = self._encoder.input_keys
-        if len(keys) == 1:
-            return self._encoder(inputs[keys[0]])
-
-        x = inputs[keys[0]]
-        for key in keys[1:]:
-            x = torch.cat([x, inputs[key]], dim=-1)
-
         x = self._encoder(x)
         return torch.tanh(x)
 
-    def decode(self, z: torch.Tensor, inputs: torch.Tensor = None) -> torch.Tensor:
+    def decode(self, z: torch.Tensor, inputs: torch.Tensor) -> torch.Tensor:
         """
         Decodes the input using the decoder network.
 
