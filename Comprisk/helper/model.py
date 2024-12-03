@@ -104,30 +104,6 @@ def store_model_output(names: List[str], container: Dict[str, np.ndarray], value
         container[key] += list(values[:, j])
 
 
-def get_tensor_from_dataset(dataset: Dataset, i: int, device: Any) -> Tuple[torch.Tensor, torch.Tensor]:
-    """This method gets a sample from a dataset given the index and transforms it
-    to a tensor including moving the tensor to the provided device.
-
-    Args:
-        dataset (Dataset): The dataset from which samples should be gathered.
-        i (int): The index of the sample to get.
-        device (str): The device to move the tensors to (e.g. 'cpu', 'cuda', or 'mps').
-    
-    Returns:
-        Tuple[torch.tensor, torch.tensor]: Sensor and weather data as tensor.
-    """
-    sensors, weather, _ = dataset[i]
-
-    if device.type == "mps":
-        sensors = sensors.astype(np.float32)
-        weather = weather.astype(np.float32)
-
-    sensors = torch.tensor(sensors, device=device)
-    sensors = torch.unsqueeze(sensors, dim=0)
-    weather = torch.tensor(weather, device=device)
-    weather = torch.unsqueeze(weather, dim=0)
-    return sensors, weather
-
 
 class ModelLoader:
     """This class handles loading the model and related objects/configurations from the model's
@@ -140,7 +116,7 @@ class ModelLoader:
         self._path = path
         model = load_model(path, eval_mode=False)
         assert model, f"Unable to load model, no checkpoints found for {path}."
-        self._model: BaseModel = model
+        self.model: BaseModel = model
 
     @property
     def path(self) -> str:
@@ -176,24 +152,26 @@ class ModelLoader:
         Returns
             Tuple[pd.DataFrame, pd.DataFrame]: Pandas dataframes containing the prediction and input.
         """
-        self._model.eval()
-        device = self._model.device
+        self.model.eval()
+        device = self.model.device
         meta = dataset.get_meta()
+        self.model.set_output_behavior(meta.type, meta.num_output_sequence)
         skip = meta.skip
         stride = meta.stride
-        window = meta.num_input_sequence
+        window = meta.num_output_sequence
         features = meta.num_features_sensors
         # output_length = batch_size * window - batch_size * stride + window // 2
         # assert window == stride, f"Something went wrong, the dataset's stride {stride} should equal the window size {window}."
 
         logger.debug("Predict on dataset %s (Original)", len(dataset))
         logger.debug("Predict loop step size %s and batch size %s", step, batch_size)
+        logger.debug("Window size %s with stride %s", window, stride)
 
         # 0. find the index of the sensor to modify with the given factor
         modifier_name, factor = modifier
         modifier_index = -1
         if modifier_name:
-            modifier_index = operator.indexOf(meta.column_names_sensor, modifier_name)
+            modifier_index = operator.indexOf(meta.column_names, modifier_name)
 
         # 1. iterate over dataset, with shuffle deactivated
         targets = np.zeros(shape=(len(dataset) * stride + window, features), dtype=np.float32)
@@ -203,25 +181,26 @@ class ModelLoader:
 
         loader = DataLoader(dataset, batch_size, collate_fn=collate_fn, num_workers=num_workers, drop_last=False)
         for i, inputs in enumerate(tqdm(loader, desc="Prediction with Model", disable=not verbose)):
-            # move the inputs to the correct (model's) device
-            inputs = {k: v.to(device) for k, v in inputs.items()}
+            inputs, expec_pred = inputs
+            inputs = inputs.to(device)
 
             # modify the sensor if required, e.g. if an anomaly should be injected
             if modifier_name:
-                inputs["sensors"][:, :, modifier_index] = factor
+                inputs[:, :, modifier_index] = factor
 
             # run the prediction, the input equals the target for auto encoders
-            model_pred = self._model.predict(inputs, as_array=True)
-            inputs = inputs["sensors"].cpu().numpy()
-            batch_size_, window_, _ = model_pred.shape
+            model_pred = self.model.predict(inputs, as_array=True)
+            inputs = expec_pred.cpu().numpy()
+            batch_size_, _, _ = model_pred.shape
             
             for j in range(0, batch_size_):
                 idx = 0 if i == 0 else i * batch_size * stride
                 idx = idx + j * stride
 
+                window_, _ = inputs[j].shape
                 targets[idx:idx + window_] += inputs[j]
                 predict[idx:idx + window_] += model_pred[j]
-                counter[idx:idx + window_] += np.ones(shape=(window, ))
+                counter[idx:idx + window_] += np.ones(shape=(window_, ))
 
                 ts = dataset.get_timestamp(i * batch_size + j)
                 ts_indx[idx:idx + window_] = [ts + k * skip for k in range(window_)]
@@ -234,7 +213,7 @@ class ModelLoader:
         predict = predict[:limit]
 
         # create the output DataFrames
-        names = meta.column_names_sensor
+        names = sorted(meta.column_names)
         targets = pd.DataFrame({n: targets[:, i] / counter for i, n in enumerate(names)}, index=ts_index)
         predict = pd.DataFrame({n: predict[:, i] / counter for i, n in enumerate(names)}, index=ts_index)
 
@@ -257,7 +236,7 @@ class ModelLoader:
         Returns:
             Any: The loaded model.
         """
-        return self._model
+        return self.model
 
     def get_normalization(self) -> pd.DataFrame | None:
         norm_path = os.path.join(self._path, "metadata", "normalizer.json")
