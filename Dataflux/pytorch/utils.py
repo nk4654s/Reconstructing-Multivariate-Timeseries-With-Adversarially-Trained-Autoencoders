@@ -1,20 +1,17 @@
-from typing import Dict, List
+from typing import List, Tuple
 
 import numpy as np
 import torch
 
 
-def collate_fn(batch: List[np.ndarray]) -> Dict[str, torch.Tensor]:
+def collate_fn(batch: List[np.ndarray]) -> Tuple[torch.Tensor, torch.Tensor]:
     """To be used in a torch DataLoader.
 
     Args:
         batch (List[np.array]): List of numpy arrays.
     
     Returns:
-        Dict[str, torch.Tensor]: Dictionary of tensors as batch.
+        Tuple[torch.Tensor, torch.Tensor]: Tuple of tensors as batch.
     """
-    return {
-        "sensors": torch.tensor(np.array([x[0] for x in batch])),
-        "weather": torch.tensor(np.array([x[1] for x in batch])),
-        "targets": torch.tensor(np.array([x[2] for x in batch])),
-    }
+    return (torch.tensor(np.array([x[0] for x in batch])), 
+            torch.tensor(np.array([x[1] for x in batch])))

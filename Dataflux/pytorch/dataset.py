@@ -3,6 +3,7 @@
 import os
 import pickle
 from typing import List, Tuple
+from enum import Enum
 import numpy as np
 import torch
 import pandas as pd
@@ -13,13 +14,15 @@ from Dataflux.pytorch.index_tree import IndexTree
 from Dataflux.pytorch.cache import DataFrameCache
 
 
+class DatasetType(Enum):
+    AUTOENCODER = "ae"
+    FUTURE = "future"
+
+
 class Dataset(torch.utils.data.Dataset): # type: ignore
     """
     A custom PyTorch dataset class that loads and processes data from HDF5 files. This class uses
     the DataFrameCache to load dataframes from memory, which can improve performance.
-
-    The dataset outputs sensor and weather data separately, allowing for separate interpretation
-    during training. The target value `y` only includes future sensor data, excluding weather data.
 
     Args:
         path (str): The path to the root folder of the dataset. The dataset folder requires a sub
@@ -33,6 +36,9 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         None
     """
 
+    AUTOENCODER = "autoencoder"
+    FUTURE = "future"
+
     def __init__(
         self,
         path: str,
@@ -41,6 +47,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         skip: int = 1,
         stride: int = 1,
         cache_size: int = -1,
+        behavior: str = AUTOENCODER,
         key: str = "norm",
         include_ts: bool = False
     ) -> None:
@@ -49,10 +56,14 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         self._skip = skip
         self._stride = stride
         self._key = key
+        self._behavior = behavior
 
         self._num_input = input_sequence
         self._num_output = output_sequence
         self._num_features = self._metadata[Meta.FILES][0]["features"]
+
+        if behavior == DatasetType.AUTOENCODER:
+            assert output_sequence <= input_sequence, "In AE mode, the output sequence should not exceed the input sequence."
 
         self._id = self._metadata[Meta.MACHINE_UUID]
         self._base_dir = path
@@ -67,21 +78,21 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
 
         # build metadata describing the dataset's configuration
         # first, get an element from the cache to make sure it is fully initialized
-        sensors, weather, targets = self[0]
+        sensors, targets = self[0]
 
         self._meta_factory = MetadataFactory()
         self._meta_factory.set(MetadataTypes.IN_SEQUENCE, self._num_input)
         self._meta_factory.set(MetadataTypes.OUT_SEQUENCE, self._num_output)
-        self._meta_factory.set(MetadataTypes.NAMES, self._cache.columns)
-        self._meta_factory.set(MetadataTypes.NAMES_SENSOR, self._cache.columns_sensor)
-        self._meta_factory.set(MetadataTypes.NAMES_SENSOR, self._cache.columns_sensor)
         self._meta_factory.set(MetadataTypes.SKIP, skip)
         self._meta_factory.set(MetadataTypes.STRIDE, stride)
+
         self._meta_factory.set(MetadataTypes.TS_INDEX, self._cache.ts_index)
+        self._meta_factory.set(MetadataTypes.NAMES, self._cache.columns)
 
         self._meta_factory.set(MetadataTypes.SENSOR, sensors.shape[-1])
         self._meta_factory.set(MetadataTypes.TARGET, targets.shape[-1])
-        self._meta_factory.set(MetadataTypes.WEATHER, weather.shape[-1])
+        self._meta_factory.set(MetadataTypes.TYPE, behavior)
+
 
     @property
     def UUID(self) -> str:
@@ -110,6 +121,22 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         """
         return self._meta_factory.build()
 
+    def set_stride(self, stride: int) -> None:
+        """Sets the stride value for this dataset.
+        """
+        assert stride > 0  and stride <= self._num_input
+        self._meta_factory.set(MetadataTypes.STRIDE, stride)
+        self._stride = stride
+    
+    def set_behavior(self, behavior: DatasetType) -> None:
+        """Sets the behavior of this dataset.
+
+        Args:
+            type_ (DatasetType): The new behavior of this dataset.
+        """
+        self._meta_factory.set(MetadataTypes.TYPE, behavior)
+        self._behavior = behavior
+
     def to_dataframe(self, percentage: float = 1.0) -> pd.DataFrame:
         """This method transforms the dataset into a single dataframe. To avoid
         memory issues, set the percentage parameter accordingly.
@@ -130,7 +157,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         # create a temporary data container and build the dataframe
         data = {key: [] for key in names}
         for i in range(0, int(len(self) * percentage), self._num_input):
-            sensors, _, _ = self._get(i, include_ts=True)
+            sensors, _ = self._get(i, include_ts=True)
 
             for j, name in enumerate(names):
                 data[name] += list(sensors[:, j])
@@ -204,8 +231,8 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         Returns:
             Tuple: Day as string and hours the machine is on as float.
         """
-        day, index = self._tree.search(index)
-        seconds = index * self._skip
+        day, index = self._tree.search(index * self._stride)
+        seconds = index * self._skip * self._stride
         minutes = seconds / 60 
         hour = minutes / 60
         return day, hour
@@ -219,11 +246,11 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         Returns:
             int: The timestamp of the provided index value.
         """
-        sensors, _, _ = self._get(index, include_ts=True)
+        sensors, _ = self._get(index, include_ts=True)
         index = self._cache.ts_index
         return int(sensors[:, index][0])
 
-    def _get(self, index: int, include_ts: bool = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _get(self, index: int, include_ts: bool = False) -> Tuple[np.ndarray, np.ndarray]:
         index *= self._stride
 
         # find the day and the correct index for that file
@@ -233,15 +260,18 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         start_idx = index + self._num_input
         end_idx = index + self._num_input + self._num_output
 
-        # get sensor/weather data, the cache returns values sorted by the dataframe's
+        # get sensor data, the cache returns values sorted by the dataframe's
         # column names for consistency
-        sensors, weather = self._cache.get(file_path, key=self._key, include_ts=self._include_ts or include_ts)
+        sensors, _ = self._cache.get(file_path, key=self._key, include_ts=self._include_ts or include_ts)
 
-        x_1 = sensors[index:start_idx, :]
-        x_2 = np.array([], dtype=np.float32) if weather is None else weather[index:start_idx, :]
-        y = sensors[start_idx:end_idx, :]
+        x = sensors[index:start_idx, :]
 
-        return x_1, x_2, y
+        if self._behavior == DatasetType.FUTURE:
+            y = sensors[start_idx:end_idx, :]
+            return x, y
+        
+        y = sensors[index:start_idx, :]
+        return x, y[self._num_input - self._num_output:]
 
     def __len__(self) -> int:
         return self.shape[0]
@@ -252,7 +282,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
             yield self._get(index)
             index += 1
 
-    def __getitem__(self, index: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def __getitem__(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
         return self._get(index)
 
 

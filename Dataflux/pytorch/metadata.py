@@ -9,21 +9,19 @@ class MetadataTypes(Enum):
 
     Attributes:
         SENSOR (str): The number of features from sensors.
-        WEATHER (str): The number of features from weather.
         TARGET (str): The number of target features.
         IN_SEQUENCE (str): The number of input sequence features.
         OUT_SEQUENCE (str): The number of output sequence features.
     """
     SENSOR = "num_features_sensors"
-    WEATHER = "num_features_weather"
     TARGET = "num_features_targets"
     NAMES = "column_names"
-    NAMES_SENSOR = "column_names_sensors"
     IN_SEQUENCE = "num_input_sequence"
     OUT_SEQUENCE = "num_output_sequence"
     SKIP = "skip"
     STRIDE = "stride"
     TS_INDEX = "ts_index"
+    TYPE = "type_"
 
 
 class Metadata:
@@ -43,25 +41,23 @@ class Metadata:
     """
     def __init__(self,
                  num_features_sensors: int,
-                 num_features_weather: int,
                  num_features_targets: int,
                  num_input_sequence: int,
                  num_output_sequence: int,
                  skip: int,
                  stride: int,
+                 type_: str,
                  ts_index: int,
-                 column_names: List[str],
-                 column_names_sensors: List[str]) -> None:
+                 column_names: List[str]) -> None:
         self._num_features_sensors = num_features_sensors
-        self._num_features_weather = num_features_weather
         self._num_features_targets = num_features_targets
         self._num_input_sequence = num_input_sequence
         self._num_output_sequence = num_output_sequence
         self._column_names = column_names
-        self._column_names_sensors = column_names_sensors
         self._skip = skip
         self._stride = stride
         self._ts_index = ts_index
+        self._type = type_
 
     @property
     def ts_index(self) -> int:
@@ -72,6 +68,15 @@ class Metadata:
                 part of the data.
         """
         return self._ts_index
+    
+    @property
+    def type(self) -> str:
+        """The dataset's type.
+
+        Returns:
+            Enum: The dataset's type
+        """
+        return self._type
 
     @property
     def skip(self) -> int:
@@ -101,15 +106,6 @@ class Metadata:
         return self._column_names
 
     @property
-    def column_names_sensor(self) -> List[str]:
-        """The column names of the dataset's sensors.
-
-        Returns:
-            List[str]: The column names sorted as list of strings.
-        """
-        return self._column_names_sensors
-
-    @property
     def num_features_sensors(self) -> int:
         """
         Gets the number of features from sensors.
@@ -118,16 +114,6 @@ class Metadata:
             int: The number of features from sensors.
         """
         return self._num_features_sensors
-
-    @property
-    def num_features_weather(self) -> int:
-        """
-        Gets the number of features from weather.
-
-        Returns:
-            int: The number of features from weather.
-        """
-        return self._num_features_weather
 
     @property
     def num_features_targets(self) -> int:
