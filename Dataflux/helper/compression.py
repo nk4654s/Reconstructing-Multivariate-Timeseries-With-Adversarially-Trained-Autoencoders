@@ -34,7 +34,7 @@ def decompress(data: pd.DataFrame, copy: bool = False, fill: bool = False) -> pd
     # apply the newly created index to the dataframe, added rows will
     # have NAN values
     new_index = pd.Index(np.arange(t0, tn, 1), name="ts")
-    data = data.set_index("ts").reindex(new_index)
+    data = data.reindex(new_index)
 
     # decompress the data by forward filling NAN values
     if fill:
@@ -62,6 +62,7 @@ def compress(dataframe: pd.DataFrame) -> pd.DataFrame:
     if dataframe.empty:
         return dataframe
 
+    index = dataframe.index
     names = dataframe.columns.values
     data = dataframe.to_numpy()
 
@@ -86,6 +87,6 @@ def compress(dataframe: pd.DataFrame) -> pd.DataFrame:
 
     # to further compress the data, remove all rows, where each value is np.NAN. This
     # data is not valuable and can be removed.
-    compressed = pd.DataFrame(compressed, columns=names)
-    compressed = compressed.set_index("ts")
+    compressed = pd.DataFrame(compressed, columns=names, index=index)
+    # compressed = compressed.set_index("ts")
     return compressed.dropna(how="all")

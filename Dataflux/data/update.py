@@ -132,7 +132,10 @@ class DataUpdater(S3Bucket):
             self.upload(df, path)
 
     def upload(self, df: pd.DataFrame, path: str) -> None:
-        df = compress(df.reset_index())
+        # df = compress(df.reset_index())
+        df = compress(df)
+        if "ts" in df.columns:
+            df.drop(columns="ts", inplace=True)
 
         # 1. sort the columns by uuid-names
         df = df.reindex(sorted(df.columns), axis=1)
