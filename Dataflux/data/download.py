@@ -159,8 +159,13 @@ class DataDownloader(S3Bucket):
         Returns:
             pd.DataFrame: The parsed pandas DataFrame.
         """
-        stream = self.get_stream(day)
-        df = self.parse_stream(stream)
+        df = None
+        try:
+            stream = self.get_stream(day)
+            df = self.parse_stream(stream)
+        except:
+            logger.error("Unable to download dataset: %s", day)
+
         df = df if df is not None else pd.DataFrame()
         return df
 
