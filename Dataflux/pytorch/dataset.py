@@ -3,20 +3,14 @@
 import os
 import pickle
 from typing import List, Tuple
-from enum import Enum
 import numpy as np
 import torch
 import pandas as pd
 
-from Dataflux.pytorch.metadata import MetadataFactory, MetadataTypes, Metadata
+from Dataflux.pytorch.args import DatasetArgs, DatasetTypes, dataset_type_from_string
 from Dataflux.helper import Meta, Metadata as FileMetadata
 from Dataflux.pytorch.index_tree import IndexTree
 from Dataflux.pytorch.cache import DataFrameCache
-
-
-class DatasetType(Enum):
-    AUTOENCODER = "ae"
-    FUTURE = "future"
 
 
 class Dataset(torch.utils.data.Dataset): # type: ignore
@@ -36,18 +30,15 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         None
     """
 
-    AUTOENCODER = "autoencoder"
-    FUTURE = "future"
-
     def __init__(
         self,
         path: str,
-        input_sequence: int,
-        output_sequence: int,
+        sequence_in: int,
+        sequence_out: int,
         skip: int = 1,
         stride: int = 1,
         cache_size: int = -1,
-        behavior: str = AUTOENCODER,
+        behavior: str = DatasetTypes.AUTOENCODER.value,
         key: str = "norm",
         include_ts: bool = False
     ) -> None:
@@ -58,12 +49,12 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         self._key = key
         self._behavior = behavior
 
-        self._num_input = input_sequence
-        self._num_output = output_sequence
+        self._num_input = sequence_in
+        self._num_output = sequence_out
         self._num_features = self._metadata[Meta.FILES][0]["features"]
 
-        if behavior == DatasetType.AUTOENCODER:
-            assert output_sequence <= input_sequence, "In AE mode, the output sequence should not exceed the input sequence."
+        if behavior == DatasetTypes.AUTOENCODER.value:
+            assert sequence_out <= sequence_in, "In AE mode, the output sequence should not exceed the input sequence."
 
         self._id = self._metadata[Meta.MACHINE_UUID]
         self._base_dir = path
@@ -71,7 +62,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         # create the custom iterators to navigate through the many dataset files
         # the cache is responsible for loading and storing dataframes in memory,
         # the tree is used to find the correct file based on a given index.
-        data = {"window_size": input_sequence + output_sequence, "skip": skip}
+        data = {"window_size": sequence_in + sequence_out, "skip": skip}
         self._include_ts = include_ts
         self._cache = DataFrameCache(cache_size, **data)
         self._tree = IndexTree(self._metadata, **data)
@@ -80,19 +71,18 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         # first, get an element from the cache to make sure it is fully initialized
         sensors, targets = self[0]
 
-        self._meta_factory = MetadataFactory()
-        self._meta_factory.set(MetadataTypes.IN_SEQUENCE, self._num_input)
-        self._meta_factory.set(MetadataTypes.OUT_SEQUENCE, self._num_output)
-        self._meta_factory.set(MetadataTypes.SKIP, skip)
-        self._meta_factory.set(MetadataTypes.STRIDE, stride)
-
-        self._meta_factory.set(MetadataTypes.TS_INDEX, self._cache.ts_index)
-        self._meta_factory.set(MetadataTypes.NAMES, self._cache.columns)
-
-        self._meta_factory.set(MetadataTypes.SENSOR, sensors.shape[-1])
-        self._meta_factory.set(MetadataTypes.TARGET, targets.shape[-1])
-        self._meta_factory.set(MetadataTypes.TYPE, behavior)
-
+        self._args = DatasetArgs(
+            sequence_in=self._num_input,
+            sequence_out=self._num_output,
+            features_in=sensors.shape[-1],
+            features_out=targets.shape[-1],
+            skip=self._skip,
+            stride=self._stride,
+            key=self._key,
+            behavior_=behavior,
+            ts_index=self._cache.ts_index,
+            names=self._cache.columns
+        )
 
     @property
     def UUID(self) -> str:
@@ -113,28 +103,29 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         """
         return (len(self._tree) // self._stride, self._num_input, self._num_features)
 
-    def get_meta(self) -> Metadata:
+    def get_args(self) -> DatasetArgs:
         """Outputs the metadata of the dataset.
 
         Returns:
             Metadata: The metadata of the dataset.
         """
-        return self._meta_factory.build()
+        return self._args.copy()
 
     def set_stride(self, stride: int) -> None:
         """Sets the stride value for this dataset.
         """
         assert stride > 0  and stride <= self._num_input
-        self._meta_factory.set(MetadataTypes.STRIDE, stride)
+        self._args.stride = stride
         self._stride = stride
     
-    def set_behavior(self, behavior: DatasetType) -> None:
+    def set_behavior(self, behavior: DatasetTypes | str) -> None:
         """Sets the behavior of this dataset.
 
         Args:
-            type_ (DatasetType): The new behavior of this dataset.
+            type_ (DatasetType | str): The new behavior of this dataset.
         """
-        self._meta_factory.set(MetadataTypes.TYPE, behavior)
+        behavior = dataset_type_from_string(behavior) if isinstance(behavior, str) else behavior
+        self._args.behavior = behavior
         self._behavior = behavior
 
     def to_dataframe(self, percentage: float = 1.0) -> pd.DataFrame:
@@ -187,7 +178,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
             data = np.expand_dims(data, axis=-1)
 
         if not isinstance(data, pd.DataFrame):
-            data_dict = {key: data[:, i] for i, key in enumerate(self.get_meta().column_names)}
+            data_dict = {key: data[:, i] for i, key in enumerate(self._args.names)}
             data = pd.DataFrame(data_dict)
 
         return scaler.transform(data)
@@ -215,11 +206,11 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
             data = np.expand_dims(data, axis=-1)
 
         if not isinstance(data, pd.DataFrame):
-            data_dict = {key: data[:, i] for i, key in enumerate(self.get_meta().column_names)}
+            data_dict = {key: data[:, i] for i, key in enumerate(self._args.names)}
             data = pd.DataFrame(data_dict)
 
         scaled = scaler.inverse_transform(data)
-        return pd.DataFrame(scaled, columns=self.get_meta().column_names)
+        return pd.DataFrame(scaled, columns=self._args.names)
 
     def get_day(self, index: int) -> Tuple[str, float]:
         """Returns the day and hours the machine is on for the provided index
@@ -266,7 +257,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
 
         x = sensors[index:start_idx, :]
 
-        if self._behavior == DatasetType.FUTURE:
+        if self._behavior == DatasetTypes.PREDICTIVE:
             y = sensors[start_idx:end_idx, :]
             return x, y
         
