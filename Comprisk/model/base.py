@@ -7,7 +7,7 @@ import lightning as L
 import torch
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.optim.optimizer import Optimizer
-from Dataflux.pytorch import Dataset
+from Dataflux.pytorch import Dataset, DatasetTypes, dataset_type_from_string
 from Comprisk.helper import (
     get_loss_by_name,
     get_optimizer_by_name,
@@ -40,7 +40,7 @@ class BaseModel(L.LightningModule):
         optimizer: str = "Adam",
         lr: float = 1e-3,
         lr_decay: float = 0.99,
-        type_: str = Dataset.AUTOENCODER,
+        type_: str = DatasetTypes.AUTOENCODER.value,
         output_length: int = 1,
         feature_names: List[str] = []
     ) -> None:
@@ -55,13 +55,13 @@ class BaseModel(L.LightningModule):
         self._lr_decay = lr_decay
         self.lr = lr
 
-        self._behavior = type_
+        self._behavior = dataset_type_from_string(type_)
         self._output_length = output_length
         
         self._feature_names = feature_names
     
-    def set_output_behavior(self, behavior: str, length: int) -> None:
-        self._behavior = behavior
+    def set_output_behavior(self, behavior: DatasetTypes | str, length: int) -> None:
+        self._behavior = dataset_type_from_string(behavior) if isinstance(behavior, str) else behavior
         self._output_length = length
     
     def set_feature_names(self, feature_names: List[str]) -> None:
@@ -153,7 +153,7 @@ class BaseModel(L.LightningModule):
             if as_array:
                 out = out.cpu().numpy()
 
-        if self._behavior == Dataset.AUTOENCODER:
+        if self._behavior == DatasetTypes.AUTOENCODER:
             out = out[:, out.shape[1] - self._output_length:, :]
 
         return out
