@@ -19,7 +19,7 @@ trainer:
         
   # define training configuration
   precision: 32
-  max_epochs: 45
+  max_epochs: 50
   gradient_clip_val: 1.0
 #  profiler: "simple"
   log_every_n_steps: 1
@@ -32,11 +32,12 @@ model:
     loss: MSELoss
     optimizer: Adam
     lr: 0.001
+    lr_decay: 0.99
     # encoder/decoder
     encoder:
-      class_path: Comprisk.model.ae.rnn.LSTMEncoderBypass
+      class_path: Comprisk.model.ae.rnn.LSTMEncoder
       init_args:
-        num_features: 21
+        num_features: 22
         num_latent_dim: 10
         num_hidden_dim: 32
         num_hidden_layers: 2
@@ -44,21 +45,19 @@ model:
     decoder:
       class_path: Comprisk.model.ae.rnn.LSTMDecoder
       init_args:
-        num_features: 21
+        num_features: 22
         num_latent_dim: 10
         num_hidden_dim: 32
         num_hidden_layers: 2
         dropout_prob: 0.4
-        predict_key: sensors
 data:
   # configure dataset to load
   train: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-trainset
   validate: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-valset
-  input_sequence: 10
-  output_sequence: 0
-  skip: 10
-  # configure how to sample from the dataset
-  batch_size: 256
+  input_sequence: 80
+  output_sequence: 60
+  skip: 1
+  stride: 10
+  batch_size: 128
   shuffle: true
-  # configure the workers sampling the dataset
   num_workers: 4

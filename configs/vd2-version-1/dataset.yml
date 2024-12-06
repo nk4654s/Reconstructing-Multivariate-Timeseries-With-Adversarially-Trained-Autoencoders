@@ -3,66 +3,79 @@ machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
   - 2020-11-01 2024-10-30
 num_workers: 8
-disk_backup: dataset-backup
+disk_backup: backup-vd2-full
 overwrite: false
 
 modules:
   - class_path: Dataflux.modules.Rename
     init_args:
       enable: True
-  - class_path: Dataflux.modules.Consistency
   - class_path: Dataflux.modules.State
     init_args:
       key: "Laeuft"
       lower: 0.9
       upper: 1.1
-      delete_ts: 5400
+      alpha_threshold: 5400
+      beta_threshold: 900
+  - class_path: Dataflux.modules.state.State
+    init_args:
+      key: "PositionBypassregelventilPCV74381 (%)"
+      lower: -0.99
+      upper: 0.01
+      alpha_threshold: 900
+      beta_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "KompressordrehzahlSE74201 (rpm)"
       lower: 400
       upper: 980
-      delete_ts: 1800
+      alpha_threshold: 1800
+      beta_threshold: 1800
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)"
       lower: 100
       upper: 145
-      delete_ts: 900
+      alpha_threshold: 900
+      beta_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)"
       lower: 100
       upper: 145
-      delete_ts: 900
+      alpha_threshold: 900
+      beta_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "EndtemperaturZweiteStufeTETIT74371 (°C)"
       lower: 100
       upper: 148
-      delete_ts: 900
+      alpha_threshold: 900
+      beta_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "Wicklungstemperatur (°C)"
       lower: 50
       upper: 120
-      delete_ts: 900
+      alpha_threshold: 900
+      beta_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "KühlwasserdurchflussmengeFIT74423 (m^3/min)"
       lower: 5.1
       upper: 5.2
-      delete_ts: 900
+      alpha_threshold: 900
+      beta_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "SchwingungsmessungTriebwerkVT74280 (mm/s)"
       lower: 0
       upper: 3
-      delete_ts: 300
+      alpha_threshold: 300
+      beta_threshold: 300
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:
-        - ts
         - SaugtemperaturZweiteStufeTETIT74341 (°C)
         - SaugdruckZweiteStufePIT74340 (bar)
         - SchwingungsmessungTriebwerkVT74280 (mm/s)
@@ -84,10 +97,11 @@ modules:
         - EndtemperaturZweiteStufeTETIT74371 (°C)
         - EndtemperaturErsteStufeTETIT74334 (°C)
         - DifferenzdruckTriebwerksölPDIT74553 (bar)
+        - Biomethandurchfluss (m^3/min)
   - class_path: Dataflux.modules.normalize.NormalizeFit
     init_args:
       method: minmax
-      remove_outliers: false
+      remove_outliers: true
       exclude_keys:
         - ts
   - class_path: Dataflux.modules.normalize.NormalizeTransform
@@ -114,6 +128,7 @@ modules:
       - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C), -20.0, 200.0
       - Wicklungstemperatur (°C), -55.0, 200.0
       - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C), -20.0, 200.0
+      - Biomethandurchfluss (m^3/min), 0, 1300
   - class_path: Dataflux.modules.split.SplitDataset
     init_args:
       name: thyssen-vd2-valset

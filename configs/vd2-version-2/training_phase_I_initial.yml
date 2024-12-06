@@ -6,59 +6,56 @@ trainer:
       init_args:
         monitor: validate/MSELoss
         min_delta: 0.00001
-        patience: 2
+        patience: 3
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
         every_n_epochs: 1
         monitor: validate/MSELoss
         filename: "epoch={epoch}-val={validate/MSELoss:.6f}"
         auto_insert_metric_name: false
-        save_top_k: 3
+        save_top_k: 12
         mode: min
         dirpath: checkpoints
         
   # define training configuration
   precision: 32
-  max_epochs: 15
+  max_epochs: 50
   gradient_clip_val: 1.0
 #  profiler: "simple"
   log_every_n_steps: 1
 # configure model hyper-parameter
 model:
-  class_path: Comprisk.model.ae.AutoEncoder
+  class_path: Comprisk.model.ae.rnn.EncDecAD
   init_args:
     # gerneral parameters
     activation: tanh
     loss: MSELoss
     optimizer: Adam
-    lr: 0.0001
+    lr: 0.001
+    lr_decay: 0.9
     # encoder/decoder
     encoder:
-      class_path: Comprisk.model.ae.rnn.LSTMEncoderBypass
+      class_path: Comprisk.model.ae.rnn.EDAEncoder
       init_args:
-        num_features: 21
-        num_latent_dim: 10
-        num_hidden_dim: 32
+        num_features: 22
+        num_hidden_dim: 16
         num_hidden_layers: 2
-        dropout_prob: 0.3
+        dropout_prob: 0.4
     decoder:
-      class_path: Comprisk.model.ae.rnn.LSTMDecoder
+      class_path: Comprisk.model.ae.rnn.EDADecoder
       init_args:
-        num_features: 21
-        num_latent_dim: 10
-        num_hidden_dim: 32
+        num_features: 22
+        num_hidden_dim: 16
         num_hidden_layers: 2
-        dropout_prob: 0.3
-        predict_key: sensors
+        dropout_prob: 0.4
 data:
   # configure dataset to load
-  train: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-trainset
-  validate: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-valset
-  input_sequence: 20
-  output_sequence: 0
-  skip: 5
-  # configure how to sample from the dataset
-  batch_size: 256
+  train: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-trainset-I
+  validate: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-valset-I
+  sequence_in: 120
+  sequence_out: 120
+  skip: 10
+  stride: 10
+  batch_size: 128
   shuffle: true
-  # configure the workers sampling the dataset
-  num_workers: 4
+  num_workers: 8

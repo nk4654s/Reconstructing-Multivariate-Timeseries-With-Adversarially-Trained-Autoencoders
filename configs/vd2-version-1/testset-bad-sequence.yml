@@ -9,17 +9,15 @@ modules:
   - class_path: Dataflux.modules.Rename
     init_args:
       enable: True
-  - class_path: Dataflux.modules.Consistency
   - class_path: Dataflux.modules.State
     init_args:
       key: "Laeuft"
       lower: 0.9
       upper: 1.1
-      delete_ts: 5400
+      alpha_threshold: 5400
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:
-        - ts
         - SaugtemperaturZweiteStufeTETIT74341 (°C)
         - SaugdruckZweiteStufePIT74340 (bar)
         - SchwingungsmessungTriebwerkVT74280 (mm/s)
@@ -41,6 +39,7 @@ modules:
         - EndtemperaturZweiteStufeTETIT74371 (°C)
         - EndtemperaturErsteStufeTETIT74334 (°C)
         - DifferenzdruckTriebwerksölPDIT74553 (bar)
+        - Biomethandurchfluss (m^3/min)
   - class_path: Dataflux.modules.normalize.NormalizeFit
     init_args:
       method: minmax
