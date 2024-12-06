@@ -9,7 +9,7 @@ import lightning as L
 from lightning.pytorch.utilities.combined_loader import CombinedLoader
 from torch.utils.data import DataLoader
 
-from Dataflux.pytorch import Dataset, collate_fn
+from Dataflux.pytorch import Dataset, online_collate_train
 from Dataflux.pytorch import RandomBatchSampler as RBS
 
 from Comprisk import logger
@@ -40,10 +40,11 @@ class DataModule(L.LightningDataModule):
         self,
         train: str = "",
         validate: str = "",
-        input_sequence: int = 1,
-        output_sequence: int = 1,
+        sequence_in: int = 1,
+        sequence_out: int = 1,
         skip: int = 1,
         stride: int = 0,
+        key: str = "data",
         batch_size: int = 1,
         shuffle: bool = True,
         num_workers: int = 1,
@@ -62,30 +63,32 @@ class DataModule(L.LightningDataModule):
             "shuffle": shuffle,
         }
 
-        stride = stride if stride != 0 else input_sequence
+        stride = stride if stride != 0 else sequence_in
 
         self._train = Dataset(
             path=train,
-            input_sequence=input_sequence,
-            output_sequence=output_sequence,
+            sequence_in=sequence_in,
+            sequence_out=sequence_out,
             stride=stride,
             skip=skip,
+            key=key,
         )
 
         self._val = Dataset(
             path=validate,
-            input_sequence=input_sequence,
-            output_sequence=output_sequence,
+            sequence_in=sequence_in,
+            sequence_out=sequence_out,
             stride=stride,
             skip=skip,
+            key=key,
         )
 
         logger.debug("Dataset (train) consists of %s samples", len(self._train))
         logger.debug("Dataset (validate) consists of %s samples", len(self._val))
         logger.debug("Dataset datapoint skip is set to %s", skip)
         logger.debug("Dataset window stride is set to %s", stride)
-        logger.debug("Dataset input sequence: %s", input_sequence)
-        logger.debug("Dataset output sequence: %s", output_sequence)
+        logger.debug("Dataset input sequence: %s", sequence_in)
+        logger.debug("Dataset output sequence: %s", sequence_out)
 
     @property
     def trainset(self) -> Dataset:
@@ -131,7 +134,7 @@ class DataModule(L.LightningDataModule):
         return DataLoader(
             self._train,
             batch_sampler=self._train_sampler,
-            collate_fn=collate_fn,
+            collate_fn=online_collate_train,
             **self._loader_kwargs
         )
 
@@ -139,7 +142,7 @@ class DataModule(L.LightningDataModule):
         return DataLoader(
             self._val,
             batch_sampler=self._val_sampler,
-            collate_fn=collate_fn,
+            collate_fn=online_collate_train,
             **self._loader_kwargs
         )
 

@@ -19,6 +19,10 @@ def sigmoid(x: pd.DataFrame, smooth: np.ndarray, factor: np.ndarray | float = 1.
     return x
 
 
+def linear(x: pd.DataFrame, factor: np.ndarray, translate: np.ndarray) -> pd.DataFrame:
+    return factor * x - factor * translate # type: ignore
+
+
 class ScoreTransformer:
     """The ScoreTransformer learns the loss distribution of a trained model over the training data
     to translate a loss value into a score between 0 and 1. Here, 0 means the model is working fine,
@@ -32,16 +36,22 @@ class ScoreTransformer:
     Args:
         upper_bound (float): The upper quantile in percent, required to calculate a smoothing factor.
             The smoothing factor defines how high a loss can get before the ScoreTransformer outputs 
-            a score of 1. Defaults to 0.999.
+            a score of 1. Defaults to 0.99.
         sensitivity (float): The factor controls how fast the underlying sigmoid function increases
             from 0 to 1. Hence, it can be called the sensitivity of the transformer and A lower value
             results in less sensitivity, defaults to 0.3.
+        mode (str): Either sigmoid or linear, depending on the transformation function to use.
     """
-    def __init__(self, upper_bound: float = 0.999, sensitivity: float = 0.3) -> None:
+    def __init__(self, upper_bound: float = 0.999, mode: str = "linear") -> None:
         self._error_scaler = StandardScaler()
-        self._sensitivity = sensitivity
+
+        supported_modes = ["linear", "sigmoid"]
+        assert mode in supported_modes, f"Supported modes are '{supported_modes}'. Unknown mode '{mode}'"
+        self._mode = mode
 
         self._upper_bound = upper_bound
+        self._medians: np.ndarray | None = None
+        self._translation: np.ndarray | None = None
         self._smoothing: np.ndarray | None = None
 
     def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -> None:
@@ -60,14 +70,23 @@ class ScoreTransformer:
 
         # compute loss
         loss = loss_fn(predicted, target)
+        self._medians = np.quantile(loss, 0.500, axis=0)
+        if self._mode == "linear":
+            self._translation = np.quantile(loss, 0.990, axis=0)
+
+            quantiles = np.quantile(loss, self._upper_bound, axis=0)
+            self._smoothing = 1 / (quantiles - self._medians)
+            self._smoothing /= np.quantile(self._smoothing, 0.900, axis=0)
+            self._smoothing = self._smoothing.clip(0, 2)
+            return
 
         # standardize loss
         scores = self._error_scaler.fit_transform(loss)
 
         # use median and the upper quantile to find the smoothing parameter per feature
         quantiles = np.quantile(scores, self._upper_bound, axis=0)
-        medians = np.quantile(scores, 0.5, axis=0)
-        self._smoothing = (quantiles - medians)
+        self._medians = np.quantile(scores, 0.5, axis=0) 
+        self._smoothing = (quantiles - self._medians)
         
         logger.debug("Fitted ScoreTransformer with smoothing factor %s", self._smoothing)
 
@@ -89,17 +108,25 @@ class ScoreTransformer:
                 and 1 is worst.
         """
         assert self._smoothing is not None, "Fit the transformer first."
+        assert self._medians is not None, "Fit the transformer first."
+        assert self._translation is not None, "Fit the transformer first."
         predicted = predicted.reindex(sorted(predicted.columns), axis=1)
         target = target.reindex(sorted(target.columns), axis=1)
 
         # compute anomaly scores
         loss = loss_fn(predicted, target)
-        anomaly_scores = self._error_scaler.transform(loss)
-        anomaly_scores = pd.DataFrame(anomaly_scores, columns=loss.columns, index=loss.index)
-        anomaly_scores = anomaly_scores.reindex(sorted(anomaly_scores.columns), axis=1)
 
-        malfunction = sigmoid(anomaly_scores, self._smoothing, factor=1 / self._smoothing**2)
-        malfunction.clip(0, None, inplace=True)
+        if self._mode == "sigmoid":
+            anomaly_scores = self._error_scaler.transform(loss)
+            anomaly_scores = pd.DataFrame(anomaly_scores, columns=loss.columns, index=loss.index)
+            anomaly_scores = anomaly_scores.reindex(sorted(anomaly_scores.columns), axis=1)
+
+            malfunction = sigmoid(anomaly_scores, self._smoothing, factor=1 / self._smoothing**2)
+            malfunction.clip(0, None, inplace=True) 
+        
+        if self._mode == "linear":
+            malfunction = linear(loss, self._smoothing, self._translation)
+            malfunction.clip(0, 1, inplace=True)
 
         # transfer all values to dataframes and return them
         if show or visualize:

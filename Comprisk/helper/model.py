@@ -8,6 +8,7 @@ from uuid import UUID
 from lightning import LightningModule
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 import yaml
 
 import torch
@@ -15,7 +16,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
-from Dataflux.pytorch import collate_fn
+from Dataflux.pytorch import online_collate_inference
 from Dataflux.helper import get_logger, get_sensor_uuid_to_name
 from Dataflux.pytorch import Dataset
 
@@ -30,12 +31,11 @@ def set_model_features(model, dataset: Dataset):
     # set correct feature names to model, the feature names of the dataset should be
     # sorted according to the sample's feature indicies
     feature_dict = get_sensor_uuid_to_name(UUID(dataset.UUID))
-    feature_names = dataset.get_meta().column_names
+    feature_names = dataset.get_args().names
     if feature_dict:
         feature_names = [feature_dict.get(n, n) for n in feature_names]
 
     model.set_feature_names(feature_names)
-
 
 
 def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
@@ -154,12 +154,12 @@ class ModelLoader:
         """
         self.model.eval()
         device = self.model.device
-        meta = dataset.get_meta()
-        self.model.set_output_behavior(meta.type, meta.num_output_sequence)
-        skip = meta.skip
-        stride = meta.stride
-        window = meta.num_output_sequence
-        features = meta.num_features_sensors
+        args = dataset.get_args()
+        self.model.set_output_behavior(args.behavior, args.sequence_out)
+        skip = args.skip
+        stride = args.stride
+        window = args.sequence_out
+        features = args.features_out
         # output_length = batch_size * window - batch_size * stride + window // 2
         # assert window == stride, f"Something went wrong, the dataset's stride {stride} should equal the window size {window}."
 
@@ -171,7 +171,7 @@ class ModelLoader:
         modifier_name, factor = modifier
         modifier_index = -1
         if modifier_name:
-            modifier_index = operator.indexOf(meta.column_names, modifier_name)
+            modifier_index = operator.indexOf(args.names, modifier_name)
 
         # 1. iterate over dataset, with shuffle deactivated
         targets = np.zeros(shape=(len(dataset) * stride + window, features), dtype=np.float32)
@@ -179,9 +179,9 @@ class ModelLoader:
         counter = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float32)
         ts_indx = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float32)
 
-        loader = DataLoader(dataset, batch_size, collate_fn=collate_fn, num_workers=num_workers, drop_last=False)
+        loader = DataLoader(dataset, batch_size, collate_fn=online_collate_inference, num_workers=num_workers, drop_last=False)
         for i, inputs in enumerate(tqdm(loader, desc="Prediction with Model", disable=not verbose)):
-            inputs, expec_pred = inputs
+            inputs, scaler = inputs
             inputs = inputs.to(device)
 
             # modify the sensor if required, e.g. if an anomaly should be injected
@@ -190,9 +190,11 @@ class ModelLoader:
 
             # run the prediction, the input equals the target for auto encoders
             model_pred = self.model.predict(inputs, as_array=True)
-            inputs = expec_pred.cpu().numpy()
+            model_pred = scaler.inverse_transform(model_pred) # type: ignore
+            inputs = inputs.cpu().numpy()
+            inputs = scaler.inverse_transform(inputs)
+
             batch_size_, _, _ = model_pred.shape
-            
             for j in range(0, batch_size_):
                 idx = 0 if i == 0 else i * batch_size * stride
                 idx = idx + j * stride
@@ -213,7 +215,7 @@ class ModelLoader:
         predict = predict[:limit]
 
         # create the output DataFrames
-        names = sorted(meta.column_names)
+        names = sorted(args.names)
         targets = pd.DataFrame({n: targets[:, i] / counter for i, n in enumerate(names)}, index=ts_index)
         predict = pd.DataFrame({n: predict[:, i] / counter for i, n in enumerate(names)}, index=ts_index)
 

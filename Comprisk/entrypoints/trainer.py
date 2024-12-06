@@ -133,12 +133,12 @@ def run_trainer(cli: CompriskCLI) -> str:
     return tb_logger.log_dir
 
 def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset):  
-    meta = dataset.get_meta()
+    dataset_args = dataset.get_args()
     
     # load the (best) trained model back
-    dataset.set_stride(meta.num_output_sequence)
+    dataset.set_stride(dataset_args.sequence_out)
     loader = ModelLoader(model_dir)
-    loader.model.set_output_behavior(meta.type, meta.num_output_sequence)
+    loader.model.set_output_behavior(dataset_args.behavior, dataset_args.sequence_out)
     predicted, target = loader.predict_loop(dataset)
 
     # fit and save the score transformer

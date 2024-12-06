@@ -2,14 +2,19 @@ from argparse import ArgumentParser
 import os
 import shutil
 import subprocess
-from typing import Tuple
+from typing import Dict, Tuple
 
 import pandas as pd
 import yaml
 
+from Dataflux import logger
 from Dataflux.pytorch import Dataset
 from Dataflux.data import DataUpdater, UpdateCallable, DataType
-from Comprisk.helper.model import ModelLoader
+
+from Comprisk.data import DataModule
+from Comprisk.cli import CompriskLoadCLI
+from Comprisk.helper import get_config_folder, ModelLoader
+from Comprisk.model import BaseModel
 
 
 def get_dataset_path(dataset: str) -> str:
@@ -24,30 +29,6 @@ def get_dataset_path(dataset: str) -> str:
     """
     with open(dataset, "r", encoding="utf-8") as f:
         return yaml.load(f, yaml.BaseLoader)["folder"]
-
-
-def get_dataset_args(model_folder: str) -> Tuple[int, int, int, int]:
-    """
-    This function gets the dataset arguments of the pipeline config given. Namely,
-    the function locates and returns the `skip`, `in_sequence`, and `out_sequence`
-    values.
-
-    Args:
-        model_folder (str): The path to the model root folder. Here, the config
-            with which the model was trained must be located.
-    
-    Returns:
-        skip (int): The number of samples to skip in the dataset, the length of the
-            input sequence, and the length of the output sequence.
-    """
-    config_path = os.path.join(model_folder, "config.yaml")
-    with open(config_path, "r", encoding="utf-8") as f:
-        config = yaml.load(f, Loader=yaml.BaseLoader)["data"]
-        skip = int(config.get("skip", 1))
-        input_sequence = int(config.get("input_sequence", 1))
-        output_sequence = int(config.get("output_sequence", 1))
-        stride = int(config.get("stride", output_sequence))
-        return (input_sequence, output_sequence, skip, stride)
 
 
 class CompriskUpdateCallable(UpdateCallable):
@@ -72,20 +53,31 @@ class CompriskUpdateCallable(UpdateCallable):
 
 
 def cli_main():
-    # define program arguments
-    parser = ArgumentParser()
-    parser.add_argument("--model", "-m", type = str, required = True, help = "The model to load.")
-    parser.add_argument("--dataset", "-d", type = str, required = True, help = "The dataset to use.")
-    args = parser.parse_args()
+    logger.debug("Starting CompriskCLI")
+    cli = CompriskLoadCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+
+    logger.debug("Loging model: %s", cli.model.__class__.__name__)
+    base_path = get_config_folder(cli)
 
     # download and process the dataset, the config file contains the requested
     # time frame to generate the scores for
-    subprocess.run(["flux-pipeline", "-c", args.dataset])
+    subprocess.run(["flux-pipeline", "-c", cli.config.dataset])
+
+    # load the dataset
+    dataset_args = cli.datamodule.trainset.get_args()
+    dataset_args_modified = dataset_args.as_dict()
+    
+    if cli.config.dataset:
+        dataset_args_modified["path"] = get_dataset_path(cli.config.dataset)
+
+    if cli.config.stride:
+        dataset_args_modified["stride"] = int(cli.config.stride)
+
+    data = Dataset(**dataset_args_modified)
 
     # load the trained model from disk and create the dataset object for the
     # previously downloaded dataset
-    loader = ModelLoader(args.model)
-    data = Dataset(get_dataset_path(args.dataset), *get_dataset_args(args.model))
+    loader = ModelLoader(base_path)
 
     # execute the model on the dataset and calculate the scores
     score = loader.get_score_transformer()
@@ -97,7 +89,7 @@ def cli_main():
     # FIXME: use `data.UUID`
     updater = DataUpdater("5ac7f03f-f4e6-4b15-9bc6-21db798f9d25", CompriskUpdateCallable(score_data))
     updater.set_data_type(DataType.MEASUREMENTS)
-    updater.update(*time_steps, data.get_meta().skip)
+    updater.update(*time_steps, data.get_args().skip)
 
     # remove the temporary downloaded dataset again
     # shutil.rmtree(get_dataset_path(args.dataset), ignore_errors = True)

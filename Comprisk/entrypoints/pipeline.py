@@ -92,6 +92,7 @@ def cli_main():
     # train the model
     trainer_list = pipeline.get("trainer", [])
     latest_config = args.load if args.load else ""
+    recently_added = ""
     if not latest_config:
         for i, trainer in enumerate(trainer_list):
             # store the current folder structure of the model output root folder
@@ -108,6 +109,7 @@ def cli_main():
             # train the model
             args = ["comprisk-trainer", "-c", config, "--tag", trainer["tag"]]
             args += [] if i == 0 else ["-f", latest_config]
+            args += ["--data.stride", trainer.get("stride")] if trainer.get("stride", None) else []
             subprocess.run(args)
 
             # find the output folder of the recently trained model
@@ -118,22 +120,23 @@ def cli_main():
     # train the scoring transformer
     score_train = pipeline.get("score_trainer", None)
     if score_train:
-        subprocess.run(["comprisk-train-score", "-c", latest_config, "-s", score_train["step"]])
+        subprocess.run(["comprisk-train-score", "-c", latest_config, "-s", score_train["stride"]])
 
     # analyze the model
     analyzer_list = pipeline.get("analyzer", [])
     for analyzer in analyzer_list:
         command = ["comprisk-analyzer", "-c", latest_config, "--dataset",
                     analyzer["dataset"], "--prefix", analyzer["prefix"], 
-                    "--step", analyzer.get("step", "10")]
+                    "-s", analyzer.get("stride", "10")]
 
         subprocess.run(command)    
     
     # generate the new score values and upload them
     generate_config = pipeline.get("generate", None)
-    if generate_config:
-        subprocess.run(["comprisk-generate", "-m", generate_config["model"], "-d",
-                        generate_config["dataset"]])
+    if generate_config and recently_added:
+        args = ["comprisk-generate", "-m", recently_added, "-d", generate_config["dataset"]]
+        args += ["--stride", generate_config["stride"]] if generate_config.get("stride", None) else []
+        subprocess.run(args)
 
 if __name__ == "__main__":
     cli_main()

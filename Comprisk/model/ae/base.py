@@ -1,15 +1,10 @@
 """This module implements a basic AutoEncoder class and the base classes for an
 encoder and decoder."""
 
-from typing import Tuple
-import numpy as np
 import torch
 import torch.nn as nn
-from torchinfo import summary as torchsummary
 
-from Dataflux.pytorch.metadata import Metadata
 from Comprisk.model import BaseModel
-from Comprisk import logger
 
 
 class EncoderBase(nn.Module):
@@ -20,6 +15,7 @@ class EncoderBase(nn.Module):
 
     def __init__(self, *args, **kwargs) -> None:
         super(EncoderBase, self).__init__()
+        self.device = torch.device("cpu")
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         """Implements the forward pass of the encoder."""
@@ -34,6 +30,7 @@ class DecoderBase(nn.Module):
 
     def __init__(self, *args, **kwargs) -> None:
         super(DecoderBase, self).__init__()
+        self.device = torch.device("cpu")
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         """Implements the forward pass of the decoder."""
@@ -72,14 +69,13 @@ class AutoEncoder(BaseModel):
 
         # build encoder/decoder
         self._encoder = encoder
+        self._encoder.to(self.device)
+        self._encoder.device = self.device
         self._decoder = decoder
+        self._decoder.to(self.device)
+        self._encoder.device = self.device
 
         self.save_hyperparameters(ignore=["encoder", "decoder"])
-
-    @property
-    def target(self) -> str:
-        """The target name of inputs to predict."""
-        return self._decoder.output_keys
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         """

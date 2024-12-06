@@ -31,12 +31,9 @@ def cli_main():
     # load the dataset and configure it to work with the trained model
     dataset = cli.datamodule.valset
     if cli.config.dataset:
-        meta = dataset.get_meta()
-        dataset = Dataset(cli.config.dataset,
-                          meta.num_input_sequence,
-                          meta.num_output_sequence,
-                          meta.skip,
-                          meta.stride)
+        dataset_args = dataset.get_args().as_dict()
+        dataset_args["path"] = cli.config.dataset
+        dataset = Dataset(**dataset_args)
 
     # load the model with the helper class, then apply the model on the dataset
     meta_path = os.path.join(base_path, "metadata")

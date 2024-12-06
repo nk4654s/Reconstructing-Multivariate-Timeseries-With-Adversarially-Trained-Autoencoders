@@ -6,7 +6,7 @@ import os
 import shutil
 from uuid import UUID
 
-from Dataflux.pytorch import Metadata, Dataset
+from Dataflux.pytorch import Dataset, DatasetArgs
 from Dataflux.visualization import show_dataframe
 from Dataflux.helper import get_logger, get_sensor_uuid_to_name
 
@@ -32,12 +32,9 @@ def cli_main():
     # load the dataset and configure it to work with the trained model
     dataset = cli.datamodule.trainset
     if cli.config.dataset:
-        meta = dataset.get_meta()
-        dataset = Dataset(cli.config.dataset,
-                          meta.num_input_sequence,
-                          meta.num_output_sequence,
-                          meta.skip,
-                          meta.stride)
+        args = dataset.get_args().as_dict()
+        args["path"] = cli.config.dataset
+        dataset = Dataset(**args)
 
     # load the model with the helper class, then apply the model on the dataset
     loader = ModelLoader(base_path)
@@ -48,7 +45,7 @@ def cli_main():
     ))
 
     # visualize the loaded dataset
-    prefix = "prediction"
+    prefix = "analysis"
     base_path = os.path.join(get_config_folder(cli), prefix)
 
     # create prefix sub-folders
@@ -70,8 +67,8 @@ def cli_main():
     target = target.rename(columns=sensors_name_dict, errors="ignore")
 
     # save the whole prediction of the dataset
-    meta: Metadata = dataset.get_meta()
-    days = round(len(dataset) * meta.skip // 60 // 60 // 24)
+    dataset_args: DatasetArgs = dataset.get_args()
+    days = round(len(dataset) * dataset_args.skip // 60 // 60 // 24)
     logger.debug("Visualizing whole dataset (samples=%s)", len(dataset))
     show_dataframe(
         [predicted, target],
@@ -81,7 +78,7 @@ def cli_main():
     )
 
     # save the prediction of three days of the dataset
-    twelve_hrs = (12 * 60 * 60) // meta.skip
+    twelve_hrs = (12 * 60 * 60) // dataset_args.skip
     logger.debug("Visualizing reduced dataset (samples=%s)", 3 * twelve_hrs)
     show_dataframe(
         [predicted.iloc[:twelve_hrs], target.iloc[:twelve_hrs]],

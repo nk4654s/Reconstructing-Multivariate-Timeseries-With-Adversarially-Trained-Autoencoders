@@ -8,7 +8,7 @@ from lightning.pytorch.cli import (
     LightningCLI,
 )
 from lightning.pytorch.tuner.tuning import Tuner
-from Dataflux.pytorch import Dataset
+from Dataflux.pytorch import Dataset, DatasetArgs
 from Comprisk.helper import set_model_features
 from Comprisk import logger
 
@@ -42,8 +42,8 @@ class CompriskCLI(LightningCLI):
         dataset: Dataset = self.datamodule.trainset
         set_model_features(self.model, dataset)
 
-        meta = dataset.get_meta()
-        self.model.set_output_behavior(meta.type, meta.num_output_sequence)
+        dataset_args = dataset.get_args()
+        self.model.set_output_behavior(dataset_args.behavior, dataset_args.sequence_out)
         
         # if the package should tune the model's hyperparameters, then reset the number
         # of training iterations
