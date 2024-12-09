@@ -51,8 +51,6 @@ class Rename(FileWorkerCallable):
             self._sensor_names = get_sensor_uuid_to_name(uuid)
             assert self._sensor_names, "No sensor name dictionary available."
 
-            logger.debug("Loaded sensor names %s", [n for _, n in self._sensor_names.items()])
-
         if self._enable:
             df.rename(columns=self._sensor_names, inplace=True)
         
