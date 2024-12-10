@@ -137,7 +137,7 @@ def simple_graph(data_x: List[str], data_y: List[float]) -> Callable:
     return graph
 
 
-def get_day_list(interval: Tuple[date, date]) -> List[datetime]:
+def get_day_list(interval: Tuple[datetime, datetime]) -> List[datetime]:
     """
     Get a list of days from an interval (tuple) of days (inclusive).
 
@@ -151,14 +151,18 @@ def get_day_list(interval: Tuple[date, date]) -> List[datetime]:
     start, end = interval
 
     # Initialize an empty list to store the days
-    days = []
+    days = [start]
 
     # Loop through each day in the interval
-    for i in range((end - start).days + 1):
+    start = datetime(start.year, start.month, start.day)
+    end_ = datetime(end.year, end.month, end.day)
+    for i in range(1, (end_ - start).days):
         # Calculate the date by adding the timedelta to the start date
         day = start + timedelta(days=i)
         # Add the day to the list
         days.append(day)
+    
+    days.append(end)
 
     # Return the list of days
     return days

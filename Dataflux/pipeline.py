@@ -4,7 +4,7 @@ when processing a dataset using a defined yaml-config.
 import os
 import shutil
 import logging
-from datetime import date
+from datetime import datetime
 from typing import List
 from Dataflux.cli import CLIArgumentParser
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
@@ -35,8 +35,8 @@ def download(parser: CLIArgumentParser, folder: str) -> None:
     for interval in parser.args.intervals:
         interval = interval.split(" ")
         interval_list.append((
-            date.fromisoformat(interval[0]),
-            date.fromisoformat(interval[1])
+            datetime.fromisoformat(interval[0]),
+            datetime.fromisoformat(interval[1])
         ))
 
     downloader = ContinuousDataDownloader(machine_uuid, interval_list)

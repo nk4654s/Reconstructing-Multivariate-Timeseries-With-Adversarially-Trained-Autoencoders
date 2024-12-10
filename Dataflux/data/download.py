@@ -2,7 +2,7 @@
 the parsing."""
 import gzip
 import os
-from datetime import date
+from datetime import date, datetime, timedelta
 from io import BytesIO, TextIOWrapper
 from multiprocessing import Pool
 from typing import List, TextIO, Tuple
@@ -179,7 +179,7 @@ class ContinuousDataDownloader(DataDownloader):
         interval (List[Tuple[date, date]] | Tuple[date, date]): The interval to download data from.
     """
     def __init__(self, machine_uuid: str | UUID,
-                 interval: List[Tuple[date, date]] | Tuple[date, date]) -> None:
+                 interval: List[Tuple[datetime, datetime]] | Tuple[datetime, datetime]) -> None:
         super().__init__(machine_uuid)
 
         # the interval can either be a single interval provided as tuple of two days
@@ -187,13 +187,13 @@ class ContinuousDataDownloader(DataDownloader):
         if isinstance(interval, list):
             self._days = []
             for inter in interval:
-                assert inter[0] < inter[1], "Start date must be before end date"
+                assert inter[0] <= inter[1], "Start date must be before end date"
                 self._days += get_day_list((inter[0], inter[1]))
         else:
-            assert interval[0] < interval[1], "Start date must be before end date"
+            assert interval[0] <= interval[1], "Start date must be before end date"
             self._days = get_day_list((interval[0], interval[1]))
 
-    def day(self, i: int) -> date:
+    def day(self, i: int) -> datetime:
         """Returns the day according to the index.
 
         Args:
@@ -217,8 +217,9 @@ class ContinuousDataDownloader(DataDownloader):
         files = []
 
         # iterate over all streams and append their content to the dataframe
-        pbar = tqdm(total=len(self), desc="Downloading Dataset")
-        for i in range(len(self)):
+        length = len(self) if len(self) != 2 or self.day(1).day - self.day(0).day != 0 else 1
+        pbar = tqdm(total=length, desc="Downloading Dataset")
+        for i in range(length):
             day = self.day(i).strftime("%Y-%m-%d")
             file_path = get_file(os.path.join(dir_name, filename), postfix=day)
             pbar.set_description(f"Downloading {day}")
@@ -235,6 +236,16 @@ class ContinuousDataDownloader(DataDownloader):
                         continue
 
                     meta.put(self.day(i).strftime("%Y-%m-%d"), Meta.DAY)
+                    # remove timestamps if the day started at a given time
+                    if i == 0:
+                        df = df[df["ts"] >= self.day(i).timestamp()]
+
+                        # remove timestamps if the dataset only consists of one day.
+                        if len(self) == 2 and self.day(1).day - self.day(0).day == 0:
+                            df = df[df["ts"] <= self.day(i + 1).timestamp()]
+
+                    if i == len(self) - 1:
+                        df = df[df["ts"] <= self.day(i).timestamp()]
                     df.to_hdf(file_path, key="data", format="table")
                     files.append({
                         Meta.DAY.name: day,

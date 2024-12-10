@@ -1,7 +1,7 @@
 folder: dataset-debug
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-  - 2020-11-01 2020-11-10
+  - 2024-08-29T12:30:00 2024-08-30T14:30:00
 num_workers: 1
 disk_backup: dataset-backup
 overwrite: true
@@ -10,17 +10,18 @@ modules:
   - class_path: Dataflux.modules.Rename
     init_args:
       enable: True
-  - class_path: Dataflux.modules.Consistency
-  # - class_path: Dataflux.modules.State
-  #   init_args:
-  #     key: "Laeuft"
-  #     lower: 0.9
-  #     upper: 1.1
-  #     delete_ts: 540
+  - class_path: Dataflux.modules.State
+    init_args:
+      key: "Laeuft"
+      lower: 0.9
+      upper: 1.1
+      alpha_threshold: 900
+      beta_threshold: 900
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:
         - ts
+        - Biomethandurchfluss (m^3/min)
         - SaugtemperaturZweiteStufeTETIT74341 (°C)
         - SaugdruckZweiteStufePIT74340 (bar)
         - SchwingungsmessungTriebwerkVT74280 (mm/s)
@@ -72,8 +73,4 @@ modules:
       - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C), -20.0, 200.0
       - Wicklungstemperatur (°C), -55.0, 200.0
       - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C), -20.0, 200.0
-  - class_path: Dataflux.modules.split.SplitDataset
-    init_args:
-      name: thyssen-vd2-valset
-      percentage: 0.3
-      overwrite: false
+      - Biomethandurchfluss (m^3/min), 0, 1300
