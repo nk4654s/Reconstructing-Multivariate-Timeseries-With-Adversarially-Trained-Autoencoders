@@ -120,7 +120,10 @@ def cli_main():
     # train the scoring transformer
     score_train = pipeline.get("score_trainer", None)
     if score_train:
-        subprocess.run(["comprisk-train-score", "-c", latest_config, "-s", score_train["stride"]])
+        args = ["comprisk-train-score", "-c", latest_config]
+        args += ["-s", score_train["stride"]] if "stride" in score_train.keys() else []
+        args += ["--score.method", score_train["method"]] if "method" in score_train.keys() else []
+        subprocess.run(args)
 
     # analyze the model
     analyzer_list = pipeline.get("analyzer", [])
@@ -134,7 +137,7 @@ def cli_main():
     # generate the new score values and upload them
     generate_config = pipeline.get("generate", None)
     if generate_config and recently_added:
-        args = ["comprisk-generate", "-m", recently_added, "-d", generate_config["dataset"]]
+        args = ["comprisk-generate", "-c", latest_config, "--dataset", generate_config["dataset"]]
         args += ["--stride", generate_config["stride"]] if generate_config.get("stride", None) else []
         subprocess.run(args)
 

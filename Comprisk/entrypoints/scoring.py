@@ -14,7 +14,7 @@ from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskLoadCLI
 
-logger = get_logger(__name__, path="./logs/logfile")
+logger = get_logger(__name__, path="logfile")
 
 
 def cli_main():
@@ -33,6 +33,7 @@ def cli_main():
     if cli.config.dataset:
         dataset_args = dataset.get_args().as_dict()
         dataset_args["path"] = cli.config.dataset
+        dataset_args["stride"] = cli.config.stride if cli.config.stride else dataset_args["stride"]
         dataset = Dataset(**dataset_args)
 
     # load the model with the helper class, then apply the model on the dataset

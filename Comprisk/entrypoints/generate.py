@@ -1,8 +1,4 @@
-from argparse import ArgumentParser
-import os
-import shutil
 import subprocess
-from typing import Dict, Tuple
 
 import pandas as pd
 import yaml
@@ -80,9 +76,10 @@ def cli_main():
     loader = ModelLoader(base_path)
 
     # execute the model on the dataset and calculate the scores
+    # TODO: load parameter `factor` and hand over to transform
     score = loader.get_score_transformer()
     score_data = loader.predict_loop(data)
-    score_data = score.transform(*score_data)
+    score_data = score.transform(*score_data, factors=0.4)
 
     # update the dataset's virtual sensors in the S3 buckets with the scores
     time_steps = (data.get_timestamp(0), data.get_timestamp(len(data) - 1))
