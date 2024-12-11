@@ -3,20 +3,18 @@ import operator
 import os
 import json
 import pickle
-from typing import Any, Dict, Tuple, Type, List, Union
+from typing import Dict, Tuple, Type, List, Union
 from uuid import UUID
 from lightning import LightningModule
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
 import yaml
 
-import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from tqdm import tqdm, trange
+from tqdm import tqdm
 
-from Dataflux.pytorch import online_collate_inference
+from Dataflux.pytorch import online_collate_inference, collate_fn
 from Dataflux.helper import get_logger, get_sensor_uuid_to_name
 from Dataflux.pytorch import Dataset
 
@@ -179,7 +177,8 @@ class ModelLoader:
         counter = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float32)
         ts_indx = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float32)
 
-        loader = DataLoader(dataset, batch_size, collate_fn=online_collate_inference, num_workers=num_workers, drop_last=False)
+        collate = online_collate_inference if args.key == "data" else collate_fn
+        loader = DataLoader(dataset, batch_size, collate_fn=collate, num_workers=num_workers, drop_last=False)
         for i, inputs in enumerate(tqdm(loader, desc="Prediction with Model", disable=not verbose)):
             inputs, scaler = inputs
             inputs = inputs.to(device)
@@ -190,9 +189,13 @@ class ModelLoader:
 
             # run the prediction, the input equals the target for auto encoders
             model_pred = self.model.predict(inputs, as_array=True)
-            model_pred = scaler.inverse_transform(model_pred) # type: ignore
             inputs = inputs.cpu().numpy()
-            inputs = scaler.inverse_transform(inputs)
+
+            # the scaler only exists, if the model uses a dataloader with 'online_collate'
+            # this happens if the dataset's key is 'data'
+            if args.key == "data":
+                model_pred = scaler.inverse_transform(model_pred) # type: ignore
+                inputs = scaler.inverse_transform(inputs)
 
             batch_size_, _, _ = model_pred.shape
             for j in range(0, batch_size_):

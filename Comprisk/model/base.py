@@ -7,7 +7,7 @@ import lightning as L
 import torch
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.optim.optimizer import Optimizer
-from Dataflux.pytorch import Dataset, DatasetTypes, dataset_type_from_string
+from Dataflux.pytorch import DatasetTypes, dataset_type_from_string
 from Comprisk.helper import (
     get_loss_by_name,
     get_optimizer_by_name,
@@ -84,10 +84,11 @@ class BaseModel(L.LightningModule):
         super().on_train_epoch_start()
         assert self._lr_scheduler, "Learning rate scheduler not initialized."
         self.log("epoch/lr", self._lr_scheduler.get_last_lr()[-1])
+        logger.debug("Starting epoch %s with lr=%s", self.current_epoch, self._lr_scheduler.get_last_lr()[-1])
 
     def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor], **kwargs) -> torch.Tensor:
         x, y = batch
-        y = y if self._behavior == Dataset.FUTURE else x
+        y = y if self._behavior == DatasetTypes.PREDICTIVE else x
         y_hat = self(x)
         loss = self._loss(y_hat, y)
         self.log(f"train/{self._loss_name}", loss)
@@ -100,7 +101,7 @@ class BaseModel(L.LightningModule):
 
     def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor], **kwargs) -> torch.Tensor:
         x, y = batch
-        y = y if self._behavior == Dataset.FUTURE else x
+        y = y if self._behavior == DatasetTypes.PREDICTIVE else x
         y_hat = self(x)
         loss = self._loss(y_hat, y)
         self.log(f"test/{self._loss_name}", loss)
@@ -108,10 +109,11 @@ class BaseModel(L.LightningModule):
 
     def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor], **kwargs) -> torch.Tensor:
         x, y = batch
-        y = y if self._behavior == Dataset.FUTURE else x
+        y = y if self._behavior == DatasetTypes.PREDICTIVE else x
         y_hat = self(x)
         loss = self._loss(y_hat, y)
         self.log(f"validate/{self._loss_name}", loss)
+        logger.debug("Validation finished (loss=%s)", loss.cpu().numpy())
         return loss
 
     def configure_optimizers(self) -> Optimizer:

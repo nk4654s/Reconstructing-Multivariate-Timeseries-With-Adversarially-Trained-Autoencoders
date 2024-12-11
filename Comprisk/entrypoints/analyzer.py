@@ -34,6 +34,7 @@ def cli_main():
     if cli.config.dataset:
         args = dataset.get_args().as_dict()
         args["path"] = cli.config.dataset
+        args["stride"] = cli.config.stride if cli.config.stride else args["stride"]
         dataset = Dataset(**args)
 
     # load the model with the helper class, then apply the model on the dataset
@@ -59,7 +60,8 @@ def cli_main():
 
     # transformes the loss between prediction and target to a score between 0 and 1.
     score_vis_path = os.path.join(base_path, "score-transformed.png")
-    score.transform(predicted, target, visualize=score_vis_path)
+    # TODO get the 'factors' parameter from a config file which should be generated where the model got stored
+    score.transform(predicted, target, visualize=score_vis_path, factors=0.4)
 
     # rename the columns, which might be required
     sensors_name_dict = get_sensor_uuid_to_name(UUID(dataset.UUID))

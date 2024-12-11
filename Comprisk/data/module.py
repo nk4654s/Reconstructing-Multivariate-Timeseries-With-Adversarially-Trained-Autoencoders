@@ -6,10 +6,9 @@ to sample as efficient as possible."""
 
 from copy import deepcopy
 import lightning as L
-from lightning.pytorch.utilities.combined_loader import CombinedLoader
 from torch.utils.data import DataLoader
 
-from Dataflux.pytorch import Dataset, online_collate_train
+from Dataflux.pytorch import Dataset, online_collate_train, collate_fn
 from Dataflux.pytorch import RandomBatchSampler as RBS
 
 from Comprisk import logger
@@ -44,7 +43,7 @@ class DataModule(L.LightningDataModule):
         sequence_out: int = 1,
         skip: int = 1,
         stride: int = 0,
-        key: str = "data",
+        key: str = "norm",
         batch_size: int = 1,
         shuffle: bool = True,
         num_workers: int = 1,
@@ -82,6 +81,11 @@ class DataModule(L.LightningDataModule):
             skip=skip,
             key=key,
         )
+
+        self._collate_fn = collate_fn
+        if key == "data":
+            logger.debug("Using online collate function normalizing each sample independently.")
+            self._collate_fn = online_collate_train
 
         logger.debug("Dataset (train) consists of %s samples", len(self._train))
         logger.debug("Dataset (validate) consists of %s samples", len(self._val))
@@ -134,7 +138,7 @@ class DataModule(L.LightningDataModule):
         return DataLoader(
             self._train,
             batch_sampler=self._train_sampler,
-            collate_fn=online_collate_train,
+            collate_fn=self._collate_fn,
             **self._loader_kwargs
         )
 
@@ -142,7 +146,7 @@ class DataModule(L.LightningDataModule):
         return DataLoader(
             self._val,
             batch_sampler=self._val_sampler,
-            collate_fn=online_collate_train,
+            collate_fn=self._collate_fn,
             **self._loader_kwargs
         )
 
