@@ -48,7 +48,16 @@ class FileWorkerThread(threading.Thread):
             if not os.path.exists(f):
                 continue
 
-            to_add, to_delete = self._module.run(f, self._context)
+            # make sure this thread does not crash, no matter what the module does
+            # if the module contains faulty code, catch the exception and remove the
+            # file from the pipeline
+            try:
+                to_add, to_delete = self._module.run(f, self._context)
+            except BaseException as e:
+                logger.error("An error occured working on file %s with module %s.", f, self.name)
+                logger.error("%s", e)
+                to_add, to_delete = [], [f]
+
             if to_add:
                 new_files += to_add if isinstance(to_add, list) else [to_add]
             
