@@ -11,19 +11,58 @@ def loss_fn(y: pd.DataFrame, y_hat: pd.DataFrame) -> pd.DataFrame:
     return np.sqrt(np.power(y - y_hat, 2)) # type: ignore
 
 
-def sigmoid(x: pd.DataFrame, smooth: np.ndarray, factor: np.ndarray | float = 1.0) -> pd.DataFrame:
+def sigmoid(x: np.ndarray, smooth: np.ndarray, factor: np.ndarray | float = 1.0) -> np.ndarray:
     factor = np.ones_like(smooth) * factor if isinstance(factor, float) else factor
-    x = x.copy()
-    for i, name in enumerate(x.columns):
-        x[name] = 2 / (1 + np.exp(-factor[i] * (x[name] - smooth[i]))) - 1 # type: ignore
-    return x
+    return 2 / (1 + np.exp(-factor * x - smooth)) - 1
 
 
 def linear(x: pd.DataFrame, factor: np.ndarray, translate: np.ndarray) -> pd.DataFrame:
     return factor * x - factor * translate # type: ignore
 
 
-class ScoreTransformer:
+class LinearTransfomer:
+    """The ScoreTransformer learns the loss distribution of a trained model over the training data
+    to translate a loss value into a score between 0 and 1. Here, 0 means the model is working fine,
+    while 1 means something is wrong with the input data.
+    """
+    def __init__(self, noise_floor: float = 0.687, twenty_percent: float = 0.995) -> None:
+        self._scaler = StandardScaler()
+
+        self._param_noise_floor = noise_floor
+        self._param_twenty_percent = twenty_percent
+
+        self._noise_floor: np.ndarray | None = None
+        self._twenty_percent: np.ndarray | None = None
+
+        self._a: np.ndarray | None = None
+
+    def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -> None:
+        # get the loss and train the standard scaler, a normal distribution is
+        # required for the following math
+        loss = loss_fn(predicted, target)
+        loss = self._scaler.fit_transform(loss)
+
+        # determine the loss' noise floor 
+        self._noise_floor = np.quantile(loss, self._param_noise_floor, axis=0)
+        self._twenty_percent = np.quantile(loss, self._param_twenty_percent, axis=0)
+
+        # calculate the linear factor
+        assert self._twenty_percent is not None
+        self._a = loss.max(axis=0) / (self._twenty_percent - self._noise_floor)
+    
+    def transform(self, predicted: pd.DataFrame, target: pd.DataFrame, 
+                  factors: np.ndarray | float = 0.2) -> pd.DataFrame:
+        assert self._noise_floor is not None, "Fit the transformer first."
+        loss = loss_fn(predicted, target)
+        loss = self._scaler.transform(loss)
+
+        factors = np.ones_like(self._a) * factors if isinstance(factors, float) else factors
+        loss = factors * self._a * loss - self._noise_floor # type: ignore
+        loss = self._scaler.inverse_transform(loss)
+        return pd.DataFrame(loss, columns=predicted.columns, index=predicted.index).clip(0, 1)
+
+
+class SigmoidTransformer:
     """The ScoreTransformer learns the loss distribution of a trained model over the training data
     to translate a loss value into a score between 0 and 1. Here, 0 means the model is working fine,
     while 1 means something is wrong with the input data.
@@ -31,67 +70,77 @@ class ScoreTransformer:
     The ScoreTransformer uses a sigmoidf(x)=1/(1+e^-x) to map the loss values into a score between 0 and 1. First,
     the loss values are standardized using sklearn's StandardScaler. Then, the median of
     the standardized loss values is computed and used to transform the sigmoid on the
-    x-axis. To controll how sensitive the transformer behaves, the x-value is multiplied with a given factor.
+    x-axis.
 
     Args:
-        upper_bound (float): The upper quantile in percent, required to calculate a smoothing factor.
+        noise_floor (float): The percentile under which a loss will count as 0 (no issue with the prediction).
+        upper_bound (float): The upper quantile in percent, required to stretch the sigmoid.
             The smoothing factor defines how high a loss can get before the ScoreTransformer outputs 
-            a score of 1. Defaults to 0.99.
-        sensitivity (float): The factor controls how fast the underlying sigmoid function increases
-            from 0 to 1. Hence, it can be called the sensitivity of the transformer and A lower value
-            results in less sensitivity, defaults to 0.3.
-        mode (str): Either sigmoid or linear, depending on the transformation function to use.
+            a score of 1. Defaults to 0.999.
     """
-    def __init__(self, upper_bound: float = 0.999, mode: str = "linear") -> None:
-        self._error_scaler = StandardScaler()
+    def __init__(self, noise_floor: float = 0.687, upper_bound: float = 0.999) -> None:
+        self._scaler = StandardScaler()
 
+        self._param_upper_bound: float = upper_bound
+        self._param_noise_floor: float = noise_floor
+        self._noise_floor: np.ndarray | None = None
+        self._quantile_delta: np.ndarray | None = None
+    
+    def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -> None:
+        loss = loss_fn(predicted, target)
+        loss = self._scaler.fit_transform(loss)
+
+        # use median and the upper quantile to find the smoothing parameter per feature
+        upper_quantiles = np.quantile(loss, self._param_upper_bound, axis=0)
+        self._noise_floor = np.quantile(loss, self._param_noise_floor, axis=0) 
+        self._quantile_delta = (upper_quantiles - self._noise_floor)
+
+    def transform(self, predicted: pd.DataFrame, target: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        assert self._noise_floor is not None, "Fit the transformer first."
+        assert self._quantile_delta is not None, "Fit the transformer first."
+        loss = loss_fn(predicted, target)
+        loss = self._scaler.transform(loss)
+
+        loss = sigmoid(loss, self._quantile_delta, 1 / self._quantile_delta ** 2)
+        return pd.DataFrame(loss, columns=predicted.columns).clip(0, 1)
+
+
+class ScoreTransformer:
+    """The ScoreTransformer learns the loss distribution of a trained model over the training data
+    to translate a loss value into a score between 0 and 1. Here, 0 means the model is working fine,
+    while 1 means something is wrong with the input data.
+
+    This transformer wraps other transformers. To get more details on these, look into the documentation
+    of `LinearTransformer` and `SigmoidTransformer`.
+
+    Args:
+        mode (str): Either `linear` or `sigmoid` to specify which backend to use. Defaults to `linear`.
+    """
+    def __init__(self, mode: str = "linear", *args, **kwargs) -> None:
         supported_modes = ["linear", "sigmoid"]
         assert mode in supported_modes, f"Supported modes are '{supported_modes}'. Unknown mode '{mode}'"
         self._mode = mode
 
-        self._upper_bound = upper_bound
-        self._medians: np.ndarray | None = None
-        self._translation: np.ndarray | None = None
-        self._smoothing: np.ndarray | None = None
+        self._transformer = None
+        if self._mode == "linear":
+            self._transformer = LinearTransfomer(*args, **kwargs)
+        
+        if self._mode == "sigmoid":
+            self._transformer = SigmoidTransformer(*args, **kwargs)
 
     def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -> None:
-        """This method fits the parameters of the ScoreTransformer to create a function based on f(x)=e^x
-        which transforms loss values in the range of 0 to 1. This method calculates the median to
-        translate the internal transformation along the x-axis. Then, the smoothing factor is calculated
-        to determine how strict a loss is clipped in the range of 0 to 1.
+        """This method fits the parameters of the ScoreTransformer.
 
         Args:
             predicted (np.array): The predicted values of the model.
             target (np.array): The target values of the model.
         """
-        assert self._smoothing is None, "Smoothing already fitted."
-        predicted = predicted.reindex(sorted(predicted.columns), axis=1)
-        target = target.reindex(sorted(target.columns), axis=1)
-
-        # compute loss
-        loss = loss_fn(predicted, target)
-        self._medians = np.quantile(loss, 0.500, axis=0)
-        if self._mode == "linear":
-            self._translation = np.quantile(loss, 0.990, axis=0)
-
-            quantiles = np.quantile(loss, self._upper_bound, axis=0)
-            self._smoothing = 1 / (quantiles - self._medians)
-            self._smoothing /= np.quantile(self._smoothing, 0.900, axis=0)
-            self._smoothing = self._smoothing.clip(0, 2)
-            return
-
-        # standardize loss
-        scores = self._error_scaler.fit_transform(loss)
-
-        # use median and the upper quantile to find the smoothing parameter per feature
-        quantiles = np.quantile(scores, self._upper_bound, axis=0)
-        self._medians = np.quantile(scores, 0.5, axis=0) 
-        self._smoothing = (quantiles - self._medians)
-        
-        logger.debug("Fitted ScoreTransformer with smoothing factor %s", self._smoothing)
+        assert self._transformer
+        self._transformer.fit(predicted, target)
+        logger.debug("Transformer '%s' fitted successfully", self._mode)
 
     def transform(self, predicted: pd.DataFrame, target: pd.DataFrame, visualize: str = "",
-                  show: bool = False) -> pd.DataFrame:
+                  show: bool = False, **kwargs) -> pd.DataFrame:
         """This method transforms the loss values in the range of 0 to 1 by applying the internal
         transformation function. Make sure to run `self.fit(predicted, target)` first, as the 
         transformation function's parameters must be found first. Only run `.fit()` on training data.
@@ -107,30 +156,12 @@ class ScoreTransformer:
             (pd.DataFrame): The transformed loss values in the range of 0 to 1. 0 is best
                 and 1 is worst.
         """
-        assert self._smoothing is not None, "Fit the transformer first."
-        assert self._medians is not None, "Fit the transformer first."
-        assert self._translation is not None, "Fit the transformer first."
-        predicted = predicted.reindex(sorted(predicted.columns), axis=1)
-        target = target.reindex(sorted(target.columns), axis=1)
-
-        # compute anomaly scores
-        loss = loss_fn(predicted, target)
-
-        if self._mode == "sigmoid":
-            anomaly_scores = self._error_scaler.transform(loss)
-            anomaly_scores = pd.DataFrame(anomaly_scores, columns=loss.columns, index=loss.index)
-            anomaly_scores = anomaly_scores.reindex(sorted(anomaly_scores.columns), axis=1)
-
-            malfunction = sigmoid(anomaly_scores, self._smoothing, factor=1 / self._smoothing**2)
-            malfunction.clip(0, None, inplace=True) 
-        
-        if self._mode == "linear":
-            malfunction = linear(loss, self._smoothing, self._translation)
-            malfunction.clip(0, 1, inplace=True)
+        assert self._transformer
+        scores = self._transformer.transform(predicted, target, **kwargs)
 
         # transfer all values to dataframes and return them
         if show or visualize:
-            show_dataframe([malfunction], ["Malfunction"], y_label="% -  lower is better",
+            show_dataframe([scores], ["Malfunction"], y_label="% -  lower is better",
                         grid_size=5, y_limit=(0, 1), save=visualize, show=show)
     
-        return malfunction
+        return scores
