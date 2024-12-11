@@ -8,7 +8,7 @@ from lightning.pytorch.cli import (
     LightningCLI,
 )
 from lightning.pytorch.tuner.tuning import Tuner
-from Dataflux.pytorch import Dataset, DatasetArgs
+from Dataflux.pytorch import Dataset
 from Comprisk.helper import set_model_features
 from Comprisk import logger
 
@@ -49,7 +49,7 @@ class CompriskCLI(LightningCLI):
         # of training iterations
         if self.config.tuner_config:
             trainer_args = vars(self.config.trainer)
-            trainer_args["callbacks"] = self.trainer.callbacks
+            trainer_args["callbacks"] = self.trainer.callbacks # type: ignore
             trainer_args["max_epochs"] = 1
             self.trainer = Trainer(**trainer_args)
 
@@ -60,20 +60,6 @@ class CompriskCLI(LightningCLI):
         if self.config.find_batch_size:
             logger.debug("Tuning batch size")
             tuner.scale_batch_size(self.model, mode="power", init_val=128)
-
-        # find the best lr rate
-        if self.config.find_lr:
-            lr_finder = tuner.lr_find(
-                self.model,
-                self.datamodule,
-                num_training=100,
-                mode="linear",
-                min_lr=1e-8,
-                max_lr=0.3,
-            )
-            lr = lr_finder.suggestion()
-            logger.debug("Tuned learning rate: lr=%s", lr)
-            self.model.lr = lr
 
 
     def after_fit(self):
