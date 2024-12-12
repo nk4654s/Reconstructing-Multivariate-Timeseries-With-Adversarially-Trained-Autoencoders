@@ -1,3 +1,5 @@
+# use the current user of None is provided. To get the build-script inside
+# of a docker container working, one mus provided the correct user.
 USE_USER="$USER"
 if [ -z "$2" ]; then
     echo "Using current user"
@@ -5,6 +7,9 @@ else
     USE_USER=$2
 fi
 
+# build the code to run a training either on the cpu or gpu
+# if the code needs to be execute on an Apple device, provide CPU as
+# flag. This also will enable the MPS framework.
 DEVICE="cpu"
 if [ -z "$1" ]; then
     echo "Building for CPU"
@@ -17,6 +22,7 @@ else
     fi
 fi
 
+# Build the Dataflux package next to this repository
 printf "Build 'Dataflux' wheel... "
 DATAFLUX_DIR="../Dataflux"
 if [ -d "$DATAFLUX_DIR" ]; then
