@@ -1,36 +1,33 @@
-# 0. define the dataset to use
+# 1. define the dataset to use
 dataset:
  - config: configs/vd2-version-1/dataset.yml
- - config: configs/vd2-version-1/testset-bad-sequence.yml
- - config: configs/vd2-version-1/testset-after-service.yml
+ - config: configs/vd2-version-1/dataset-validate.yml
+ - config: configs/vd2-version-1/testset-service.yml
  - config: configs/vd2-version-1/testset-coolant-anomaly.yml
-
-# 1. tune the model given a search space for the hyperparameters
-# tuner:
-#   config: configs/vd2-version-1/lstm_base.yml
-#   tuner_config: configs/vd2-version-1/tune_search_space.yml
-#   tuner_trials: 20
 
 # 2. train the model using the tuned hyperparameters
 trainer:
-  - config: configs/vd2-version-1/initial_training.yml
-    tag: thyssen-vd2
-    step: 1
+  - config: configs/vd2-version-1/initial_training_encdec.yml
+    tag: thyssen-vd2-training
+
+    # overwrite the config's values
+    data.train: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-trainset
+    data.validate: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-valset
+    data.stride: 1
+    data.sequence_in: 120
+    data.sequence_out: 120
+  
+score_trainer:
+  score.method: linear
+  data.stride: 120
 
 analyzer:
 # 1. generate data on the test dataset
-  - dataset: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-after-service
-    prefix: analysis/transformer/good
-# 2. generate data on the test dataset
-  - dataset: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-suspicious
-    prefix: analysis/transformer/bad
-# 3. generate data on the trajn dataset
-  - dataset: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-trainset
-    prefix: analysis/transformer/train
-# 4. generate data on the train dataset
+  - dataset: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-service
+    prefix: analysis/service
+# 2. generate data on the train dataset
   - dataset: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-valset
-    prefix: analysis/transformer/validate
-# 5. generate data on the last test dataset which includes the timespan
-# where someone limited the coolant flow
+    prefix: analysis/validate
+# 3. generate data on the last test dataset which includes the timespan where someone limited the coolant flow
   - dataset: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-coolant-anomaly
-    prefix: analysis/transformer/coolant
+    prefix: analysis/coolant

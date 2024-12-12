@@ -1,9 +1,8 @@
 folder: thyssen-vd2-trainset
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-  - 2020-11-01 2024-10-30
+  - 2024-09-10 2024-11-10
 num_workers: 8
-disk_backup: backup-vd2-full
 overwrite: false
 
 modules:
@@ -15,7 +14,7 @@ modules:
       key: "Laeuft"
       lower: 0.9
       upper: 1.1
-      alpha_threshold: 5400
+      alpha_threshold: 900
       beta_threshold: 900
   - class_path: Dataflux.modules.state.State
     init_args:
@@ -24,55 +23,7 @@ modules:
       upper: 0.01
       alpha_threshold: 900
       beta_threshold: 900
-  - class_path: Dataflux.modules.state.State
-    init_args:
-      key: "KompressordrehzahlSE74201 (rpm)"
-      lower: 400
-      upper: 980
-      alpha_threshold: 1800
-      beta_threshold: 1800
-  - class_path: Dataflux.modules.state.State
-    init_args:
-      key: "VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)"
-      lower: 100
-      upper: 145
-      alpha_threshold: 900
-      beta_threshold: 900
-  - class_path: Dataflux.modules.state.State
-    init_args:
-      key: "VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)"
-      lower: 100
-      upper: 145
-      alpha_threshold: 900
-      beta_threshold: 900
-  - class_path: Dataflux.modules.state.State
-    init_args:
-      key: "EndtemperaturZweiteStufeTETIT74371 (°C)"
-      lower: 100
-      upper: 148
-      alpha_threshold: 900
-      beta_threshold: 900
-  - class_path: Dataflux.modules.state.State
-    init_args:
-      key: "Wicklungstemperatur (°C)"
-      lower: 50
-      upper: 120
-      alpha_threshold: 900
-      beta_threshold: 900
-  - class_path: Dataflux.modules.state.State
-    init_args:
-      key: "KühlwasserdurchflussmengeFIT74423 (m^3/min)"
-      lower: 5.1
-      upper: 5.2
-      alpha_threshold: 900
-      beta_threshold: 900
-  - class_path: Dataflux.modules.state.State
-    init_args:
-      key: "SchwingungsmessungTriebwerkVT74280 (mm/s)"
-      lower: 0
-      upper: 3
-      alpha_threshold: 300
-      beta_threshold: 300
+
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:
@@ -107,30 +58,25 @@ modules:
   - class_path: Dataflux.modules.normalize.NormalizeTransform
     init_args:
       custom:
-      - DifferenzdruckTriebwerksölPDIT74553 (bar), 0, 8
-      - EnddruckErsteStufePIT74339 (bar), 0, 50
-      - EnddruckZweiteStufePIT74397 (bar), 0, 100
-      - EndtemperaturErsteStufeTETIT74334 (°C), -20, 200
-      - EndtemperaturZweiteStufeTETIT74371 (°C), -20, 200
-      - EndtemperaturZweiteStufenachKühlerTETIT74378 (°C), -20, 200
-      - KompressordrehzahlSE74201 (rpm), 0, 1000
-      - KühlwasserdrucknachPumpePIT74425 (bar), -10, 100.0
-      - KühlwasserdurchflussmengeFIT74423 (m^3/min), 0, 6
-      - KühlwassertemperaturnachKühlerTETIT74422 (°C), -20.0, 200.0
-      - Motorlager (°C), -55.0, 180.0
-      - PackungsleckageFIT74389 (Nm3h), 0, 50.0
-      - SaugdruckErsteStufePIT74319 (bar), 0, 50
-      - SaugdruckZweiteStufePIT74340 (bar), 0, 50
-      - SaugtemperaturErsteStufeTETIT74328 (°C), -20, 200.0
-      - SaugtemperaturZweiteStufeTETIT74341 (°C), -20.0, 200.0
-      - SchwingungsmessungTriebwerkVT74280 (mm/s), 0, 50.0
-      - VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C), -20.0, 200.0
-      - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C), -20.0, 200.0
-      - Wicklungstemperatur (°C), -55.0, 200.0
-      - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C), -20.0, 200.0
-      - Biomethandurchfluss (m^3/min), 0, 1300
-  - class_path: Dataflux.modules.split.SplitDataset
-    init_args:
-      name: thyssen-vd2-valset
-      percentage: 0.3
-      overwrite: false
+        - DifferenzdruckTriebwerksölPDIT74553 (bar), 0, 8
+        - EnddruckErsteStufePIT74339 (bar), 0, 50
+        - EnddruckZweiteStufePIT74397 (bar), 0, 100
+        - EndtemperaturErsteStufeTETIT74334 (°C), -20, 200
+        - EndtemperaturZweiteStufeTETIT74371 (°C), -20, 200
+        - EndtemperaturZweiteStufenachKühlerTETIT74378 (°C), -20, 200
+        - KompressordrehzahlSE74201 (rpm), 0, 1000
+        - KühlwasserdrucknachPumpePIT74425 (bar), -10, 100.0
+        - KühlwasserdurchflussmengeFIT74423 (m^3/min), 0, 6
+        - KühlwassertemperaturnachKühlerTETIT74422 (°C), -20.0, 200.0
+        - Motorlager (°C), -55.0, 180.0
+        - PackungsleckageFIT74389 (Nm3h), 0, 50.0
+        - SaugdruckErsteStufePIT74319 (bar), 0, 50
+        - SaugdruckZweiteStufePIT74340 (bar), 0, 50
+        - SaugtemperaturErsteStufeTETIT74328 (°C), -20, 200.0
+        - SaugtemperaturZweiteStufeTETIT74341 (°C), -20.0, 200.0
+        - SchwingungsmessungTriebwerkVT74280 (mm/s), 0, 50.0
+        - VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C), -20.0, 200.0
+        - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C), -20.0, 200.0
+        - Wicklungstemperatur (°C), -55.0, 200.0
+        - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C), -20.0, 200.0
+        - Biomethandurchfluss (m^3/min), 0, 1300

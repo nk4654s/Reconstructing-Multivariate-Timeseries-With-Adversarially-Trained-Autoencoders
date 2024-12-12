@@ -66,9 +66,6 @@ def cli_main():
     if cli.config.dataset:
         dataset_args_modified["path"] = get_dataset_path(cli.config.dataset)
 
-    if cli.config.stride:
-        dataset_args_modified["stride"] = int(cli.config.stride)
-
     data = Dataset(**dataset_args_modified)
 
     # load the trained model from disk and create the dataset object for the
@@ -79,7 +76,7 @@ def cli_main():
     # TODO: load parameter `factor` and hand over to transform
     score = loader.get_score_transformer()
     score_data = loader.predict_loop(data)
-    score_data = score.transform(*score_data, factors=0.4)
+    score_data = score.transform(*score_data, factors=0.05)
 
     # update the dataset's virtual sensors in the S3 buckets with the scores
     time_steps = (data.get_timestamp(0), data.get_timestamp(len(data) - 1))

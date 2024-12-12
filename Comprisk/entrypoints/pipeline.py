@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import List
+from typing import Dict, List
 from argparse import ArgumentParser
 
 import yaml
@@ -83,14 +83,14 @@ def cli_main():
 
     # tune the model, this will not have an effect on the model's output folder
     tuner = pipeline.get("tuner", None)
-    tuned_config = None
+    tuned_config: str | None = None
     if tuner:
         subprocess.run(["comprisk-tuner", "-c", tuner["config"], "--tuner-config",
                         tuner["tuner_config"], "--tuner-trials", tuner["tuner_trials"]])
         tuned_config = find_tuned_config(tuner["config"])
 
     # train the model
-    trainer_list = pipeline.get("trainer", [])
+    trainer_list: List[Dict] = pipeline.get("trainer", [])
     latest_config = args.load if args.load else ""
     recently_added = ""
     if not latest_config:
@@ -102,14 +102,17 @@ def cli_main():
             
             # use the tuned config if available and wanted, this only applies for the first
             # trainer. Each next trainer will use the one of the previously trained model
-            config = trainer["config"]
-            if tuned_config and trainer["prefer_tuned"]:
+            config: str = trainer.pop("config")
+            prefer_tuned = trainer.pop("prefer_tuned", False)
+            if tuned_config and prefer_tuned:
                 config = tuned_config
             
             # train the model
-            args = ["comprisk-trainer", "-c", config, "--tag", trainer["tag"]]
+            args = ["comprisk-trainer", "-c", config]
             args += [] if i == 0 else ["-f", latest_config]
-            args += ["--data.stride", trainer.get("stride")] if trainer.get("stride", None) else []
+            for key, value in trainer.items():
+                args += [f"--{key}", value]
+
             subprocess.run(args)
 
             # find the output folder of the recently trained model
@@ -121,8 +124,8 @@ def cli_main():
     score_train = pipeline.get("score_trainer", None)
     if score_train:
         args = ["comprisk-train-score", "-c", latest_config]
-        args += ["-s", score_train["stride"]] if "stride" in score_train.keys() else []
-        args += ["--score.method", score_train["method"]] if "method" in score_train.keys() else []
+        for key, value in score_train.items():
+            args += [f"--{key}", value]
         subprocess.run(args)
 
     # analyze the model
@@ -137,8 +140,7 @@ def cli_main():
     # generate the new score values and upload them
     generate_config = pipeline.get("generate", None)
     if generate_config and recently_added:
-        args = ["comprisk-generate", "-c", latest_config, "--dataset", generate_config["dataset"]]
-        args += ["--stride", generate_config["stride"]] if generate_config.get("stride", None) else []
+        args = ["comprisk-generate", "-c", latest_config, "--dataset", generate_config["config"]]
         subprocess.run(args)
 
 if __name__ == "__main__":
