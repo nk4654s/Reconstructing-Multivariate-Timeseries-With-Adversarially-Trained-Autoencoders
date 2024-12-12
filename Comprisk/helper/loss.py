@@ -14,6 +14,16 @@ _loss_register = {
     "GaussianNLLLoss": nn.GaussianNLLLoss()
 }
 
+
+def r2_score(i, t):
+    mean = t.mean(axis=0)
+    ss_regression = ((i - mean) ** 2).sum(axis=0)
+    ss_total = ((t - mean) ** 2).sum(axis=0)
+    r2_score = ss_regression / ss_total
+
+    return (1 / r2_score.clip(1, None)).mean()
+
+
 def get_loss_by_name(name: str) -> nn.Module:
     """Get loss function by name.
 

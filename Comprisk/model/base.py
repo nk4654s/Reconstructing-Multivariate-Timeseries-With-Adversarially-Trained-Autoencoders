@@ -5,10 +5,12 @@ from typing import List, Tuple, Union
 import numpy as np
 import lightning as L
 import torch
+
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.optim.optimizer import Optimizer
 from Dataflux.pytorch import DatasetTypes, dataset_type_from_string
 from Comprisk.helper import (
+    r2_score,
     get_loss_by_name,
     get_optimizer_by_name,
     get_activation_from_string,
@@ -85,6 +87,9 @@ class BaseModel(L.LightningModule):
         assert self._lr_scheduler, "Learning rate scheduler not initialized."
         self.log("epoch/lr", self._lr_scheduler.get_last_lr()[-1])
         logger.debug("Starting epoch %s with lr=%s", self.current_epoch, self._lr_scheduler.get_last_lr()[-1])
+    
+    def on_validation_batch_end(self, outputs, batch, batch_idx, dataloader_idx = 0) -> None:
+        logger.debug("Validation finished (loss=%s)", outputs.cpu().numpy().mean())
 
     def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor], **kwargs) -> torch.Tensor:
         x, y = batch
@@ -113,7 +118,11 @@ class BaseModel(L.LightningModule):
         y_hat = self(x)
         loss = self._loss(y_hat, y)
         self.log(f"validate/{self._loss_name}", loss)
-        logger.debug("Validation finished (loss=%s)", loss.cpu().numpy())
+
+        batch_size, sequence, features = y.shape
+        y = y.reshape(batch_size * sequence, features)
+        y_hat = y_hat.reshape(batch_size * sequence, features)
+        self.log(f"validate/R2Score", r2_score(y_hat, y))
         return loss
 
     def configure_optimizers(self) -> Optimizer:
