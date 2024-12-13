@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:20.04 AS comprisk-base
 
 # Remove any third-party apt sources to avoid issues with expiring keys.
 RUN rm -f /etc/apt/sources.list.d/*.list
@@ -13,8 +13,9 @@ RUN mkdir /app
 WORKDIR /app
 
 # copy code to the docker
-COPY . .
-RUN sh /app/scripts/clean.sh
+COPY packages/Comprisk/ packages/
+COPY packages/Dataflux/ packages/
+COPY scripts/ scripts/
 
 # Create a non-root user and switch to it
 RUN adduser --disabled-password --gecos '' --shell /bin/bash user
@@ -32,10 +33,22 @@ ENV PATH=/home/user/miniconda3/bin:$PATH
 ARG PATH=/home/user/miniconda3/bin:$PATH
 
 # Install Miniconda and build comprisk
-RUN sh /app/scripts/build.sh cpu user
+RUN sh scripts/build.sh cpu user
+RUN mkdir model
 
-# add folders as volume mount points
-RUN mkdir -p models configs logs dataset
-
+# automatically activate comprisk
 RUN echo "source activate comprisk" > ~/.bashrc
 ENV PATH=/home/user/miniconda3/envs/comprisk/bin:$PATH
+
+FROM comprisk-base
+ARG MACHINE_UUID="0b3426b3-94af-4b8c-89c1-da57493c099a"
+ARG TAG="AutoEncoder"
+ARG MODEL_VERSION=0
+
+# copy the model into this docker container
+WORKDIR /app
+COPY environment/production/models/$TAG/$MACHINE_UUID/version_$MODEL_VERSION/ model/
+
+# run the score generation
+#RUN comprisk-generate -c model/config.yaml --latest
+RUN comprisk-generate -h

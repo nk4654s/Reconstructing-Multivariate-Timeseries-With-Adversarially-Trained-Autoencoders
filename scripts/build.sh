@@ -1,4 +1,15 @@
-export PATH="/Users/jonas/.miniconda/bin:$PATH"
+#########################################################################
+#                                get user                               #
+#########################################################################
+USE_USER="$USER"
+if [ -z "$2" ]; then
+    USE_USER="$USER"
+else
+    USE_USER=$2
+fi
+echo "Using user $USE_USER"
+
+export PATH="/Users/$USE_USER/.miniconda/bin:$PATH"
 
 DEVICE="cpu"
 
@@ -52,5 +63,5 @@ printf "Build pip packages... "
 conda run -n dataflux pip install -e $DATAFLUX_DIR >> $BUILD_LOG 2>&1
 
 conda run -n comprisk pip install -e $COMPRISK_DIR >> $BUILD_LOG 2>&1
-conda run -n comprisk pip install -e $COMPRISK_DIR >> $BUILD_LOG 2>&1
+conda run -n comprisk pip install -e DATAFLUX_DIR >> $BUILD_LOG 2>&1
 printf "Done.\n"
