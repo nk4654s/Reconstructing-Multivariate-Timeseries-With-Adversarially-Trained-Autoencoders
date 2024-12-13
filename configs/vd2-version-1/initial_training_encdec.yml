@@ -4,9 +4,9 @@ trainer:
     # define the early stopping callback
     - class_path: lightning.pytorch.callbacks.EarlyStopping
       init_args:
-        monitor: validate/MSELoss
+        monitor: validate/R2Score
         min_delta: 0.000001
-        patience: 2
+        patience: 4
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
         every_n_epochs: 1
@@ -39,14 +39,14 @@ model:
       init_args:
         num_features: 22
         num_hidden_dim: 64
-        num_hidden_layers: 2
+        num_hidden_layers: 3
         dropout_prob: 0.4
     decoder:
       class_path: Comprisk.model.ae.rnn.EDADecoder
       init_args:
         num_features: 22
         num_hidden_dim: 64
-        num_hidden_layers: 2
+        num_hidden_layers: 3
         dropout_prob: 0.4
 data:
   train: define_in_pipeline
