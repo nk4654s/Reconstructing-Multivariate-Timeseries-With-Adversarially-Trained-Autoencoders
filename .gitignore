@@ -6,6 +6,8 @@ requirements.txt
 *.whl
 
 # models from specific stages
+*.png
+events.out.tfevents.*
 models/*
 !environment/dev/models/README.md
 !environment/production/models/
@@ -23,7 +25,7 @@ logfile*
 Dockerfile
 
 # exclude temporary checkpoints
-*.ckpt
+.temp.ckpt
 
 # exclude extensions
 .VSCodeCounter/
