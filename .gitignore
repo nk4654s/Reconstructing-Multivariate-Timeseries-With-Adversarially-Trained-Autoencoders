@@ -19,7 +19,7 @@ thyssen-*/
 # exclude logs
 *.sqlite3
 logs/
-logfile
+logfile*
 Dockerfile
 
 # exclude temporary checkpoints
