@@ -6,7 +6,7 @@ from optuna import Trial
 
 class BaseProvider:
     """
-    The BaseProvider defines the structure of a provider used by the ConfigManager of the `tune` sub module.
+    The BaseProvider defines the structure of a provider used by the ConfigManager of the `tune` submodule.
     The provider is used to provide the hyperparameter values for each trial.
     """
     def get(self, name: str, value_specs: Dict[str, Any]) -> Any:
@@ -15,7 +15,7 @@ class BaseProvider:
 
         Args:
             name (str): The name of the hyperparameter whose value is being suggested.
-            value_specs (Dict[str, Any]): A dictionary containing the specifications for the hyperparameter's
+            value_specs (Dict[str, Any]): A dictionary containing the specifications for the hyperparameter
                 value.
         
         Returns:
@@ -27,7 +27,7 @@ class BaseProvider:
 class SuggestionProvider(BaseProvider):
     """
     The SuggestionProvider is used to provide the hyperparameter values for each
-    trial using Optuna's suggestion methods.
+    trial using Optuna suggestion methods.
 
     Args:
         trial (Trial): The Optuna trial object to use for suggestions.

@@ -1,5 +1,5 @@
 """This module contains the tuner class based on the `optuna` package to find
-optimal hyper parameters for training."""
+optimal hyperparameters for training."""
 from typing import Any, Dict
 from copy import deepcopy
 import os
@@ -10,14 +10,14 @@ from Comprisk.tune.config import ConfigManager
 
 
 class Tuner:
-    """This class finds the optimal hyper parameters for a model using the `optuna`
-    package. This package employs an advanced for of bayesian optimistaion to explore
-    the hyper parameter space.
+    """This class finds the optimal hyperparameters for a model using the `optuna`
+    package. This package employs an advanced for of bayesian optimisation to explore
+    the hyperparameter space.
 
     Args:
-        cli (CompriskCLI): The comrpisk command line interface object, which contains
-            the initialized model and datamodule. During optimization, the model
-            will be re-initialized with a different set of hyper parameters.
+        cli (CompriskCLI): The comprisk command line interface object, which contains
+            the initialized model and datamodule. During optimisation, the model
+            will be re-initialized with a different set of hyperparameters.
     """
 
     def __init__(self, config: ConfigManager) -> None:
@@ -35,8 +35,8 @@ class Tuner:
 
     def objective(self, trial: Trial) -> float:
         """The objective function is used by the `self.optimize` method and contains
-        the training and validation loop of the model. Here, different hyper
-        parameters will be tested to find the lowest loss.
+        the training and validation loop of the model. Here, different hyperparameters
+        will be tested to find the lowest loss.
 
         Args:
             trial (Trial): The trial object managed by `optuna`.

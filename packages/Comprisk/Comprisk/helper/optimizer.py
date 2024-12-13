@@ -1,6 +1,6 @@
 """This module handles string to optimizer conversion."""
 from typing import Type, Union
-from torch.optim import *  # type: ignore is fine, as optim only includes Optimizers
+from torch.optim import *
 
 
 _optimizer_register = {

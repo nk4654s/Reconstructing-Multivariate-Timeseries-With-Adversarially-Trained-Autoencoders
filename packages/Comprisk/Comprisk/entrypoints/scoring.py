@@ -1,5 +1,5 @@
 """This module loads a model using the **Comprisk.cli.CompriskCLI** and
-applys the loaded model on the configured dataset. The ScoreTransformer
+apply the loaded model on the configured dataset. The ScoreTransformer
 will be learned based on the resulting loss. Only use configure this entry
 point with a trained model and the matching validation dataset."""
 import os

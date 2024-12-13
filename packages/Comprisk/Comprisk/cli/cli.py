@@ -38,7 +38,7 @@ class CompriskCLI(LightningCLI):
         logger.debug("Starting CompriskCLI for training")
 
         # set correct feature names to model, the feature names of the dataset should be
-        # sorted according to the sample's feature indicies
+        # sorted according to the sample's feature indices
         dataset: Dataset = self.datamodule.trainset
         set_model_features(self.model, dataset)
 
@@ -53,7 +53,7 @@ class CompriskCLI(LightningCLI):
             trainer_args["max_epochs"] = 1
             self.trainer = Trainer(**trainer_args)
 
-        # tune the learning rate and batcg size if required
+        # tune the learning rate and batch size if required
         # this operation may take a while before the training can start
         tuner = Tuner(self.trainer)
         # find best batch size

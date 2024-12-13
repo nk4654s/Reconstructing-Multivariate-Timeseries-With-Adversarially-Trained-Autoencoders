@@ -1,6 +1,6 @@
 """This module loads a model using the **Comprisk.cli.CompriskCLI** and
-applys the loaded model on the configured dataset. The prediction will be
-safed next to the model's log folder as graph comparing prediction
+apply the loaded model on the configured dataset. The prediction will be
+saved next to the model's log folder as graph comparing prediction
 vs. target."""
 import os
 import shutil
@@ -57,7 +57,7 @@ def cli_main():
         shutil.rmtree(base_path)
     os.makedirs(base_path)
 
-    # transformes the loss between prediction and target to a score between 0 and 1.
+    # transforms the loss between prediction and target to a score between 0 and 1.
     score_vis_path = os.path.join(base_path, "score-transformed.png")
     # TODO get the 'factors' parameter from a config file which should be generated where the model got stored
     score.transform(predicted, target, visualize=score_vis_path, factors=0.02)

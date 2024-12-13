@@ -50,7 +50,7 @@ class LSTMEncoder(EncoderBase):
 
 
 class LSTMDecoder(DecoderBase):
-    """A simple Decoder based on an LSTM layer folowed by a Linear layer.
+    """A simple Decoder based on an LSTM layer followed by a Linear layer.
     
     Args:
         num_features (int): The number of features output by the model.

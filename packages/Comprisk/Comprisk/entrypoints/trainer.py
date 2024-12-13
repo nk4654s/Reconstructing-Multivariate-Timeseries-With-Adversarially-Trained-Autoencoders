@@ -20,7 +20,7 @@ from Comprisk import logger
 
 def get_trainer_callback(trainer, callback_name: str) -> Callback | None:
     """
-    Finds the fiven callback class in the trainer callbacks list. If the
+    Finds the given callback class in the trainer callbacks list. If the
     callback could not be found, then the returned value is None.
     
     Args:

@@ -27,7 +27,7 @@ logger = get_logger(__name__, path="./logs/logfile")
 
 def set_model_features(model, dataset: Dataset):
     # set correct feature names to model, the feature names of the dataset should be
-    # sorted according to the sample's feature indicies
+    # sorted according to the sample's feature indices
     feature_dict = get_sensor_uuid_to_name(UUID(dataset.UUID))
     feature_names = dataset.get_args().names
     if feature_dict:
@@ -69,7 +69,7 @@ def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
 
     Args:
         cli (CompriskCLI): The cli object created when starting an entrypoint.
-        eval_mode (bool): Wether to set the loaded model to eval mode or not. Defaults to True.
+        eval_mode (bool): Weather to set the loaded model to eval mode or not. Defaults to True.
     """
     checkpoints = get_checkpoints(path)
     checkpoints = sorted(checkpoints, key = lambda x : float(x[:-5].split("val=")[-1]))

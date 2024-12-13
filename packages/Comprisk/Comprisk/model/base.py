@@ -1,5 +1,5 @@
 """This module contains the base model implementing widely-used functions. Layers
-of a nerual network are not implemented."""
+of a neural network are not implemented."""
 
 from typing import List, Tuple, Union
 import numpy as np
@@ -30,7 +30,7 @@ class BaseModel(L.LightningModule):
         activation (str, optional): Activation function to use. Defaults to "sigmoid"
         optimizer (str, optional): Optimizer to use. Defaults to "Adam".
         lr (float, optional): Initial learning rate. Defaults to 1e-3.
-        lr_decay (float, optional): Learning rate dacying factor. Defaults to 0.99.
+        lr_decay (float, optional): Learning rate decaying factor. Defaults to 0.99.
         monte_carlo (int, optional): Number of Monte-Carlo iterations, higher will be
             slower but more stable. Defaults to 0 which is disabled.
     """

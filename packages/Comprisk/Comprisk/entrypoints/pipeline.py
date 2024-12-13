@@ -19,15 +19,15 @@ def model_folder_structure(path: str = "models", structure: List[str] = []) -> L
     Returns:
         List[str]: The list of folders that contains the model's config file.
     """
-    entites = os.listdir(path)
+    entities = os.listdir(path)
 
     # check if the folder contains the model's comfig. If so, then the folder is
     # a model's output folder
-    if "config.yaml" in entites:
+    if "config.yaml" in entities:
         return structure + [path]
 
     # go a level deeper
-    entity_paths = [os.path.join(path, entity) for entity in entites]
+    entity_paths = [os.path.join(path, entity) for entity in entities]
     for entity in entity_paths:
         if os.path.isdir(entity):
             structure = model_folder_structure(entity, structure)

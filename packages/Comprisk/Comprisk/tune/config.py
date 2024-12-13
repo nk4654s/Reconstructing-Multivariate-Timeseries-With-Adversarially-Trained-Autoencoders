@@ -1,4 +1,4 @@
-"""This mdoule contains the ConfigManager and dict tools to navigate
+"""This module contains the ConfigManager and dict tools to navigate
 a nested dict."""
 
 from typing import Any, Dict, Tuple
@@ -111,7 +111,7 @@ class ConfigManager:
         """
         Returns a dictionary containing the initialization arguments.
 
-        This property provides a read-only access to the `_train` attribute,
+        This property provides read-only access to the `_train` attribute,
         which contains the configuration settings for the training process.
 
         Returns:
@@ -124,7 +124,7 @@ class ConfigManager:
         """
         Returns an instance of CompriskCLI associated with this ConfigManager.
 
-        This method provides a read-only access to the `_cli` attribute,
+        This method provides read-only access to the `_cli` attribute,
         which contains the configuration settings for the CLI.
 
         Returns:
@@ -176,7 +176,7 @@ class ConfigManager:
         root_key: str = None,
     ) -> None:
         suggestion = {}
-        # build the hyper parameters
+        # build the hyperparameters
         for key in train.keys():
             if isinstance(train[key], dict) and key in tune.keys():
                 suggestion[key] = {"class_path": train[key]["class_path"]}
@@ -185,12 +185,12 @@ class ConfigManager:
                 )
                 continue
 
-            # use hyper parameters from the model config, if they will not be tuned
+            # use hyperparameters from the model config, if they will not be tuned
             if key not in tune.keys():
                 suggestion[key] = train[key]
                 continue
 
-            # get hyper parameter (spaces) from the tuner config
+            # get hyperparameter (spaces) from the tuner config
             value = tune[key]
             name = key if not root_key else f"{root_key}.{key}"
             suggestion[key] = provider.get(name, value)

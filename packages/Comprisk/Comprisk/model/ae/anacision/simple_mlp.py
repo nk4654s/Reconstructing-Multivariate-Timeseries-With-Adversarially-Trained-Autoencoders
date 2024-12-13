@@ -1,4 +1,4 @@
-"""The anacision autoencder uses a simple multi layer perceptron."""
+"""The anacision autoencoder uses a simple multi layer perceptron."""
 from typing import Dict, List
 import torch
 from torch import nn

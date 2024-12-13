@@ -23,7 +23,7 @@ def get_config_path(cli) -> str:
     Args:
         cli (CLI): The command line interface object. To use this method,
             cli must be called with the argument `-c`. Otherwise, no path
-            will be avialable.
+            will be available.
 
     Returns:
         str: The config path from the command line arguments.
@@ -38,7 +38,7 @@ def get_config_folder(cli) -> str:
     Args:
         cli (CLI): The command line interface object. To use this method,
             cli must be called with the argument `-c`. Otherwise, no path
-            will be avialable.
+            will be available.
 
     Returns:
         str: The config folder path from the command line arguments.

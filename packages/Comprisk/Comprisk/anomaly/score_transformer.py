@@ -20,7 +20,7 @@ def linear(x: pd.DataFrame, factor: np.ndarray, translate: np.ndarray) -> pd.Dat
     return factor * x - factor * translate # type: ignore
 
 
-class LinearTransfomer:
+class LinearTransformer:
     """The ScoreTransformer learns the loss distribution of a trained model over the training data
     to translate a loss value into a score between 0 and 1. Here, 0 means the model is working fine,
     while 1 means something is wrong with the input data.
@@ -69,8 +69,8 @@ class SigmoidTransformer:
     to translate a loss value into a score between 0 and 1. Here, 0 means the model is working fine,
     while 1 means something is wrong with the input data.
 
-    The ScoreTransformer uses a sigmoidf(x)=1/(1+e^-x) to map the loss values into a score between 0 and 1. First,
-    the loss values are standardized using sklearn's StandardScaler. Then, the median of
+    The ScoreTransformer uses a sigmoid f(x)=1/(1+e^-x) to map the loss values into a score between 0 and 1. First,
+    the loss values are standardized using the sklearn StandardScaler. Then, the median of
     the standardized loss values is computed and used to transform the sigmoid on the
     x-axis.
 
@@ -125,7 +125,7 @@ class ScoreTransformer:
 
         self._transformer = None
         if self._mode == "linear":
-            self._transformer = LinearTransfomer(*args, **kwargs)
+            self._transformer = LinearTransformer(*args, **kwargs)
         
         if self._mode == "sigmoid":
             self._transformer = SigmoidTransformer(*args, **kwargs)
