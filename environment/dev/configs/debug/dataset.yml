@@ -1,4 +1,4 @@
-folder: dataset-debug
+folder: environment/dev/datasets/dataset-debug
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
   - 2020-11-01 2020-12-01
@@ -9,7 +9,6 @@ modules:
   - class_path: Dataflux.modules.Rename
     init_args:
       enable: False
-  - class_path: Dataflux.modules.Consistency
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:
@@ -41,8 +40,3 @@ modules:
       exclude_keys:
         - ts
   - class_path: Dataflux.modules.normalize.NormalizeTransform
-  - class_path: Dataflux.modules.split.SplitDataset
-    init_args:
-      name: dataset-debug-split
-      percentage: 0.3
-      overwrite: false

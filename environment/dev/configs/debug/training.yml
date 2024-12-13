@@ -52,8 +52,8 @@ model:
         predict_key: sensors
 data:
   # configure dataset to load
-  train: /Users/jonas/Dev/NEAX/Comprisk/dataset-debug
-  validate: /Users/jonas/Dev/NEAX/Comprisk/dataset-debug-split
+  train: environment/dev/datasets/dataset-debug
+  validate: 
   input_sequence: 10
   output_sequence: 0
   skip: 50

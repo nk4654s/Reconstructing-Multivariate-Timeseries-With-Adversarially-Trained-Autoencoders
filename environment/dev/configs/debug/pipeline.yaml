@@ -1,17 +1,14 @@
 dataset:
- - config: configs/debug/dataset.yml
+ - config: environment/dev/configs/debug/dataset.yml
 
 trainer:
-  - config: configs/debug/training.yml
+  - config: environment/dev/datasets//configs/debug/training.yml
     tag: debug
-    step: 5
 
 analyzer:
-# 1. generate data on the test dataset
-  - dataset: /Users/jonas/Dev/NEAX/Comprisk/dataset-debug
+  - dataset: environment/dev/datasets/dataset-debug
     prefix: analysis/transformer/good
 
-  - dataset: /Users/jonas/Dev/NEAX/Comprisk/dataset-debug
+  - dataset: environment/dev/datasets/dataset-debug
     prefix: analysis/validate
-    static_scores: true
   

@@ -52,8 +52,8 @@ model:
         dropout_prob: 0.4
 data:
   # configure dataset to load
-  train: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-trainset
-  validate: /Users/jonas/Dev/NEAX/Comprisk/thyssen-vd2-valset
+  train: 
+  validate: 
   sequence_in: 60
   sequence_out: 60
   skip: 1

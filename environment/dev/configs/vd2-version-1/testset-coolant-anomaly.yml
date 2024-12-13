@@ -1,4 +1,4 @@
-folder: thyssen-vd2-test-coolant
+folder: environment/dev/datasets/thyssen-vd2-test-coolant
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
   - 2024-08-29T12:30:00 2024-08-29T14:30:00

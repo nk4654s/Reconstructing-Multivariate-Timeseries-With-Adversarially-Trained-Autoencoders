@@ -1,4 +1,4 @@
-folder: thyssen-vd2-service
+folder: environment/dev/datasets/thyssen-vd2-service
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
   - 2024-08-10 2024-09-20

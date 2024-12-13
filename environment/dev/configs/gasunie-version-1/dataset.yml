@@ -1,4 +1,4 @@
-folder: gasunie-trainset
+folder: environment/dev/datasets/gasunie-trainset
 machine_uuid: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
 intervals:
   - 2023-03-07 2023-08-31

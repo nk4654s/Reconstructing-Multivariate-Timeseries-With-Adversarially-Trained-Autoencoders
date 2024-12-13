@@ -5,8 +5,19 @@ __pycache__/
 requirements.txt
 *.whl
 
+# models from specific stages
+models/*
+!environment/dev/models/README.md
+!environment/production/models/
+
+# exclude datasets from specific stages
+datasets/*
+!environment/dev/datasets/README.md
+!environment/production/datasets/README.md
+thyssen-*/
+
 # exclude logs
-models/
+*.sqlite3
 logs/
 logfile
 Dockerfile
@@ -17,16 +28,10 @@ Dockerfile
 # exclude extensions
 .VSCodeCounter/
 .DS_Store
-playground.ipynb
 
-# exclude optuna database
-*.sqlite3
-test.ipynb
+# exclude notebooks
+*.ipynb
+
+# exclude generated files
 docs/
 build/
-
-dataset-*
-*/metadata/
-*.json
-*.pkl
-*/*.h5
