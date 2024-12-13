@@ -1,0 +1,16 @@
+name: dataflux
+channels:
+  - pytorch
+  - conda-forge
+  - default
+dependencies:
+  - python=3.12
+  - pandas
+  - tqdm
+  - boto3
+  - pytables
+  - numpy
+  - scipy
+  - matplotlib
+  - requests
+  - pytorch
