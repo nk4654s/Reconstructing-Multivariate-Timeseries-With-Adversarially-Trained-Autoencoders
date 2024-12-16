@@ -1,12 +1,15 @@
 # Compressor AI Suite
-The Compressor AI Suite (CAS) mainly consists of two `PIP` packages [Comprisk]()  and [Dataflux]() located under 
-`packages/`. The Dataflux package manages the download and pre-processing of a compressor. Click [here]() to learn more 
+The Compressor AI Suite (CAS) mainly consists of two `PIP` packages Comprisk and Dataflux located under 
+`packages/`. The Dataflux package manages the download and pre-processing of a compressor. Click 
+[here](https://github.com/neaxplore/xplore-ai-cas/tree/master/packages/Dataflux) to learn more 
 about the standalone features and development of Dataflux. The Comprisk package is responsible for training an AI based 
 on the downloaded dataset by Dataflux. A set of multiple configuration files manages the training hyperparameters and 
-specifies the exact training. More information about Comprisk and its configuration can be found [here](). 
+specifies the exact training. More information about Comprisk and its configuration can be found 
+[here](https://github.com/neaxplore/xplore-ai-cas/tree/master/packages/Comprisk). 
 
 ## Installation
-CAS relies on [Python](), [Miniconda](), and [Docker]() and supports a variety of deep learning acceleration backends
+CAS relies on [Python](https://www.python.org), [Miniconda](https://docs.anaconda.com/miniconda/), and 
+[Docker](https://www.docker.com) and supports a variety of deep learning acceleration backends
 (e.g. `CUDA`, `MPS`, ...). The installation is simplified by multiple script files, but Python and Docker must be 
 installed manually.
 
@@ -31,7 +34,8 @@ sh scripts/docs.sh
 
 ## Usage
 The AI training is handled Comprisk and mainly performed using the `comprisk-pipeline` command. To apply a model for
-testing, use the `comprisk-analyzer` command. Both are explained in more detail [here]().
+testing, use the `comprisk-analyzer` command. Both are explained in more detail 
+[here](https://github.com/neaxplore/xplore-ai-cas/tree/master/packages/Comprisk#usage-locally).
 
 > Note: For production usage of a model, check out the `Docker` section of this document.
 

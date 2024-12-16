@@ -1,7 +1,8 @@
-name: comprisk
+name: cas
 channels:
     - pytorch
-    - conda-forge 
+    - conda-forge
+    - default
 dependencies:
     - python
     - boto3
