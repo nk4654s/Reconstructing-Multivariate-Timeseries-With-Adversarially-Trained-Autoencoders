@@ -1,11 +1,7 @@
 folder: environment/dev/datasets/thyssen-vd2-upload
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
-intervals:
-# - start      end
-  #- 2020-11-01 2024-10-29
-  - 2023-01-01 2024-12-12
-disk_backup: thyssen-vd2-upload-backup
-overwrite: false
+latest: true
+overwrite: true
 
 modules:
   - class_path: Dataflux.modules.Rename

@@ -59,14 +59,13 @@ def cli_main():
     # time frame to generate the scores for
     subprocess.run(["flux-pipeline", "-c", cli.config.dataset])
 
-    # load the dataset
-    dataset_args = cli.datamodule.trainset.get_args()
-    dataset_args_modified = dataset_args.as_dict()
-    
+    # load the dataset using the model's 'data' configuration
+    datamodule_args_modified = cli.config.data.as_dict()
+    datamodule_args_modified["shuffle"] = False
     if cli.config.dataset:
-        dataset_args_modified["path"] = get_dataset_path(cli.config.dataset)
+        datamodule_args_modified["train"] = get_dataset_path(cli.config.dataset)
 
-    data = Dataset(**dataset_args_modified)
+    data = DataModule(**datamodule_args_modified).trainset
 
     # load the trained model from disk and create the dataset object for the
     # previously downloaded dataset

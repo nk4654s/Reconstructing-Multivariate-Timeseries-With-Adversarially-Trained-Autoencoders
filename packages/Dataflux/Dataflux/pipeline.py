@@ -4,7 +4,7 @@ when processing a dataset using a defined yaml-config.
 import os
 import shutil
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List
 from Dataflux.cli import CLIArgumentParser
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
@@ -32,12 +32,25 @@ def download(parser: CLIArgumentParser, folder: str) -> None:
     # define the s3 data source
     machine_uuid = parser.args.machine_uuid
     interval_list = []
-    for interval in parser.args.intervals:
-        interval = interval.split(" ")
-        interval_list.append((
-            datetime.fromisoformat(interval[0]),
-            datetime.fromisoformat(interval[1])
-        ))
+    if parser.args.intervals and not parser.args.latest:
+        for interval in parser.args.intervals:
+            interval = interval.split(" ")
+            interval_list.append((
+                datetime.fromisoformat(interval[0]),
+                datetime.fromisoformat(interval[1])
+            ))
+
+    # get the current date and subtract 1 hour to get the model's input
+    if parser.args.latest:
+        now = datetime.now(tz=timezone.utc)
+        past = now - timedelta(hours=1)
+        interval_list = [(past, now)]
+
+    # exit on wrong inputs
+    if not interval_list:
+        method = "Latest" if parser.args.latest else "Config Intervals"
+        logger.error("Interval list should not be empty. Used method '%s' to get dates.", method)
+        exit(1)
 
     downloader = ContinuousDataDownloader(machine_uuid, interval_list)
     downloader.set_data_type(DataType.MEASUREMENTS)

@@ -64,35 +64,51 @@ class DataModule(L.LightningDataModule):
 
         stride = stride if stride != 0 else sequence_in
 
+        self._dataset_args = {
+            "sequence_in": sequence_in,
+            "sequence_out": sequence_out,
+            "stride": stride,
+            "skip": skip,
+            "key": key
+        }
+
+        self._train = None
+        self._val = None
+        self._collate_fn = None
+
+        if train and validate:
+            self.set_path(train, validate)
+
+    def set_path(self, train: str, validate: str) -> None:
+        """This method sets a new path to the training and validation datasets which
+        triggers both to load again. This function will be called by the constructor automatically,
+        if the paths are not 'None'.
+
+        Args:
+            train (str): The path of the training dataset.
+            validate (str): The path of the validation dataset.
+        """
         self._train = Dataset(
             path=train,
-            sequence_in=sequence_in,
-            sequence_out=sequence_out,
-            stride=stride,
-            skip=skip,
-            key=key,
+            **self._dataset_args
         )
 
         self._val = Dataset(
             path=validate,
-            sequence_in=sequence_in,
-            sequence_out=sequence_out,
-            stride=stride,
-            skip=skip,
-            key=key,
+            **self._dataset_args
         )
 
         self._collate_fn = collate_fn
-        if key == "data":
+        if self._dataset_args["key"] == "data":
             logger.debug("Using online collate function normalizing each sample independently.")
             self._collate_fn = online_collate_train
 
         logger.debug("Dataset (train) consists of %s samples", len(self._train))
         logger.debug("Dataset (validate) consists of %s samples", len(self._val))
-        logger.debug("Dataset datapoint skip is set to %s", skip)
-        logger.debug("Dataset window stride is set to %s", stride)
-        logger.debug("Dataset input sequence: %s", sequence_in)
-        logger.debug("Dataset output sequence: %s", sequence_out)
+        logger.debug("Dataset datapoint skip is set to %s", self._dataset_args["kip"])
+        logger.debug("Dataset window stride is set to %s", self._dataset_args["stride"])
+        logger.debug("Dataset input sequence: %s", self._dataset_args["sequence_in"])
+        logger.debug("Dataset output sequence: %s",self._dataset_args ["sequence_out"])
 
     @property
     def trainset(self) -> Dataset:

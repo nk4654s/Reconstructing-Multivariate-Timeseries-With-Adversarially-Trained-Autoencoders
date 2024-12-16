@@ -15,8 +15,6 @@ from Comprisk import logger
 
 class CompriskCLI(LightningCLI):
     """The CompriskCLI adds methods to the LightningCLI for training a model.
-    Before training, the user can set options to:
-        - find the best `lr_rate` and `batch_size`
     """
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:

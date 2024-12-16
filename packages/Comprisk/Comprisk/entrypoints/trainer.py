@@ -3,6 +3,8 @@
 import os
 import pickle
 import shutil
+
+import yaml
 from lightning.pytorch.callbacks.callback import Callback
 from lightning import LightningModule
 from lightning.pytorch.callbacks import ModelCheckpoint
@@ -101,7 +103,7 @@ def run_trainer(cli: CompriskCLI) -> str:
     metafolder = os.path.join(tb_logger.log_dir, "metadata")
     save_training_meta(metafolder, data)
     
-    # check iif a model should be finetuned
+    # check if a model should be finetuned
     if cli.config.finetune:
         config_path = os.path.dirname(cli.config.finetune)
         loader = ModelLoader(config_path)
@@ -132,7 +134,15 @@ def run_trainer(cli: CompriskCLI) -> str:
     train_score_transformer(tb_logger.log_dir, metafolder, valset)
     return tb_logger.log_dir
 
-def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset):  
+def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset) -> None:
+    """This method trains the ScoreTransformer given the model and dataset. Usually, this is immediately done on the
+    validation set after a training.
+
+    Args:
+        model_dir (str): The model's directory.
+        meta_dir (str): The model's metadata directory.
+        dataset (Dataset): The dataset to train the ScoreTransformer on.
+    """
     dataset_args = dataset.get_args()
     
     # load the (best) trained model back
@@ -146,7 +156,7 @@ def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset):
     score.fit(predicted, target)
 
     score_path = os.path.join(meta_dir, "score_transformer.pkl")
-    with open(score_path, "wb") as f:
+    with open(score_path, mode="wb") as f:
         pickle.dump(score, f)
 
 
@@ -159,7 +169,14 @@ def cli_main():
 
     # run methods before fit, then train
     cli.before_fit()
-    run_trainer(cli)
+    model_folder = run_trainer(cli)
+
+    # delete dataset paths from the saved config file
+    with open(os.path.join(model_folder, "config.yaml"), mode="r+", encoding="utf-8") as f:
+        model_args = yaml.safe_load(f)
+        model_args["data"]["train"] = None
+        model_args["data"]["validate"] = None
+        yaml.safe_dump(model_args, f)
 
 
 if __name__ == "__main__":
