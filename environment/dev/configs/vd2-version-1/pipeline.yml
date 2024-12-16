@@ -9,7 +9,7 @@ dataset:
 
 # 2. train the model using the tuned hyperparameters
 trainer:
-  - config: configs/vd2-version-1/initial_training_encdec.yml
+  - config: configs/vd2-version-1/model-training.yml
     tag: thyssen-vd2-training
 
     # overwrite the config's values

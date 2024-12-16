@@ -2,7 +2,7 @@ dataset:
  - config: environment/dev/configs/debug/dataset.yml
 
 trainer:
-  - config: environment/dev/datasets//configs/debug/training.yml
+  - config: environment/dev/datasets//configs/debug/model-training.yml
     tag: debug
 
 analyzer:
