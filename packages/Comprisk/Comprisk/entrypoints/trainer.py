@@ -80,7 +80,7 @@ def run_trainer(cli: CompriskCLI) -> str:
         sub_path = f"{cli.model.__class__.__name__}/{cli.config.tag}"
 
     logger.debug("Defining TensorBoard logger for %s", sub_path)
-    tb_logger = TensorBoardLogger("models", name=sub_path)
+    tb_logger = TensorBoardLogger(f"environment/{cli.config.environment}/models", name=sub_path)
     cli.trainer.logger = tb_logger
     os.makedirs(tb_logger.log_dir)
     logger.debug("Using log folder %s", tb_logger.log_dir)

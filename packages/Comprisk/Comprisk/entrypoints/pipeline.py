@@ -75,19 +75,23 @@ def cli_main():
     # load the pipeline config
     with open(args.config, "r", encoding="utf-8") as f:
         pipeline = yaml.load(f, Loader=yaml.BaseLoader)
+
+    # get the environment, defaults to "dev"
+    env = pipeline.get("environment", "dev")
+    base_dir = lambda p: os.path.join("environment", env, p)
     
     # download the dataset
     dataset_config = pipeline.get("dataset", [])
     for config in dataset_config:
-        subprocess.run(["flux-pipeline", "-c", config["config"]])
+        subprocess.run(["flux-pipeline", "-c", base_dir(config["config"])])
 
     # tune the model, this will not have an effect on the model's output folder
     tuner = pipeline.get("tuner", None)
     tuned_config: str | None = None
     if tuner:
-        subprocess.run(["comprisk-tuner", "-c", tuner["config"], "--tuner-config",
-                        tuner["tuner_config"], "--tuner-trials", tuner["tuner_trials"]])
-        tuned_config = find_tuned_config(tuner["config"])
+        subprocess.run(["comprisk-tuner", "-c", base_dir(tuner["config"]), "--tuner-config",
+                        base_dir(tuner["tuner_config"]), "--tuner-trials", tuner["tuner_trials"]])
+        tuned_config = find_tuned_config(base_dir(tuner["config"]))
 
     # train the model
     trainer_list: List[Dict] = pipeline.get("trainer", [])
@@ -98,7 +102,7 @@ def cli_main():
             # store the current folder structure of the model output root folder
             # after training, a new folder will be created, which must be passed to
             # the analyzer node
-            initial_structure = model_folder_structure()
+            initial_structure = model_folder_structure(path=base_dir(p="models"))
             
             # use the tuned config if available and wanted, this only applies for the first
             # trainer. Each next trainer will use the one of the previously trained model
@@ -108,7 +112,7 @@ def cli_main():
                 config = tuned_config
             
             # train the model
-            args = ["comprisk-trainer", "-c", config]
+            args = ["comprisk-trainer", "-c", base_dir(config)]
             args += [] if i == 0 else ["-f", latest_config]
             for key, value in trainer.items():
                 args += [f"--{key}", value]
@@ -116,7 +120,7 @@ def cli_main():
             subprocess.run(args)
 
             # find the output folder of the recently trained model
-            modified_structure = model_folder_structure()
+            modified_structure = model_folder_structure(path=base_dir(p="models"))
             recently_added = find_recent_folders(initial_structure, modified_structure)[0]
             latest_config = os.path.join(recently_added, "config.yaml")
     
@@ -132,8 +136,7 @@ def cli_main():
     analyzer_list = pipeline.get("analyzer", [])
     for analyzer in analyzer_list:
         command = ["comprisk-analyzer", "-c", latest_config, "--dataset",
-                    analyzer["dataset"], "--prefix", analyzer["prefix"], 
-                    "-s", analyzer.get("stride", "10")]
+                    base_dir(analyzer["dataset"]), "--prefix", analyzer["prefix"]]
 
         subprocess.run(command)    
     

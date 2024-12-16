@@ -2,7 +2,7 @@ name: cas
 channels:
     - pytorch
     - conda-forge
-    - default
+    - defaults
 dependencies:
     - python
     - boto3

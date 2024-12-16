@@ -5,7 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/packages/Comprisk" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/packages/Dataflux" isTestSource="false" />
     </content>
-    <orderEntry type="jdk" jdkName="comprisk" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="cas" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">

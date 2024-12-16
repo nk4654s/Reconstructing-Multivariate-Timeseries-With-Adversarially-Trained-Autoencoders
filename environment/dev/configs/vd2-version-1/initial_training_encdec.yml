@@ -27,7 +27,7 @@ trainer:
 model:
   class_path: Comprisk.model.ae.rnn.EncDecAD
   init_args:
-    # gerneral parameters
+    # general parameters
     activation: tanh
     loss: MSELoss
     optimizer: Adam

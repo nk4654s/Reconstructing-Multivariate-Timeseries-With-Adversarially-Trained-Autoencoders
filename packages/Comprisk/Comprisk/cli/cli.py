@@ -21,13 +21,11 @@ class CompriskCLI(LightningCLI):
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--tag", type=str, default=None)
+        parser.add_argument("--environment", type=str, default="dev")
         parser.add_argument("--finetune", "-f", type=str, default=None)
-        parser.add_argument("--find-lr", default=False, action="store_true")
         parser.add_argument("--find-batch-size", default=False, action="store_true")
-        parser.add_argument("--save-every", default=1)
         parser.add_argument("--tuner-config", nargs="?")
         parser.add_argument("--tuner-trials", type=int, default=1)
-        parser.add_argument("--scoring_step", type=int, default=-1)
 
     def before_fit(self):
         """Method executes before fit automatically."""
