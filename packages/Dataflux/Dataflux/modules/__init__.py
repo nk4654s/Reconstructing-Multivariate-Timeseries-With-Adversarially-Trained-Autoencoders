@@ -1,13 +1,17 @@
 """This submodule contains the processing modules applied after
-downloading a raw dataset from the Amazon S3 buckt. As some modules require
-the whole dataset to be available, there are two types of modules:
+downloading a raw dataset from the Amazon S3 buckt, as some modules require
+the whole dataset to be available.
 
-- preprocess
-- postprocess
-
-The preprocess-modules are called after downloading a file, while the
-postprocess-modules are executed on the whole dataset. Hence, the postprocess-modules
-inherit from a threaded super class (for more see `Dataflux.diskio`).
+The process-modules are called after downloading the whole dataset. Hence, the 
+modules inherit from a threaded super class (for more see `Dataflux.diskio`).
 """
-from Dataflux.modules.module import BasePreProcessor, EntryPoint
-from Dataflux.modules import preprocess, postprocess
+from Dataflux.modules.rename import Rename
+from Dataflux.modules.filter import Filter
+from Dataflux.modules.consistency import Consistency
+from Dataflux.modules.state import State
+
+from Dataflux.modules.position_bypass import PositionBypassValve
+# from Dataflux.modules.weather import WeatherDataset
+
+from Dataflux.modules.features import Features
+from Dataflux.modules.normalize import NormalizeFit, NormalizeTransform

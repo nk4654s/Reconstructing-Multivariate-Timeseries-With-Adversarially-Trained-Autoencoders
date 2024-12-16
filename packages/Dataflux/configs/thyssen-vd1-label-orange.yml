@@ -1,0 +1,62 @@
+folder: thyssen-vd1-labeled-testset
+machine_uuid: a6252582-01dd-49cb-8dbe-0742b28bc007
+intervals:
+  - 2022-09-20 2022-09-28 # Packungsleckage
+  - 2022-12-06 2022-12-15 # Packungsleckage
+  - 2024-06-11 2024-06-12 # Kühlwasserdurchfluss / Öldurchfluss
+num_workers: 1
+disk_backup: thyssen-vd1-orange
+overwrite: true
+
+modules:
+  - class_path: Dataflux.modules.Rename
+    init_args:
+      enable: True
+  - class_path: Dataflux.modules.State
+    init_args:
+      key: "Laeuft"
+      lower: 0.9
+      upper: 1.1
+      alpha_threshold: 10800
+      beta_threshold: 900
+  - class_path: Dataflux.modules.State
+    init_args:
+      key: "PositionBypassregelventilPCV73381 (%)"
+      lower: -0.999
+      upper: 0.001
+      alpha_threshold: 900
+      beta_threshold: 900
+  - class_path: Dataflux.modules.features.Features
+    init_args:
+      include:
+        - EnddruckErsteStufePIT73339 (bar)
+        - EnddruckZweiteStufePIT73397 (bar)
+        - EndtemperaturErsteStufeTETIT73334 (°C)
+        - EndtemperaturZweiteStufeTETIT73371 (°C)
+        - EndtemperaturZweiteStufenachKühlerTETIT73378 (°C)
+        - DifferenzdruckTriebwerksölPDIT73553 (bar)
+        - KompressordrehzahlSE73201 (rpm)
+        - KühlwasserdrucknachPumpePIT73425 (bar)
+        - KühlwasserdurchflussmengeFIT73423 (m^3/min)
+        - KühlwassertemperaturnachKühlerTETIT73422 (°C)
+        - Motorlager (°C)
+        - PackungsleckageFIT73389 (Nm3h)
+        - SaugdruckErsteStufePIT73319 (bar)
+        - SaugdruckZweiteStufePIT73340 (bar)
+        - SaugtemperaturErsteStufeTETIT73328 (°C)
+        - SaugtemperaturZweiteStufeTETIT73341 (°C)
+        - SchwingungsmessungTriebwerkVT74280 (mm/s)
+        - VentilnesttemperaturZweiteStufeDeckelseiteTETT73367 (°C)
+        - VentilnesttemperaturZweiteStufeKurbelseiteTETT73386 (°C)
+        - Wicklungstemperatur (°C)
+        - ÖltemperaturVorlaufTriebwerkTETIT73538 (°C)
+        - Biomethandurchfluss (m^3/min)
+  - class_path: Dataflux.modules.normalize.NormalizeFit
+    init_args:
+      method: minmax
+      remove_outliers: false
+      exclude_keys:
+        - ts
+  - class_path: Dataflux.modules.normalize.NormalizeTransform
+    init_args:
+      from_other: thyssen-vd1-labeled-trainset

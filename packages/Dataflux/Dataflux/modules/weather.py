@@ -1,16 +1,17 @@
 import os
 from threading import Lock
-from typing import Any, Dict, List
+from typing import Any, Dict
 import numpy as np
 import pandas as pd
-from Dataflux.helper import Meta, Metadata, get_machine_location
+from Dataflux.helper import Meta, Metadata
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
 from Dataflux.external.weather import WeatherData, WeatherStations, Geo
-from Dataflux.modules.postprocess.normalize import NormalizeFit
+from Dataflux.modules.normalize import NormalizeFit
 
 mutex = Lock()
 
 
+@DeprecationWarning
 class WeatherDataset(FileWorkerCallable):
     """
     Represents a weather dataset for file worker operations. This class provides

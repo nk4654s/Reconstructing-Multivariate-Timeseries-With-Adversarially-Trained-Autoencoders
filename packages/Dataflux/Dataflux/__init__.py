@@ -1,12 +1,11 @@
 """The Dataflux package contains entrypoints to download and process a dataset made
-out of `TSV-files` stored on an Amazon S3 server. The pre- and post-processing steps
+out of `TSV-files` stored on an Amazon S3 server. The pre-processing steps
 can be found in the entrypoint file `pipeline.py`.
 
-A processing module has to be registered in the `modules_pre` or `modules_post` list at
+A processing module has to be registered in the `modules` list at
 the very top, if it should be executed as a default every time. To add new modules,
 just for a single dataset configuration, define the module's class path in the yaml-config.
-To create custom modules, head to the `Dataflux.modules` folder and choose either the 
-`postprocess` or `preprocess` submodule.
+To create custom modules, head to the `Dataflux.modules` create a `FileWorker` subclass.
 
 ### Config Structure
 To download and process a dataset, run the command `flux-pipeline -c <path-to-config>`,
@@ -19,12 +18,7 @@ intervals:
   - <start> <end>
   - ...
 
-preprocessing:
-  - class_path: <class-path-with-package>
-    init_args:
-      <arg-name>: <arg-value>
-
-postprocessing:
+modules:
   - class_path: <class-path-with-package>
     init_args:
       <arg-name>: <arg-value>

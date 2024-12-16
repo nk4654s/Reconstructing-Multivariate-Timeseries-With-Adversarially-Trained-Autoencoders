@@ -8,7 +8,7 @@ import pickle
 
 from Dataflux import logger
 from Dataflux.helper import Meta, Metadata, FluxScaler, ScalerMethod
-from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
+from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
 
 mutex = Lock()
 
@@ -100,23 +100,19 @@ class NormalizeFit(FileWorkerCallable):
 
         return scaler
 
-    def run(self, file_path: str, context: FileWorkerContext) -> Any:
+    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         # Load the file into a pandas DataFrame, sort by column names to ensure that
         # dataframe is consistent
         df = pd.read_hdf(file_path, key="data")
         df = df.reindex(sorted(df.columns), axis=1) # type: ignore
-        logger.debug("Fitting file %s", file_path)
 
         with mutex:
             # find and remove outliers
             if self._remove:
-                initial = len(df)
                 df = remove_outlier(df)
                 df.to_hdf(file_path, key="clean")
 
                 day = file_path.rsplit(os.path.sep, maxsplit=1)[-1].split("_", maxsplit=1)[1][:-3]
-                logger.debug("Removed Outliers of (day) file (%s) %s", day, file_path)
-                logger.debug("Removed %s values from original length %s", initial - len(df), initial)
                 self._files[day] = len(df)
 
             # get minimum and maximum values from previous files
@@ -124,11 +120,12 @@ class NormalizeFit(FileWorkerCallable):
             scaler.fit(df)
 
             context.put(ContextParam.SCALER, scaler)
+        return None, None
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         logger.debug("Finished fitting the normalizer. Used method %s", self._method)
         for file_dict in metadata[Meta.FILES]:
-            day = file_dict["day"]
+            day = file_dict[Meta.DAY.name]
             changes = self._files.get(day, None)
 
             if changes:
@@ -140,7 +137,6 @@ class NormalizeFit(FileWorkerCallable):
             total = sum([d["recordings"] for d in metadata[Meta.FILES]])
             metadata.put(total, Meta.TOTAL_RECORDINGS)
             logger.debug("Removing outliers resulted in a new dataset length of %s samples", total)
-            logger.debug("Modified day info after outlier removal %s", metadata[Meta.FILES])
 
 
 class NormalizeTransform(FileWorkerCallable):
@@ -154,7 +150,7 @@ class NormalizeTransform(FileWorkerCallable):
     Args:
         from_other (str): Another dataset to use the normalizer from.
     """
-    def __init__(self, from_other: str = "") -> None:
+    def __init__(self, from_other: str = "", custom: List[str] = []) -> None:
         self._scaler = None
         self._columns = list()
         if from_other:
@@ -168,6 +164,9 @@ class NormalizeTransform(FileWorkerCallable):
             with open(path, "rb") as f:
                 self._scaler = pickle.load(f)
                 logger.debug("Loaded normalization of other dataset.")
+        
+        self._custom = [[e.strip() for e in c.split(",")] for c in custom] if custom else []
+        self._custom = sorted(self._custom, key=lambda x: x[0])
 
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {NormalizeFit.__name__: CallableDependency.IMMEDIATELY_BEFORE}
@@ -176,28 +175,34 @@ class NormalizeTransform(FileWorkerCallable):
         if self._scaler:
             return self._scaler
 
-        scaler = context.get(ContextParam.SCALER)
+        scaler: FluxScaler = context.get(ContextParam.SCALER)
+        assert scaler, "Scaler is 'None', maybe the dataset is empty?"
+        logger.debug("Got scaler from 'NormalizeFit'.")
+
+        # modify the scaler if a custom one was defined
+        if self._custom:
+            assert scaler.method == ScalerMethod.NORMALIZE, "Custom scalings are supported on 'MinMax' scaler only."
+
+            for i, feature in enumerate(sorted(scaler._internal_scaler.feature_names_in_)):
+                name, min_, max_ = self._custom[i]
+                assert name == feature, f"Expected defined name ({name}) to match scaling feature ({feature})"
+                
+                scaler.overwrite_column(i, float(min_), float(max_))
+            logger.debug("Modified scaler with custom values.")
+
+        self._scaler = scaler
         return scaler
 
-    def run(self, file_path: str, context: FileWorkerContext) -> Any:
+    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         # read the file as pandas dataframe and sort by column names
         # to be consistent with the fitted values
-        store = pd.HDFStore(file_path)
-        if "/clean" in store.keys():
-            df = store.get("clean")
-            logger.debug("Loaded cleaned file %s", file_path)
-        else:
-            df = store.get("data")
-            logger.debug("Loaded regular file %s", file_path)
-
-        store.close()
+        df = pd.read_hdf(file_path, key="data")
         df = df.reindex(sorted(df.columns), axis=1) # type: ignore
 
         if not self._columns:
             self._columns = list(df.columns.values)
         else:
             to_drop = list(set(df.columns.values) - set(self._columns))
-            logger.debug("Ignored %s when normalizing (%s)", to_drop, self._columns)
             df = df.drop(columns=to_drop, errors="ignore")
 
         # get the used normalization method and the fitted values
@@ -205,6 +210,7 @@ class NormalizeTransform(FileWorkerCallable):
         normed = scaler.transform(df, dtype=np.float32)
 
         normed.to_hdf(file_path, key="norm")
+        return None, None
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         # get the fitted values and method
@@ -221,7 +227,7 @@ class NormalizeTransform(FileWorkerCallable):
         # save the used normalization method and fitted values to the
         # dataset's metadata
         data = {
-            Meta.NORM_METHOD.name: scaler.method.value,
+            Meta.NORM_METHOD.name: scaler.method.value if scaler else None,
             Meta.NORM_PATH.name: path,
             Meta.NORM_KEYS.name: self._columns
         }

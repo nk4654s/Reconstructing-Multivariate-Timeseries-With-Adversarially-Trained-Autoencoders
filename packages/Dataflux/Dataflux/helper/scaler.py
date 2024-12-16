@@ -58,6 +58,22 @@ class FluxScaler:
         The scaling method used.
         """
         return self._method
+
+    def overwrite_column(self, index: int, min_: float, max_: float) -> None:
+        assert isinstance(self._internal_scaler, MinMaxScaler), "Overwriting columns on MinMax method available only."
+
+        data_range = max_ - min_
+
+        self._internal_scaler.data_min_[index] = min_
+        self._internal_scaler.data_max_[index] = max_
+        self._internal_scaler.data_range_[index] = data_range
+        self._internal_scaler.min_[index] = -1 - min_ * (2 / data_range)
+
+        # scale calculation: (feature_range_max - feature_range_min) / data_range
+        # MinMax feature range is always [-1, 1] here, which results in 2
+        scale = 2 / data_range if data_range != 0 else 0
+        self._internal_scaler.scale_[index] = scale
+
     
     def fit(self, df: pd.DataFrame) -> "FluxScaler":
         """
@@ -68,6 +84,7 @@ class FluxScaler:
         """
         header = sorted(list(set(df.columns.values) - self._exclude))
         self._internal_scaler.partial_fit(df[header])
+        return self
 
     def transform(self, df: pd.DataFrame, dtype: str = "float32") -> pd.DataFrame:
         """

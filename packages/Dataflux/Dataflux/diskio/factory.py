@@ -5,7 +5,7 @@ from typing import List
 from Dataflux.helper import Meta, Metadata
 from .pool import FileWorkerPool
 from .worker import FileWorkerThread
-from .context import FileWorkerContext
+from .context import FileWorkerContext as Context
 from .callable import FileWorkerCallable
 from Dataflux import logger
 
@@ -13,22 +13,25 @@ from Dataflux import logger
 class FileWorkerFactory:
     """This class is used to create a pool of file workers.
     """
-    def __init__(self, base_dir: str = "dataset", num_workers: int = 2) -> None:
+    def __init__(self, base_dir: str = "dataset", num_workers: int = 1) -> None:
         """The FileWorkerFactory initializes a pool of file workers.
 
         Args:
             base_dir (str): The base directory of the dataset.
             num_workers (int): The number of workers to be created.
         """
-        self._context = FileWorkerContext()
         self._base_dir = base_dir
         self._metadata = Metadata()
         self._metadata.load(base_dir)
 
+        self._context = Context()
+        self._context.put(Context.DIRECTORY, base_dir)
+        self._context.put(Context.UUID, self._metadata[Meta.MACHINE_UUID])
+
         self._num_workers = num_workers
         self._pool = FileWorkerPool(self._context, self._metadata)
 
-    def initialize_workers(self, modules: List[FileWorkerCallable]) -> FileWorkerPool:
+    def initialize_workers(self) -> FileWorkerPool:
         """The method initializes the workers in the pool and provides a list of files
         to process to each worker.
 
@@ -48,10 +51,9 @@ class FileWorkerFactory:
         s = max(math.ceil(n / self._num_workers), 1) # e.g. threads=4 -> s=25
         logger.debug("One worker processes %d files", s)
         logger.debug("Using %d workers", self._num_workers)
-        for m in modules:
-            for i in range(0, n, s): # i=0, i=25, i=75, ...
-                logger.debug("Adding files %s to worker %d", files[i:i + s], i)
-                worker = FileWorkerThread(files[i:i + s], self._context)
-                self._pool.register_worker(worker, m)
+        for i in range(0, n, s): # i=0, i=25, i=75, ...
+            worker = {"files": files[i:i + s], "context": self._context}
+            self._pool.register_worker(worker)
 
+        logger.debug("Finished worker initialization for %s files", n)
         return self._pool
