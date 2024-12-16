@@ -1,0 +1,14 @@
+dataset:
+ - config: environment/dev/configs/debug/dataset.yml
+
+trainer:
+  - config: environment/dev/datasets//configs/debug/training.yml
+    tag: debug
+
+analyzer:
+  - dataset: environment/dev/datasets/dataset-debug
+    prefix: analysis/transformer/good
+
+  - dataset: environment/dev/datasets/dataset-debug
+    prefix: analysis/validate
+  
