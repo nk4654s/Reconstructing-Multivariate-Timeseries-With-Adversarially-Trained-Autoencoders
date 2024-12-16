@@ -3,7 +3,9 @@ import shutil
 from typing import Any, Dict, List, Tuple
 from copy import deepcopy, copy
 
-from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency
+import pandas as pd
+
+from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
 from Dataflux.helper import Metadata, Meta
 from Dataflux import logger
 
@@ -82,18 +84,36 @@ class SplitDataset(FileWorkerCallable):
                 os.makedirs(os.path.join(name, "metadata"))
             else:
                 self.active = False
+        else:
+            os.makedirs(os.path.join(name, "metadata"))
+
+        self._files = []
+        self._total = 0
 
 
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {SplitDataset.__name__: CallableDependency.FINAL}
 
-    def run(self, file_path: str, context: FileWorkerContext) -> Any:
-        # this module does not need to operate the dataframes themselves
-        pass
+    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
+        df = pd.read_hdf(file_path, key="norm")
+        info = {
+            Meta.DAY.name: file_path.split("_", maxsplit=1)[-1][:-3],
+            "recordings": df.shape[0],
+            "features": df.shape[1]
+        }
+
+        self._files.append(info)
+        self._total += df.shape[0]
+
+        return None, None
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         if not self.active:
             return
+        
+        # make sure to have the correct metadata before performing a split
+        metadata.put(self._total, Meta.TOTAL_RECORDINGS)
+        metadata.put(self._files, Meta.FILES)
 
         # split the dataset according to each dataframes metadata
         trimmed_days, splitted_days = deterministic_split_algorithm(metadata, self._percentage)
@@ -116,15 +136,18 @@ class SplitDataset(FileWorkerCallable):
         # the metadata from the arguments will be saved automatically, but the
         # splitted metadata not. Hence, save it from here
         splitted_metadata.save(self._name)
+        logger.debug("Cut produces the sizes %s and %s", metadata[Meta.TOTAL_RECORDINGS], splitted_metadata[Meta.TOTAL_RECORDINGS])
 
         # finally move all day-files from the trimmed dataset to the splitted one
         uuid = metadata[Meta.MACHINE_UUID]
         path = metadata[Meta.PATH]
-        move = [f"{path}{os.path.sep}{uuid}_{day['day']}.h5" for day in splitted_days]
+        move = [f"{path}{os.path.sep}{uuid}_{day[Meta.DAY.name]}.h5" for day in splitted_days]
         for path in move:
             splitted_path = path.replace(metadata[Meta.PATH], self._name)
             if os.path.exists(path):
                 shutil.move(path, splitted_path)
+            else:
+                logger.warning("Tried to move a non-existing file to splitted dataset (%s).", path)
         
         # do not forget to move the normalizer
         trimmed_norm = os.path.join(metadata[Meta.PATH], "metadata", "normalizer.pkl")

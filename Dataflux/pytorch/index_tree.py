@@ -1,9 +1,12 @@
 """This module contains a search tree to find the file to load corresponding
 to the sampling index."""
+import sys
 from typing import Dict, List, Tuple
 
 from Dataflux.helper import Meta, Metadata
 from Dataflux import logger
+
+sys.setrecursionlimit(1500)
 
 
 class Node:
@@ -77,6 +80,7 @@ class IndexTree:
         skip (int): The number of timestamps to skip. Defaults to 1 (do not skip any timestamps).
     """
     def __init__(self, metadata: Metadata, window_size: int = 1, skip: int = 1) -> None:
+        logger.debug("Initialize indexing")
         self._root: Node | None = None
         self._win = window_size
         self._skip = skip
@@ -84,6 +88,7 @@ class IndexTree:
 
         self._size = 0
         self._build_tree(metadata[Meta.FILES])
+        logger.debug("Finished indexing")
 
     def __len__(self) -> int:
         return self._size
@@ -103,7 +108,7 @@ class IndexTree:
     def _get_cumulative_size(self, node_list: List[Dict]) -> List[Node]:
         # sort the node_list first, as this hould help building
         # a balanced binary search tree
-        node_list = sorted(node_list, key=lambda _: _["day"])
+        node_list = sorted(node_list, key=lambda _: _[Meta.DAY.name])
         cum_weights = 0
         weights = []
 
@@ -114,7 +119,7 @@ class IndexTree:
         for node in node_list:
             # create a new node
             node_size = node["recordings"] // self._skip
-            node = Node(node["day"], cum_weights, node_size)
+            node = Node(node[Meta.DAY.name], cum_weights, node_size)
 
             # skip dataframes which are smaller than the window size
             if node_size < self._win:

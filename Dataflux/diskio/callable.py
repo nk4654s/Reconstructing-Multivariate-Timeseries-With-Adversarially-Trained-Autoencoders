@@ -1,8 +1,11 @@
 """Contains the base class for a post-processing module."""
 from enum import Enum, unique, auto
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple, Union
 from Dataflux.helper import Metadata
 from .context import FileWorkerContext
+
+
+CALLABLE_RETURN_TYPE = Tuple[Union[str, List[str], None], Union[str, List[str], None]]
 
 
 @unique
@@ -16,6 +19,7 @@ class CallableDependency(Enum):
     IMMEDIATELY_BEFORE = auto()
     EXISTS = auto()
     NOT_BEFORE = auto()
+    BEFORE = auto()
     FINAL = auto()
 
 
@@ -43,7 +47,7 @@ class FileWorkerCallable:
         """
         raise NotImplementedError
 
-    def run(self, file_path: str, context: FileWorkerContext) -> Any:
+    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         """This method will be executed by the FileWorkerThread.
 
         Args:
@@ -52,6 +56,6 @@ class FileWorkerCallable:
             information passed between modules.
 
         Returns:
-            Any result of the file processing task. Can be `None`.
+            File path(s), if the worker module added new files to the dataset.
         """
         raise NotImplementedError

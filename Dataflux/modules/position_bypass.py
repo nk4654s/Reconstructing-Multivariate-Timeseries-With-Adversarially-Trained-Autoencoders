@@ -1,20 +1,19 @@
 """This module pre-processes a dataframe and insters values to NAN."""
+import os
+from typing import Any, Dict
 import numpy as np
-from pandas import DataFrame, Series
+import pandas as pd
 
-from Dataflux.helper import simple_graph, Meta
-from Dataflux.modules import BasePreProcessor
-from Dataflux.helper import Metadata, DataWrapper
+from Dataflux.diskio import FileWorkerCallable, CALLABLE_RETURN_TYPE, FileWorkerContext as Context
+from Dataflux.diskio.callable import CallableDependency
+from Dataflux.helper import Meta
+from Dataflux.helper import Metadata
 from Dataflux import logger
+from Dataflux.modules.normalize import NormalizeFit
+from Dataflux.modules.rename import Rename
 
 
-GRAPH_HTS_TITLE = "Time Steps Removed after Bypass Ventil"
-GRAPH_HTS_XLABEL = "Date"
-GRAPH_HTS_YLABEL = "Time Steps Removed (%)"
-GRAPH_HTS_FILE_NAME = "position_bypass_ventil_removalpng"
-
-
-class PositionBypassRemoval(BasePreProcessor):
+class PositionBypassValve(FileWorkerCallable):
     """This mdoule drops bypass ventils from the dataframe. In addition, everytime the bypass ventil is
     opened, a timespan `t` can be removed from the dataset.
 
@@ -25,22 +24,25 @@ class PositionBypassRemoval(BasePreProcessor):
     def __init__(self, remove_timespan: int = 600):
         super().__init__()
 
-        self._stats = {}
-        self._rm_rows = int(remove_timespan)
+        self._update = {}
+        self._threshold = int(remove_timespan)
 
-    def on_download_finished(self, wrapper: DataWrapper, metadata: Metadata) -> DataWrapper:
-        logger.debug("Removing position bypass ventil from dataset file.")
-        df = wrapper.df
+    def get_dependencies(self) -> Dict[str, CallableDependency]:
+        return {
+            Rename.__name__: CallableDependency.BEFORE,
+            NormalizeFit.__name__: CallableDependency.NOT_BEFORE
+        }
+
+    def run(self, file_path: str, context: Context) -> CALLABLE_RETURN_TYPE:
+        df = pd.read_hdf(file_path, keys="data")
         cols = [c for c in df.columns.values if "PositionBypassregelventilPCV74381 (%)" in c]
 
         # copied from Anacision, malfunctions possible
         lower = np.argwhere(df[cols].to_numpy())[:, 0]
         if len(lower) == 0:
-            self._stats[metadata[Meta.DAY]] = 0
-            wrapper.df = df
-            return wrapper
+            return None, None
 
-        upper = lower + self._rm_rows
+        upper = lower + self._threshold
 
         # Combine lower and upper into a list of tuples and sort by the lower bounds
         intervals = sorted(zip(lower, upper, strict=True))
@@ -62,31 +64,22 @@ class PositionBypassRemoval(BasePreProcessor):
         merged_intervals.append((current_start, current_end))
 
         # Create a boolean series to mark data within the specified ranges
-        mask = Series(False, index=df.index)
+        mask = pd.Series(False, index=df.index)
         for l, u in merged_intervals:
             mask |= (df.index >= l) & (df.index <= u)
 
         # Invert the mask to filter out the data within the specified ranges
         filtered_data = df[~mask]
+        filtered_data.to_hdf(file_path, key="data")
 
-        logger.debug("Removing bypass ventils from dataset file resulted in %s dropped columns", len(cols))
-        logger.debug("Removed %s rows due to opened bypass ventils.", len(df) - len(filtered_data))
+        day = os.path.basename(file_path).split("_", maxsplit=1)[-1][:-3]
+        self._update[day] = len(filtered_data)
+        return None, None
 
-        self._stats[metadata[Meta.DAY]] = round(
-            (len(df) - len(filtered_data)) / len(df) * 100, 3
-        )
-
-        wrapper.df = filtered_data
-        return wrapper
-
-    def on_processing_finished(self, metadata: Metadata) -> None:
-        days = list(self._stats.keys())
-        vals = list(self._stats.values())
-
-        # generate graph
-        ax = simple_graph(days, vals)(
-            GRAPH_HTS_TITLE, GRAPH_HTS_XLABEL, GRAPH_HTS_YLABEL
-        )
-
-        # add graph to metadata
-        metadata.put_list((ax, GRAPH_HTS_FILE_NAME), Meta.ADDITIONAL_REPORT_GRAPHS)
+    def finish(self, context: Context, metadata: Metadata) -> None:
+        for file_info in metadata[Meta.FILES]:
+            day = file_info[Meta.DAY.name]
+            recordings = self._update.get(day, None)
+            if recordings:
+                file_info["recordings"] = recordings
+        logger.debug("Finished PositionBypassValve module.")
