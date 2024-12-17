@@ -1,10 +1,11 @@
+import os.path
 import subprocess
 
 import pandas as pd
 import yaml
 
 from Dataflux import logger
-from Dataflux.pytorch import Dataset
+from Dataflux.pytorch import EmptyDatasetError
 from Dataflux.data import DataUpdater, UpdateCallable, DataType
 
 from Comprisk.data import DataModule
@@ -57,15 +58,21 @@ def cli_main():
 
     # download and process the dataset, the config file contains the requested
     # time frame to generate the scores for
-    subprocess.run(["flux-pipeline", "-c", cli.config.dataset])
-
-    # load the dataset using the model's 'data' configuration
+    # If the dataset is given as a folder, there is no need to download it again
     datamodule_args_modified = cli.config.data.as_dict()
     datamodule_args_modified["shuffle"] = False
-    if cli.config.dataset:
+    if os.path.isfile(cli.config.dataset):
+        subprocess.run(["flux-pipeline", "-c", cli.config.dataset])
         datamodule_args_modified["train"] = get_dataset_path(cli.config.dataset)
+    else:
+        datamodule_args_modified["train"] = cli.config.dataset
 
-    data = DataModule(**datamodule_args_modified).trainset
+    # catch the case, where the machine is offline and the dataset is empty
+    try:
+        data = DataModule(**datamodule_args_modified).trainset
+    except EmptyDatasetError:
+        logger.warning("The dataset is empty, nothing to generate. Exiting gracefully.")
+        exit(0)
 
     # load the trained model from disk and create the dataset object for the
     # previously downloaded dataset

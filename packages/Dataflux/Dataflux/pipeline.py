@@ -59,7 +59,7 @@ def download(parser: CLIArgumentParser, folder: str) -> None:
     downloader.run(folder)
 
 
-def process(parser: CLIArgumentParser, modules: List) -> None:
+def process(parser: CLIArgumentParser) -> None:
     """
     The processing operations. This function initializes the CLIArgumentParser
     with the module classes and handles command-line interface (CLI) arguments.
@@ -67,10 +67,8 @@ def process(parser: CLIArgumentParser, modules: List) -> None:
     Args:
         parser (CLIArgumentParser): The CLIArgumentParser which contains all arguments
             parsed from the command line interface.
-        modules (List): The list of classes which should be used for
-            processing.
     """
-    # create multi-threaded file-hanlder
+    # create multithreaded file-handler
     factory = FileWorkerFactory(parser.args.folder, parser.args.num_workers)
     pool: FileWorkerPool = factory.initialize_workers()
     pool.ensure_module_dependency(modules)
@@ -110,7 +108,7 @@ def main() -> None:
     metadata.save(parser.args.folder)      
 
     # 2. run post-processing step, which requires the pre-processed data
-    process(parser, modules) 
+    process(parser)
 
     # 3. copy the pipeline configuration used for consistency
     config_path = os.path.join(parser.args.folder, "metadata", "config.yaml") # type: ignore

@@ -13,6 +13,10 @@ from Dataflux.pytorch.index_tree import IndexTree
 from Dataflux.pytorch.cache import DataFrameCache
 
 
+class EmptyDatasetError(Exception):
+    pass
+
+
 class Dataset(torch.utils.data.Dataset): # type: ignore
     """
     A custom PyTorch dataset class that loads and processes data from HDF5 files. This class uses
@@ -51,6 +55,9 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
 
         self._num_input = sequence_in
         self._num_output = sequence_out
+        if len(self._metadata[Meta.FILES]) == 0:
+            raise EmptyDatasetError()
+
         self._num_features = self._metadata[Meta.FILES][0]["features"]
 
         if behavior == DatasetTypes.AUTOENCODER.value:

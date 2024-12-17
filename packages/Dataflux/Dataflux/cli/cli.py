@@ -5,9 +5,7 @@ import re
 from argparse import ArgumentParser, Namespace, Action
 from typing import List
 
-from Dataflux.helper import fullname, class_for_name
-
-from Dataflux.cli.config_helper import build_config, expand_module_list, get_module_config_args
+from Dataflux.cli.config_helper import build_config, expand_module_list
 from Dataflux.cli.defaults import DEFAULT_ARGUMENTS
 
 
@@ -36,6 +34,8 @@ class CLIArgumentParser(ArgumentParser):
 
         # init additional arguments from child classes
         self.add_argument("--config", "-c", type=str, help="Path to pipeline config yaml.")
+        self.add_argument("--latest", action="store_true", help="Whether to use the last hour of data or not.")
+        self.add_argument("--folder", help="The output folder name")
         self.prepare_arguments()
 
         # pre-parse args to load config if given
@@ -44,7 +44,13 @@ class CLIArgumentParser(ArgumentParser):
         for key, value in DEFAULT_ARGUMENTS.items():
             value = self.args.config.get(key, value)
             arg_name = key.replace("_", "-")
-            self.add_argument(f"--{arg_name}", default=value, dest=key, help=f"{key} generated from config.")
+            if f"--{arg_name}" in self._option_string_actions.keys():
+                continue
+
+            if isinstance(value, bool):
+                self.add_argument(f"--{arg_name}", action="store_true", default=value, dest=key, help=f"{key} generated from config.")
+            else:
+                self.add_argument(f"--{arg_name}", default=value, dest=key, help=f"{key} generated from config.")
 
         # store all processing modules as classes and inspect their attributes
         # each attribute required by the classes constructer will be added as argument to
