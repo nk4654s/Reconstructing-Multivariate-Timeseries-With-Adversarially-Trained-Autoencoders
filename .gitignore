@@ -9,11 +9,14 @@ requirements.txt
 *.png
 events.out.tfevents.*
 models/*
+environment/dev/models/*
 !environment/dev/models/README.md
 !environment/production/models/
 
 # exclude datasets from specific stages
 datasets/*
+environment/dev/datasets/
+environment/production/datasets/
 !environment/dev/datasets/README.md
 !environment/production/datasets/README.md
 thyssen-*/

@@ -171,12 +171,13 @@ class NormalizeTransform(FileWorkerCallable):
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {NormalizeFit.__name__: CallableDependency.IMMEDIATELY_BEFORE}
 
-    def _get_scaler(self, context: FileWorkerContext):
+    def _get_scaler(self, context: FileWorkerContext)-> FluxScaler | None:
         if self._scaler:
             return self._scaler
 
         scaler: FluxScaler = context.get(ContextParam.SCALER)
-        assert scaler, "Scaler is 'None', maybe the dataset is empty?"
+        if not scaler:
+            return None
         logger.debug("Got scaler from 'NormalizeFit'.")
 
         # modify the scaler if a custom one was defined
@@ -207,6 +208,8 @@ class NormalizeTransform(FileWorkerCallable):
 
         # get the used normalization method and the fitted values
         scaler = self._get_scaler(context)
+        if not scaler:
+            return None, file_path
         normed = scaler.transform(df, dtype=np.float32)
 
         normed.to_hdf(file_path, key="norm")

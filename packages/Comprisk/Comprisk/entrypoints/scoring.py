@@ -33,8 +33,11 @@ def cli_main():
     if cli.config.dataset:
         dataset_args = dataset.get_args().as_dict()
         dataset_args["path"] = cli.config.dataset
-        dataset_args["stride"] = cli.config.stride if cli.config.stride else dataset_args["stride"]
         dataset = Dataset(**dataset_args)
+
+    if dataset is None:
+        logger.error("No dataset available for training the ScoreTransformer. Make sure to define the validation set path.")
+        exit(1)
 
     # load the model with the helper class, then apply the model on the dataset
     meta_path = os.path.join(base_path, "metadata")
