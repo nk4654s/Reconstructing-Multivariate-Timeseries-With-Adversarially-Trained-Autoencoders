@@ -88,23 +88,25 @@ class DataModule(L.LightningDataModule):
             train (str): The path of the training dataset.
             validate (str): The path of the validation dataset.
         """
-        self._train = Dataset(
-            path=train,
-            **self._dataset_args
-        )
-
-        self._val = Dataset(
-            path=validate,
-            **self._dataset_args
-        )
-
         self._collate_fn = collate_fn
         if self._dataset_args["key"] == "data":
             logger.debug("Using online collate function normalizing each sample independently.")
             self._collate_fn = online_collate_train
 
-        logger.debug("Dataset (train) consists of %s samples", len(self._train))
-        logger.debug("Dataset (validate) consists of %s samples", len(self._val))
+        if train:
+            self._train = Dataset(
+                path=train,
+                **self._dataset_args
+            )
+            logger.debug("Dataset (train) consists of %s samples", len(self._train))
+
+        if validate:
+            self._val = Dataset(
+                path=validate,
+                **self._dataset_args
+            )
+            logger.debug("Dataset (validate) consists of %s samples", len(self._val))
+
         logger.debug("Dataset datapoint skip is set to %s", self._dataset_args["skip"])
         logger.debug("Dataset window stride is set to %s", self._dataset_args["stride"])
         logger.debug("Dataset input sequence: %s", self._dataset_args["sequence_in"])

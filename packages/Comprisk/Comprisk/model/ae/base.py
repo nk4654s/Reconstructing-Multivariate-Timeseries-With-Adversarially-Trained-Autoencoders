@@ -75,7 +75,8 @@ class AutoEncoder(BaseModel):
         self._decoder.to(self.device)
         self._encoder.device = self.device
 
-        self.save_hyperparameters(ignore=["encoder", "decoder"])
+        # self.save_hyperparameters(ignore=["encoder", "decoder"])
+        self.save_hyperparameters()
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         """
