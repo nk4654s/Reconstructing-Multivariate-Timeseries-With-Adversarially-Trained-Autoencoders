@@ -51,7 +51,16 @@ def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
     with open(hparam_path, mode="r", encoding="UTF-8") as f:
         hparams = yaml.safe_load(f)
         sub_modules = {}
-        for key, value in hparams["init_args"].items():
+
+        for drop in [key for key in hparams.keys() if key.startswith("_")]:
+            if drop == "_class_path":
+                continue
+            del hparams[drop]
+
+        for key, value in hparams.items():
+            if drop == "_class_path":
+                continue
+
             if isinstance(value, dict):
                 libpath = value["class_path"]
                 module = class_for_name(*libpath.rsplit(".", maxsplit=1))
@@ -59,7 +68,7 @@ def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
             else:
                 sub_modules[key] = value
 
-        model_class = class_for_name(*hparams["class_path"].rsplit(".", maxsplit=1))
+        model_class = class_for_name(*hparams["_class_path"].rsplit(".", maxsplit=1))
         return model_class, sub_modules
 
 
