@@ -4,22 +4,22 @@ trainer:
     # define the early stopping callback
     - class_path: lightning.pytorch.callbacks.EarlyStopping
       init_args:
-        monitor: validate/R2Score
+        monitor: validate/MSELoss
         min_delta: 0.000001
         patience: 4
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
         every_n_epochs: 1
-        monitor: validate/R2Score
+        monitor: validate/MSELoss
         filename: "epoch={epoch}-val={validate/MSELoss:.6f}"
         auto_insert_metric_name: false
         save_top_k: 3
-        mode: max
+        mode: min
         dirpath: checkpoints
         
   # define training configuration
   precision: 32
-  max_epochs: 100
+  max_epochs: 50
   gradient_clip_val: 1.0
 #  profiler: "simple"
   log_every_n_steps: 1
