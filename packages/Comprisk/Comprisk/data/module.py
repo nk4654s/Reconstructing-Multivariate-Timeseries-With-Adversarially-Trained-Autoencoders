@@ -105,7 +105,7 @@ class DataModule(L.LightningDataModule):
 
         logger.debug("Dataset (train) consists of %s samples", len(self._train))
         logger.debug("Dataset (validate) consists of %s samples", len(self._val))
-        logger.debug("Dataset datapoint skip is set to %s", self._dataset_args["kip"])
+        logger.debug("Dataset datapoint skip is set to %s", self._dataset_args["skip"])
         logger.debug("Dataset window stride is set to %s", self._dataset_args["stride"])
         logger.debug("Dataset input sequence: %s", self._dataset_args["sequence_in"])
         logger.debug("Dataset output sequence: %s",self._dataset_args ["sequence_out"])

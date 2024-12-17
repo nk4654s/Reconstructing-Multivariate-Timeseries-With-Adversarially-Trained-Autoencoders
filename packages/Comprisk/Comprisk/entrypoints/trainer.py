@@ -120,7 +120,7 @@ def run_trainer(cli: CompriskCLI) -> str:
     # run methods after fit
     cli.after_fit()
 
-    # if a model was finetuned, make sure to have the same hparams.yaml in the
+    # if a model was finetuned, make sure to have the same hparams.yaml indebu the
     # output folder.
     # FIXME: this should not be a problem, this is a workaround
     if cli.config.finetune:
