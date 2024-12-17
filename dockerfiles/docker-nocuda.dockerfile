@@ -59,5 +59,5 @@ ARG MODEL_VERSION=0
 COPY environment/production/models/$TAG/$MACHINE_UUID/version_$MODEL_VERSION/ model/
 
 # run the score generation
-ENTRYPOINT flux-pipeline -c model/metadata/dataset_config.yaml --folder upload --latest && comprisk-generator -c model/config.yaml --dataset upload && /bin/bash
+ENTRYPOINT flux-pipeline -c model/upload.yaml --folder upload --latest && comprisk-generator -c model/config.yaml --dataset upload && /bin/bash
 #RUN comprisk-generator -h

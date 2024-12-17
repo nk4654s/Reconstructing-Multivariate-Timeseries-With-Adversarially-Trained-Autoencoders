@@ -72,15 +72,21 @@ comprisk-pipeline -h
 Most entrypoints can be configured in advance using `yaml`-configuration files. Examples of such files are located inside the `config/` folder and named `pipeline.yaml`. A pipeline can define 6 actions `dataset`, `tuner`, `trainer`, `score_trainer`, `generator`, and `analyzer`. 
 
 ### Dataset
-The dataset key enables the `Dataflux` pipeline command for the `Comprisk` pipeline. At the start, `Comprisk` will download defined datasets and pre-process them. To define a dataset to download, provide a path to a `Dataflux` pipeline `yaml`-configuration. A configuration could look like
+The dataset key enables the `Dataflux` pipeline command for the `Comprisk` pipeline. At the start, `Comprisk` will 
+download defined datasets and pre-process them. To define a dataset to download, provide a path to a `Dataflux` 
+pipeline `yaml`-configuration. A configuration could look like
 
 ```yaml
 dataset:
   - config: path/to/dataset/config_a.yaml
   - config: path/to/dataset/config_b.yaml
   - config: path/to/dataset/config_c.yaml
+    copy_to_output: desired_name.yaml
   - ...
 ```
+
+Using the flag `copy_to_output`, the dataset will not be downloaded but the configuration will be copied to the
+created model output folder. This comes in handy, when deploying a model within a docker container.
 
 ### Tuner
 TBD
