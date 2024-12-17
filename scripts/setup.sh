@@ -49,12 +49,6 @@ else
     echo "Installing miniconda"
     bash miniconda.sh -b -p "$HOME/$1/.miniconda"
     rm -f miniconda.sh
-    if [ "$SHELL" == "/bin/zsh" ]; then
-        source "$HOME/$1/.zshrc"
-    else
-        source "$HOME/$1/.bashrc"
-    fi
-    conda init
 fi
 
 #########################################################################
@@ -62,15 +56,16 @@ fi
 #########################################################################
 echo "Creating environment"
 
-if [ "$2" == "cuda" ]; then
-    conda env create -f $COMPRISK_DIR/requirements.yml
-    conda run -n comprisk conda install pytorch-cuda=12.4 -c nvidida -c pytorch
+if [ "$2" = "cuda" ]; then
+    conda env create -f requirements.yml
+    conda run -n cas conda install pytorch-cuda=12.4 -c nvidida -c pytorch
 else
-    conda env create -f $COMPRISK_DIR/requirements.yml
+    conda env create -f requirements.yml
 fi
 
 #########################################################################
 #                        install missing packages                       #
 #########################################################################
-conda run -n comprisk pip install -U 'jsonargparse[signatures]>=4.27.7'
-conda run -n comprisk pip install -e DATAFLUX_DIR
+conda run -n cas pip install -U 'jsonargparse[signatures]>=4.27.7'
+conda run -n cas pip install -e $DATAFLUX_DIR
+conda run -n cas pip install -e $COMPRISK_DIR
