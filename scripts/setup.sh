@@ -21,7 +21,7 @@ fi
 #                              get os/home                              #
 #########################################################################
 HOME="/home"
-if [ "$(uname)" == "Darwin" ]; then
+if [ "$(uname)" = "Darwin" ]; then
     HOME="/Users"
 fi
 

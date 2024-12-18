@@ -35,7 +35,7 @@ ENV HOME=/home/user
 RUN chmod 777 /home/user
 
 # Set up the Conda environment
-ENV CONDA_AUTO_UPDATE_CONDA=true
+ENV CONDA_AUTO_UPDATE_CONDA=false
 ENV PATH=/home/user/.miniconda/bin:$PATH
 ARG PATH=/home/user/.miniconda/bin:$PATH
 
@@ -48,7 +48,7 @@ RUN echo "source activate cas" > ~/.bashrc
 ENV PATH=/home/user/.miniconda/envs/cas/bin:$PATH
 
 FROM cas-base
-USER user
+USER root
 WORKDIR /app
 
 ARG MACHINE_UUID="0b3426b3-94af-4b8c-89c1-da57493c099a"
@@ -57,6 +57,8 @@ ARG MODEL_VERSION=0
 
 # copy the model into this docker container
 COPY environment/production/models/$TAG/$MACHINE_UUID/version_$MODEL_VERSION/ model/
+RUN chown -R user:user /app/model/
+USER user
 
 # run the score generation
 ENTRYPOINT flux-pipeline -c model/upload.yaml --folder upload --latest && comprisk-generator -c model/config.yaml --dataset upload && /bin/bash
