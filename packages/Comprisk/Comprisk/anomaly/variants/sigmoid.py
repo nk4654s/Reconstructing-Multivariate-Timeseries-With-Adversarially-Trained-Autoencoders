@@ -1,3 +1,7 @@
+"""This module contains the SigmoidTransformer, which uses a sigmoid $$f(x)=1/(1+e^-x)$$ to clip the model's
+expected/predicted output difference into the range 0  to 1. First, the loss values are standardized using the sklearn
+StandardScaler. Then, the median of the standardized loss values is computed and used to transform the sigmoid on the
+x-axis."""
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -11,21 +15,6 @@ def sigmoid(x: np.ndarray, smooth: np.ndarray, factor: np.ndarray | float = 1.0)
 
 
 class SigmoidTransformer(BaseTransformer):
-    """The ScoreTransformer learns the loss distribution of a trained model over the training data
-    to translate a loss value into a score between 0 and 1. Here, 0 means the model is working fine,
-    while 1 means something is wrong with the input data.
-
-    The ScoreTransformer uses a sigmoid f(x)=1/(1+e^-x) to map the loss values into a score between 0 and 1. First,
-    the loss values are standardized using the sklearn StandardScaler. Then, the median of
-    the standardized loss values is computed and used to transform the sigmoid on the
-    x-axis.
-
-    Args:
-        noise_floor (float): The percentile under which a loss will count as 0 (no issue with the prediction).
-        upper_bound (float): The upper quantile in percent, required to stretch the sigmoid.
-            The smoothing factor defines how high a loss can get before the ScoreTransformer outputs
-            a score of 1. Defaults to 0.999.
-    """
     def __init__(self, noise_floor: float = 0.687, upper_bound: float = 0.999) -> None:
         self._scaler = StandardScaler()
 

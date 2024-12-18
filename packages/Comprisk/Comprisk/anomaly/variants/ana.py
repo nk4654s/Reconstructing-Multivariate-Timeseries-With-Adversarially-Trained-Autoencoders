@@ -10,11 +10,6 @@ def linear(x: pd.DataFrame, factor: np.ndarray, translate: np.ndarray) -> pd.Dat
 
 
 class AnaTransformer(BaseTransformer):
-    """The ScoreTransformer learns the loss distribution of a trained model over the training data
-    to translate a loss value into a score between 0 and 1. Here, 0 means the model is working fine,
-    while 1 means something is wrong with the input data.
-    """
-
     def __init__(self, noise_floor: float = 0.500, outer_border: float = 0.999) -> None:
         self._scaler = StandardScaler()
 

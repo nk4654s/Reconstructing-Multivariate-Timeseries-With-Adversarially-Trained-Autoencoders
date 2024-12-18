@@ -2,20 +2,18 @@
 import pandas as pd
 
 from Comprisk.anomaly.base_transformer import BaseTransformer
-from Comprisk.anomaly.linear import LinearTransformer
-from Comprisk.anomaly.sigmoid import SigmoidTransformer
-from Comprisk.anomaly.ana import AnaTransformer
+from Comprisk.anomaly.variants import LinearTransformer, SigmoidTransformer, AnaTransformer
 from Dataflux.visualization import show_dataframe
 from Comprisk import logger
 
 
 class ScoreTransformer(BaseTransformer):
-    """The ScoreTransformer learns the loss distribution of a trained model over the training data
-    to translate a loss value into a score between 0 and 1. Here, 0 means the model is working fine,
-    while 1 means something is wrong with the input data.
+    """The ScoreTransformer wraps one of the transformer variants located in the package `Comprisk.anomaly.variants`
+    to learn the difference-distribution between the models predicted and expected output. This knowledge is required
+    to transform the difference into a score between 0 and 1.
 
-    This transformer wraps other transformers. To get more details on these, look into the documentation
-    of `LinearTransformer` and `SigmoidTransformer`.
+    To get more details on a specific variant, look into the documentation
+    of `LinearTransformer`, `SigmoidTransformer`, and `AnaTransformer`.
 
     Args:
         mode (str): Either `linear`, `sigmoid`, or `anacision` to specify which backend to use. Defaults to `linear`.
