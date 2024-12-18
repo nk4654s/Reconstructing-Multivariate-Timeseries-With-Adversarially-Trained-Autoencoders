@@ -70,6 +70,8 @@ def cli_main():
     # catch the case, where the machine is offline and the dataset is empty
     try:
         data = DataModule(**datamodule_args_modified).trainset
+        if data is None:
+            raise EmptyDatasetError()
     except EmptyDatasetError:
         logger.warning("The dataset is empty, nothing to generate. Exiting gracefully.")
         exit(0)
