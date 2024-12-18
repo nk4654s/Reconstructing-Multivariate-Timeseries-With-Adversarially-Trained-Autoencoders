@@ -188,7 +188,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
             data_dict = {key: data[:, i] for i, key in enumerate(self._args.names)}
             data = pd.DataFrame(data_dict)
 
-        return scaler.transform(data,, {}
+        return scaler.transform(data)
 
     def scale_back(self, data: List | np.ndarray | pd.DataFrame) -> pd.DataFrame:
         """Method scales back the given data using the normalizer of the dataset.
