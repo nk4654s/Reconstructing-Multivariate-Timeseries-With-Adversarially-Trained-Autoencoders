@@ -31,8 +31,6 @@ class BaseModel(L.LightningModule):
         optimizer (str, optional): Optimizer to use. Defaults to "Adam".
         lr (float, optional): Initial learning rate. Defaults to 1e-3.
         lr_decay (float, optional): Learning rate decaying factor. Defaults to 0.99.
-        monte_carlo (int, optional): Number of Monte-Carlo iterations, higher will be
-            slower but more stable. Defaults to 0 which is disabled.
     """
 
     def __init__(
@@ -87,9 +85,6 @@ class BaseModel(L.LightningModule):
         assert self._lr_scheduler, "Learning rate scheduler not initialized."
         self.log("epoch/lr", self._lr_scheduler.get_last_lr()[-1])
         logger.debug("Starting epoch %s with lr=%s", self.current_epoch, self._lr_scheduler.get_last_lr()[-1])
-    
-    def on_validation_batch_end(self, outputs, batch, batch_idx, dataloader_idx = 0) -> None:
-        logger.debug("Validation finished (loss=%s)", outputs.cpu().numpy().mean())
 
     def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor], **kwargs) -> torch.Tensor:
         x, y = batch

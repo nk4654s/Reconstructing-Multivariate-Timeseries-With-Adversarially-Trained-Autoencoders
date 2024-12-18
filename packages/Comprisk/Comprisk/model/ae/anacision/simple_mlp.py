@@ -23,10 +23,6 @@ class AnacisionEncoder(EncoderBase):
     def forward(self, batch):
         return self._linear(batch)
 
-    @property
-    def input_keys(self) -> List[str]:
-        return ["sensors"]
-
 
 class AnacisionDecoder(DecoderBase):
     """The anacision decoder uses a single layer to expand the latent space back into the original space.
@@ -44,7 +40,3 @@ class AnacisionDecoder(DecoderBase):
 
     def forward(self, z: torch.Tensor, inputs: Dict[str, torch.tensor]) -> torch.Tensor:
         return self._linear(z)
-
-    @property
-    def output_keys(self) -> List[str]:
-        return ["sensors"]

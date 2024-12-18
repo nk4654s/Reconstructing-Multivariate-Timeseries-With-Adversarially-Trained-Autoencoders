@@ -33,6 +33,11 @@ def set_model_features(model, dataset: Dataset):
     if feature_dict:
         feature_names = [feature_dict.get(n, n) for n in feature_names]
 
+    # remove the 'ts' value from the model's feature set as it should not use it
+    if "ts" in feature_names:
+        feature_names.remove("ts")
+        logger.debug("Removed 'ts' from model's feature set.")
+
     model.set_feature_names(feature_names)
 
 

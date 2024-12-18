@@ -54,10 +54,6 @@ class FSDecoder(DecoderBase):
             padding=0,
         )
 
-    @property
-    def output_keys(self) -> List[str]:
-        return ["sensors"]
-
     def forward(self, z: torch.Tensor, inputs: Dict[str, torch.tensor]) -> torch.Tensor:
         output_size = inputs["sensors"].size()[1:]
 
