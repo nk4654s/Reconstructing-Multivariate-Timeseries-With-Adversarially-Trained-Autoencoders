@@ -13,7 +13,7 @@ dataset:
 # 2. train the model using the tuned hyperparameters
 trainer:
   - config: configs/vd2-version-1/model-training.yml
-    tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
+    tag: test #0b3426b3-94af-4b8c-89c1-da57493c099a
 
     # overwrite the config's values
     # for path values, the explicit path is required
@@ -25,7 +25,7 @@ trainer:
     trainer.max_epochs: 1
 
 score_trainer:
-  score.method: linear
+  score.mode: anacision
   data.validate: environment/dev/datasets/thyssen-vd2-valset
   data.stride: 60
 

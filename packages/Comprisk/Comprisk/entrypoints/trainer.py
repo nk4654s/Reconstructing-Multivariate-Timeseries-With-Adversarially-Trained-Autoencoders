@@ -3,6 +3,7 @@
 import os
 import pickle
 import shutil
+from typing import Dict
 
 import yaml
 from lightning.pytorch.callbacks.callback import Callback
@@ -134,7 +135,9 @@ def run_trainer(cli: CompriskCLI) -> str:
     train_score_transformer(tb_logger.log_dir, metafolder, valset)
     return tb_logger.log_dir
 
-def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset) -> None:
+
+def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset,
+                            transformer_args: Dict = {}) -> None:
     """This method trains the ScoreTransformer given the model and dataset. Usually, this is immediately done on the
     validation set after a training.
 
@@ -144,15 +147,15 @@ def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset) -> 
         dataset (Dataset): The dataset to train the ScoreTransformer on.
     """
     dataset_args = dataset.get_args()
-    
-    # load the (best) trained model back
     dataset.set_stride(dataset_args.sequence_out)
+
+    # load the (best) trained model back
     loader = ModelLoader(model_dir)
     loader.model.set_output_behavior(dataset_args.behavior, dataset_args.sequence_out)
     predicted, target = loader.predict_loop(dataset)
 
     # fit and save the score transformer
-    score = ScoreTransformer()
+    score = ScoreTransformer(**transformer_args)
     score.fit(predicted, target)
 
     score_path = os.path.join(meta_dir, "score_transformer.pkl")

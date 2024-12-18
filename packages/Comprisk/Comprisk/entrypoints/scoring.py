@@ -4,7 +4,6 @@ will be learned based on the resulting loss. Only use configure this entry
 point with a trained model and the matching validation dataset."""
 import os
 
-from Dataflux.pytorch import Dataset
 from Dataflux.helper import get_logger
 
 from Comprisk.entrypoints.trainer import train_score_transformer
@@ -31,9 +30,8 @@ def cli_main():
     # load the dataset and configure it to work with the trained model
     dataset = cli.datamodule.valset
     if cli.config.dataset:
-        dataset_args = dataset.get_args().as_dict()
-        dataset_args["path"] = cli.config.dataset
-        dataset = Dataset(**dataset_args)
+        cli.datamodule.set_path(None, cli.config.dataset)
+        dataset = cli.datamodule.valset
 
     if dataset is None:
         logger.error("No dataset available for training the ScoreTransformer. Make sure to define the validation set path.")
@@ -41,7 +39,7 @@ def cli_main():
 
     # load the model with the helper class, then apply the model on the dataset
     meta_path = os.path.join(base_path, "metadata")
-    train_score_transformer(base_path, meta_path, dataset)
+    train_score_transformer(base_path, meta_path, dataset, vars(cli.config.score))
 
 
 if __name__ == "__main__":
