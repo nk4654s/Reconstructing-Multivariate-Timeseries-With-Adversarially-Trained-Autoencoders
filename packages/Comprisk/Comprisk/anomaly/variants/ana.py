@@ -27,8 +27,7 @@ class AnaTransformer(BaseTransformer):
         loss = loss_fn(predicted, target)
         self._scaler.fit_transform(loss)
 
-    def transform(self, predicted: pd.DataFrame, target: pd.DataFrame,
-                  factors: np.ndarray | float = 0.01) -> pd.DataFrame:
+    def transform(self, predicted: pd.DataFrame, target: pd.DataFrame, **kwargs) -> pd.DataFrame:
         loss = loss_fn(predicted, target)
         loss = np.abs(self._scaler.transform(loss))
 
@@ -39,7 +38,7 @@ class AnaTransformer(BaseTransformer):
 
         # clip the result if required
         clip = 0 if self._clip else None
-        health_scores = np.clip(m * loss + b, clip, 1)
+        health_scores = 1 - np.clip(m * loss + b, clip, 1)
         health_scores = pd.DataFrame(health_scores, columns=predicted.columns, index=predicted.index)
 
         return health_scores
