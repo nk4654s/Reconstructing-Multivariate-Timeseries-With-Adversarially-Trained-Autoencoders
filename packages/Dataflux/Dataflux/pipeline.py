@@ -12,6 +12,7 @@ from Dataflux.helper.metadata import Meta, Metadata
 from Dataflux.data import ContinuousDataDownloader, DataType
 
 from Dataflux import get_logger
+from Dataflux.modules import State
 
 logger = get_logger(__name__, path="logfile", level=logging.DEBUG)
 
@@ -34,7 +35,9 @@ def download(parser: CLIArgumentParser, folder: str) -> None:
     interval_list = []
     if parser.args.intervals and not parser.args.latest:
         for interval in parser.args.intervals:
-            interval = interval.split(" ")
+            interval = interval.split(
+
+            )
             interval_list.append((
                 datetime.fromisoformat(interval[0]),
                 datetime.fromisoformat(interval[1])
@@ -42,8 +45,13 @@ def download(parser: CLIArgumentParser, folder: str) -> None:
 
     # get the current date and subtract 1 hour to get the model's input
     if parser.args.latest:
+        offset = 0
+        for m in modules:
+            if isinstance(m, State) and m.force_trim:
+                offset += m.alpha
+
         now = datetime.now(tz=timezone.utc)
-        past = now - timedelta(hours=1)
+        past = now - timedelta(seconds=3600 + offset)
         interval_list = [(past, now)]
 
     # exit on wrong inputs
@@ -52,6 +60,7 @@ def download(parser: CLIArgumentParser, folder: str) -> None:
         logger.error("Interval list should not be empty. Used method '%s' to get dates.", method)
         exit(1)
 
+    logger.debug("Downloading interval %s", interval_list)
     downloader = ContinuousDataDownloader(machine_uuid, interval_list)
     downloader.set_data_type(DataType.MEASUREMENTS)
 

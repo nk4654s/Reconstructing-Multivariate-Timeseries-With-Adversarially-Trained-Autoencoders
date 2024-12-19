@@ -2,7 +2,7 @@
 import os
 import logging
 import logging.config
-
+import sys
 
 LOGGING_ENABLED = True
 class LoggerDummy:
@@ -55,8 +55,16 @@ def get_logger(name: str, path: str = "logfile.log", level: int = logging.DEBUG)
         os.makedirs(basedir)
 
     # setup the logger
-    logging.basicConfig(filename=path, encoding="utf-8", level=logging.DEBUG)
     logger = logging.getLogger(name)
+    formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+
+    file_handler = logging.FileHandler(path)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
 
     # disable all other loggers
     logger_list = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
