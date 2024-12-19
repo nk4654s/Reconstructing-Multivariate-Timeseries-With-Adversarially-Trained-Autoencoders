@@ -1,22 +1,21 @@
+_class_path: Comprisk.model.ae.rnn.EncDecAD
 _instantiator: lightning.pytorch.cli.instantiate_module
-class_path: Comprisk.model.ae.rnn.EncDecAD
-init_args:
-  activation: tanh
-  decoder:
-    class_path: Comprisk.model.ae.rnn.EDADecoder
-    init_args:
-      dropout_prob: 0.4
-      num_features: 22
-      num_hidden_dim: 64
-      num_hidden_layers: 2
-  encoder:
-    class_path: Comprisk.model.ae.rnn.EDAEncoder
-    init_args:
-      dropout_prob: 0.4
-      num_features: 22
-      num_hidden_dim: 64
-      num_hidden_layers: 2
-  loss: MSELoss
-  lr: 0.0001
-  lr_decay: 0.9
-  optimizer: Adam
+activation: tanh
+decoder:
+  class_path: Comprisk.model.ae.rnn.EDADecoder
+  init_args:
+    dropout_prob: 0.4
+    num_features: 22
+    num_hidden_dim: 64
+    num_hidden_layers: 3
+encoder:
+  class_path: Comprisk.model.ae.rnn.EDAEncoder
+  init_args:
+    dropout_prob: 0.4
+    num_features: 22
+    num_hidden_dim: 64
+    num_hidden_layers: 3
+loss: MSELoss
+lr: 0.0001
+lr_decay: 0.9
+optimizer: Adam
