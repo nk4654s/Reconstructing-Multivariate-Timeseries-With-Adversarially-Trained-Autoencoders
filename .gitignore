@@ -1,42 +1,37 @@
-# exclude packages
+# exclude generated files
 src/*
 __pycache__/
 *egg-info/
 requirements.txt
 *.whl
 
-# models from specific stages
+docs/
+build/
+
+# general exclude from model output folders
 *.png
 events.out.tfevents.*
-models/*
+.temp.ckpt
+
+# exclude dev environment (but include config set)
 environment/dev/models/*
 !environment/dev/models/README.md
-!environment/production/models/
 
-# exclude datasets from specific stages
-datasets/*
 environment/dev/datasets/
-environment/production/datasets/
 !environment/dev/datasets/README.md
+
+# exclude the datasets from the production environment
+environment/production/datasets/
 !environment/production/datasets/README.md
-thyssen-*/
 
 # exclude logs
 *.sqlite3
 logs/
 logfile*
-Dockerfile
 
-# exclude temporary checkpoints
-.temp.ckpt
-
-# exclude extensions
-.VSCodeCounter/
+# MacOS specific files
 .DS_Store
 
 # exclude notebooks
 *.ipynb
 
-# exclude generated files
-docs/
-build/
