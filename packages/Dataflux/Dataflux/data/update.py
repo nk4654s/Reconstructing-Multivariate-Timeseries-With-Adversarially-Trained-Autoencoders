@@ -95,7 +95,7 @@ class DataUpdater(S3Bucket):
             result_df = self._callable(ts_1, ts_2, total_key="Total")
             result_df = result_df.round(3)
 
-            # 3. rename human readable column names to be machine readable
+            # 3. rename human-readable column names to be machine-readable
             drop = [name for name in result_df.columns.values if not score_uuids.get(name.split(" ")[0]  + " (Malfunction AI) (%)", None)]
             if len(drop) > 0:
                 logger.debug("Did not expect %s in header, removing from upload.", drop)
