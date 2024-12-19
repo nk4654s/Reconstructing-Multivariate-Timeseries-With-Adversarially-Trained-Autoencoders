@@ -4,7 +4,7 @@ import subprocess
 import pandas as pd
 import yaml
 
-from Dataflux import logger
+from Comprisk import logger
 from Dataflux.pytorch import EmptyDatasetError
 from Dataflux.data import DataUpdater, UpdateCallable, DataType
 
@@ -83,6 +83,7 @@ def cli_main():
     # execute the model on the dataset and calculate the scores
     # TODO: load parameter `factor` and hand over to transform
     score = loader.get_score_transformer()
+    logger.debug("Loaded score transformer (mode=%s)", score.mode)
     score_data = loader.predict_loop(data)
     score_data = score.transform(*score_data, factors=0.05)
 
