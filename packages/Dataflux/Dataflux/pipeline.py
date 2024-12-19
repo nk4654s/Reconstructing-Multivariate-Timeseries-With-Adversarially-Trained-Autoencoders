@@ -35,7 +35,9 @@ def download(parser: CLIArgumentParser, folder: str) -> None:
     interval_list = []
     if parser.args.intervals and not parser.args.latest:
         for interval in parser.args.intervals:
-            interval = interval.split(" ")
+            interval = interval.split(
+
+            )
             interval_list.append((
                 datetime.fromisoformat(interval[0]),
                 datetime.fromisoformat(interval[1])
