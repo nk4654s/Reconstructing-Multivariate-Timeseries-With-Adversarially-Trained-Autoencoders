@@ -59,8 +59,8 @@ class BaseModel(L.LightningModule):
         self._behavior = dataset_type_from_string(behavior)
         self._output_length = output_length
 
-        self._features_in = features_in
-        self._features_out = features_out
+        self._features_in = sorted(features_in)
+        self._features_out = sorted(features_out)
 
         self._input_dim = len(features_in)
         self._output_dim = len(features_out)
@@ -159,7 +159,7 @@ class BaseModel(L.LightningModule):
             if as_array:
                 out = out.cpu().numpy()
 
-        if self._behavior == DatasetTypes.AUTOENCODER:
+        if self._behavior == DatasetTypes.PREDICTIVE:
             out = out[:, out.shape[1] - self._output_length:, :]
 
         return out

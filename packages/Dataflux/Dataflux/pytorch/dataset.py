@@ -92,7 +92,9 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
             stride=self._stride,
             key=self._key,
             behavior_=behavior,
-            names=self._cache.columns
+            names=self._cache.columns,
+            names_in=feature_names_in,
+            names_out=feature_names_out
         )
 
     @property

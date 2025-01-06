@@ -160,7 +160,7 @@ class ModelLoader:
         # assert window == stride, f"Something went wrong, the dataset's stride {stride} should equal the window size {window}."
 
         logger.debug("Predict on dataset %s (Original)", len(dataset))
-        logger.debug("Predict loop step size %s and batch size %s", step, batch_size)
+        logger.debug("Predict loop step size %s and batch size %s", step or skip, batch_size)
         logger.debug("Window size %s with stride %s", window, stride)
 
         # 0. find the index of the sensor to modify with the given factor
@@ -174,6 +174,8 @@ class ModelLoader:
         predict = np.zeros(shape=(len(dataset) * stride + window, features), dtype=np.float32)
         counter = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float32)
         ts_indx = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float32)
+
+        inputs_indicies = [i for i, x in enumerate(args.names_in) if x in args.names_out]
 
         collate = online_collate_inference if args.key == "data" else collate_fn
         loader = DataLoader(dataset, batch_size, collate_fn=collate, num_workers=num_workers, drop_last=False)
@@ -201,7 +203,7 @@ class ModelLoader:
                 idx = idx + j * stride
 
                 window_, _ = inputs[j].shape
-                targets[idx:idx + window_] += inputs[j]
+                targets[idx:idx + window_] += inputs[j][:, inputs_indicies]
                 predict[idx:idx + window_] += model_pred[j]
                 counter[idx:idx + window_] += np.ones(shape=(window_, ))
 
@@ -209,6 +211,7 @@ class ModelLoader:
                 ts_indx[idx:idx + window_] = [ts + k * skip for k in range(window_)]
 
         limit = counter.argmin()
+        limit = limit if counter.min() != counter.mean() else -1
         ts_index = pd.Index(ts_indx[:limit], name="ts")
 
         counter = counter[:limit]
@@ -216,7 +219,7 @@ class ModelLoader:
         predict = predict[:limit]
 
         # create the output DataFrames
-        names = sorted(args.names)
+        names = args.names_out
         targets = pd.DataFrame({n: targets[:, i] / counter for i, n in enumerate(names)}, index=ts_index)
         predict = pd.DataFrame({n: predict[:, i] / counter for i, n in enumerate(names)}, index=ts_index)
 

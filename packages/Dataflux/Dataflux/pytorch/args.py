@@ -13,6 +13,8 @@ def dataset_type_from_string(string: str) -> DatasetTypes:
     for type_ in DatasetTypes:
         if type_.value == string:
             return type_
+        elif type_ == string:
+            return type_
     
     raise ValueError(f"Input '{string}' is not part of 'DatasetTypes'.")
 
@@ -30,6 +32,8 @@ class DatasetArgs:
     behavior: DatasetTypes = field(init=False)
     ts_index: int = 0
     names: List[str] = field(default_factory=list)
+    names_in: List[str] = field(default_factory=list)
+    names_out: List[str] = field(default_factory=list)
 
     def __post_init__(self, behavior_: DatasetTypes | str) -> None:
 
@@ -42,6 +46,9 @@ class DatasetArgs:
         del dict_["features_out"]
         del dict_["ts_index"]
         del dict_["names"]
+
+        dict_["feature_names_in"] = dict_.pop("names_in")
+        dict_["feature_names_out"] = dict_.pop("names_out")
         return dict_
     
     def copy(self) -> "DatasetArgs":

@@ -61,6 +61,13 @@ class DataModule(L.LightningDataModule):
         pin_memory: bool = True,
     ) -> None:
         super().__init__()
+
+        # add public attributes to link them with a model. Check out the CompriskCLI.add_arguments_to_parser()
+        # to learn more about this
+        self.features_in = sorted(features_in)
+        self.features_out = sorted(features_out)
+        self.behavior = behavior
+
         self._loader_kwargs = {
             "num_workers": num_workers,
             "persistent_workers": persistent_workers,
@@ -77,8 +84,8 @@ class DataModule(L.LightningDataModule):
         self._dataset_args = {
             "sequence_in": sequence_in,
             "sequence_out": sequence_out,
-            "feature_names_in": features_in,
-            "feature_names_out": features_out,
+            "feature_names_in": self.features_in,
+            "feature_names_out": self.features_out,
             "stride": stride,
             "skip": skip,
             "key": key,
@@ -90,12 +97,6 @@ class DataModule(L.LightningDataModule):
         self._collate_fn = None
 
         self.set_path(train, validate)
-
-        # add public attributes to link them with a model. Check out the CompriskCLI.add_arguments_to_parser()
-        # to learn more about this
-        self.features_in = features_in
-        self.features_out = features_out
-        self.behavior = behavior
 
     def set_path(self, train: str, validate: str) -> None:
         """This method sets a new path to the training and validation datasets which
