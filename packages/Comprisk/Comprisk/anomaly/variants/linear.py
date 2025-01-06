@@ -31,7 +31,7 @@ class LinearTransformer(BaseTransformer):
         self._outer_std = np.quantile(loss, self._param_out_border, axis=0)
 
     def transform(self, predicted: pd.DataFrame, target: pd.DataFrame,
-                  factors: np.ndarray | float = 0.01) -> pd.DataFrame:
+                  factors: np.ndarray | float = 0.05) -> pd.DataFrame:
         assert self._noise_floor is not None, "Fit the transformer first."
         assert self._outer_std is not None
         loss = loss_fn(predicted, target)

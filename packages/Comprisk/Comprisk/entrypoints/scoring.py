@@ -13,7 +13,7 @@ from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskLoadCLI
 
-logger = get_logger(__name__, path="logfile")
+from Comprisk import logger
 
 
 def cli_main():
