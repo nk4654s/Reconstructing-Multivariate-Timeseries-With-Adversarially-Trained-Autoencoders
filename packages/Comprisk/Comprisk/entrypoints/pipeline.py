@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 from typing import Dict, List
 from argparse import ArgumentParser
@@ -80,9 +81,15 @@ def cli_main():
     env = pipeline.get("environment", "dev")
     base_dir = lambda p: os.path.join("environment", env, p)
     
-    # download the dataset
-    dataset_config = pipeline.get("dataset", [])
+    # download the dataset, or copy the configuration to the desired output folder
+    # this can only happen after the model was trained, so hold back this information
+    dataset_config: List[Dict] = pipeline.get("dataset", [])
+    copy_config = []
     for config in dataset_config:
+        if config.get("copy_to_output", None):
+            copy_config.append(config)
+            continue
+
         subprocess.run(["flux-pipeline", "-c", base_dir(config["config"])])
 
     # tune the model, this will not have an effect on the model's output folder
@@ -123,7 +130,13 @@ def cli_main():
             modified_structure = model_folder_structure(path=base_dir(p="models"))
             recently_added = find_recent_folders(initial_structure, modified_structure)[0]
             latest_config = os.path.join(recently_added, "config.yaml")
-    
+
+    # copy the configs (if existing) to the recently added model output folder
+    for config in copy_config:
+        source = base_dir(config["config"])
+        destin = os.path.join(recently_added, config["copy_to_output"])
+        shutil.copy(source, destin)
+
     # train the scoring transformer
     score_train = pipeline.get("score_trainer", None)
     if score_train:

@@ -18,8 +18,6 @@ class CompriskLoadCLI(CompriskCLI):
         parser.add_argument("--score.method", type=str, default="linear")
         parser.add_argument("--anomaly.name", type=str, default=None)
         parser.add_argument("--anomaly.factor", type=float, default=None)
-        parser.add_argument("--stride", "-s", type = int, default = None,
-                            help = "The step size to slide the model's input/output window over the dataset.")
 
     def before_fit(self):
         pass

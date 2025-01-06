@@ -30,6 +30,7 @@ def cli_main():
     base_path = get_config_folder(cli)
 
     # load the dataset and configure it to work with the trained model
+    cli.datamodule.set_path(cli.config.dataset, None)
     dataset = cli.datamodule.trainset
     if cli.config.dataset:
         args = dataset.get_args().as_dict()

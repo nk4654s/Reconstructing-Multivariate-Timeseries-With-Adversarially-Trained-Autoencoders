@@ -1,1 +1,0 @@
-pdoc -o docs -d markdown Dataflux

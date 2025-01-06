@@ -163,8 +163,9 @@ class DataDownloader(S3Bucket):
         try:
             stream = self.get_stream(day)
             df = self.parse_stream(stream)
-        except:
+        except BaseException as e:
             logger.error("Unable to download dataset: %s", day)
+            logger.error("Caught error %s", e)
 
         df = df if df is not None else pd.DataFrame()
         return df

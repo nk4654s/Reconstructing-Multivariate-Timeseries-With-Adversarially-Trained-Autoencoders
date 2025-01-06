@@ -27,7 +27,7 @@ class EncDecAD(AutoEncoder):
             input_decoder = output_decoder
             output[:, i, :] = output_decoder[:, 0, :]
 
-        return output
+        return self._activation(output)
 
 
 class EDAEncoder(EncoderBase):

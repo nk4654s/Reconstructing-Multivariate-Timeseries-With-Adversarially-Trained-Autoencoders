@@ -6,34 +6,39 @@ dataset:
  - config: configs/vd2-version-1/valset.yml
  - config: configs/vd2-version-1/testset-service.yml
  - config: configs/vd2-version-1/testset-coolant-anomaly.yml
+# do not download the configuration file, but copy it to the model's output folder
+ - config: configs/vd2-version-1/dataset-upload.yml
+   copy_to_output: upload.yml
 
 # 2. train the model using the tuned hyperparameters
 trainer:
   - config: configs/vd2-version-1/model-training.yml
-    tag: thyssen-vd2-training
+    tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
 
     # overwrite the config's values
     # for path values, the explicit path is required
     data.train: environment/dev/datasets/thyssen-vd2-trainset
     data.validate: environment/dev/datasets/thyssen-vd2-valset
-    data.sequence_in: 120
-    data.sequence_out: 120
-    data.stride: 1
+    data.sequence_in: 60
+    data.sequence_out: 60
+    data.stride: 10
+    trainer.max_epochs: 1
 
 score_trainer:
   score.method: linear
-  data.stride: 120
+  data.validate: environment/dev/datasets/thyssen-vd2-valset
+  data.stride: 60
 
 analyzer:
 # 1. generate data on the test dataset
   - dataset: datasets/thyssen-vd2-service
     prefix: analysis/service
-    data.stride: 120
+    data.stride: 60
 # 2. generate data on the train dataset
   - dataset: datasets/thyssen-vd2-valset
     prefix: analysis/validate
-    data.stride: 120
+    data.stride: 60
 # 3. generate data on the last test dataset which includes the timespan where someone limited the coolant flow
-  - dataset: datasets/thyssen-vd2-coolant-anomaly
+  - dataset: datasets/thyssen-vd2-test-coolant
     prefix: analysis/coolant
-    data.stride: 120
+    data.stride: 60

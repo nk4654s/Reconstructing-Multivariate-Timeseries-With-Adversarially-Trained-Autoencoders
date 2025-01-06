@@ -1,10 +1,11 @@
+import os.path
 import subprocess
 
 import pandas as pd
 import yaml
 
-from Dataflux import logger
-from Dataflux.pytorch import Dataset
+from Comprisk import logger
+from Dataflux.pytorch import EmptyDatasetError
 from Dataflux.data import DataUpdater, UpdateCallable, DataType
 
 from Comprisk.data import DataModule
@@ -57,16 +58,23 @@ def cli_main():
 
     # download and process the dataset, the config file contains the requested
     # time frame to generate the scores for
-    subprocess.run(["flux-pipeline", "-c", cli.config.dataset])
+    # If the dataset is given as a folder, there is no need to download it again
+    datamodule_args_modified = cli.config.data.as_dict()
+    datamodule_args_modified["shuffle"] = False
+    if os.path.isfile(cli.config.dataset):
+        subprocess.run(["flux-pipeline", "-c", cli.config.dataset])
+        datamodule_args_modified["train"] = get_dataset_path(cli.config.dataset)
+    else:
+        datamodule_args_modified["train"] = cli.config.dataset
 
-    # load the dataset
-    dataset_args = cli.datamodule.trainset.get_args()
-    dataset_args_modified = dataset_args.as_dict()
-    
-    if cli.config.dataset:
-        dataset_args_modified["path"] = get_dataset_path(cli.config.dataset)
-
-    data = Dataset(**dataset_args_modified)
+    # catch the case, where the machine is offline and the dataset is empty
+    try:
+        data = DataModule(**datamodule_args_modified).trainset
+        if data is None:
+            raise EmptyDatasetError()
+    except EmptyDatasetError:
+        logger.warning("The dataset is empty, nothing to generate. Exiting gracefully.")
+        exit(0)
 
     # load the trained model from disk and create the dataset object for the
     # previously downloaded dataset
@@ -75,6 +83,7 @@ def cli_main():
     # execute the model on the dataset and calculate the scores
     # TODO: load parameter `factor` and hand over to transform
     score = loader.get_score_transformer()
+    logger.debug("Loaded score transformer (mode=%s)", score.mode)
     score_data = loader.predict_loop(data)
     score_data = score.transform(*score_data, factors=0.05)
 

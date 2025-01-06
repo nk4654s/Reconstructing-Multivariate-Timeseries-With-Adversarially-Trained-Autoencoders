@@ -73,10 +73,6 @@ class FSEncoder(EncoderBase):
         """Returns the size of the latent vector."""
         return self._latent
 
-    @property
-    def input_keys(self) -> List[str]:
-        return ["sensors", "weather"]
-
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         # change x shape to: batch, 1, sequence, features
         x = torch.unsqueeze(batch, dim=1)

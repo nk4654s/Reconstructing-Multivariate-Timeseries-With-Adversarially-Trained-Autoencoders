@@ -130,6 +130,10 @@ class ScoreTransformer:
         if self._mode == "sigmoid":
             self._transformer = SigmoidTransformer(*args, **kwargs)
 
+    @property
+    def mode(self) -> str:
+        return self._mode
+
     def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -> None:
         """This method fits the parameters of the ScoreTransformer.
 

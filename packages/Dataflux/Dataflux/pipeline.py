@@ -4,7 +4,7 @@ when processing a dataset using a defined yaml-config.
 import os
 import shutil
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List
 from Dataflux.cli import CLIArgumentParser
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
@@ -12,6 +12,7 @@ from Dataflux.helper.metadata import Meta, Metadata
 from Dataflux.data import ContinuousDataDownloader, DataType
 
 from Dataflux import get_logger
+from Dataflux.modules import State
 
 logger = get_logger(__name__, path="logfile", level=logging.DEBUG)
 
@@ -32,13 +33,34 @@ def download(parser: CLIArgumentParser, folder: str) -> None:
     # define the s3 data source
     machine_uuid = parser.args.machine_uuid
     interval_list = []
-    for interval in parser.args.intervals:
-        interval = interval.split(" ")
-        interval_list.append((
-            datetime.fromisoformat(interval[0]),
-            datetime.fromisoformat(interval[1])
-        ))
+    if parser.args.intervals and not parser.args.latest:
+        for interval in parser.args.intervals:
+            interval = interval.split(
 
+            )
+            interval_list.append((
+                datetime.fromisoformat(interval[0]),
+                datetime.fromisoformat(interval[1])
+            ))
+
+    # get the current date and subtract 1 hour to get the model's input
+    if parser.args.latest:
+        offset = 0
+        for m in modules:
+            if isinstance(m, State) and m.force_trim:
+                offset += m.alpha
+
+        now = datetime.now(tz=timezone.utc)
+        past = now - timedelta(seconds=3600 + offset)
+        interval_list = [(past, now)]
+
+    # exit on wrong inputs
+    if not interval_list:
+        method = "Latest" if parser.args.latest else "Config Intervals"
+        logger.error("Interval list should not be empty. Used method '%s' to get dates.", method)
+        exit(1)
+
+    logger.debug("Downloading interval %s", interval_list)
     downloader = ContinuousDataDownloader(machine_uuid, interval_list)
     downloader.set_data_type(DataType.MEASUREMENTS)
 
@@ -46,7 +68,7 @@ def download(parser: CLIArgumentParser, folder: str) -> None:
     downloader.run(folder)
 
 
-def process(parser: CLIArgumentParser, modules: List) -> None:
+def process(parser: CLIArgumentParser) -> None:
     """
     The processing operations. This function initializes the CLIArgumentParser
     with the module classes and handles command-line interface (CLI) arguments.
@@ -54,10 +76,8 @@ def process(parser: CLIArgumentParser, modules: List) -> None:
     Args:
         parser (CLIArgumentParser): The CLIArgumentParser which contains all arguments
             parsed from the command line interface.
-        modules (List): The list of classes which should be used for
-            processing.
     """
-    # create multi-threaded file-hanlder
+    # create multithreaded file-handler
     factory = FileWorkerFactory(parser.args.folder, parser.args.num_workers)
     pool: FileWorkerPool = factory.initialize_workers()
     pool.ensure_module_dependency(modules)
@@ -97,7 +117,7 @@ def main() -> None:
     metadata.save(parser.args.folder)      
 
     # 2. run post-processing step, which requires the pre-processed data
-    process(parser, modules) 
+    process(parser)
 
     # 3. copy the pipeline configuration used for consistency
     config_path = os.path.join(parser.args.folder, "metadata", "config.yaml") # type: ignore
