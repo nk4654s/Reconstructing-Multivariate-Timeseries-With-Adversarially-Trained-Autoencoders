@@ -5,10 +5,12 @@ package provides classes and methods to load a processed dataset and
 to sample as efficient as possible."""
 
 from copy import deepcopy
+from typing import List
+
 import lightning as L
 from torch.utils.data import DataLoader
 
-from Dataflux.pytorch import Dataset, online_collate_train, collate_fn
+from Dataflux.pytorch import Dataset, online_collate_train, collate_fn, DatasetTypes
 from Dataflux.pytorch import RandomBatchSampler as RBS
 
 from Comprisk import logger
@@ -25,13 +27,18 @@ class DataModule(L.LightningDataModule):
             many `pandas.DataFrames` stored as `HDF5` files next to a sub-folder
             `metadata` which contains the dataset's information.
         validate (str, optional): Path to the validation dataset root folder.
-        input_sequence (int): The input sequence length of one sample.
-        output_sequence (int): The output sequence length of one sample.
+        sequence_in (int): The input sequence length of one sample.
+        sequence_out (int): The output sequence length of one sample.
+        features_in (List[str]): The amount of input features.
+        features_out (List[str]): The amount of output features.
+        stride (int): How many stime steps a window should slide.
+        key (str): Whether to load the normalized ('norm') or original ('data') data.
+        behavior (str): Either 'autoencoder' or 'predictive'.
         skip (int): Skip every n-th sample in the dataset.
         batch_size (int): Batch size of the model's input.
         shuffle (bool): Whether to shuffle the dataset or not.
         num_workers (int): Number of workers to use in data loading.
-        persist (bool): Whether to persist the dataset or not.
+        persistent_workers (bool): Whether to persist the dataset or not.
         pin_memory (bool): Whether to pin memory or not in data loading.
     """
 
@@ -41,9 +48,12 @@ class DataModule(L.LightningDataModule):
         validate: str = "",
         sequence_in: int = 1,
         sequence_out: int = 1,
+        features_in: List[str] = None,
+        features_out: List[str] = None,
         skip: int = 1,
         stride: int = 0,
         key: str = "norm",
+        behavior: str = DatasetTypes.AUTOENCODER.value,
         batch_size: int = 1,
         shuffle: bool = True,
         num_workers: int = 1,
@@ -67,9 +77,12 @@ class DataModule(L.LightningDataModule):
         self._dataset_args = {
             "sequence_in": sequence_in,
             "sequence_out": sequence_out,
+            "feature_names_in": features_in,
+            "feature_names_out": features_out,
             "stride": stride,
             "skip": skip,
-            "key": key
+            "key": key,
+            "behavior": behavior
         }
 
         self._train = None
@@ -77,6 +90,12 @@ class DataModule(L.LightningDataModule):
         self._collate_fn = None
 
         self.set_path(train, validate)
+
+        # add public attributes to link them with a model. Check out the CompriskCLI.add_arguments_to_parser()
+        # to learn more about this
+        self.features_in = features_in
+        self.features_out = features_out
+        self.behavior = behavior
 
     def set_path(self, train: str, validate: str) -> None:
         """This method sets a new path to the training and validation datasets which

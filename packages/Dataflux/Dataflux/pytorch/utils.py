@@ -4,6 +4,9 @@ import numpy as np
 import torch
 
 
+BATCH_TYPE = Tuple[torch.Tensor, torch.Tensor]
+
+
 class MinMaxScaler:
     def __init__(self) -> None:
         self._min = None
@@ -40,7 +43,7 @@ def online_collate_inference(batch: List[np.ndarray]) -> Tuple[torch.Tensor, Min
     return (torch.tensor(s.fit_transform(x)), s)
 
 
-def online_collate_train(batch: List[np.ndarray]) -> Tuple[torch.Tensor, torch.Tensor]:
+def online_collate_train(batch: List[np.ndarray]) -> BATCH_TYPE:
     """To be used in a torch DataLoader.
 
     Args:
@@ -57,14 +60,14 @@ def online_collate_train(batch: List[np.ndarray]) -> Tuple[torch.Tensor, torch.T
     return (torch.tensor(s.transform(x)), torch.tensor(s.transform(y)))
 
 
-def collate_fn(batch: List[np.ndarray]) -> Tuple[torch.Tensor, torch.Tensor]:
+def collate_fn(batch: List[np.ndarray | str]) -> BATCH_TYPE:
     """To be used in a torch DataLoader.
 
     Args:
         batch (List[np.array]): List of numpy arrays.
     
     Returns:
-        Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: Tuple of tensors as batch.
+        Dataflux.pytorch.BATCH_TYPES: Tuple of tensors as batch.
     """
-    return (torch.tensor(np.array([x[0] for x in batch])), 
+    return (torch.tensor(np.array([x[0] for x in batch])),
             torch.tensor(np.array([x[1] for x in batch])))
