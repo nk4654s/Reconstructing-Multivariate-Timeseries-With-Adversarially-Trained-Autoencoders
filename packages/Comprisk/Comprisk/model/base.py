@@ -1,14 +1,14 @@
 """This module contains the base model implementing widely-used functions. Layers
 of a neural network are not implemented."""
 
-from typing import List, Tuple, Union
+from typing import List, Union
 import numpy as np
 import lightning as L
 import torch
 
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.optim.optimizer import Optimizer
-from Dataflux.pytorch import DatasetTypes, dataset_type_from_string
+from Dataflux.pytorch import DatasetTypes, dataset_type_from_string, BATCH_TYPE
 from Comprisk.helper import (
     r2_score,
     get_loss_by_name,
@@ -40,9 +40,10 @@ class BaseModel(L.LightningModule):
         optimizer: str = "Adam",
         lr: float = 1e-3,
         lr_decay: float = 0.99,
-        type_: str = DatasetTypes.AUTOENCODER.value,
+        features_in: List[str] = None,
+        features_out: List[str] = None,
+        behavior: str = DatasetTypes.AUTOENCODER.value,
         output_length: int = 1,
-        feature_names: List[str] = []
     ) -> None:
         super().__init__()
 
@@ -55,17 +56,19 @@ class BaseModel(L.LightningModule):
         self._lr_decay = lr_decay
         self.lr = lr
 
-        self._behavior = dataset_type_from_string(type_)
+        self._behavior = dataset_type_from_string(behavior)
         self._output_length = output_length
-        
-        self._feature_names = feature_names
+
+        self._features_in = features_in
+        self._features_out = features_out
+
+        self._input_dim = len(features_in)
+        self._output_dim = len(features_out)
+        logger.debug("The model gets %s features and outputs %s values", self._input_dim, self._output_dim)
     
     def set_output_behavior(self, behavior: DatasetTypes | str, length: int) -> None:
         self._behavior = dataset_type_from_string(behavior) if isinstance(behavior, str) else behavior
         self._output_length = length
-    
-    def set_feature_names(self, feature_names: List[str]) -> None:
-        self._feature_names = feature_names
 
     def _get_feature_loss(self, y_hat, y) -> np.ndarray:
         y_hat = y_hat.detach().cpu().numpy()
@@ -86,30 +89,27 @@ class BaseModel(L.LightningModule):
         self.log("epoch/lr", self._lr_scheduler.get_last_lr()[-1])
         logger.debug("Starting epoch %s with lr=%s", self.current_epoch, self._lr_scheduler.get_last_lr()[-1])
 
-    def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor], **kwargs) -> torch.Tensor:
+    def training_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:
         x, y = batch
-        y = y if self._behavior == DatasetTypes.PREDICTIVE else x
         y_hat = self(x)
         loss = self._loss(y_hat, y)
         self.log(f"train/{self._loss_name}", loss)
 
         # the feature loss is required by the LossMeasurement callback to calculate
         # the model's performance during training.
-        for name_, loss_ in zip(self._feature_names, self._get_feature_loss(y_hat, y)):
+        for name_, loss_ in zip(self._features_out, self._get_feature_loss(y_hat, y)):
             self.log(f"train/{name_}", loss_)
         return loss
 
-    def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor], **kwargs) -> torch.Tensor:
+    def test_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:
         x, y = batch
-        y = y if self._behavior == DatasetTypes.PREDICTIVE else x
         y_hat = self(x)
         loss = self._loss(y_hat, y)
         self.log(f"test/{self._loss_name}", loss)
         return loss
 
-    def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor], **kwargs) -> torch.Tensor:
+    def validation_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:
         x, y = batch
-        y = y if self._behavior == DatasetTypes.PREDICTIVE else x
         y_hat = self(x)
         loss = self._loss(y_hat, y)
         self.log(f"validate/{self._loss_name}", loss)
@@ -130,12 +130,12 @@ class BaseModel(L.LightningModule):
 
         return [self._optim], [{"scheduler": self._lr_scheduler, "interval": "epoch"}] # type: ignore
 
-    def predict_step(self, batch: Tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
+    def predict_step(self, batch: BATCH_TYPE) -> torch.Tensor:
         """
         This method is used to make predictions on a batch of data during inference.
 
         Args:
-            batch (Tuple[torch.Tensor, torch.Tensor]): A tensor containing the input data.
+            batch (Dataflux.pytorch.BATCH_TYPE): A tensor containing the input data.
 
         Returns:
             torch.Tensor: The predicted output for the given batch.
