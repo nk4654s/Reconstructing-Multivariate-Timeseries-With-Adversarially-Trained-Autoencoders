@@ -33,6 +33,10 @@ class ScoreTransformer(BaseTransformer):
         if self._mode == "anacision":
             self._transformer = AnaTransformer(*args, **kwargs)
 
+    @property
+    def mode(self) -> str:
+        return self._mode
+
     def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -> None:
         """This method fits the parameters of the ScoreTransformer.
 

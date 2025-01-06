@@ -76,8 +76,7 @@ class DataModule(L.LightningDataModule):
         self._val = None
         self._collate_fn = None
 
-        if train and validate:
-            self.set_path(train, validate)
+        self.set_path(train, validate)
 
     def set_path(self, train: str, validate: str) -> None:
         """This method sets a new path to the training and validation datasets which
@@ -88,6 +87,10 @@ class DataModule(L.LightningDataModule):
             train (str): The path of the training dataset.
             validate (str): The path of the validation dataset.
         """
+        if not train and not validate:
+            logger.debug("No ")
+            return
+
         self._collate_fn = collate_fn
         if self._dataset_args["key"] == "data":
             logger.debug("Using online collate function normalizing each sample independently.")
