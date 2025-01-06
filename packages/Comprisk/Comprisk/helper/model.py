@@ -25,22 +25,6 @@ from Comprisk.model.base import BaseModel
 from Comprisk import logger
 
 
-def set_model_features(model, dataset: Dataset):
-    # set correct feature names to model, the feature names of the dataset should be
-    # sorted according to the sample's feature indices
-    feature_dict = get_sensor_uuid_to_name(UUID(dataset.UUID))
-    feature_names = dataset.get_args().names
-    if feature_dict:
-        feature_names = [feature_dict.get(n, n) for n in feature_names]
-
-    # remove the 'ts' value from the model's feature set as it should not use it
-    if "ts" in feature_names:
-        feature_names.remove("ts")
-        logger.debug("Removed 'ts' from model's feature set.")
-
-    model.set_feature_names(feature_names)
-
-
 def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
     """This method loads the hyperparameters of an already trained model
     and initializes the model's sub_modules if existing.

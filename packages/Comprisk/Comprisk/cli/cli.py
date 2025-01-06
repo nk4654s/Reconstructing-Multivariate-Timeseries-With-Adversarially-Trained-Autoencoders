@@ -10,8 +10,6 @@ from lightning.pytorch.cli import (
 from lightning.pytorch.tuner.tuning import Tuner
 
 from Comprisk.anomaly import ScoreTransformer
-from Dataflux.pytorch import Dataset
-from Comprisk.helper import set_model_features
 from Comprisk import logger
 
 
@@ -50,6 +48,11 @@ class CompriskCLI(LightningCLI):
         parser.add_argument("--tuner-config", nargs="?")
         parser.add_argument("--tuner-trials", type=int, default=1)
 
+        # link the model's input/output features with the dataset's configuration
+        parser.link_arguments("data.features_in", "model.init_args.features_in", apply_on="instantiate")
+        parser.link_arguments("data.features_out", "model.init_args.features_out", apply_on="instantiate")
+        parser.link_arguments("data.behavior", "model.init_args.behavior", apply_on="instantiate")
+
         # generate arguments for the custom classes
         generate_class_arguments(ScoreTransformer, "score", parser)
 
@@ -60,14 +63,6 @@ class CompriskCLI(LightningCLI):
         logger.debug(header_str)
         logger.debug(start_str)
         logger.debug("Starting CompriskCLI for training")
-
-        # set correct feature names to model, the feature names of the dataset should be
-        # sorted according to the sample's feature indices
-        dataset: Dataset = self.datamodule.trainset
-        set_model_features(self.model, dataset)
-
-        dataset_args = dataset.get_args()
-        self.model.set_output_behavior(dataset_args.behavior, dataset_args.sequence_out)
         
         # if the package should tune the model's hyperparameters, then reset the number
         # of training iterations
