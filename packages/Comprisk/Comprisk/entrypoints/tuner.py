@@ -1,14 +1,13 @@
 """This module creates a model and tunes its hyperparameters."""
 import os
 import yaml
-from Dataflux.helper import get_logger
 
 from Comprisk.tune import Tuner, ConfigManager
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
 
-logger = get_logger(__name__, path="./logs/logfile")
+from Comprisk import logger
 
 
 def run_tuner(cli: CompriskCLI) -> str:

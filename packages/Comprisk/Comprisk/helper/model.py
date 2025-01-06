@@ -22,7 +22,7 @@ from Comprisk.anomaly import ScoreTransformer
 from Comprisk.helper.file_structure import class_for_name, get_checkpoints
 from Comprisk.model.base import BaseModel
 
-logger = get_logger(__name__, path="./logs/logfile")
+from Comprisk import logger
 
 
 def set_model_features(model, dataset: Dataset):

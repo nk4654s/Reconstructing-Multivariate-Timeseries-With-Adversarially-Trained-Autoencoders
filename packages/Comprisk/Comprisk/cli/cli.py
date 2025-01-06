@@ -1,6 +1,6 @@
 """This module implements an advanced CLI for training or loading
 a model. Moreover, the module expands the CLI by **lightning.ai**."""
-
+import inspect
 import datetime
 from lightning import Trainer
 from lightning.pytorch.cli import (
@@ -8,9 +8,34 @@ from lightning.pytorch.cli import (
     LightningCLI,
 )
 from lightning.pytorch.tuner.tuning import Tuner
+
+from Comprisk.anomaly import ScoreTransformer
 from Dataflux.pytorch import Dataset
 from Comprisk.helper import set_model_features
 from Comprisk import logger
+
+
+def generate_class_arguments(cls, prefix: str, parser: LightningArgumentParser) -> None:
+    """This method adds a classes constructor arguments to the CLI. For a proper presentation, make sure that
+    each argument is well documented.
+
+    Args:
+        cls: The class to inspect.
+        prefix (str): The argument prefix which is followed by ".arg_name".
+        parser (LightningArgumentParser): The CLI parser.
+    """
+    args = inspect.signature(cls.__init__).parameters
+    docs = cls.__doc__.split("Args:")[1].strip().split("\n")
+    exclude = ["self", "args", "kwargs"]
+    index = 0
+    for key, value in args.items():
+        if key in exclude:
+            continue
+
+        arg_name = f"--{prefix}.{key}"
+        desc = docs[index].split(":", maxsplit=1)[1].strip() if docs[index].startswith(key) else ""
+        parser.add_argument(arg_name, type=value.annotation, default=value.default, help=desc)
+        index += 1
 
 
 class CompriskCLI(LightningCLI):
@@ -24,6 +49,9 @@ class CompriskCLI(LightningCLI):
         parser.add_argument("--find-batch-size", default=False, action="store_true")
         parser.add_argument("--tuner-config", nargs="?")
         parser.add_argument("--tuner-trials", type=int, default=1)
+
+        # generate arguments for the custom classes
+        generate_class_arguments(ScoreTransformer, "score", parser)
 
     def before_fit(self):
         """Method executes before fit automatically."""

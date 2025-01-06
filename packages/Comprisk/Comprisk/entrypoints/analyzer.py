@@ -8,14 +8,14 @@ from uuid import UUID
 
 from Dataflux.pytorch import Dataset, DatasetArgs
 from Dataflux.visualization import show_dataframe
-from Dataflux.helper import get_logger, get_sensor_uuid_to_name
+from Dataflux.helper import get_sensor_uuid_to_name
 
 from Comprisk.helper import get_config_folder, ModelLoader
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskLoadCLI
 
-logger = get_logger(__name__, path="./logs/logfile")
+from Comprisk import logger
 
 
 def cli_main():
@@ -61,7 +61,7 @@ def cli_main():
     # transforms the loss between prediction and target to a score between 0 and 1.
     score_vis_path = os.path.join(base_path, "score-transformed.png")
     # TODO get the 'factors' parameter from a config file which should be generated where the model got stored
-    score.transform(predicted, target, visualize=score_vis_path, factors=0.02)
+    score.transform(predicted, target, visualize=score_vis_path, factors=0.1)
 
     # rename the columns, which might be required
     sensors_name_dict = get_sensor_uuid_to_name(UUID(dataset.UUID))
