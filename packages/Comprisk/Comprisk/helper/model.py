@@ -14,7 +14,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from Dataflux.pytorch import online_collate_inference, collate_fn
+from Dataflux.pytorch import online_collate_inference, collate_fn, DatasetTypes
 from Dataflux.helper import get_logger, get_sensor_uuid_to_name
 from Dataflux.pytorch import Dataset
 
@@ -154,7 +154,7 @@ class ModelLoader:
         self.model.set_output_behavior(args.behavior, args.sequence_out)
         skip = args.skip
         stride = args.stride
-        window = args.sequence_out
+        window = args.sequence_out if args.behavior != DatasetTypes.AUTOENCODER else args.sequence_in
         features = args.features_out
         # output_length = batch_size * window - batch_size * stride + window // 2
         # assert window == stride, f"Something went wrong, the dataset's stride {stride} should equal the window size {window}."
@@ -203,6 +203,7 @@ class ModelLoader:
                 idx = idx + j * stride
 
                 window_, _ = inputs[j].shape
+                window_ = min(window_, len(targets[idx:idx + window_]))
                 targets[idx:idx + window_] += inputs[j][:, inputs_indicies]
                 predict[idx:idx + window_] += model_pred[j]
                 counter[idx:idx + window_] += np.ones(shape=(window_, ))
