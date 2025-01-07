@@ -74,9 +74,6 @@ class AutoEncoder(BaseModel):
         self._decoder.to(self.device)
         self._encoder.device = self.device
 
-        # self.save_hyperparameters(ignore=["encoder", "decoder"])
-        self.save_hyperparameters()
-
     def encoder_init(self) -> nn.Module:
         """This method must be overwritten by a child class to instantiate the encoder part of the autoencoder. This
         initialization method is called after the super-constructor of the BaseModel class was called.

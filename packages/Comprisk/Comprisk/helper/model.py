@@ -66,12 +66,13 @@ def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
     the filename structure `...val=<validation_loss>.ckpt`.
 
     Args:
-        cli (CompriskCLI): The cli object created when starting an entrypoint.
+        path (str): The path where the model checkpoints were saved.
         eval_mode (bool): Weather to set the loaded model to eval mode or not. Defaults to True.
     """
     checkpoints = get_checkpoints(path)
     checkpoints = sorted(checkpoints, key = lambda x : float(x[:-5].split("val=")[-1]))
     if len(checkpoints) == 0:
+        logger.warning("Could not find a checkpoint to load a model from. (%s)", path)
         return None
 
     # 1. get dataset configuration: start, end, step size (size of input window)
@@ -81,7 +82,7 @@ def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
         **sub_modules
     )
 
-    logger.debug("Loaded model %s from %s", checkpoints[0], path)
+    logger.info("Loaded model %s from %s", checkpoints[0], path)
     if eval_mode:
         model.eval()
     return model
@@ -119,19 +120,6 @@ class ModelLoader:
         """The path where the model is saved.
         """
         return self._path
-
-    def get_correlations(self) -> pd.DataFrame:
-        """Loads the correlations of input features from the model metadata folder. These
-        correlations are computed from the training data.
-
-        Returns:
-            pd.DataFrame: The correlations of input features as pandas DataFrame.
-        """
-        correlation_path = os.path.join(self._path, "metadata", "correlation.csv")
-        if not os.path.exists(correlation_path):
-            return pd.DataFrame()
-
-        return pd.read_csv(correlation_path, index_col=0)
 
     def predict_loop(self, dataset: Dataset, modifier: Tuple[str, float] = ("", 1.0), batch_size: int = 64,
                      step: int | None = None, num_workers: int = 4, verbose: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:

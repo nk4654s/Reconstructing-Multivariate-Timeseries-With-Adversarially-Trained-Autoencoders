@@ -65,6 +65,15 @@ class BaseModel(L.LightningModule):
         self._input_dim = len(features_in)
         self._output_dim = len(features_out)
         logger.debug("The model gets %s features and outputs %s values", self._input_dim, self._output_dim)
+
+        self.save_hyperparameters()
+
+        # somehow, linked arguments are not set when saving hparams
+        # the fix is to overwrite hparams after its creation and save it explicitly after
+        self.hparams["features_in"] = self._features_in
+        self.hparams["features_out"] = self._features_out
+        self.hparams["behavior"] = self._behavior.value
+        self.save_hyperparameters(self.hparams)
     
     def set_output_behavior(self, behavior: DatasetTypes | str, length: int) -> None:
         self._behavior = dataset_type_from_string(behavior) if isinstance(behavior, str) else behavior
