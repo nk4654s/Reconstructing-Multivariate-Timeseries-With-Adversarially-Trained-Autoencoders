@@ -1,5 +1,6 @@
 """This module implements a basic AutoEncoder class and the base classes for an
 encoder and decoder."""
+from typing import List
 
 import torch
 import torch.nn as nn
@@ -41,18 +42,13 @@ class AutoEncoder(BaseModel):
     """The AutoEncoder class uses a given encoder and decoder model to learn a latent
     space representation of the input data. Usually, the latent space is dramatically
     smaller than the input.
-
-    Args:
-        encoder (EncoderBase): The encoder model to learn the latent space representation.
-        decoder (DecoderBase): The decoder model to reconstruct the input from the latent
-            space.
     
     > More information about the other arguments can be found in the super class.
     """
     def __init__(
         self,
-        encoder: EncoderBase,
-        decoder: DecoderBase,
+        features_in: List[str] = None,
+        features_out: List[str] = None,
         loss: str = "MSELoss",
         activation: str = "tanh",
         optimizer: str = "Adam",
@@ -60,6 +56,8 @@ class AutoEncoder(BaseModel):
         lr_decay: float = 0.999,
     ) -> None:
         super().__init__(
+            features_in=features_in,
+            features_out=features_out,
             loss=loss,
             activation=activation,
             optimizer=optimizer,
@@ -68,15 +66,31 @@ class AutoEncoder(BaseModel):
         )
 
         # build encoder/decoder
-        self._encoder = encoder
+        self._encoder = self.encoder_init()
         self._encoder.to(self.device)
         self._encoder.device = self.device
-        self._decoder = decoder
+
+        self._decoder = self.decoder_init()
         self._decoder.to(self.device)
         self._encoder.device = self.device
 
-        # self.save_hyperparameters(ignore=["encoder", "decoder"])
-        self.save_hyperparameters()
+    def encoder_init(self) -> nn.Module:
+        """This method must be overwritten by a child class to instantiate the encoder part of the autoencoder. This
+        initialization method is called after the super-constructor of the BaseModel class was called.
+
+        Returns:
+            nn.Module: The Encoder as pytorch module.
+        """
+        raise NotImplementedError
+
+    def decoder_init(self) -> nn.Module:
+        """This method must be overwritten by a child class to instantiate the decoder part of the autoencoder. This
+        initialization method is called after the super-constructor of the BaseModel class was called.
+
+        Returns:
+            nn.Module: The Encoder as pytorch module.
+        """
+        raise NotImplementedError
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         """

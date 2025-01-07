@@ -14,7 +14,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from Dataflux.pytorch import online_collate_inference, collate_fn
+from Dataflux.pytorch import online_collate_inference, collate_fn, DatasetTypes
 from Dataflux.helper import get_logger, get_sensor_uuid_to_name
 from Dataflux.pytorch import Dataset
 
@@ -23,22 +23,6 @@ from Comprisk.helper.file_structure import class_for_name, get_checkpoints
 from Comprisk.model.base import BaseModel
 
 from Comprisk import logger
-
-
-def set_model_features(model, dataset: Dataset):
-    # set correct feature names to model, the feature names of the dataset should be
-    # sorted according to the sample's feature indices
-    feature_dict = get_sensor_uuid_to_name(UUID(dataset.UUID))
-    feature_names = dataset.get_args().names
-    if feature_dict:
-        feature_names = [feature_dict.get(n, n) for n in feature_names]
-
-    # remove the 'ts' value from the model's feature set as it should not use it
-    if "ts" in feature_names:
-        feature_names.remove("ts")
-        logger.debug("Removed 'ts' from model's feature set.")
-
-    model.set_feature_names(feature_names)
 
 
 def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
@@ -82,12 +66,13 @@ def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
     the filename structure `...val=<validation_loss>.ckpt`.
 
     Args:
-        cli (CompriskCLI): The cli object created when starting an entrypoint.
+        path (str): The path where the model checkpoints were saved.
         eval_mode (bool): Weather to set the loaded model to eval mode or not. Defaults to True.
     """
     checkpoints = get_checkpoints(path)
     checkpoints = sorted(checkpoints, key = lambda x : float(x[:-5].split("val=")[-1]))
     if len(checkpoints) == 0:
+        logger.warning("Could not find a checkpoint to load a model from. (%s)", path)
         return None
 
     # 1. get dataset configuration: start, end, step size (size of input window)
@@ -97,7 +82,7 @@ def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
         **sub_modules
     )
 
-    logger.debug("Loaded model %s from %s", checkpoints[0], path)
+    logger.info("Loaded model %s from %s", checkpoints[0], path)
     if eval_mode:
         model.eval()
     return model
@@ -136,19 +121,6 @@ class ModelLoader:
         """
         return self._path
 
-    def get_correlations(self) -> pd.DataFrame:
-        """Loads the correlations of input features from the model metadata folder. These
-        correlations are computed from the training data.
-
-        Returns:
-            pd.DataFrame: The correlations of input features as pandas DataFrame.
-        """
-        correlation_path = os.path.join(self._path, "metadata", "correlation.csv")
-        if not os.path.exists(correlation_path):
-            return pd.DataFrame()
-
-        return pd.read_csv(correlation_path, index_col=0)
-
     def predict_loop(self, dataset: Dataset, modifier: Tuple[str, float] = ("", 1.0), batch_size: int = 64,
                      step: int | None = None, num_workers: int = 4, verbose: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """This method applies a model on a given dataset. For an AutoEncoder, the reconstructed
@@ -170,13 +142,13 @@ class ModelLoader:
         self.model.set_output_behavior(args.behavior, args.sequence_out)
         skip = args.skip
         stride = args.stride
-        window = args.sequence_out
+        window = args.sequence_out if args.behavior != DatasetTypes.AUTOENCODER else args.sequence_in
         features = args.features_out
         # output_length = batch_size * window - batch_size * stride + window // 2
         # assert window == stride, f"Something went wrong, the dataset's stride {stride} should equal the window size {window}."
 
         logger.debug("Predict on dataset %s (Original)", len(dataset))
-        logger.debug("Predict loop step size %s and batch size %s", step, batch_size)
+        logger.debug("Predict loop step size %s and batch size %s", step or skip, batch_size)
         logger.debug("Window size %s with stride %s", window, stride)
 
         # 0. find the index of the sensor to modify with the given factor
@@ -190,6 +162,8 @@ class ModelLoader:
         predict = np.zeros(shape=(len(dataset) * stride + window, features), dtype=np.float32)
         counter = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float32)
         ts_indx = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float32)
+
+        inputs_indicies = [i for i, x in enumerate(args.names_in) if x in args.names_out]
 
         collate = online_collate_inference if args.key == "data" else collate_fn
         loader = DataLoader(dataset, batch_size, collate_fn=collate, num_workers=num_workers, drop_last=False)
@@ -217,7 +191,8 @@ class ModelLoader:
                 idx = idx + j * stride
 
                 window_, _ = inputs[j].shape
-                targets[idx:idx + window_] += inputs[j]
+                window_ = min(window_, len(targets[idx:idx + window_]))
+                targets[idx:idx + window_] += inputs[j][:, inputs_indicies]
                 predict[idx:idx + window_] += model_pred[j]
                 counter[idx:idx + window_] += np.ones(shape=(window_, ))
 
@@ -225,6 +200,7 @@ class ModelLoader:
                 ts_indx[idx:idx + window_] = [ts + k * skip for k in range(window_)]
 
         limit = counter.argmin()
+        limit = limit if counter.min() != counter.mean() else -1
         ts_index = pd.Index(ts_indx[:limit], name="ts")
 
         counter = counter[:limit]
@@ -232,7 +208,7 @@ class ModelLoader:
         predict = predict[:limit]
 
         # create the output DataFrames
-        names = sorted(args.names)
+        names = args.names_out
         targets = pd.DataFrame({n: targets[:, i] / counter for i, n in enumerate(names)}, index=ts_index)
         predict = pd.DataFrame({n: predict[:, i] / counter for i, n in enumerate(names)}, index=ts_index)
 

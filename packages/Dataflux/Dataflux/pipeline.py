@@ -11,10 +11,8 @@ from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
 from Dataflux.helper.metadata import Meta, Metadata
 from Dataflux.data import ContinuousDataDownloader, DataType
 
-from Dataflux import get_logger
+from Dataflux import logger
 from Dataflux.modules import State
-
-logger = get_logger(__name__, path="logfile", level=logging.DEBUG)
 
 # define modules here which should always be applied, regardless of the yaml config file!
 modules = []

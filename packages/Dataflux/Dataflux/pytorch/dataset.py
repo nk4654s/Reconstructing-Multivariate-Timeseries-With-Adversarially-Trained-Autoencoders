@@ -12,6 +12,8 @@ from Dataflux.helper import Meta, Metadata as FileMetadata
 from Dataflux.pytorch.index_tree import IndexTree
 from Dataflux.pytorch.cache import DataFrameCache
 
+from Dataflux import logger
+
 
 class EmptyDatasetError(Exception):
     pass
@@ -25,8 +27,8 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
     Args:
         path (str): The path to the root folder of the dataset. The dataset folder requires a sub
         folder `metadata` containing the `info.json` file.
-        input_sequence (int): The number of time steps for the input sequence.
-        output_sequence (int): The number of time steps for the output sequence.
+        sequence_in (int): The number of time steps for the input sequence.
+        sequence_out (int): The number of time steps for the output sequence.
         cache_size (int, optional): The size of the cache. Defaults to -1.
         key (str): The key of the HDF-file specifying the data to load. Defaults to "norm".
 
@@ -39,29 +41,33 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         path: str,
         sequence_in: int,
         sequence_out: int,
+        feature_names_in: List[str] = None,
+        feature_names_out: List[str] = None,
         skip: int = 1,
         stride: int = 1,
         cache_size: int = -1,
         behavior: str = DatasetTypes.AUTOENCODER.value,
-        key: str = "norm",
-        include_ts: bool = False
+        key: str = "norm"
     ) -> None:
         self._metadata = FileMetadata()
         self._metadata.load(path)
         self._skip = skip
         self._stride = stride
         self._key = key
-        self._behavior = behavior
+        self._behavior = dataset_type_from_string(behavior)
 
         self._num_input = sequence_in
         self._num_output = sequence_out
         if len(self._metadata[Meta.FILES]) == 0:
             raise EmptyDatasetError()
 
+        self._features_in = feature_names_in
+        self._features_out = feature_names_out
         self._num_features = self._metadata[Meta.FILES][0]["features"]
 
-        if behavior == DatasetTypes.AUTOENCODER.value:
-            assert sequence_out <= sequence_in, "In AE mode, the output sequence should not exceed the input sequence."
+        if behavior == DatasetTypes.AUTOENCODER:
+            self._num_output = 0
+            logger.info("The output sequence does not exist when loading the dataset in 'AUTOENCODER' mode. Overwriting parameter to have the value '0'")
 
         self._id = self._metadata[Meta.MACHINE_UUID]
         self._base_dir = path
@@ -70,7 +76,6 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         # the cache is responsible for loading and storing dataframes in memory,
         # the tree is used to find the correct file based on a given index.
         data = {"window_size": sequence_in + sequence_out, "skip": skip}
-        self._include_ts = include_ts
         self._cache = DataFrameCache(cache_size, **data)
         self._tree = IndexTree(self._metadata, **data)
 
@@ -87,8 +92,9 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
             stride=self._stride,
             key=self._key,
             behavior_=behavior,
-            ts_index=self._cache.ts_index,
-            names=self._cache.columns
+            names=self._cache.columns,
+            names_in=feature_names_in,
+            names_out=feature_names_out
         )
 
     @property
@@ -134,33 +140,6 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         behavior = dataset_type_from_string(behavior) if isinstance(behavior, str) else behavior
         self._args.behavior = behavior
         self._behavior = behavior
-
-    def to_dataframe(self, percentage: float = 1.0) -> pd.DataFrame:
-        """This method transforms the dataset into a single dataframe. To avoid
-        memory issues, set the percentage parameter accordingly.
-        
-        Args:
-            precentage (float): The percentage of the dataset to put into the
-                dataframe. Defaults to 1.0 (100%).
-        
-        Returns:
-            DataFrame: The dataset as dataframe.
-        """
-        # get the feature names to build the dataframe with it's header
-        # do not forget to add the timestamp column, if it exists
-        names = self._cache.columns
-        if self._cache.ts_index:
-            names.insert(self._cache.ts_index, "ts")
-
-        # create a temporary data container and build the dataframe
-        data = {key: [] for key in names}
-        for i in range(0, int(len(self) * percentage), self._num_input):
-            sensors, _ = self._get(i, include_ts=True)
-
-            for j, name in enumerate(names):
-                data[name] += list(sensors[:, j])
-
-        return pd.DataFrame(data)
 
     def scale(self, data: List | np.ndarray | pd.DataFrame) -> pd.DataFrame:
         """Method scales the given data using the normalizer of the dataset.
@@ -244,11 +223,16 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         Returns:
             int: The timestamp of the provided index value.
         """
-        sensors, _ = self._get(index, include_ts=True)
-        index = self._cache.ts_index
-        return int(sensors[:, index][0])
+        index *= self._stride
 
-    def _get(self, index: int, include_ts: bool = False) -> Tuple[np.ndarray, np.ndarray]:
+        # find the day and the correct index for that file
+        # start of the sequence will be: index + self._num_input ...
+        day, index = self._tree.search(index)
+        file_path = f"{self._base_dir}/{self._id}_{day}.h5"
+        ts = self._cache.get(file_path, key=self._key)["ts"].to_numpy()
+        return int(ts[index])
+
+    def _get(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
         index *= self._stride
 
         # find the day and the correct index for that file
@@ -260,16 +244,30 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
 
         # get sensor data, the cache returns values sorted by the dataframe's
         # column names for consistency
-        sensors, _ = self._cache.get(file_path, key=self._key, include_ts=self._include_ts or include_ts)
+        sensors = self._cache.get(file_path, key=self._key)
 
-        x = sensors[index:start_idx, :]
+        # create containers for the sensor data
+        features_in = self._features_in if self._features_in else self._cache.columns
+        features_out = self._features_out if self._features_out else self._cache.columns
 
-        if self._behavior == DatasetTypes.PREDICTIVE:
-            y = sensors[start_idx:end_idx, :]
+        x = np.zeros((self._num_input, len(features_in)), dtype=np.float32)
+        y = np.zeros((self._num_input, len(features_out)), dtype=np.float32)
+
+        for i, name in enumerate(features_in):
+            x[:, i] = sensors[name].to_numpy()[index:start_idx]
+
+        # if the dataset will be used to train an autoencoder, then the input should match the output
+        if self._behavior == DatasetTypes.AUTOENCODER:
+            for i, name in enumerate(features_out):
+                y[:, i] = sensors[name].to_numpy()[index:start_idx]
+
             return x, y
-        
-        y = sensors[index:start_idx, :]
-        return x, y[self._num_input - self._num_output:]
+
+        # get only the output features
+        for i, name in enumerate(features_out):
+            y[:, i] = sensors[name].to_numpy()[start_idx:end_idx]
+
+        return x, y
 
     def __len__(self) -> int:
         return self.shape[0]
@@ -285,28 +283,9 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
 
 
 if __name__ == "__main__":
-    from tqdm import tqdm, trange
-    from torch.utils.data import DataLoader
-    from Dataflux.pytorch.utils import collate_fn
-    from Dataflux.pytorch.sampler import RandomBatchSampler
-
-    # end of file one: index=22121
-
-    dataset = Dataset("dataset-debug", 50, 0, cache_size=-1, skip=1)
-    for _ in tqdm(dataset):
-        pass
-
-    batch_sampler = RandomBatchSampler(len(dataset), batch_size=32)
-    loader = DataLoader(
-        dataset, batch_sampler=batch_sampler, collate_fn=collate_fn
-    )
-
-    prev = None
-    for _ in trange(0, 5_000, 1, leave=True):
-        current = next(loader.__iter__())
-        if prev is None:
-            prev = current
-            continue
-
-        assert prev is not current
-        prev = current
+    dataset = Dataset("../../../../environment/dev/datasets/thyssen-vd2-trainset",
+                      50, 25,
+                      feature_names_in=["SaugtemperaturErsteStufeTETIT74328 (°C)", "Biomethandurchfluss (m^3/min)"],
+                      feature_names_out=["Biomethandurchfluss (m^3/min)"],
+                      cache_size=-1, skip=1)
+    print(dataset.get_args())

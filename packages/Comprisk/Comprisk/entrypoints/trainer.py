@@ -14,7 +14,7 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from Dataflux.pytorch import Dataset
 
 from Comprisk.anomaly import ScoreTransformer
-from Comprisk.helper import ModelLoader, set_model_features
+from Comprisk.helper import ModelLoader
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
@@ -51,11 +51,6 @@ def save_training_meta(base_path: str, dataset: Dataset) -> None:
     """
     # create the metadata base dir
     os.makedirs(base_path)
-
-    # save the correlation of the training data
-    correlation_path = os.path.join(base_path, "correlation.csv")
-    df = dataset.to_dataframe()
-    df.corr().to_csv(correlation_path, index=True)
 
     # copy the normalizer of the training data to the model
     normfile = os.path.join(dataset.directory, "metadata", "normalizer.pkl")
@@ -110,7 +105,6 @@ def run_trainer(cli: CompriskCLI) -> str:
         loader = ModelLoader(config_path)
         model = loader.get_model()
         model.train()
-        set_model_features(model, data)
     else:
         model: LightningModule = cli.model
 
