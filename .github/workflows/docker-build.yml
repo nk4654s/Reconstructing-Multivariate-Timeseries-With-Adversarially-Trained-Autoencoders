@@ -46,5 +46,5 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build --build-arg --build-arg --build-arg --no-cache -f ${{ inputs.CONTAINER_LOCAL_PATH }}/docker-nocuda.dockerfile -t $ECR_REGISTRY/${{ inputs.ECR_REPOSITORY }}:$DEFAULT_IMAGE_TAG .
+        docker build --no-cache -f ${{ inputs.CONTAINER_LOCAL_PATH }}/docker-nocuda.dockerfile -t $ECR_REGISTRY/${{ inputs.ECR_REPOSITORY }}:$DEFAULT_IMAGE_TAG .
         docker push $ECR_REGISTRY/${{ inputs.ECR_REPOSITORY }} --all-tags

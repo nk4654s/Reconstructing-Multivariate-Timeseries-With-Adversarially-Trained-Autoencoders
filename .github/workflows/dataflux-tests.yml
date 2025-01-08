@@ -25,8 +25,8 @@ jobs:
         environment-file: requirements.yml
 
     - name: Lint with flake8
-      with:
-        workdir: ./packages/Dataflux
+      id: flux-linting
+      workdir: ./packages/Dataflux
       run: |
         conda install flake8
         # stop the build if there are Python syntax errors or undefined names
@@ -36,7 +36,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Run Unittests
-      with:
-        workdir: ./packages/Dataflux
+      id: flux-test
+      workdir: ./packages/Dataflux
       run: |
         sh scripts/run_tests.sh
