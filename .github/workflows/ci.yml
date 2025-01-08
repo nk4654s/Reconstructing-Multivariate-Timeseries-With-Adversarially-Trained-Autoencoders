@@ -23,8 +23,8 @@ jobs:
   docker-build:
     uses: ./.github/workflows/docker-build.yml
     needs:
-      - dataflux-tests
-      - comprisk-tests
+      - dataflux-test
+      - comprisk-test
     secrets: inherit
     with:
       ECR_REPOSITORY: 'xplore-ai-cas'
