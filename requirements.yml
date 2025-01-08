@@ -1,6 +1,6 @@
 name: cas
 channels:
-    - pytorch=3.12.8
+    - pytorch
     - conda-forge
     - defaults
 dependencies:

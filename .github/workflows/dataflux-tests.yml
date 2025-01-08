@@ -20,6 +20,7 @@ jobs:
       - name: Setup Miniforge
         uses: conda-incubator/setup-miniconda@v3
         with:
+          python-version: 3.12.8
           miniforge-version: latest
           channels: pytorch, conda-forge, defaults
           auto-activate-base: false
