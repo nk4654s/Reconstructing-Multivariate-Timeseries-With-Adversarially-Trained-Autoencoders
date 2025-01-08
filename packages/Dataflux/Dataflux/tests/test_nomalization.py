@@ -23,12 +23,12 @@ class TestMachineSplit(unittest.TestCase):
         reverted = scaler.revert(normed.to_numpy())
 
         self.assertTrue(np.min(normed) == -1, "Minimum after normalization is not `-1`")
-        self.assertTrue(np.max(normed) == 1, "Maxiumum after normalization is not `+1`")
+        self.assertTrue(np.max(normed) == 1, "Maximum after normalization is not `+1`")
         np.testing.assert_allclose(self.output, reverted, rtol=TOLERANCE, err_msg="MinMax normalization/revert does not match input")
 
     def test_minmax_partial_fit(self) -> None:
-        """Function tests fitting the FluxScaler's internal MinMax scaler on multiple inputs
-        to proper normalize many inputs."""
+        """Function tests fitting the FluxScaler internal MinMax scaler on multiple inputs
+        to properly normalize many inputs."""
         scaler = FluxScaler(method=ScalerMethod.NORMALIZE)
 
         # train

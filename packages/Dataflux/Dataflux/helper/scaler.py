@@ -30,7 +30,7 @@ class ScalerMethod(Enum):
     """
     NORMALIZE = "minmax"
     STANDARDIZE = "standard"
-    COSTUM_ROBUST = "custom-robust"
+    CUSTOM_ROBUST = "custom-robust"
 
 
 class FluxScaler:
@@ -49,7 +49,7 @@ class FluxScaler:
 
         if method == ScalerMethod.STANDARDIZE:
             self._internal_scaler = StandardScaler()
-        if method == ScalerMethod.COSTUM_ROBUST:
+        if method == ScalerMethod.CUSTOM_ROBUST:
             self._internal_scaler = CustomRobustScaler()
 
     @property
