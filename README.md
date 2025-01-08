@@ -49,6 +49,9 @@ include the `config.yaml` which equals to the training configuration, a `upload.
 download for inference, and model checkpoints in the `checkpoint/*.ckpt` folder. As the model's output is send to an
 AWS server, no persistent volumes are required.
 
+Usually, the docker will be build when updating the master branch while changing the `environment/production/models` 
+folder. This will trigger GitHub actions and start the specified workflow immediately.
+
 > Note: Press [here](https://github.com/neaxplore/xplore-ai-cas/tree/master/environment/production/models/README.md) 
 > to learn more about the production folder structure.
 
