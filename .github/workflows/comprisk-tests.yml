@@ -16,27 +16,34 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      # set up the conda environment without specifying an environment.yaml
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          channels: pytorch, conda-forge, defaults
+          auto-activate-base: false
+          activate-environment: cas
+          use-only-tar-bz2: true
+
       # cache the environment, as creating takes some time. Re-create the environment when the environment.yaml
       # or setup.py changes.
       - name: Cache Conda
+        id: comprisk-conda-cache
         uses: actions/cache@v4
         env:
           CACHE_NUMBER: 0
         with:
-          path: ~/conda_pkgs_dir
+          path: ${{ env.CONDA }}/envs
           key:
             comprisk-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('requirements.yml') }}-${{ 
             hashFiles('packages/Comprisk/setup.py') }}
 
-      # create the conda environment
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniconda-version: "latest"
-          channels: pytorch, conda-forge, defaults
-          auto-activate-base: false
-          activate-environment: cas
-          environment-file: requirements.yml
-          use-only-tar-bz2: true
+      # if there was no cache or the cache is too old, update the conda env
+      - name: Update Conda
+        run:
+          conda env update -n cas requirements.yml
+        if: steps.comprisk-conda-cache.outputs.cache-hit != 'true'
 
       # check for obvious mistakes
       - name: Lint with flake8

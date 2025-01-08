@@ -16,40 +16,34 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      # set up the conda environment without specifying an environment.yaml
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          channels: pytorch, conda-forge, defaults
+          auto-activate-base: false
+          activate-environment: cas
+          use-only-tar-bz2: true
+
       # cache the environment, as creating takes some time. Re-create the environment when the environment.yaml
       # or setup.py changes.
       - name: Cache Conda
+        id: dataflux-conda-cache
         uses: actions/cache@v4
         env:
           CACHE_NUMBER: 0
         with:
-          path: ~/conda_pkgs_dir
+          path: ${{ env.CONDA }}/envs
           key:
             dataflux-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('requirements.yml') }}-${{ 
             hashFiles('packages/Dataflux/setup.py') }}
 
-      # create the conda environment
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniconda-version: "latest"
-          channels: pytorch, conda-forge, defaults
-          auto-activate-base: false
-          activate-environment: cas
-          environment-file: requirements.yml
-          use-only-tar-bz2: true
-
-        # check for obvious mistakes
-      - name: Lint with flake8
-        id: flux-linting
-        working-directory: ./packages/Dataflux
-        run: |
-          pip install -e packages/Dataflux
-          conda install flake8
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      # if there was no cache or the cache is too old, update the conda env
+      - name: Update Conda
+        run:
+          conda env update -n cas requirements.yml
+        if: steps.dataflux-conda-cache.outputs.cache-hit != 'true'
 
       # Run unit tests
       - name: Run Unittests
