@@ -1,6 +1,7 @@
 folder: upload
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
-latest: true
+intervals:
+  - 2025-01-06 2025-01-08
 overwrite: true
 
 modules:

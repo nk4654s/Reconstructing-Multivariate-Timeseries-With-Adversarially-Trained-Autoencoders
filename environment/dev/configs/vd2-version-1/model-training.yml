@@ -36,8 +36,8 @@ model:
 data:
   train: define_in_pipeline
   validate: define_in_pipeline
-  sequence_in: 60
-  sequence_out: 60
+  sequence_in: 20
+  sequence_out: 20
   features_in:
     - Biomethandurchfluss (m^3/min)
     - DifferenzdruckTriebwerksölPDIT74553 (bar)
@@ -79,6 +79,6 @@ data:
     - Wicklungstemperatur (°C)
   skip: 1
   stride: 1
-  batch_size: 128
+  batch_size: 256
   shuffle: true
   num_workers: 6
