@@ -26,7 +26,7 @@ jobs:
 
     - name: Lint with flake8
       id: comp-linting
-      workdir: ./packages/Comprisk
+      working-directory: ./packages/Comprisk
       run: |
         conda install flake8
         # stop the build if there are Python syntax errors or undefined names
