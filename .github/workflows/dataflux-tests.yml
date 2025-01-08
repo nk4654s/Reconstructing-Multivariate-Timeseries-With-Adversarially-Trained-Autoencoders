@@ -2,7 +2,7 @@ name: Dataflux Tests
 
 on:
   workflow_call:
-  push:
+  pull_request:
     branches:
       - master
   workflow_dispatch:
@@ -37,6 +37,6 @@ jobs:
 
     - name: Run Unittests
       id: flux-test
-      working-directory: ./packages/Dataflux
+      working-directory: ./packages/Dataflux/Dataflux
       run: |
         sh scripts/run_tests.sh

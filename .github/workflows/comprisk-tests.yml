@@ -2,7 +2,7 @@ name: Comprisk Tests
 
 on:
   workflow_call:
-  push:
+  pull_request:
     branches:
       - master
   workflow_dispatch:
