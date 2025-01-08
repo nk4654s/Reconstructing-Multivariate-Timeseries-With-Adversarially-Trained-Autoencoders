@@ -79,9 +79,9 @@ def compress(data: pd.DataFrame) -> pd.DataFrame:
 
     # assume the data is a function: we want to find the changes of the first and second
     # derivative. An approximation is f'(x) = f(x) - f(x - 1)
-    deriv_1 = (data[1:, :] - data[:-1, :])
-    deriv_2 = (deriv_1[1:, :] - deriv_1[:-1, :])
-    interest = abs(deriv_1[:-1]) + abs(deriv_2)
+    derivative_1 = (data[1:, :] - data[:-1, :])
+    derivative_2 = (derivative_1[1:, :] - derivative_1[:-1, :])
+    interest = abs(derivative_1[:-1]) + abs(derivative_2)
 
     # if the first and second derivative is NOT zero, then there is a change, we are interested
     # in. Set these value to 1 and others to 0. Finally, multiply the array of 0s and 1s with
