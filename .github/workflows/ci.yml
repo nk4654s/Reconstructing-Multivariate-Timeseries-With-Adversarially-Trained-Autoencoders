@@ -1,0 +1,31 @@
+name: CAS CI/CD
+
+on:
+  push:
+    paths:
+      - 'environment/production/models/**'
+    branches:
+      - master
+  pull_request:
+    paths:
+      - 'environment/production/models/**'
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  dataflux-test:
+    uses: ./.github/workflows/comprisk-tests.yml
+
+  comprisk-test:
+    uses: ./.github/workflows/dataflux-tests.yml
+
+  docker-build:
+    uses: ./.github/workflows/docker-build.yml
+    needs:
+      - dataflux-tests
+      - comprisk-tests
+    secrets: inherit
+    with:
+      ECR_REPOSITORY: 'xplore-ai-cas'
+      CONTAINER_LOCAL_PATH: './dockerfiles'
