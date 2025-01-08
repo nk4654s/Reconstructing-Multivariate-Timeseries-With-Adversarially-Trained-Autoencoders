@@ -15,22 +15,37 @@ jobs:
         shell: bash -el {0}
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        miniconda-version: "latest"
-        channels: pytorch, conda-forge, defaults
-        auto-activate-base: false
-        activate-environment: test
-        environment-file: requirements.yml
+      - uses: actions/checkout@v4
+      # cache the environment, as creating takes some time. Re-create the environment when the environment.yaml
+      # or setup.py changes.
+      - name: Cache Conda
+      - uses: actions/cache@v4
+      - env:
+          CACHE_NUMBER: 0
+      - with:
+          key:
+            comprisk-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}-${{ 
+            hashFiles('packages/Comprisk/Comprisk/setup.py') }}
 
-    - name: Lint with flake8
-      id: comp-linting
-      working-directory: ./packages/Comprisk
-      run: |
-        conda install flake8
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      # create the conda environment
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniconda-version: "latest"
+          channels: pytorch, conda-forge, defaults
+          auto-activate-base: false
+          activate-environment: cas
+          environment-file: requirements.yml
+          use-only-tar-bz2: true
+
+      # check for obvious mistakes
+      - name: Lint with flake8
+        id: comp-linting
+        working-directory: ./packages/Comprisk
+        run: |
+          pip install -e packages/Comprisk
+          conda install flake8
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics

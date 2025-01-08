@@ -1,4 +1,5 @@
 # Compressor AI Suite
+[![CI/CD](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/ci.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/ci.yml)
 [![Dataflux](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/dataflux-tests.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/dataflux-tests.yml)
 [![Comprisk](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/comprisk-tests.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/comprisk-tests.yml)
 
