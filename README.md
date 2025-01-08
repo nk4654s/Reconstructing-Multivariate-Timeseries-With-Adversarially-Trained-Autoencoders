@@ -1,4 +1,7 @@
 # Compressor AI Suite
+[![Dataflux](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/dataflux-tests.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/dataflux-tests.yml)
+[![Comprisk](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/comprisk-tests.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/comprisk-tests.yml)
+
 The Compressor AI Suite (CAS) mainly consists of two `PIP` packages Comprisk and Dataflux located under 
 `packages/`. The Dataflux package manages the download and pre-processing of a compressor. Click 
 [here](https://github.com/neaxplore/xplore-ai-cas/tree/master/packages/Dataflux) to learn more 
@@ -40,18 +43,16 @@ testing, use the `comprisk-analyzer` command. Both are explained in more detail
 > Note: For production usage of a model, check out the `Docker` section of this document.
 
 ## Docker
-This repository uses docker to deploy a trained model for a specific machine. The model is defined by three `build-arg` 
-values such that the model output folder can be copied to the docker container. As the model's output is send to an
-AWS server, no persistent volumes are required. The `build-arg` values are:
+This repository uses docker to deploy all trained models located in the production environment. The model folder must
+include the `config.yaml` which equals to the training configuration, a `upload.yaml` which defines the dataset to
+download for inference, and model checkpoints in the `checkpoint/*.ckpt` folder. As the model's output is send to an
+AWS server, no persistent volumes are required.
 
-- ``MACHINE_UUID``
-- ``MODEL_VERSION``
-- ``TAG``
-
-> Note: Make sure to train a model to the `environment/production` folder, as the dockerfile tries to locate models here.
+> Note: Press [here](https://github.com/neaxplore/xplore-ai-cas/tree/master/environment/production/models/README.md) 
+> to learn more about the production folder structure.
 
 If you would like to have a command to copy and paste into the CLI, then use the template:
 
 ```commandline
-docker build --build-arg MACHINE_UUID= --build-arg MODEL_VERSION= --build-arg TAG= --no-cache -f dockerfiles/docker-nocuda.dockerfile -t inference .
+docker build --no-cache -f dockerfiles/docker-nocuda.dockerfile -t inference .
 ```
