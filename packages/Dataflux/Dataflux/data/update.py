@@ -17,6 +17,7 @@ class UpdateCallable:
     This class defines the callable which is executed by the DataUpdater. This should 
     generate a series (or a list of series) to be added to the virtual sensor list.
     """
+
     def get_update(self, start: int, end: int, total_key: str) -> pd.DataFrame:
         """
         This method generates the update for the given timeframe.
@@ -24,6 +25,7 @@ class UpdateCallable:
         Args:
             start (int): The start time steps of the timeframe to be updated.
             end (int): The end time steps of the timeframe to be updated.
+            total_key (str): The key of the column showing the max over all sensor values.
 
         Returns:
             pd.DataFrame: The updated data.
@@ -36,17 +38,17 @@ class UpdateCallable:
 
 class DataUpdater(S3Bucket):
     """
-    This class updates a TSV in the S3Bucket with newly genereated data. To generate the data,
+    This class updates a TSV in the S3Bucket with newly generated data. To generate the data,
     an `UpdateCallable` is required, which generates the series to add for a given time frame.
 
     Args:
         machine_uuid (str): The UUID of the machine to be updated.
         update_callable (UpdateCallable): The callable which generates the data to be added.
     """
+
     def __init__(self, machine_uuid: str, update_callable: UpdateCallable) -> None:
         super().__init__(machine_uuid)
         self._callable = update_callable
-
 
     def update(self, start_ts: int, end_ts: int, time_delta: int) -> None:
         """
@@ -55,8 +57,8 @@ class DataUpdater(S3Bucket):
         data is compressed, added to the downloaded TSV-file and uploaded again.
 
         Args:
-            start (int): The start time steps of the timeframe to be updated.
-            end (int): The end time steps of the timeframe to be updated.
+            start_ts (int): The start time steps of the timeframe to be updated.
+            end_ts (int): The end time steps of the timeframe to be updated.
             time_delta (int): The delta in seconds between two timestamps.
         """
         # get start and end days
@@ -84,6 +86,7 @@ class DataUpdater(S3Bucket):
             day_str = day.strftime("%Y-%m-%d")
             try:
                 df = downloader.get_dataframe(day_str)
+                df.set_index("ts", inplace=True)
                 df.drop(columns=score_uuids.values(), errors="ignore", inplace=True)
                 df = decompress(df)
             except ClientError as _:
@@ -96,12 +99,14 @@ class DataUpdater(S3Bucket):
             result_df = result_df.round(3)
 
             # 3. rename human-readable column names to be machine-readable
-            drop = [name for name in result_df.columns.values if not score_uuids.get(name.split(" ")[0]  + " (Malfunction AI) (%)", None)]
+            drop = [name for name in result_df.columns.values if
+                    not score_uuids.get(name.split(" ")[0] + " (Malfunction AI) (%)", None)]
             if len(drop) > 0:
                 logger.debug("Did not expect %s in header, removing from upload.", drop)
                 result_df.drop(columns=drop, inplace=True)
 
-            names = {name: score_uuids.get(name.split(" ")[0] + " (Malfunction AI) (%)", name) for name in list(result_df.columns.values)}
+            names = {name: score_uuids.get(name.split(" ")[0] + " (Malfunction AI) (%)", name) for name in
+                     list(result_df.columns.values)}
             result_df.rename(columns=names, inplace=True)
 
             # 4. merge, then apply the same compressing rules 
@@ -149,4 +154,4 @@ class DataUpdater(S3Bucket):
 
         # 3. upload dataframe to s3
         self._client.put_object(Bucket=self._bucket, Key=f"{path}", Body=tsv_bytes,
-            ContentType="text/tab-separated-values", ContentEncoding="gzip")
+                                ContentType="text/tab-separated-values", ContentEncoding="gzip")

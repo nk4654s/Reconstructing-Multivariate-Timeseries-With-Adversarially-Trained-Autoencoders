@@ -114,7 +114,6 @@ class DataDownloader(S3Bucket):
 
         Args:
             stream (TextIO): The stream to parse into a pandas DataFrame
-            ignore_header (bool): Ignore header lengths. Defaults to False.
 
         Returns:
             pd.DataFrame: The parsed pandas DataFrame.
@@ -151,7 +150,6 @@ class DataDownloader(S3Bucket):
 
         Args:
             day (str): The day to stream from.
-            ignore_header (bool): Ignore header lengths. Defaults to False.
 
         Raises:
             EmptyStreamError (Exception): If the stream is empty.

@@ -1,0 +1,55 @@
+name: Dataflux Tests
+
+on:
+  workflow_call:
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  test-package:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    steps:
+      - uses: actions/checkout@v4
+      # set up the conda environment without specifying an environment.yaml
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: 3.12.8
+          miniforge-version: latest
+          channels: pytorch, conda-forge, defaults
+          auto-activate-base: false
+          activate-environment: cas
+          use-only-tar-bz2: true
+
+      # cache the environment, as creating takes some time. Re-create the environment when the environment.yaml
+      # or setup.py changes.
+      - name: Cache Conda
+        id: dataflux-conda-cache
+        uses: actions/cache@v4
+        env:
+          CACHE_NUMBER: 0
+        with:
+          path: ${{ env.CONDA }}/envs
+          key:
+            dataflux-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('requirements.yml') }}-${{ 
+            hashFiles('packages/Dataflux/setup.py') }}
+
+      # if there was no cache or the cache is too old, update the conda env
+      - name: Update Conda
+        run:
+          conda env update -n cas -f requirements.yml
+        if: steps.dataflux-conda-cache.outputs.cache-hit != 'true'
+
+      # Run unit tests
+      - name: Run Unittests
+        id: flux-test
+        working-directory: ./packages/Dataflux
+        run: |
+          pip install -e .
+          sh scripts/run_tests.sh

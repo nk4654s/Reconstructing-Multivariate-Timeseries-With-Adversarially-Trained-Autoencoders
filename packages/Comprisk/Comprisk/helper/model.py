@@ -161,7 +161,7 @@ class ModelLoader:
         targets = np.zeros(shape=(len(dataset) * stride + window, features), dtype=np.float32)
         predict = np.zeros(shape=(len(dataset) * stride + window, features), dtype=np.float32)
         counter = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float32)
-        ts_indx = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float32)
+        ts_index = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float64)
 
         inputs_indicies = [i for i, x in enumerate(args.names_in) if x in args.names_out]
 
@@ -197,11 +197,11 @@ class ModelLoader:
                 counter[idx:idx + window_] += np.ones(shape=(window_, ))
 
                 ts = dataset.get_timestamp(i * batch_size + j)
-                ts_indx[idx:idx + window_] = [ts + k * skip for k in range(window_)]
+                ts_index[idx:idx + window_] = [ts + k * skip for k in range(window_)]
 
         limit = counter.argmin()
         limit = limit if counter.min() != counter.mean() else -1
-        ts_index = pd.Index(ts_indx[:limit], name="ts")
+        ts_index = pd.Index(ts_index[:limit], name="ts")
 
         counter = counter[:limit]
         targets = targets[:limit]

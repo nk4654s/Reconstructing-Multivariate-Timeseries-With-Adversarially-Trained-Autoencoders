@@ -85,7 +85,7 @@ def cli_main():
     score = loader.get_score_transformer()
     logger.debug("Loaded score transformer (mode=%s)", score.mode)
     score_data = loader.predict_loop(data)
-    score_data = score.transform(*score_data, factors=0.05)
+    score_data = score.transform(*score_data, factors=0.1)
 
     # update the dataset's virtual sensors in the S3 buckets with the scores
     time_steps = (data.get_timestamp(0), data.get_timestamp(len(data) - 1))

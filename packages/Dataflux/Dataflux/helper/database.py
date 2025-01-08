@@ -6,8 +6,8 @@ import requests
 
 class MissingEnvironmentVariable(Exception):
     """This class defines the exception to throw when trying to
-    access a missing envrionment variable. Provide the variable's name to
-    the constructior for displaying a correct message.
+    access a missing environment variable. Provide the variable's name to
+    the constructor for displaying a correct message.
 
     Args:
         key_name (str): The missing variable's name.
@@ -46,7 +46,6 @@ def get_sensor_name_to_uuid(machine_uuid: UUID) -> Dict[str, str]:
             "CPU Usage (%)": "7ab52395-d5e1-31ac-ad5d-5e6d36d9aa64",
             "Memory Usage (%)": "082b3922-a7d9-3bf3-b015-e5acb19d1dbf",
             "EnddruckErsteStufePIT74339 (Malfunction AI) (%)": "bdd640fb-0667-4ad1-9c80-317fa3b1799d",
-            "EnddruckZweiteStufePIT74397 (Malfunction AI) (%)": "23b8c1e9-3924-46de-beb1-3b9046685257",
             "EndtemperaturErsteStufeTETIT74334 (Malfunction AI) (%)": "bd9c66b3-ad3c-4d6d-9a3d-1fa7bc8960a9",
             "EndtemperaturZweiteStufeTETIT74371 (Malfunction AI) (%)": "972a8469-1641-4f82-8b9d-2434e465e150",
             "EndtemperaturZweiteStufenachKühlerTETIT74378 (Malfunction AI) (%)": "17fc695a-07a0-4a6e-8822-e8f36c031199",
@@ -56,17 +55,14 @@ def get_sensor_name_to_uuid(machine_uuid: UUID) -> Dict[str, str]:
             "KühlwasserdrucknachPumpePIT74425 (Malfunction AI) (%)": "b74d0fb1-32e7-4629-8fad-c1a606cb0fb3",
             "KühlwasserdurchflussmengeFIT74423 (Malfunction AI) (%)": "6b65a6a4-8b81-48f6-b38a-088ca65ed389",
             "KühlwassertemperaturnachKühlerTETIT74422 (Malfunction AI) (%)": "47378190-96da-4dac-b2ff-5d2a386ecbe0",
-            "Motorlager (Malfunction AI) (%)": "c241330b-01a9-471f-9e8a-774bcf36d58b",
             "PackungsleckageFIT74389 (Malfunction AI) (%)": "6c307511-b2b9-437a-a8df-6ec4ce4a2bbd",
-            "SaugdruckErsteStufePIT74319 (Malfunction AI) (%)": "371ecd7b-27cd-4130-8722-9389571aa876",
             "SaugdruckZweiteStufePIT74340 (Malfunction AI) (%)": "1a2a73ed-562b-4f79-8374-59eef50bea63",
-            "SaugtemperaturErsteStufeTETIT74328 (Malfunction AI) (%)": "5be6128e-18c2-4797-a142-ea7d17be3111",
-            "SaugtemperaturZweiteStufeTETIT74341 (Malfunction AI) (%)": "43b7a3a6-9a8d-4a03-980d-7b71d8f56413",
-            "SchwingungsmessungTriebwerkVT74280 (Malfunction AI) (%)": "759cde66-bacf-43d0-8b1f-9163ce9ff57f",
             "VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (Malfunction AI) (%)": "ec1b8ca1-f91e-4d4c-9ff4-9b7889463e85",
             "VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (Malfunction AI) (%)": "4b0dbb41-8d52-48f1-942c-3fe860e7a113",
             "Wicklungstemperatur (Malfunction AI) (%)": "e2acf72f-9e57-4f7a-a0ee-89aed453dd32",
             "ÖltemperaturVorlaufTriebwerkTETIT74538 (Malfunction AI) (%)": "3139d32c-93cd-49bf-9c94-1cf0dc98d2c1",
+            "Biomethandurchfluss (Malfunction AI) (%)": "632f86ac-e987-4ce7-bd79-0c38e034adf8",
+            "DifferenzdruckTriebwerksölPDIT74553 (Malfunction AI) (%)": "16ea8594-78da-46e0-b882-99fa5956b541",
             "Total (Malfunction AI) (%)": "a9488d99-0bbb-4599-91ce-5dd2b45ed1f0"}
     # TODO: get from backend
     return {

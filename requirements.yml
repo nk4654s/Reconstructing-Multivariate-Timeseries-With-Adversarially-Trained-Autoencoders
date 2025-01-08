@@ -6,7 +6,7 @@ channels:
 dependencies:
     - python
     - boto3
-    - scikit-learn
+    - scikit-learn>1.5.1
     - numpy<2.0
     - scipy
     - pandas
