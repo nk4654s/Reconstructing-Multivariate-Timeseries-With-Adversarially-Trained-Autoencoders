@@ -21,6 +21,9 @@ def decompress(data: pd.DataFrame, copy: bool = False, fill: bool = False) -> pd
     if data.empty:
         return data
 
+    if data.index.name != "ts":
+        raise ValueError("Malformed DataFrame, expected index to be named 'ts'.")
+
     # make sure to not modify the original dataframe, if
     # copy is true
     if copy:
@@ -28,8 +31,8 @@ def decompress(data: pd.DataFrame, copy: bool = False, fill: bool = False) -> pd
 
     # get the first and last timestamp value which define the new
     # index range. The step is 1 second for each data point
-    t0 = data["ts"].iloc[0]
-    tn = data["ts"].max() + 1
+    t0 = data.index.values[0]
+    tn = data.index.values[-1] + 1
 
     # apply the newly created index to the dataframe, added rows will
     # have NAN values
@@ -42,7 +45,7 @@ def decompress(data: pd.DataFrame, copy: bool = False, fill: bool = False) -> pd
     return data
 
 
-def compress(dataframe: pd.DataFrame) -> pd.DataFrame:
+def compress(data: pd.DataFrame) -> pd.DataFrame:
     """
     This function compresses the time series data by removing duplicates in a safe way.
     If a value is repeated in the time series, it is replaced by np.NAN until there is
@@ -54,17 +57,20 @@ def compress(dataframe: pd.DataFrame) -> pd.DataFrame:
     - Output `[1, 1, 3, 3, 4, 5, 4, 6]`
 
     Args:
-        dataframe (pd.DataFrame): The time series data to compress.
+        data (pd.DataFrame): The time series data to compress.
     
     Returns:
         pd.DataFrame: Compressed time series data.
     """
-    if dataframe.empty:
-        return dataframe
+    if data.empty:
+        return data
 
-    index = dataframe.index
-    names = dataframe.columns.values
-    data = dataframe.to_numpy()
+    if data.index.name != "ts":
+        raise ValueError("Malformed DataFrame, expected index to be named 'ts'.")
+
+    index = data.index
+    names = data.columns.values
+    data = data.to_numpy()
 
     # due to our basic approximation of the first derivative, the first and last value is missing.
     # To handle this, simply pad a 0 to the start and end of the data

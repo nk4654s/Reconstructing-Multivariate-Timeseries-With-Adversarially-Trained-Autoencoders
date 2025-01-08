@@ -14,13 +14,13 @@ class TestCompressDecompress(unittest.TestCase):
         decompressed without error.
         """
         data = pd.DataFrame({
-            "ts": range(10),
+            "ts": range(1, 11),
             "A": range(10)
         }, dtype=float)
         data = data.set_index("ts")
 
-        compressed_data = compress(data.reset_index())
-        decompressed_data = decompress(compressed_data.reset_index(), fill=True)
+        compressed_data = compress(data)
+        decompressed_data = decompress(compressed_data, fill=True)
 
         self.assertTrue(decompressed_data.equals(data))
 
@@ -40,8 +40,8 @@ class TestCompressDecompress(unittest.TestCase):
         }, dtype=float)
         data = data.set_index("ts")
 
-        compressed_data = compress(data.reset_index())
-        decompressed_data = decompress(compressed_data.reset_index(), fill=True)
+        compressed_data = compress(data)
+        decompressed_data = decompress(compressed_data, fill=True)
 
         self.assertTrue(decompressed_data.equals(data))
 
@@ -57,8 +57,8 @@ class TestCompressDecompress(unittest.TestCase):
         }, dtype=float)
         data = data.set_index("ts")
 
-        compressed_data = compress(data.reset_index())
-        decompressed_data = decompress(compressed_data.reset_index(), fill=True)
+        compressed_data = compress(data)
+        decompressed_data = decompress(compressed_data, fill=True)
 
         self.assertGreater(len(data), len(compressed_data))
         self.assertTrue(decompressed_data.equals(data))
@@ -70,8 +70,8 @@ class TestCompressDecompress(unittest.TestCase):
         data = pd.DataFrame({"ts": [], "A": []}, dtype=float)
         data = data.set_index("ts")
 
-        compressed_data = compress(data.reset_index())
-        decompressed_data = decompress(compressed_data.reset_index(), fill=True)
+        compressed_data = compress(data)
+        decompressed_data = decompress(compressed_data, fill=True)
 
         self.assertTrue(decompressed_data.empty)
 
@@ -83,8 +83,8 @@ class TestCompressDecompress(unittest.TestCase):
         data = pd.DataFrame({"ts": [1, 2], "A": [1, 1]}, dtype=float)
         data = data.set_index("ts")
 
-        compressed_data = compress(data.reset_index())
-        decompressed_data = decompress(compressed_data.reset_index(), fill=True)
+        compressed_data = compress(data)
+        decompressed_data = decompress(compressed_data, fill=True)
 
         self.assertTrue(decompressed_data.equals(data))
 
@@ -96,8 +96,8 @@ class TestCompressDecompress(unittest.TestCase):
         data = pd.DataFrame({"ts": [1, 2, 3, 4, 5, 6, 7, 8], "A": [1, 0, 0, 0, 1, 0, 0, 1]}, dtype=float)
         data = data.set_index("ts")
 
-        compressed_data = compress(data.reset_index())
-        decompressed_data = decompress(compressed_data.reset_index(), fill=True)
+        compressed_data = compress(data)
+        decompressed_data = decompress(compressed_data, fill=True)
 
         self.assertTrue(decompressed_data.equals(data))
 
