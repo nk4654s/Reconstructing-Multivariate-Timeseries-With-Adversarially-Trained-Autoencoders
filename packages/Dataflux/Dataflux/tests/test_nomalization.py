@@ -22,8 +22,8 @@ class TestMachineSplit(unittest.TestCase):
         normed = scaler.fit(self.input).transform(self.input)
         reverted = scaler.revert(normed.to_numpy())
 
-        self.assertTrue(np.min(normed) == -1, "Minimum after normalization is not `-1`")
-        self.assertTrue(np.max(normed) == 1, "Maximum after normalization is not `+1`")
+        self.assertTrue((np.min(normed.to_numpy(), axis=0) == -1).all(), "Minimum after normalization is not `-1`")
+        self.assertTrue((np.max(normed.to_numpy(), axis=0) == 1).all(), "Maximum after normalization is not `+1`")
         np.testing.assert_allclose(self.output, reverted, rtol=TOLERANCE, err_msg="MinMax normalization/revert does not match input")
 
     def test_minmax_partial_fit(self) -> None:
@@ -39,8 +39,8 @@ class TestMachineSplit(unittest.TestCase):
         normed = [scaler.transform(df) for df in self.input_list]
         reverted = [scaler.revert(n.to_numpy()) for n in normed]
 
-        self.assertTrue(np.min(normed) == -1, "Minimum after normalization is `-1`")
-        self.assertTrue(np.max(normed) == 1, "Maximum after normalization is `1`")
+        self.assertTrue((np.min([np.min(n.to_numpy(), axis=0) for n in normed], axis=0) == -1).all(), "Minimum after normalization is not `-1`")
+        self.assertTrue((np.max([np.max(n.to_numpy(), axis=0) for n in normed], axis=0) == 1).all(), "Maximum after normalization is not `1`")
 
         for i, r in enumerate(reverted):
             np.testing.assert_allclose(self.output_list[i], r, rtol=TOLERANCE, err_msg="MinMax normalization/revert does not match input")
