@@ -42,7 +42,7 @@ jobs:
       # if there was no cache or the cache is too old, update the conda env
       - name: Update Conda
         run:
-          conda env update -n cas requirements.yml
+          conda env update -n cas -f requirements.yml
         if: steps.comprisk-conda-cache.outputs.cache-hit != 'true'
 
       # check for obvious mistakes
