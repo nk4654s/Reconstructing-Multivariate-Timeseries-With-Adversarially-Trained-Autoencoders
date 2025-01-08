@@ -51,15 +51,10 @@ FROM cas-base
 USER root
 WORKDIR /app
 
-ARG MACHINE_UUID="0b3426b3-94af-4b8c-89c1-da57493c099a"
-ARG TAG="AutoEncoder"
-ARG MODEL_VERSION=0
-
 # copy the model into this docker container
-COPY environment/production/models/$TAG/$MACHINE_UUID/version_$MODEL_VERSION/ model/
-RUN chown -R nea-cas:nea-cas /app/model/
+COPY environment/production/models/ models/
+RUN chown -R nea-cas:nea-cas /app/models/
 USER nea-cas
 
 # run the score generation
-ENTRYPOINT flux-pipeline -c model/upload.yaml --folder upload --latest && comprisk-generator -c model/config.yaml --dataset upload
-#RUN comprisk-generator -h
+ENTRYPOINT sh scripts/upload.sh
