@@ -6,8 +6,8 @@ import requests
 
 class MissingEnvironmentVariable(Exception):
     """This class defines the exception to throw when trying to
-    access a missing envrionment variable. Provide the variable's name to
-    the constructior for displaying a correct message.
+    access a missing environment variable. Provide the variable's name to
+    the constructor for displaying a correct message.
 
     Args:
         key_name (str): The missing variable's name.
