@@ -54,7 +54,7 @@ jobs:
       # Run unit tests
       - name: Run Unittests
         id: flux-test
-        working-directory: ./packages/Dataflux/Dataflux
+        working-directory: ./packages/Dataflux
         run: |
-          pip install -e packages/Dataflux
+          pip install -e .
           sh scripts/run_tests.sh
