@@ -1,1 +1,1 @@
-python -m unittest discover -s Dataflux/tests -p 'test_*.py'
+uv run python -m unittest discover -s Dataflux/tests -p 'test_*.py'
