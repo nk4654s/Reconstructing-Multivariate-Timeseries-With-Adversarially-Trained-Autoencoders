@@ -12,18 +12,17 @@ specifies the exact training. More information about Comprisk and its configurat
 [here](https://github.com/neaxplore/xplore-ai-cas/tree/master/packages/Comprisk). 
 
 ## Installation
-CAS relies on [Python](https://www.python.org), [Miniconda](https://docs.anaconda.com/miniconda/), and 
+CAS relies on [Python](https://www.python.org), [uv](https://docs.astral.sh/uv/getting-started/installation/), and 
 [Docker](https://www.docker.com) and supports a variety of deep learning acceleration backends
 (e.g. `CUDA`, `MPS`, ...). The installation is simplified by multiple script files, but Python and Docker must be 
 installed manually.
 
 ### Development Environment
-Use the `setup.sh` script to set up the development environment, which comes with an installation of Miniconda. As 
-the user, pass `$USER` to install the environment for the current user and as second argument either pass `CUDA` or 
-`CPU`.
+Use the `setup.sh` script to set up the development environment, which comes with an installation of `uv`. After the 
+installation of `uv`, the project's dependencies will be installed. This may take a while.
 
 ```commandline
-sh scripts/setup.sh $USER cpu
+sh scripts/setup.sh
 ```
 
 > Note: `CPU` includes the framework `MPS` to accelerate training on Apple Silicon
@@ -58,5 +57,5 @@ folder. This will trigger GitHub actions and start the specified workflow immedi
 If you would like to have a command to copy and paste into the CLI, then use the template:
 
 ```commandline
-docker build --no-cache -f dockerfiles/docker-nocuda.dockerfile -t inference .
+docker build -f dockerfiles/docker.dockerfile -t cas-uv:latest .
 ```

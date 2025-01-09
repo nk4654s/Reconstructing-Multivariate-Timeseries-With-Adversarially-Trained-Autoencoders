@@ -1,0 +1,32 @@
+[project]
+name = "cas"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12.8"
+dependencies = [
+    "boto3>=1.35.95",
+    "comprisk",
+    "dataflux",
+    "lightning>=2.5.0.post0",
+    "matplotlib>=3.10.0",
+    "numpy>=2.2.1",
+    "optuna>=4.1.0",
+    "optuna-dashboard>=0.17.0",
+    "pandas>=2.2.3",
+    "pdoc>=15.0.1",
+    "pyyaml>=6.0.2",
+    "requests>=2.32.3",
+    "scikit-learn>=1.6.0",
+    "scipy>=1.15.0",
+    "setuptools>=75.8.0",
+    "tables>=3.10.2",
+    "tensorboard>=2.18.0",
+    "torchinfo>=1.8.0",
+    "tqdm>=4.67.1",
+    "jsonargparse[signatures]>=4.27.7",
+]
+
+[tool.uv.sources]
+comprisk = { path = "packages/Comprisk", editable = true }
+dataflux = { path = "packages/Dataflux", editable = true }

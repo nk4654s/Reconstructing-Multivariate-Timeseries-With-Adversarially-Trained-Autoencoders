@@ -35,3 +35,6 @@ logfile*
 # exclude notebooks
 *.ipynb
 
+# specific
+/.venv/
+/uv.lock
