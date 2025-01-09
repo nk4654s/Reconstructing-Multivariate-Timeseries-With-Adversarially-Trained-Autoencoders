@@ -1,5 +1,2 @@
-DATAFLUX_DIR="packages/Dataflux"
-COMPRISK_DIR="packages/Comprisk"
-
-pdoc --html $COMPRISK_DIR -o docs/ --force
-pdoc --html $DATAFLUX_DIR -o docs/ --force
+pdoc packages/Dataflux/Dataflux -d google -o docs
+pdoc packages/Comprisk/Comprisk -d google -o docs
