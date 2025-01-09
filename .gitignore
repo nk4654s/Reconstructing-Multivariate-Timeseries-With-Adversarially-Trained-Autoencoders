@@ -37,4 +37,3 @@ logfile*
 
 # specific
 /.venv/
-/uv.lock
