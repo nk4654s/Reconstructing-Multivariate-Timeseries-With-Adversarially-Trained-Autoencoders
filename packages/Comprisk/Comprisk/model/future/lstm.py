@@ -1,9 +1,5 @@
 import torch
 import torch.nn as nn
-import numpy as np
-from torchinfo import summary as torchsummary
-
-from Dataflux.pytorch.metadata import Metadata
 from Comprisk.model.base import BaseModel
 
 

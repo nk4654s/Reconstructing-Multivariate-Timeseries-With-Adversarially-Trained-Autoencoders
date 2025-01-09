@@ -10,46 +10,29 @@ on:
 jobs:
   test-package:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -el {0}
-
     steps:
       - uses: actions/checkout@v4
-      # set up the conda environment without specifying an environment.yaml
-      - name: Setup Miniforge
-        uses: conda-incubator/setup-miniconda@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: 3.12.8
-          miniforge-version: latest
-          channels: pytorch, conda-forge, defaults
-          auto-activate-base: false
-          activate-environment: cas
-          use-only-tar-bz2: true
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-      # cache the environment, as creating takes some time. Re-create the environment when the environment.yaml
-      # or setup.py changes.
-      - name: Cache Conda
-        id: dataflux-conda-cache
-        uses: actions/cache@v4
-        env:
-          CACHE_NUMBER: 0
-        with:
-          path: ${{ env.CONDA }}/envs
-          key:
-            dataflux-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('requirements.yml') }}-${{ 
-            hashFiles('packages/Dataflux/setup.py') }}
-
-      # if there was no cache or the cache is too old, update the conda env
-      - name: Update Conda
-        run:
-          conda env update -n cas -f requirements.yml
-        if: steps.dataflux-conda-cache.outputs.cache-hit != 'true'
+      # check for obvious mistakes
+      - name: Lint with flake8
+        id: comp-linting
+        working-directory: ./packages/Comprisk
+        run: |
+          uv add flake8
+          # stop the build if there are Python syntax errors or undefined names
+          uv run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          uv run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       # Run unit tests
       - name: Run Unittests
         id: flux-test
         working-directory: ./packages/Dataflux
         run: |
-          pip install -e .
           sh scripts/run_tests.sh

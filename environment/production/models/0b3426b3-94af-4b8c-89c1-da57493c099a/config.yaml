@@ -38,7 +38,7 @@ trainer:
       save_on_train_epoch_end: null
       enable_version_counter: true
   fast_dev_run: false
-  max_epochs: 10
+  max_epochs: 50
   min_epochs: null
   max_steps: -1
   min_steps: null
@@ -72,20 +72,9 @@ trainer:
 model:
   class_path: Comprisk.model.ae.rnn.EncDecAD
   init_args:
-    encoder:
-      class_path: Comprisk.model.ae.rnn.EDAEncoder
-      init_args:
-        num_hidden_layers: 3
-        num_hidden_dim: 64
-        num_features: 22
-        dropout_prob: 0.4
-    decoder:
-      class_path: Comprisk.model.ae.rnn.EDADecoder
-      init_args:
-        num_hidden_layers: 3
-        num_hidden_dim: 64
-        num_features: 22
-        dropout_prob: 0.4
+    num_hidden_layers: 3
+    num_hidden_dim: 64
+    dropout_prob: 0.4
     loss: MSELoss
     activation: tanh
     optimizer: Adam
@@ -94,12 +83,52 @@ model:
 data:
   train: environment/dev/datasets/thyssen-vd2-trainset
   validate: environment/dev/datasets/thyssen-vd2-valset
-  sequence_in: 60
-  sequence_out: 60
+  sequence_in: 20
+  sequence_out: 20
+  features_in:
+  - Biomethandurchfluss (m^3/min)
+  - DifferenzdruckTriebwerksölPDIT74553 (bar)
+  - EndtemperaturZweiteStufenachKühlerTETIT74378 (°C)
+  - EnddruckZweiteStufePIT74397 (bar)
+  - EndtemperaturZweiteStufeTETIT74371 (°C)
+  - EndtemperaturErsteStufeTETIT74334 (°C)
+  - EnddruckErsteStufePIT74339 (bar)
+  - SaugtemperaturZweiteStufeTETIT74341 (°C)
+  - KompressordrehzahlSE74201 (rpm)
+  - KühlwassertemperaturnachKühlerTETIT74422 (°C)
+  - KühlwasserdurchflussmengeFIT74423 (m^3/min)
+  - KühlwasserdrucknachPumpePIT74425 (bar)
+  - Motorlager (°C)
+  - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
+  - PackungsleckageFIT74389 (Nm3h)
+  - SaugdruckZweiteStufePIT74340 (bar)
+  - SchwingungsmessungTriebwerkVT74280 (mm/s)
+  - SaugtemperaturErsteStufeTETIT74328 (°C)
+  - SaugdruckErsteStufePIT74319 (bar)
+  - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)
+  - VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)
+  - Wicklungstemperatur (°C)
+  features_out:
+  - Biomethandurchfluss (m^3/min)
+  - DifferenzdruckTriebwerksölPDIT74553 (bar)
+  - EnddruckErsteStufePIT74339 (bar)
+  - EndtemperaturErsteStufeTETIT74334 (°C)
+  - EndtemperaturZweiteStufeTETIT74371 (°C)
+  - EndtemperaturZweiteStufenachKühlerTETIT74378 (°C)
+  - KühlwassertemperaturnachKühlerTETIT74422 (°C)
+  - KühlwasserdurchflussmengeFIT74423 (m^3/min)
+  - KühlwasserdrucknachPumpePIT74425 (bar)
+  - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
+  - PackungsleckageFIT74389 (Nm3h)
+  - SaugdruckZweiteStufePIT74340 (bar)
+  - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)
+  - VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)
+  - Wicklungstemperatur (°C)
   skip: 1
-  stride: 10
+  stride: 1
   key: norm
-  batch_size: 128
+  behavior: autoencoder
+  batch_size: 256
   shuffle: true
   num_workers: 6
   persistent_workers: true
@@ -115,16 +144,56 @@ score:
 optimizer: null
 lr_scheduler: null
 data:
-  batch_size: 128
+  batch_size: 256
+  behavior: autoencoder
+  features_in:
+  - Biomethandurchfluss (m^3/min)
+  - "DifferenzdruckTriebwerks\xF6lPDIT74553 (bar)"
+  - "EndtemperaturZweiteStufenachK\xFChlerTETIT74378 (\xB0C)"
+  - EnddruckZweiteStufePIT74397 (bar)
+  - "EndtemperaturZweiteStufeTETIT74371 (\xB0C)"
+  - "EndtemperaturErsteStufeTETIT74334 (\xB0C)"
+  - EnddruckErsteStufePIT74339 (bar)
+  - "SaugtemperaturZweiteStufeTETIT74341 (\xB0C)"
+  - KompressordrehzahlSE74201 (rpm)
+  - "K\xFChlwassertemperaturnachK\xFChlerTETIT74422 (\xB0C)"
+  - "K\xFChlwasserdurchflussmengeFIT74423 (m^3/min)"
+  - "K\xFChlwasserdrucknachPumpePIT74425 (bar)"
+  - "Motorlager (\xB0C)"
+  - "\xD6ltemperaturVorlaufTriebwerkTETIT74538 (\xB0C)"
+  - PackungsleckageFIT74389 (Nm3h)
+  - SaugdruckZweiteStufePIT74340 (bar)
+  - SchwingungsmessungTriebwerkVT74280 (mm/s)
+  - "SaugtemperaturErsteStufeTETIT74328 (\xB0C)"
+  - SaugdruckErsteStufePIT74319 (bar)
+  - "VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (\xB0C)"
+  - "VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (\xB0C)"
+  - "Wicklungstemperatur (\xB0C)"
+  features_out:
+  - Biomethandurchfluss (m^3/min)
+  - "DifferenzdruckTriebwerks\xF6lPDIT74553 (bar)"
+  - EnddruckErsteStufePIT74339 (bar)
+  - "EndtemperaturErsteStufeTETIT74334 (\xB0C)"
+  - "EndtemperaturZweiteStufeTETIT74371 (\xB0C)"
+  - "EndtemperaturZweiteStufenachK\xFChlerTETIT74378 (\xB0C)"
+  - "K\xFChlwassertemperaturnachK\xFChlerTETIT74422 (\xB0C)"
+  - "K\xFChlwasserdurchflussmengeFIT74423 (m^3/min)"
+  - "K\xFChlwasserdrucknachPumpePIT74425 (bar)"
+  - "\xD6ltemperaturVorlaufTriebwerkTETIT74538 (\xB0C)"
+  - PackungsleckageFIT74389 (Nm3h)
+  - SaugdruckZweiteStufePIT74340 (bar)
+  - "VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (\xB0C)"
+  - "VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (\xB0C)"
+  - "Wicklungstemperatur (\xB0C)"
   key: norm
   num_workers: 6
   persistent_workers: true
   pin_memory: true
-  sequence_in: 60
-  sequence_out: 60
+  sequence_in: 20
+  sequence_out: 20
   shuffle: true
   skip: 1
-  stride: 10
+  stride: 1
   train: null
   validate: null
 environment: dev
@@ -135,23 +204,12 @@ model:
   class_path: Comprisk.model.ae.rnn.EncDecAD
   init_args:
     activation: tanh
-    decoder:
-      class_path: Comprisk.model.ae.rnn.EDADecoder
-      init_args:
-        dropout_prob: 0.4
-        num_features: 22
-        num_hidden_dim: 64
-        num_hidden_layers: 3
-    encoder:
-      class_path: Comprisk.model.ae.rnn.EDAEncoder
-      init_args:
-        dropout_prob: 0.4
-        num_features: 22
-        num_hidden_dim: 64
-        num_hidden_layers: 3
+    dropout_prob: 0.4
     loss: MSELoss
     lr: 0.0001
     lr_decay: 0.9
+    num_hidden_dim: 64
+    num_hidden_layers: 3
     optimizer: Adam
 optimizer: null
 score:
@@ -211,7 +269,7 @@ trainer:
   limit_val_batches: null
   log_every_n_steps: 1
   logger: null
-  max_epochs: 10
+  max_epochs: 50
   max_steps: -1
   max_time: null
   min_epochs: null
