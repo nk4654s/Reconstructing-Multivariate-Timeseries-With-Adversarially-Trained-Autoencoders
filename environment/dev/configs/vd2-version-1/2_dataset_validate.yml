@@ -1,7 +1,7 @@
-folder: environment/dev/datasets/thyssen-vd2-valset
+folder: environment/dev/datasets/thyssen-vd2-valset-phase-1
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-  - 2024-09-01 2024-09-09
+  - 2023-08-01 2023-08-09
 num_workers: 8
 overwrite: false
 
@@ -52,9 +52,9 @@ modules:
   - class_path: Dataflux.modules.normalize.NormalizeFit
     init_args:
       method: minmax
-      remove_outliers: true
+      remove_outliers: false
       exclude_keys:
         - ts
   - class_path: Dataflux.modules.normalize.NormalizeTransform
     init_args:
-      from_other: environment/dev/datasets/thyssen-vd2-trainset
+      from_other: environment/dev/datasets/thyssen-vd2-trainset-phase-1

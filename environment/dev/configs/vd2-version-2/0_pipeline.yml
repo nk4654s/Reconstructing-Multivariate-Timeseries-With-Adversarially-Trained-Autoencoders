@@ -2,40 +2,38 @@ environment: dev
 
 # 1. define the dataset to use
 dataset:
- - config: configs/vd2-version-1/trainset.yml
- - config: configs/vd2-version-1/valset.yml
- - config: configs/vd2-version-1/testset-service.yml
- - config: configs/vd2-version-1/testset-coolant-anomaly.yml
+ - config: configs/vd2-version-2/1_dataset_train.yml
+ - config: configs/vd2-version-2/2_dataset_validate.yml
+ - config: configs/vd2-version-2/5_testset_service.yml
+ - config: configs/vd2-version-2/4_testset_coolant_flow.yml
 # do not download the configuration file, but copy it to the model's output folder
- - config: configs/vd2-version-1/dataset-upload.yaml
+ - config: configs/vd2-version-2/6_dataset-upload.yml
    copy_to_output: upload.yaml
 
 # 2. train the model using the tuned hyperparameters
 trainer:
-  - config: configs/vd2-version-1/model-training.yml
+  # load a trained model
+  - config: environment/dev/models/EncDecAD/0b3426b3-94af-4b8c-89c1-da57493c099a/config.yaml
+  - config: configs/vd2-version-2/3_model.yml
     tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
 
     # overwrite the config's values
     # for path values, the explicit path is required
-    data.train: environment/dev/datasets/thyssen-vd2-trainset
-    data.validate: environment/dev/datasets/thyssen-vd2-valset
-    data.sequence_in: 60
-    data.sequence_out: 60
-    data.stride: 1
-    trainer.max_epochs: 25
+    data.train: environment/dev/datasets/thyssen-vd2-trainset-phase-2
+    data.validate: environment/dev/datasets/thyssen-vd2-valset-phase-2
 
 score_trainer:
-  score.mode: anacision
-  data.validate: environment/dev/datasets/thyssen-vd2-valset
+  score.mode: linear
+  data.validate: environment/dev/datasets/thyssen-vd2-valset-phase-2
   data.stride: 60
 
 analyzer:
 # 1. generate data on the test dataset
-  - dataset: datasets/thyssen-vd2-service
+  - dataset: datasets/thyssen-vd2-test-service
     prefix: analysis/service
     data.stride: 60
 # 2. generate data on the train dataset
-  - dataset: datasets/thyssen-vd2-valset
+  - dataset: datasets/thyssen-vd2-valset-phase-2
     prefix: analysis/validate
     data.stride: 60
 # 3. generate data on the last test dataset which includes the timespan where someone limited the coolant flow

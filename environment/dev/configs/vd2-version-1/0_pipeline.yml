@@ -1,0 +1,28 @@
+environment: dev
+
+dataset:
+ - config: configs/vd2-version-1/1_dataset_train.yml
+ - config: configs/vd2-version-1/2_dataset_validate.yml
+
+# do not download the configuration file, but copy it to the model's output folder
+ - config: configs/vd2-version-1/4_dataset-upload.yml
+   copy_to_output: upload.yaml
+
+trainer:
+  - config: configs/vd2-version-1/3_model.yml
+    tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
+
+    # overwrite the config's values
+    # for path values, the explicit path is required
+    data.train: environment/dev/datasets/thyssen-vd2-trainset-phase-1
+    data.validate: environment/dev/datasets/thyssen-vd2-valset-phase-1
+
+score_trainer:
+  score.mode: linear
+  data.validate: environment/dev/datasets/thyssen-vd2-valset-phase-1
+  data.stride: 60
+
+analyzer:
+  - dataset: datasets/thyssen-vd2-valset-phase-1
+    prefix: analysis/validate
+    data.stride: 60
