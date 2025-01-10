@@ -1,7 +1,6 @@
 """This module contains the FileWorkerThread."""
 import os
 import threading
-import time
 from typing import List
 
 from .callable import FileWorkerCallable
