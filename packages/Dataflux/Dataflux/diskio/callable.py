@@ -1,6 +1,6 @@
 """Contains the base class for a post-processing module."""
 from enum import Enum, unique, auto
-from typing import Any, Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 from Dataflux.helper import Metadata
 from .context import FileWorkerContext
 

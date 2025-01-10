@@ -126,7 +126,7 @@ class BaseModel(L.LightningModule):
         batch_size, sequence, features = y.shape
         y = y.reshape(batch_size * sequence, features)
         y_hat = y_hat.reshape(batch_size * sequence, features)
-        self.log(f"validate/R2Score", r2_score(y_hat, y))
+        self.log("validate/R2Score", r2_score(y_hat, y))
         return loss
 
     def configure_optimizers(self) -> Optimizer:

@@ -2,10 +2,10 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/packages/Comprisk/Comprisk" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/packages/Dataflux/Dataflux" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/Comprisk" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/Dataflux" isTestSource="false" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.12 virtualenv at ~/Dev/NEAX/Comprisk/.venv" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="cas-uv" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PackageRequirementsSettings">
@@ -14,5 +14,12 @@
   <component name="PyDocumentationSettings">
     <option name="format" value="GOOGLE" />
     <option name="myDocStringFormat" value="Google" />
+  </component>
+  <component name="PyNamespacePackagesService">
+    <option name="namespacePackageFolders">
+      <list>
+        <option value="$MODULE_DIR$/packages/Comprisk" />
+      </list>
+    </option>
   </component>
 </module>

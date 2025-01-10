@@ -6,7 +6,6 @@ from argparse import ArgumentParser
 
 import yaml
 
-from Comprisk.entrypoints.trainer import train_score_transformer
 
 
 def model_folder_structure(path: str = "models", structure: List[str] = []) -> List[str]:

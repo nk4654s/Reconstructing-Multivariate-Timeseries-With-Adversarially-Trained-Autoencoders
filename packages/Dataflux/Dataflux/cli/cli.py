@@ -1,7 +1,5 @@
 """This module handles arguments and generation of those for pre-processing modules."""
 
-import inspect
-import re
 from argparse import ArgumentParser, Namespace, Action
 from typing import List
 

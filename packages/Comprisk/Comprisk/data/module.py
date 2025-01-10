@@ -10,7 +10,7 @@ from typing import List
 import lightning as L
 from torch.utils.data import DataLoader
 
-from Dataflux.pytorch import Dataset, online_collate_train, collate_fn, DatasetTypes
+from Dataflux.pytorch import Dataset, collate_fn, DatasetTypes
 from Dataflux.pytorch import RandomBatchSampler as RBS
 
 from Comprisk import logger
@@ -169,7 +169,7 @@ class DataModule(L.LightningDataModule):
             self._val_sampler = RBS(**kwargs)
 
         if stage == "test":
-            raise NotImplemented
+            raise NotImplementedError
 
     def train_dataloader(self) -> DataLoader:
         return DataLoader(

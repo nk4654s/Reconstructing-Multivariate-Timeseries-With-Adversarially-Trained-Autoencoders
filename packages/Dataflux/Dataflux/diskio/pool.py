@@ -101,7 +101,7 @@ class FileWorkerPool:
                 logger.info("Module %s finished processing.", module_name)
                 pbar.update(1)
 
-            pbar.set_description(f"Processing Done")
+            pbar.set_description("Processing Done")
 
         logger.debug("=" * 100)
         logger.debug("=" + " " * 42 + "End Processing" + " " * 42 + "=")

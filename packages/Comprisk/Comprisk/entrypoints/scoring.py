@@ -4,7 +4,6 @@ will be learned based on the resulting loss. Only use configure this entry
 point with a trained model and the matching validation dataset."""
 import os
 
-from Dataflux.helper import get_logger
 
 from Comprisk.entrypoints.trainer import train_score_transformer
 

@@ -2,7 +2,7 @@
 the parsing."""
 import gzip
 import os
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from io import BytesIO, TextIOWrapper
 from multiprocessing import Pool
 from typing import List, TextIO, Tuple
