@@ -46,13 +46,12 @@ class DataFrameCache:
         assert self._column_names, "Column names available after calling .get() for the first time."
         return self._column_names
 
-    def get(self, path: str, key: str = "norm") -> OrderedDict[str, pd.Series]:
+    def get(self, path: str) -> OrderedDict[str, pd.Series]:
         """
         Retrieves a DataFrame from the cache.
 
         Args:
-            path (str): The path to the HDF5 file containing the data.
-            key (str): The key for the data in the HDF5 file. Defaults to 'norm'.
+            path (str): The path to the Feather file containing the data.
 
         Returns:
             A tuple of two numpy arrays: sensors data as numpy matrix, but the columns were sorted by their
@@ -64,7 +63,7 @@ class DataFrameCache:
         # is not full
         if data is None:
             # read dataframe and sort columns by name for consistency
-            df = pd.read_hdf(path, key=key, mode="r")
+            df = pd.read_feather(path)
             df = df.reindex(sorted(df.columns), axis=1) # type: ignore
 
             # initialize the column names and ts-index value

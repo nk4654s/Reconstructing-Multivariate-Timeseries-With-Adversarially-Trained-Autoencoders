@@ -13,6 +13,7 @@ from Dataflux.modules.normalize import NormalizeFit
 from Dataflux.modules.rename import Rename
 
 
+@DeprecationWarning
 class PositionBypassValve(FileWorkerCallable):
     """This mdoule drops bypass ventils from the dataframe. In addition, everytime the bypass ventil is
     opened, a timespan `t` can be removed from the dataset.
@@ -34,7 +35,7 @@ class PositionBypassValve(FileWorkerCallable):
         }
 
     def run(self, file_path: str, context: Context) -> CALLABLE_RETURN_TYPE:
-        df = pd.read_hdf(file_path, keys="data")
+        df = pd.read_feather(file_path)
         cols = [c for c in df.columns.values if "PositionBypassregelventilPCV74381 (%)" in c]
 
         # copied from Anacision, malfunctions possible
@@ -70,7 +71,7 @@ class PositionBypassValve(FileWorkerCallable):
 
         # Invert the mask to filter out the data within the specified ranges
         filtered_data = df[~mask]
-        filtered_data.to_hdf(file_path, key="data")
+        filtered_data.to_feather(file_path)
 
         day = os.path.basename(file_path).split("_", maxsplit=1)[-1][:-3]
         self._update[day] = len(filtered_data)

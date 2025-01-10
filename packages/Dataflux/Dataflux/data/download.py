@@ -28,7 +28,7 @@ def homogeneous_decompress(df: pd.DataFrame, index_key: str = "ts") -> pd.DataFr
 
     # get time start and end
     range_start = df[index_key].iloc[0]
-    range_end = df[index_key].iloc[-1]
+    range_end = df[index_key].iloc[-1] + 1
 
     # create a new index based on the start and end range
     new_index = pd.Index(np.arange(range_start, range_end, 1), name=index_key)
@@ -207,7 +207,7 @@ class ContinuousDataDownloader(DataDownloader):
             dir_name (str): Path of the HDF5 file to be saved. If not provided, the current
             folder will be used. Defaults to "dataset".
         """
-        filename = str(self.machine_uuid) + ".h5"
+        filename = str(self.machine_uuid) + ".feather"
 
         # organize modules and build metadata as information for modules
         meta = Metadata()
@@ -245,7 +245,8 @@ class ContinuousDataDownloader(DataDownloader):
 
                     if i == len(self) - 1:
                         df = df[df["ts"] <= self.day(i).timestamp()]
-                    df.to_hdf(file_path, key="data", format="table")
+
+                    df.to_feather(file_path)
                     files.append({
                         Meta.DAY.name: day,
                         "recordings": len(df),

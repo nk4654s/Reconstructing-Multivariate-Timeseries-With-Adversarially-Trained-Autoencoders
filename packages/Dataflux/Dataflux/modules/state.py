@@ -51,7 +51,7 @@ def split(df: DataFrame, key: str, value: int | float, lower: bool = True) -> Tu
             True.
 
     Returns:
-        Tuple[DataFrame, DataFrame]: Returns the splitted DataFrames, where the scond one can be
+        Tuple[DataFrame, DataFrame]: Returns the splitted DataFrames, where the second one can be
             empty, if there was no split possible.
     """
     if df.empty:
@@ -185,9 +185,10 @@ class State(FileWorkerCallable):
         return self._key in column_names
     
     def run(self, file_path: str, context: Context) -> CALLABLE_RETURN_TYPE:
-        # read and remove the dataset file, if everyting is fine, it will eb created again
-        df = pd.read_hdf(file_path, key="data")
-        day = os.path.basename(file_path).split("_", maxsplit=1)[-1][:-3]
+        # read and remove the dataset file, if everything is fine, it will eb created again
+        df = pd.read_feather(file_path)
+        day = os.path.basename(file_path).split("_", maxsplit=1)[-1]
+        day = day.split(".")[0]
         os.remove(file_path)
         self._update[day] = None
         if df.empty or isinstance(df, pd.Series):
@@ -216,8 +217,8 @@ class State(FileWorkerCallable):
         new_files = []
         for i, df in enumerate(df_splits):
             postfix = "" if i == 0 else f"_{i}"
-            path = os.path.join(base_path, f"{uuid}_{day}{postfix}.h5")
-            df.to_hdf(path, key="data")
+            path = os.path.join(base_path, f"{uuid}_{day}{postfix}.feather")
+            df.to_feather(path)
 
             self._update[f"{day}{postfix}"] = {
                 "recordings": df.shape[0],

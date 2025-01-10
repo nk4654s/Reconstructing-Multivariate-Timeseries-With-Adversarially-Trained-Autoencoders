@@ -54,7 +54,7 @@ class FileWorkerThread(threading.Thread):
             try:
                 to_add, to_delete = self._module.run(f, self._context)
             except BaseException as e:
-                logger.error("An error occured working on file %s with module %s.", f, self.name)
+                logger.error("An error occurred working on file %s with module %s.", f, self.name)
                 logger.error("%s", e)
                 to_add, to_delete = [], [f]
 

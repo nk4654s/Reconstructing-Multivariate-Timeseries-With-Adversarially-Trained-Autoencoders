@@ -28,12 +28,12 @@ class Features(FileWorkerCallable):
         return found == len(self._include)
 
     def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
-        df = pd.read_hdf(file_path, key="data")
+        df = pd.read_feather(file_path)
         if not self._check_integrity(df.columns.values):
             return None, [file_path]
         
         df = df[self._include]
-        df.to_hdf(file_path, key="data", format="table", mode="w")
+        df.to_feather(file_path)
 
         return None, None
 

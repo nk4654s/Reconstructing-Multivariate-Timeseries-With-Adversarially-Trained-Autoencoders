@@ -27,7 +27,6 @@ class DatasetArgs:
     features_out: int
     skip: int = 1
     stride: int = 1
-    key: str = "norm"
     behavior_: InitVar[DatasetTypes | str] = DatasetTypes.AUTOENCODER.value
     behavior: DatasetTypes = field(init=False)
     ts_index: int = 0
