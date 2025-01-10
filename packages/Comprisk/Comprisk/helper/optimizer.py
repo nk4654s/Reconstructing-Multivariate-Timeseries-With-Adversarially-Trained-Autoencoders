@@ -1,31 +1,31 @@
 """This module handles string to optimizer conversion."""
 from typing import Type, Union
-from torch.optim import *
+import torch.optim as optim
 
 
 _optimizer_register = {
-    "Adam": Adam,
-    "Adagrad": Adagrad,
-    "SparseAdam": SparseAdam,
-    "RMSprop": RMSprop,
-    "ASGD": ASGD,
-    "SGD": SGD,
-    "Adadelta": Adadelta,
-    "Adamax": Adamax,
-    "AdamW": AdamW,
+    "Adam": optim.Adam,
+    "Adagrad": optim.Adagrad,
+    "SparseAdam": optim.SparseAdam,
+    "RMSprop": optim.RMSprop,
+    "ASGD": optim.ASGD,
+    "SGD": optim.SGD,
+    "Adadelta": optim.Adadelta,
+    "Adamax": optim.Adamax,
+    "AdamW": optim.AdamW,
 }
 
 
 OPTIM_CLASS = Union[
-        Type[Adam],
-        Type[Adagrad],
-        Type[SparseAdam],
-        Type[RMSprop],
-        Type[ASGD],
-        Type[SGD],
-        Type[Adadelta],
-        Type[Adamax],
-        Type[AdamW]
+        Type[optim.Adam],
+        Type[optim.Adagrad],
+        Type[optim.SparseAdam],
+        Type[optim.RMSprop],
+        Type[optim.ASGD],
+        Type[optim.SGD],
+        Type[optim.Adadelta],
+        Type[optim.Adamax],
+        Type[optim.AdamW]
     ]
 
 

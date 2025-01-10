@@ -66,8 +66,8 @@ class PositionBypassValve(FileWorkerCallable):
 
         # Create a boolean series to mark data within the specified ranges
         mask = pd.Series(False, index=df.index)
-        for l, u in merged_intervals:
-            mask |= (df.index >= l) & (df.index <= u)
+        for _lower, _upper in merged_intervals:
+            mask |= (df.index >= _lower) & (df.index <= _upper)
 
         # Invert the mask to filter out the data within the specified ranges
         filtered_data = df[~mask]
