@@ -1,5 +1,4 @@
 """This module contains the FileWorkerPool"""
-import time
 from typing import List, Dict
 from tqdm import tqdm
 from Dataflux.helper import Metadata
@@ -36,7 +35,7 @@ class FileWorkerPool:
 
             # check registered dependencies
             for module_name, mode in dependencies.items():
-                # check that dependecies is registered as a module
+                # check that dependencies is registered as a module
                 if module_name not in all_modules.keys():
                     continue
 
@@ -97,11 +96,12 @@ class FileWorkerPool:
                     thread_id = int(thread.name.split("_")[-1])
                     self._workers[thread_id]["files"] = thread.files
 
-                # run finish the the main thread again
+                # run finish the main thread again
                 module.finish(self._context, self._metadata)
+                logger.info("Module %s finished processing.", module_name)
                 pbar.update(1)
 
-            pbar.set_description(f"Processing Done")
+            pbar.set_description("Processing Done")
 
         logger.debug("=" * 100)
         logger.debug("=" + " " * 42 + "End Processing" + " " * 42 + "=")

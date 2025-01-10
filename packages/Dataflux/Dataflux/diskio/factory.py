@@ -1,12 +1,9 @@
 """This module contains the FileWorkerFactory."""
 import os
 import math
-from typing import List
 from Dataflux.helper import Meta, Metadata
 from .pool import FileWorkerPool
-from .worker import FileWorkerThread
 from .context import FileWorkerContext as Context
-from .callable import FileWorkerCallable
 from Dataflux import logger
 
 

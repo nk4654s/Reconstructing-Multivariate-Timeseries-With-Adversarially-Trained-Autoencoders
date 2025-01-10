@@ -47,10 +47,10 @@ def main() -> None:
     # copy the rest of datasets
     for dataset in args.datasets[1:]:
         # copy the dataset files first
-        for h5 in os.listdir(dataset):
-            if h5[-3:] == ".h5":
+        for feather in os.listdir(dataset):
+            if feather[-3:] == ".feather":
                 shutil.copyfile(
-                    os.path.join(dataset, h5), os.path.join(args.export, h5)
+                    os.path.join(dataset, feather), os.path.join(args.export, feather)
                 )
 
         _metadata = Metadata()

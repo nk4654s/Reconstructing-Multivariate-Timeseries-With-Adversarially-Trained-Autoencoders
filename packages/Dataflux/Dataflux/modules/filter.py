@@ -11,7 +11,7 @@ from Dataflux.modules.rename import Rename
 
 
 class Filter(FileWorkerCallable):
-    """This class filters according to given sensor borders. The given format msut be a dictionary of the format
+    """This class filters according to given sensor borders. The given format must be a dictionary of the format
 
     `{"name": (string), "lower": (float), "upper": (float)}`
 
@@ -29,7 +29,7 @@ class Filter(FileWorkerCallable):
         return {Rename.__name__: CallableDependency.BEFORE}
 
     def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
-        df = pd.read_hdf(file_path, key="data")
+        df = pd.read_feather(file_path)
         
         for filter_dict in self._filters:
             key = filter_dict["name"]

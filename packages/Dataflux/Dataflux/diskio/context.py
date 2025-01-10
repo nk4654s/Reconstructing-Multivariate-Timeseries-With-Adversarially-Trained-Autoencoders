@@ -1,6 +1,6 @@
 """This module contains the FileWorkerContext which may be used to transfer values
 and object from one post-processing module to the other."""
-from typing import Any, Literal
+from typing import Any
 from enum import auto
 
 
@@ -36,9 +36,9 @@ class FileWorkerContext:
             key (str): The key for the list that will have a new element appended.
             value (Any): The new element to be appended to the list.
         """
-        l = self._content.get(key, [])
-        l.append(value)
-        self._content[key] = l
+        container = self._content.get(key, [])
+        container.append(value)
+        self._content[key] = container
 
     def get(self, key: Any) -> Any:
         """

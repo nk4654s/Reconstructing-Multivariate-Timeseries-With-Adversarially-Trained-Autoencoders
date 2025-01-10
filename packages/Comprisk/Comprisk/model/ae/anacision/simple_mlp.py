@@ -1,5 +1,5 @@
 """The anacision autoencoder uses a simple multi layer perceptron."""
-from typing import Dict, List
+from typing import Dict
 import torch
 from torch import nn
 

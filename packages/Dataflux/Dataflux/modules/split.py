@@ -1,6 +1,6 @@
 import os
 import shutil
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 from copy import deepcopy, copy
 
 import pandas as pd
@@ -95,7 +95,7 @@ class SplitDataset(FileWorkerCallable):
         return {SplitDataset.__name__: CallableDependency.FINAL}
 
     def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
-        df = pd.read_hdf(file_path, key="norm")
+        df = pd.read_feather(file_path)
         info = {
             Meta.DAY.name: file_path.split("_", maxsplit=1)[-1][:-3],
             "recordings": df.shape[0],
