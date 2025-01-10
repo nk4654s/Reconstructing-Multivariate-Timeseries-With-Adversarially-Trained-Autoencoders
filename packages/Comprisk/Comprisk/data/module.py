@@ -10,7 +10,7 @@ from typing import List
 import lightning as L
 from torch.utils.data import DataLoader
 
-from Dataflux.pytorch import Dataset, online_collate_train, collate_fn, DatasetTypes
+from Dataflux.pytorch import Dataset, collate_fn, DatasetTypes
 from Dataflux.pytorch import RandomBatchSampler as RBS
 
 from Comprisk import logger
@@ -24,7 +24,7 @@ class DataModule(L.LightningDataModule):
 
     Args:
         train (str): Path to the dataset root folder. The folder must contain
-            many `pandas.DataFrames` stored as `HDF5` files next to a sub-folder
+            many `pandas.DataFrames` stored as `Feather` files next to a sub-folder
             `metadata` which contains the dataset's information.
         validate (str, optional): Path to the validation dataset root folder.
         sequence_in (int): The input sequence length of one sample.
@@ -32,7 +32,6 @@ class DataModule(L.LightningDataModule):
         features_in (List[str]): The amount of input features.
         features_out (List[str]): The amount of output features.
         stride (int): How many stime steps a window should slide.
-        key (str): Whether to load the normalized ('norm') or original ('data') data.
         behavior (str): Either 'autoencoder' or 'predictive'.
         skip (int): Skip every n-th sample in the dataset.
         batch_size (int): Batch size of the model's input.
@@ -52,7 +51,6 @@ class DataModule(L.LightningDataModule):
         features_out: List[str] = None,
         skip: int = 1,
         stride: int = 0,
-        key: str = "norm",
         behavior: str = DatasetTypes.AUTOENCODER.value,
         batch_size: int = 1,
         shuffle: bool = True,
@@ -88,7 +86,6 @@ class DataModule(L.LightningDataModule):
             "feature_names_out": self.features_out,
             "stride": stride,
             "skip": skip,
-            "key": key,
             "behavior": behavior
         }
 
@@ -112,9 +109,8 @@ class DataModule(L.LightningDataModule):
             return
 
         self._collate_fn = collate_fn
-        if self._dataset_args["key"] == "data":
-            logger.debug("Using online collate function normalizing each sample independently.")
-            self._collate_fn = online_collate_train
+        # online collate normalizes the dataset on the fly
+        # self._collate_fn = online_collate_train
 
         if train:
             self._train = Dataset(
@@ -173,7 +169,7 @@ class DataModule(L.LightningDataModule):
             self._val_sampler = RBS(**kwargs)
 
         if stage == "test":
-            raise NotImplemented
+            raise NotImplementedError
 
     def train_dataloader(self) -> DataLoader:
         return DataLoader(

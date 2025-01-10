@@ -106,7 +106,7 @@ class IndexTree:
             i = 0 if i == len(node_weighted_list) - 1 else len(node_weighted_list) - 1
 
     def _get_cumulative_size(self, node_list: List[Dict]) -> List[Node]:
-        # sort the node_list first, as this hould help building
+        # sort the node_list first, as this should help building
         # a balanced binary search tree
         node_list = sorted(node_list, key=lambda _: _[Meta.DAY.name])
         cum_weights = 0
@@ -126,7 +126,7 @@ class IndexTree:
                 samples_dropped += node_size
                 continue
 
-            # count the tree's size (substract window size)
+            # count the tree's size (subtract window size)
             samples_included += node_size
             cum_weights += node_size - self._win
             weights.append(node)

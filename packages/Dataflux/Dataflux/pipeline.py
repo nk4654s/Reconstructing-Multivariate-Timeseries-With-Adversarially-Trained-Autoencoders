@@ -3,9 +3,7 @@ when processing a dataset using a defined yaml-config.
 """
 import os
 import shutil
-import logging
 from datetime import datetime, timedelta, timezone
-from typing import List
 from Dataflux.cli import CLIArgumentParser
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
 from Dataflux.helper.metadata import Meta, Metadata
@@ -13,6 +11,10 @@ from Dataflux.data import ContinuousDataDownloader, DataType
 
 from Dataflux import logger
 from Dataflux.modules import State
+
+import faulthandler
+
+faulthandler.enable()
 
 # define modules here which should always be applied, regardless of the yaml config file!
 modules = []
@@ -36,9 +38,12 @@ def download(parser: CLIArgumentParser, folder: str) -> None:
             interval = interval.split(
 
             )
+
+            end = datetime.fromisoformat(interval[1])
+            end = end.replace(hour=23, minute=59, second=59)
             interval_list.append((
                 datetime.fromisoformat(interval[0]),
-                datetime.fromisoformat(interval[1])
+                end
             ))
 
     # get the current date and subtract 1 hour to get the model's input
@@ -58,7 +63,7 @@ def download(parser: CLIArgumentParser, folder: str) -> None:
         logger.error("Interval list should not be empty. Used method '%s' to get dates.", method)
         exit(1)
 
-    logger.debug("Downloading interval %s", interval_list)
+    logger.info("Downloading interval %s", interval_list)
     downloader = ContinuousDataDownloader(machine_uuid, interval_list)
     downloader.set_data_type(DataType.MEASUREMENTS)
 

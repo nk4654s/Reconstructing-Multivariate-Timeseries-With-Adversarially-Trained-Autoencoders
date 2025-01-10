@@ -16,6 +16,7 @@ from Dataflux import logger
 mutex = Lock()
 
 
+@DeprecationWarning
 class Consistency(FileWorkerCallable):
     """Ensures homogeneous columns."""
 
@@ -50,7 +51,7 @@ class Consistency(FileWorkerCallable):
 
     def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         # make sure to remove columns which are completely empty
-        df = pd.read_hdf(file_path, key="data")
+        df = pd.read_feather(file_path)
         if df.empty or isinstance(df, pd.Series):
             return None, None
         
@@ -64,7 +65,7 @@ class Consistency(FileWorkerCallable):
         if incoming.drop:
             df.drop(columns=incoming.drop, axis=1, inplace=True, errors="ignore")
 
-        df.to_hdf(file_path, key="data")
+        df.to_feather(file_path)
         return None, None
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:

@@ -36,7 +36,7 @@ class Rename(FileWorkerCallable):
         }
 
     def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
-        df = pd.read_hdf(file_path, key="data")
+        df = pd.read_feather(file_path)
         if df.empty or isinstance(df, pd.Series):
             return None, [file_path]
 
@@ -54,7 +54,7 @@ class Rename(FileWorkerCallable):
         if self._enable:
             df.rename(columns=self._sensor_names, inplace=True)
         
-        df.to_hdf(file_path, key="data", format="table")
+        df.to_feather(file_path)
         if len(self._names) == 0:
             self._names = set(df.columns.values)
         else:

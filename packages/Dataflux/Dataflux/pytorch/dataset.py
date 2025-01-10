@@ -21,7 +21,7 @@ class EmptyDatasetError(Exception):
 
 class Dataset(torch.utils.data.Dataset): # type: ignore
     """
-    A custom PyTorch dataset class that loads and processes data from HDF5 files. This class uses
+    A custom PyTorch dataset class that loads and processes data from Feather files. This class uses
     the DataFrameCache to load dataframes from memory, which can improve performance.
 
     Args:
@@ -30,7 +30,6 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         sequence_in (int): The number of time steps for the input sequence.
         sequence_out (int): The number of time steps for the output sequence.
         cache_size (int, optional): The size of the cache. Defaults to -1.
-        key (str): The key of the HDF-file specifying the data to load. Defaults to "norm".
 
     Returns:
         None
@@ -47,13 +46,11 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         stride: int = 1,
         cache_size: int = -1,
         behavior: str = DatasetTypes.AUTOENCODER.value,
-        key: str = "norm"
     ) -> None:
         self._metadata = FileMetadata()
         self._metadata.load(path)
         self._skip = skip
         self._stride = stride
-        self._key = key
         self._behavior = dataset_type_from_string(behavior)
 
         self._num_input = sequence_in
@@ -90,7 +87,6 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
             features_out=targets.shape[-1],
             skip=self._skip,
             stride=self._stride,
-            key=self._key,
             behavior_=behavior,
             names=self._cache.columns,
             names_in=feature_names_in,
@@ -228,8 +224,8 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         # find the day and the correct index for that file
         # start of the sequence will be: index + self._num_input ...
         day, index = self._tree.search(index)
-        file_path = f"{self._base_dir}/{self._id}_{day}.h5"
-        ts = self._cache.get(file_path, key=self._key)["ts"].to_numpy()
+        file_path = f"{self._base_dir}/{self._id}_{day}.feather"
+        ts = self._cache.get(file_path)["ts"].to_numpy()
         return int(ts[index])
 
     def _get(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
@@ -238,13 +234,13 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         # find the day and the correct index for that file
         # start of the sequence will be: index + self._num_input ...
         day, index = self._tree.search(index)
-        file_path = f"{self._base_dir}/{self._id}_{day}.h5"
+        file_path = f"{self._base_dir}/{self._id}_{day}.feather"
         start_idx = index + self._num_input
         end_idx = index + self._num_input + self._num_output
 
         # get sensor data, the cache returns values sorted by the dataframe's
         # column names for consistency
-        sensors = self._cache.get(file_path, key=self._key)
+        sensors = self._cache.get(file_path)
 
         # create containers for the sensor data
         features_in = self._features_in if self._features_in else self._cache.columns
@@ -283,9 +279,12 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
 
 
 if __name__ == "__main__":
-    dataset = Dataset("../../../../environment/dev/datasets/thyssen-vd2-trainset",
+    dataset = Dataset("../../../../environment/dev/datasets/thyssen-vd2-trainset-phase-1",
                       50, 25,
                       feature_names_in=["SaugtemperaturErsteStufeTETIT74328 (°C)", "Biomethandurchfluss (m^3/min)"],
                       feature_names_out=["Biomethandurchfluss (m^3/min)"],
                       cache_size=-1, skip=1)
     print(dataset.get_args())
+
+    for i in range(len(dataset)):
+        dataset[i]

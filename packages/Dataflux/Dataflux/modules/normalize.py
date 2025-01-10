@@ -1,6 +1,6 @@
 import os
 from threading import Lock
-from typing import Any, Dict, List
+from typing import Dict, List
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -103,16 +103,17 @@ class NormalizeFit(FileWorkerCallable):
     def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         # Load the file into a pandas DataFrame, sort by column names to ensure that
         # dataframe is consistent
-        df = pd.read_hdf(file_path, key="data")
+        df = pd.read_feather(file_path)
         df = df.reindex(sorted(df.columns), axis=1) # type: ignore
 
         with mutex:
             # find and remove outliers
             if self._remove:
                 df = remove_outlier(df)
-                df.to_hdf(file_path, key="clean")
+                df.to_feather(file_path)
 
-                day = file_path.rsplit(os.path.sep, maxsplit=1)[-1].split("_", maxsplit=1)[1][:-3]
+                day = file_path.rsplit(os.path.sep, maxsplit=1)[-1].split("_", maxsplit=1)[1]
+                day = day.split(".")[0]
                 self._files[day] = len(df)
 
             # get minimum and maximum values from previous files
@@ -197,7 +198,7 @@ class NormalizeTransform(FileWorkerCallable):
     def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         # read the file as pandas dataframe and sort by column names
         # to be consistent with the fitted values
-        df = pd.read_hdf(file_path, key="data")
+        df = pd.read_feather(file_path)
         df = df.reindex(sorted(df.columns), axis=1) # type: ignore
 
         if not self._columns:
@@ -212,7 +213,7 @@ class NormalizeTransform(FileWorkerCallable):
             return None, file_path
         normed = scaler.transform(df, dtype=np.float32)
 
-        normed.to_hdf(file_path, key="norm")
+        normed.to_feather(file_path)
         return None, None
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:

@@ -1,10 +1,10 @@
 """This module contains helper methods related to the models."""
+
 import operator
 import os
 import json
 import pickle
 from typing import Dict, Tuple, Type, List, Union
-from uuid import UUID
 from lightning import LightningModule
 import numpy as np
 import pandas as pd
@@ -15,7 +15,6 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from Dataflux.pytorch import online_collate_inference, collate_fn, DatasetTypes
-from Dataflux.helper import get_logger, get_sensor_uuid_to_name
 from Dataflux.pytorch import Dataset
 
 from Comprisk.anomaly import ScoreTransformer
@@ -31,7 +30,7 @@ def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
 
     Args:
         path (str): The folder path where the model is saved.
-    
+
     Returns:
         Tuple: The class of the model to load and a dictionary of
             initialized submodules modules.
@@ -70,7 +69,7 @@ def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
         eval_mode (bool): Weather to set the loaded model to eval mode or not. Defaults to True.
     """
     checkpoints = get_checkpoints(path)
-    checkpoints = sorted(checkpoints, key = lambda x : float(x[:-5].split("val=")[-1]))
+    checkpoints = sorted(checkpoints, key=lambda x: float(x[:-5].split("val=")[-1]))
     if len(checkpoints) == 0:
         logger.warning("Could not find a checkpoint to load a model from. (%s)", path)
         return None
@@ -78,8 +77,7 @@ def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
     # 1. get dataset configuration: start, end, step size (size of input window)
     model_class, sub_modules = init_modules(path)
     model = model_class.load_from_checkpoint(
-        os.path.join(path, "checkpoints", checkpoints[0]),
-        **sub_modules
+        os.path.join(path, "checkpoints", checkpoints[0]), **sub_modules
     )
 
     logger.info("Loaded model %s from %s", checkpoints[0], path)
@@ -88,8 +86,10 @@ def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
     return model
 
 
-def store_model_output(names: List[str], container: Dict[str, np.ndarray], values: np.ndarray) -> None:
-    """Store the provided values to the container dictionary with the keys equal to the 
+def store_model_output(
+    names: List[str], container: Dict[str, np.ndarray], values: np.ndarray
+) -> None:
+    """Store the provided values to the container dictionary with the keys equal to the
     names list.
 
     Args:
@@ -101,7 +101,6 @@ def store_model_output(names: List[str], container: Dict[str, np.ndarray], value
         container[key] += list(values[:, j])
 
 
-
 class ModelLoader:
     """This class handles loading the model and related objects/configurations from the model's
     output directory.
@@ -109,6 +108,7 @@ class ModelLoader:
         Args:
             path (str): The path where the model is saved.
     """
+
     def __init__(self, path: str) -> None:
         self._path = path
         model = load_model(path, eval_mode=False)
@@ -117,12 +117,18 @@ class ModelLoader:
 
     @property
     def path(self) -> str:
-        """The path where the model is saved.
-        """
+        """The path where the model is saved."""
         return self._path
 
-    def predict_loop(self, dataset: Dataset, modifier: Tuple[str, float] = ("", 1.0), batch_size: int = 64,
-                     step: int | None = None, num_workers: int = 4, verbose: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def predict_loop(
+        self,
+        dataset: Dataset,
+        modifier: Tuple[str, float] = ("", 1.0),
+        batch_size: int = 64,
+        step: int | None = None,
+        num_workers: int = 4,
+        verbose: bool = True,
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """This method applies a model on a given dataset. For an AutoEncoder, the reconstructed
         output will be returned. For future prediction models, the prediction of the future is
         output. In addition, the original input data will be temporarily stored and returned.
@@ -132,7 +138,7 @@ class ModelLoader:
             modifier (Tuple[str, float]): The sensor name and factor to apply. This is handy to inject
                 some kind of anomaly.
             batch_size (int): The amount of sample to process at a time
-        
+
         Returns
             Tuple[pd.DataFrame, pd.DataFrame]: Pandas dataframes containing the prediction and input.
         """
@@ -142,13 +148,19 @@ class ModelLoader:
         self.model.set_output_behavior(args.behavior, args.sequence_out)
         skip = args.skip
         stride = args.stride
-        window = args.sequence_out if args.behavior != DatasetTypes.AUTOENCODER else args.sequence_in
+        window = (
+            args.sequence_out
+            if args.behavior != DatasetTypes.AUTOENCODER
+            else args.sequence_in
+        )
         features = args.features_out
         # output_length = batch_size * window - batch_size * stride + window // 2
         # assert window == stride, f"Something went wrong, the dataset's stride {stride} should equal the window size {window}."
 
         logger.debug("Predict on dataset %s (Original)", len(dataset))
-        logger.debug("Predict loop step size %s and batch size %s", step or skip, batch_size)
+        logger.debug(
+            "Predict loop step size %s and batch size %s", step or skip, batch_size
+        )
         logger.debug("Window size %s with stride %s", window, stride)
 
         # 0. find the index of the sensor to modify with the given factor
@@ -158,16 +170,30 @@ class ModelLoader:
             modifier_index = operator.indexOf(args.names, modifier_name)
 
         # 1. iterate over dataset, with shuffle deactivated
-        targets = np.zeros(shape=(len(dataset) * stride + window, features), dtype=np.float32)
-        predict = np.zeros(shape=(len(dataset) * stride + window, features), dtype=np.float32)
-        counter = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float32)
-        ts_index = np.zeros(shape=(len(dataset) * stride + window, ), dtype=np.float64)
+        targets = np.zeros(
+            shape=(len(dataset) * stride + window, features), dtype=np.float32
+        )
+        predict = np.zeros(
+            shape=(len(dataset) * stride + window, features), dtype=np.float32
+        )
+        counter = np.zeros(shape=(len(dataset) * stride + window,), dtype=np.float32)
+        ts_index = np.zeros(shape=(len(dataset) * stride + window,), dtype=np.float64)
 
-        inputs_indicies = [i for i, x in enumerate(args.names_in) if x in args.names_out]
+        inputs_indicies = [
+            i for i, x in enumerate(args.names_in) if x in args.names_out
+        ]
 
         collate = online_collate_inference if args.key == "data" else collate_fn
-        loader = DataLoader(dataset, batch_size, collate_fn=collate, num_workers=num_workers, drop_last=False)
-        for i, inputs in enumerate(tqdm(loader, desc="Prediction with Model", disable=not verbose)):
+        loader = DataLoader(
+            dataset,
+            batch_size,
+            collate_fn=collate,
+            num_workers=num_workers,
+            drop_last=False,
+        )
+        for i, inputs in enumerate(
+            tqdm(loader, desc="Prediction with Model", disable=not verbose)
+        ):
             inputs, scaler = inputs
             inputs = inputs.to(device)
 
@@ -182,7 +208,7 @@ class ModelLoader:
             # the scaler only exists, if the model uses a dataloader with 'online_collate'
             # this happens if the dataset's key is 'data'
             if args.key == "data":
-                model_pred = scaler.inverse_transform(model_pred) # type: ignore
+                model_pred = scaler.inverse_transform(model_pred)  # type: ignore
                 inputs = scaler.inverse_transform(inputs)
 
             batch_size_, _, _ = model_pred.shape
@@ -191,13 +217,13 @@ class ModelLoader:
                 idx = idx + j * stride
 
                 window_, _ = inputs[j].shape
-                window_ = min(window_, len(targets[idx:idx + window_]))
-                targets[idx:idx + window_] += inputs[j][:, inputs_indicies]
-                predict[idx:idx + window_] += model_pred[j]
-                counter[idx:idx + window_] += np.ones(shape=(window_, ))
+                window_ = min(window_, len(targets[idx : idx + window_]))
+                targets[idx : idx + window_] += inputs[j][:, inputs_indicies]
+                predict[idx : idx + window_] += model_pred[j]
+                counter[idx : idx + window_] += np.ones(shape=(window_,))
 
                 ts = dataset.get_timestamp(i * batch_size + j)
-                ts_index[idx:idx + window_] = [ts + k * skip for k in range(window_)]
+                ts_index[idx : idx + window_] = [ts + k * skip for k in range(window_)]
 
         limit = counter.argmin()
         limit = limit if counter.min() != counter.mean() else -1
@@ -209,8 +235,12 @@ class ModelLoader:
 
         # create the output DataFrames
         names = args.names_out
-        targets = pd.DataFrame({n: targets[:, i] / counter for i, n in enumerate(names)}, index=ts_index)
-        predict = pd.DataFrame({n: predict[:, i] / counter for i, n in enumerate(names)}, index=ts_index)
+        targets = pd.DataFrame(
+            {n: targets[:, i] / counter for i, n in enumerate(names)}, index=ts_index
+        )
+        predict = pd.DataFrame(
+            {n: predict[:, i] / counter for i, n in enumerate(names)}, index=ts_index
+        )
 
         # todo: recursive call to iterate over leftover then merge dataframes
         return targets, predict
@@ -223,11 +253,13 @@ class ModelLoader:
         if os.path.exists(score_path):
             with open(score_path, "rb") as f:
                 return pickle.load(f)
-        raise LookupError("Could not find 'score_transformer.pkl' in model metadata path.")
+        raise LookupError(
+            "Could not find 'score_transformer.pkl' in model metadata path."
+        )
 
     def get_model(self) -> LightningModule:
         """A simple getter for the loaded model during object initialization.
-        
+
         Returns:
             Any: The loaded model.
         """
@@ -242,8 +274,10 @@ class ModelLoader:
         with open(norm_path, "r", encoding="UTF-8") as f:
             norm_file = json.load(f)
             for i, key in enumerate(norm_file["NORM_KEYS"]):
-                norm_data[key] = (norm_file["NORM_VAL_A"][i],
-                                  norm_file["NORM_VAL_B"][i])
+                norm_data[key] = (
+                    norm_file["NORM_VAL_A"][i],
+                    norm_file["NORM_VAL_B"][i],
+                )
 
         # TODO: should create a custom Normalize-class to handle this?
         norm_data = pd.DataFrame(norm_data)
