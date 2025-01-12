@@ -7,13 +7,12 @@ dataset:
  - config: configs/vd2-version-2/5_testset_service.yml
  - config: configs/vd2-version-2/4_testset_coolant_flow.yml
 # do not download the configuration file, but copy it to the model's output folder
- - config: configs/vd2-version-2/6_dataset-upload.yml
+ - config: configs/vd2-version-2/6_dataset_upload.yml
    copy_to_output: upload.yaml
 
 # 2. train the model using the tuned hyperparameters
 trainer:
-  # load a trained model
-  - config: environment/dev/models/EncDecAD/0b3426b3-94af-4b8c-89c1-da57493c099a/config.yaml
+  # load a trained model using "--load" environment/dev/models/EncDecAD/0b3426b3-94af-4b8c-89c1-da57493c099a/version_0/config.yaml
   - config: configs/vd2-version-2/3_model.yml
     tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
 

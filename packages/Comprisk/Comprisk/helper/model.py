@@ -183,7 +183,7 @@ class ModelLoader:
             i for i, x in enumerate(args.names_in) if x in args.names_out
         ]
 
-        collate = online_collate_inference if args.key == "data" else collate_fn
+        collate = collate_fn
         loader = DataLoader(
             dataset,
             batch_size,
@@ -194,7 +194,7 @@ class ModelLoader:
         for i, inputs in enumerate(
             tqdm(loader, desc="Prediction with Model", disable=not verbose)
         ):
-            inputs, scaler = inputs
+            inputs, _ = inputs
             inputs = inputs.to(device)
 
             # modify the sensor if required, e.g. if an anomaly should be injected
@@ -204,12 +204,6 @@ class ModelLoader:
             # run the prediction, the input equals the target for auto encoders
             model_pred = self.model.predict(inputs, as_array=True)
             inputs = inputs.cpu().numpy()
-
-            # the scaler only exists, if the model uses a dataloader with 'online_collate'
-            # this happens if the dataset's key is 'data'
-            if args.key == "data":
-                model_pred = scaler.inverse_transform(model_pred)  # type: ignore
-                inputs = scaler.inverse_transform(inputs)
 
             batch_size_, _, _ = model_pred.shape
             for j in range(0, batch_size_):

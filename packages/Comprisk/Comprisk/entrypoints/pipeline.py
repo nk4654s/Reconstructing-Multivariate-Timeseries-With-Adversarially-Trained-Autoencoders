@@ -102,32 +102,31 @@ def cli_main():
     trainer_list: List[Dict] = pipeline.get("trainer", [])
     latest_config = args.load if args.load else ""
     recently_added = ""
-    if not latest_config:
-        for i, trainer in enumerate(trainer_list):
-            # store the current folder structure of the model output root folder
-            # after training, a new folder will be created, which must be passed to
-            # the analyzer node
-            initial_structure = model_folder_structure(path=os.path.join("environment", env, "models"))
-            
-            # use the tuned config if available and wanted, this only applies for the first
-            # trainer. Each next trainer will use the one of the previously trained model
-            config: str = trainer.pop("config")
-            prefer_tuned = trainer.pop("prefer_tuned", False)
-            if tuned_config and prefer_tuned:
-                config = tuned_config
-            
-            # train the model
-            args = ["comprisk-trainer", "-c", os.path.join("environment", env, config)]
-            args += [] if i == 0 else ["-f", latest_config]
-            for key, value in trainer.items():
-                args += [f"--{key}", value]
+    for i, trainer in enumerate(trainer_list):
+        # store the current folder structure of the model output root folder
+        # after training, a new folder will be created, which must be passed to
+        # the analyzer node
+        initial_structure = model_folder_structure(path=os.path.join("environment", env, "models"))
 
-            subprocess.run(args)
+        # use the tuned config if available and wanted, this only applies for the first
+        # trainer. Each next trainer will use the one of the previously trained model
+        config: str = trainer.pop("config")
+        prefer_tuned = trainer.pop("prefer_tuned", False)
+        if tuned_config and prefer_tuned:
+            config = tuned_config
 
-            # find the output folder of the recently trained model
-            modified_structure = model_folder_structure(path=os.path.join("environment", env, "models"))
-            recently_added = find_recent_folders(initial_structure, modified_structure)[0]
-            latest_config = os.path.join(recently_added, "config.yaml")
+        # train the model
+        args = ["comprisk-trainer", "-c", os.path.join("environment", env, config)]
+        args += ["--finetune", latest_config] if latest_config else []
+        for key, value in trainer.items():
+            args += [f"--{key}", value]
+
+        subprocess.run(args)
+
+        # find the output folder of the recently trained model
+        modified_structure = model_folder_structure(path=os.path.join("environment", env, "models"))
+        recently_added = find_recent_folders(initial_structure, modified_structure)[0]
+        latest_config = os.path.join(recently_added, "config.yaml")
 
     # copy the configs (if existing) to the recently added model output folder
     for config in copy_config:
