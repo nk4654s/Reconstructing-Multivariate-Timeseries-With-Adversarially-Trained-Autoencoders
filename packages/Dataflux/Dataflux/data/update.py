@@ -86,9 +86,10 @@ class DataUpdater(S3Bucket):
             day_str = day.strftime("%Y-%m-%d")
             try:
                 df = downloader.get_dataframe(day_str)
-                df.set_index("ts", inplace=True)
-                df.drop(columns=score_uuids.values(), errors="ignore", inplace=True)
-                df = decompress(df)
+                if not df.empty:
+                    df.set_index("ts", inplace=True)
+                    df.drop(columns=score_uuids.values(), errors="ignore", inplace=True)
+                    df = decompress(df)
             except ClientError as _:
                 logger.debug(f"Could not find a TSV-file for day {day_str}, continue with empty DataFrame.")
                 df = pd.DataFrame()
