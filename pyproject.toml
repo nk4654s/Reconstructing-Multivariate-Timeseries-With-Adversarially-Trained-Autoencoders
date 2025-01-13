@@ -29,6 +29,7 @@ dependencies = [
     "ruff>=0.9.0",
     "aws-secretsmanager-caching>=1.1.3",
     "pycognito>=2024.5.1",
+    "toking",
 ]
 
 [tool.uv.sources]
