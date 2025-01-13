@@ -1,34 +1,8 @@
-from typing import Dict, Tuple
+from typing import Dict
 from uuid import UUID
-import os
 import requests
 
-
-class MissingEnvironmentVariable(Exception):
-    """This class defines the exception to throw when trying to
-    access a missing environment variable. Provide the variable's name to
-    the constructor for displaying a correct message.
-
-    Args:
-        key_name (str): The missing variable's name.
-    """
-    def __init__(self, key_name: str, *args: object) -> None:
-        message = f"Make sure to define the '{key_name}' environment variable according to your system."
-        super().__init__(message, *args)
-
-
-def get_secret() -> str | None:
-    """This method loads the authorization key for the database from the ".env" file, which
-    should be located next to this code.
-
-    Raises:
-        MissingEnvironmentVariable: If the 'DB_SECRET' could not be found in the environment
-            variables.
-    """
-    if "DB_SECRET" not in os.environ:
-        raise MissingEnvironmentVariable("DB_SECRET")
-
-    return os.environ["DB_SECRET"]
+from Toking import get_access_token
 
 
 def get_sensor_name_to_uuid(machine_uuid: UUID) -> Dict[str, str]:
@@ -90,42 +64,6 @@ def get_sensor_name_to_uuid(machine_uuid: UUID) -> Dict[str, str]:
     }
 
 
-def get_machine_location(machine_uuid: UUID) -> Tuple[float, float] | None:
-    """This function returns the latitude and logintude of a machine.
-
-    Args:
-        machine_uuid (UUID): The machine's UUID from which the position is
-        requested.
-
-    Returns:
-        Tuple[float, float]: Latitude and longitude.
-    """
-    url = "https://stage.graphql.api.xplore.ac/"
-    payload = (
-        '"query": "query getMachine '
-        + '{\n\tmachine {\n\t\tgetMachine(machineId: \\"'
-        + str(machine_uuid)
-        + '\\") {\n'
-        + "\t\t\txrn\n\t\t\tname\n\t\t\tmission {\n\t\t\t\tlocation {\n"
-        + '\t\t\t\t\tlat\n\t\t\t\t\tlng\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}"'
-        + ',"operationName":"getMachine"}'
-    )
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": get_secret(),
-    }
-
-    try:
-        response = requests.request(
-            "POST", url, data=payload, headers=headers, timeout=30
-        )
-    except requests.Timeout as _:
-        return None
-
-    coords = response.json()["data"]["machine"]["getMachine"]["mission"]["locataion"]
-    return (coords["lat"], coords["lng"])
-
-
 def get_sensor_uuid_to_name(machine_uuid: UUID) -> Dict[str, str] | None:
     """This function returns a dictionary of sensor uuids to sensor names."""
     url = "https://stage.graphql.api.xplore.ac/"
@@ -141,7 +79,7 @@ def get_sensor_uuid_to_name(machine_uuid: UUID) -> Dict[str, str] | None:
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": get_secret(),
+        "Authorization": get_access_token(),
     }
     try:
         response = requests.request(
