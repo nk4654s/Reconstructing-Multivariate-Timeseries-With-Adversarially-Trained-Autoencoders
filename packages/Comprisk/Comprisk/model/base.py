@@ -60,7 +60,7 @@ class BaseModel(L.LightningModule):
 
         self._input_dim = len(features_in)
         self._output_dim = len(features_out)
-        logger.debug("The model gets %s features and outputs %s values", self._input_dim, self._output_dim)
+        logger.info("The model gets %s features and outputs %s values", self._input_dim, self._output_dim)
 
         self._behavior = dataset_type_from_string(behavior)
         self._output_length = output_length

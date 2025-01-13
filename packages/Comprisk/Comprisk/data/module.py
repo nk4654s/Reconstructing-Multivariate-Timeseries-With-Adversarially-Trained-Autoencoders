@@ -105,7 +105,6 @@ class DataModule(L.LightningDataModule):
             validate (str): The path of the validation dataset.
         """
         if not train and not validate:
-            logger.debug("No ")
             return
 
         self._collate_fn = collate_fn
