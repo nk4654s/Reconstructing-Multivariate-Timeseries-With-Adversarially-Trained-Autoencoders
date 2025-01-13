@@ -1,4 +1,4 @@
-# lightning.pytorch==2.4.0
+# lightning.pytorch==2.5.0.post0
 seed_everything: 0
 trainer:
   accelerator: auto
@@ -81,10 +81,10 @@ model:
     lr: 0.0001
     lr_decay: 0.9
 data:
-  train: environment/dev/datasets/thyssen-vd2-trainset
-  validate: environment/dev/datasets/thyssen-vd2-valset
-  sequence_in: 20
-  sequence_out: 20
+  train: environment/dev/datasets/thyssen-vd2-trainset-phase-2
+  validate: environment/dev/datasets/thyssen-vd2-valset-phase-2
+  sequence_in: 60
+  sequence_out: 60
   features_in:
   - Biomethandurchfluss (m^3/min)
   - DifferenzdruckTriebwerksölPDIT74553 (bar)
@@ -126,16 +126,15 @@ data:
   - Wicklungstemperatur (°C)
   skip: 1
   stride: 1
-  key: norm
   behavior: autoencoder
-  batch_size: 256
+  batch_size: 128
   shuffle: true
   num_workers: 6
   persistent_workers: true
   pin_memory: true
 tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
 environment: dev
-finetune: null
+finetune: environment/dev/models/EncDecAD/0b3426b3-94af-4b8c-89c1-da57493c099a/version_0/config.yaml
 find_batch_size: false
 tuner_config: null
 tuner_trials: 1
@@ -144,7 +143,7 @@ score:
 optimizer: null
 lr_scheduler: null
 data:
-  batch_size: 256
+  batch_size: 128
   behavior: autoencoder
   features_in:
   - Biomethandurchfluss (m^3/min)
@@ -185,12 +184,11 @@ data:
   - "VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (\xB0C)"
   - "VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (\xB0C)"
   - "Wicklungstemperatur (\xB0C)"
-  key: norm
   num_workers: 6
   persistent_workers: true
   pin_memory: true
-  sequence_in: 20
-  sequence_out: 20
+  sequence_in: 60
+  sequence_out: 60
   shuffle: true
   skip: 1
   stride: 1
@@ -198,7 +196,7 @@ data:
   validate: null
 environment: dev
 find_batch_size: false
-finetune: null
+finetune: environment/dev/models/EncDecAD/0b3426b3-94af-4b8c-89c1-da57493c099a/version_0/config.yaml
 lr_scheduler: null
 model:
   class_path: Comprisk.model.ae.rnn.EncDecAD

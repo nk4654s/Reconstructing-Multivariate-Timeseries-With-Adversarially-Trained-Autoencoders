@@ -1,5 +1,5 @@
-_class_path: Comprisk.model.ae.rnn.EncDecAD
 _instantiator: lightning.pytorch.cli.instantiate_module
+_class_path: Comprisk.model.ae.rnn.EncDecAD
 activation: tanh
 behavior: autoencoder
 dropout_prob: 0.4
