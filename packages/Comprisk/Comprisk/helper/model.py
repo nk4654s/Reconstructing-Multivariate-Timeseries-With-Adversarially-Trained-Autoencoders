@@ -14,7 +14,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from Dataflux.pytorch import online_collate_inference, collate_fn, DatasetTypes
+from Dataflux.pytorch import collate_fn, DatasetTypes
 from Dataflux.pytorch import Dataset
 
 from Comprisk.anomaly import ScoreTransformer
@@ -41,12 +41,12 @@ def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
         sub_modules = {}
 
         for drop in [key for key in hparams.keys() if key.startswith("_")]:
-            if drop == "_class_path":
+            if drop == "class_path":
                 continue
             del hparams[drop]
 
         for key, value in hparams.items():
-            if drop == "_class_path":
+            if drop == "class_path":
                 continue
 
             if isinstance(value, dict):
@@ -56,7 +56,7 @@ def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
             else:
                 sub_modules[key] = value
 
-        model_class = class_for_name(*hparams["_class_path"].rsplit(".", maxsplit=1))
+        model_class = class_for_name(*hparams["class_path"].rsplit(".", maxsplit=1))
         return model_class, sub_modules
 
 

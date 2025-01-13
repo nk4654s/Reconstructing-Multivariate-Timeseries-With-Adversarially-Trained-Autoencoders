@@ -1,6 +1,5 @@
 """This module contains the base model implementing widely-used functions. Layers
 of a neural network are not implemented."""
-
 from typing import List, Union
 import numpy as np
 import lightning as L
@@ -56,15 +55,15 @@ class BaseModel(L.LightningModule):
         self._lr_decay = lr_decay
         self.lr = lr
 
-        self._behavior = dataset_type_from_string(behavior)
-        self._output_length = output_length
-
         self._features_in = sorted(features_in)
         self._features_out = sorted(features_out)
 
         self._input_dim = len(features_in)
         self._output_dim = len(features_out)
         logger.debug("The model gets %s features and outputs %s values", self._input_dim, self._output_dim)
+
+        self._behavior = dataset_type_from_string(behavior)
+        self._output_length = output_length
 
         self.save_hyperparameters()
 
@@ -73,8 +72,10 @@ class BaseModel(L.LightningModule):
         self.hparams["features_in"] = self._features_in
         self.hparams["features_out"] = self._features_out
         self.hparams["behavior"] = self._behavior.value
+        self.hparams["class_path"] = f"{self.__module__}.{self.__class__.__name__}"
+
         self.save_hyperparameters(self.hparams)
-    
+
     def set_output_behavior(self, behavior: DatasetTypes | str, length: int) -> None:
         self._behavior = dataset_type_from_string(behavior) if isinstance(behavior, str) else behavior
         self._output_length = length
