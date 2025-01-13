@@ -26,7 +26,7 @@ def cli_main():
     logger.debug("Starting CompriskCLI")
     cli = CompriskLoadCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
 
-    logger.debug("Loging model: %s", cli.model.__class__.__name__)
+    logger.info("Logging model: %s", cli.model.__class__.__name__)
     base_path = get_config_folder(cli)
 
     # load the dataset and configure it to work with the trained model

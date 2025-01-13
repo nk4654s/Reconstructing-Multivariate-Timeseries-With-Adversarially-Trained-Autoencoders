@@ -1,7 +1,7 @@
-folder: environment/dev/datasets/thyssen-vd2-service
+folder: environment/dev/datasets/thyssen-vd2-test-coolant
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-  - 2024-08-10 2024-09-20
+  - 2024-08-29T12:30:00 2024-08-29T14:30:00
 overwrite: false
 
 modules:
@@ -13,7 +13,7 @@ modules:
       key: "Laeuft"
       lower: 0.9
       upper: 1.1
-      alpha_threshold: 5400
+      alpha_threshold: 900
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:
@@ -46,4 +46,4 @@ modules:
         - ts
   - class_path: Dataflux.modules.normalize.NormalizeTransform
     init_args:
-      from_other: environment/dev/datasets/thyssen-vd2-trainset
+      from_other: environment/dev/datasets/thyssen-vd2-trainset-phase-2

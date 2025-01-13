@@ -14,7 +14,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from Dataflux.pytorch import online_collate_inference, collate_fn, DatasetTypes
+from Dataflux.pytorch import collate_fn, DatasetTypes
 from Dataflux.pytorch import Dataset
 
 from Comprisk.anomaly import ScoreTransformer
@@ -41,12 +41,12 @@ def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
         sub_modules = {}
 
         for drop in [key for key in hparams.keys() if key.startswith("_")]:
-            if drop == "_class_path":
+            if drop == "class_path":
                 continue
             del hparams[drop]
 
         for key, value in hparams.items():
-            if drop == "_class_path":
+            if drop == "class_path":
                 continue
 
             if isinstance(value, dict):
@@ -56,7 +56,7 @@ def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
             else:
                 sub_modules[key] = value
 
-        model_class = class_for_name(*hparams["_class_path"].rsplit(".", maxsplit=1))
+        model_class = class_for_name(*hparams["class_path"].rsplit(".", maxsplit=1))
         return model_class, sub_modules
 
 
@@ -183,7 +183,7 @@ class ModelLoader:
             i for i, x in enumerate(args.names_in) if x in args.names_out
         ]
 
-        collate = online_collate_inference if args.key == "data" else collate_fn
+        collate = collate_fn
         loader = DataLoader(
             dataset,
             batch_size,
@@ -194,7 +194,7 @@ class ModelLoader:
         for i, inputs in enumerate(
             tqdm(loader, desc="Prediction with Model", disable=not verbose)
         ):
-            inputs, scaler = inputs
+            inputs, _ = inputs
             inputs = inputs.to(device)
 
             # modify the sensor if required, e.g. if an anomaly should be injected
@@ -204,12 +204,6 @@ class ModelLoader:
             # run the prediction, the input equals the target for auto encoders
             model_pred = self.model.predict(inputs, as_array=True)
             inputs = inputs.cpu().numpy()
-
-            # the scaler only exists, if the model uses a dataloader with 'online_collate'
-            # this happens if the dataset's key is 'data'
-            if args.key == "data":
-                model_pred = scaler.inverse_transform(model_pred)  # type: ignore
-                inputs = scaler.inverse_transform(inputs)
 
             batch_size_, _, _ = model_pred.shape
             for j in range(0, batch_size_):

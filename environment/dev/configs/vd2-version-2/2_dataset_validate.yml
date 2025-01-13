@@ -1,7 +1,9 @@
-folder: environment/dev/datasets/thyssen-vd2-test-coolant
+folder: environment/dev/datasets/thyssen-vd2-valset-phase-2
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-  - 2024-08-29T12:30:00 2024-08-29T14:30:00
+  - 2023-08-01 2023-08-09 # use the validation set of phase 1
+  - 2024-09-01 2024-09-09 # update the validation set using phase 2
+num_workers: 8
 overwrite: false
 
 modules:
@@ -13,7 +15,16 @@ modules:
       key: "Laeuft"
       lower: 0.9
       upper: 1.1
+      alpha_threshold: 3600
+      beta_threshold: 600
+  - class_path: Dataflux.modules.state.State
+    init_args:
+      key: "PositionBypassregelventilPCV74381 (%)"
+      lower: -0.99
+      upper: 0.01
       alpha_threshold: 900
+      beta_threshold: 900
+
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:
@@ -42,8 +53,9 @@ modules:
   - class_path: Dataflux.modules.normalize.NormalizeFit
     init_args:
       method: minmax
+      remove_outliers: false
       exclude_keys:
         - ts
   - class_path: Dataflux.modules.normalize.NormalizeTransform
     init_args:
-      from_other: environment/dev/datasets/thyssen-vd2-trainset
+      from_other: environment/dev/datasets/thyssen-vd2-trainset-phase-2
