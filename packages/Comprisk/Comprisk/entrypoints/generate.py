@@ -50,7 +50,6 @@ class CompriskUpdateCallable(UpdateCallable):
 
 
 def cli_main():
-    logger.debug("Starting CompriskCLI")
     cli = CompriskLoadCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
 
     logger.info("Logging model: %s", cli.model.__class__.__name__)
@@ -90,7 +89,10 @@ def cli_main():
     # update the dataset's virtual sensors in the S3 buckets with the scores
     time_steps = (data.get_timestamp(0), data.get_timestamp(len(data) - 1))
 
-    updater = DataUpdater(data.UUID, CompriskUpdateCallable(score_data), debug=True)
+    debug = os.environ.get("CAS_DEBUG_MODE", "0") == "1"
+    logger.info("Publishing scores to test device? %s", "yes" if debug else "no")
+
+    updater = DataUpdater(data.UUID, CompriskUpdateCallable(score_data), debug=debug)
     updater.set_data_type(DataType.MEASUREMENTS)
     updater.update(*time_steps, data.get_args().skip)
 

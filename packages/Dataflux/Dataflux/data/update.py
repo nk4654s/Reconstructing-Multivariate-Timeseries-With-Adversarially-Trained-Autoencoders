@@ -70,9 +70,11 @@ class DataUpdater(S3Bucket):
         end = datetime.fromtimestamp(end_ts, timezone.utc)
         days = get_day_list((start, end))
 
-        assert self._uuid, "A machine UUID must be defined."
         sensor_filter = filter_upload(sensor_format=self._sensor_format, include=self._score_substring)
         score_uuids = get_sensors(self._uuid, self._sensor_format, sensor_filter, debug=self._debug)
+        if not score_uuids:
+            logger.error("No sensors to upload to, is '%s' missing in the sensor names?", self._score_substring)
+            return None
 
         # create the S3 bucket connection and download the files for each day
         downloader = DataDownloader(self._uuid, file_postfix="virtual")
