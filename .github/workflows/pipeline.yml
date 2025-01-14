@@ -15,11 +15,15 @@ jobs:
   comprisk-test:
     uses: ./.github/workflows/comprisk-tests.yml
 
+  toking-test:
+    uses: ./.github/workflows/toking-tests.yml
+
   docker-build:
     uses: ./.github/workflows/docker-build.yml
     needs:
       - dataflux-test
       - comprisk-test
+      - toking-test
     secrets: inherit
     with:
       ECR_REPOSITORY: 'xplore-ai-cas'

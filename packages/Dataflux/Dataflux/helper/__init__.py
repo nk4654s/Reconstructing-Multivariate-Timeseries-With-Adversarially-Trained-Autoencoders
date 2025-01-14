@@ -8,13 +8,12 @@ from Dataflux.helper.utils import (
     fullname,
 )
 from Dataflux.helper.database import (
-    get_machine_location,
     get_sensor_uuid_to_name,
     get_sensor_name_to_uuid,
 )
 from Dataflux.helper.compression import compress, decompress
 from Dataflux.helper.metadata import Meta, Metadata
-from Dataflux.helper.logger import get_logger, LOGGING_ENABLED
+from Dataflux.logger import get_logger, LOGGING_ENABLED
 from Dataflux.helper.scaler import FluxScaler, ScalerMethod
 
 __all__ = [
@@ -25,7 +24,6 @@ __all__ = [
     "line_str_to_array",
     "class_for_name",
     "fullname",
-    "get_machine_location",
     "get_sensor_uuid_to_name",
     "get_sensor_name_to_uuid",
     "compress",

@@ -19,6 +19,8 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - uses: astral-sh/ruff-action@v3
+        with:
+          src: "./packages/Dataflux"
 
       # Run unit tests
       - name: Run Unittests

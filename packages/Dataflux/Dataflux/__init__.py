@@ -29,6 +29,6 @@ Once a dataset has been downloaded, the subpackage provides a `pytorch` submodul
 dataset for machine learning. Install the Dataflux package as `pip`-package and import it.
 """
 import logging
-from Dataflux.helper.logger import get_logger
+from Dataflux.logger import get_logger
 
 logger = get_logger(__name__, path="logfile", level=logging.DEBUG)
