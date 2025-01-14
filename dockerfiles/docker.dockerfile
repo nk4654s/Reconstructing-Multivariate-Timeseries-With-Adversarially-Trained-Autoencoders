@@ -26,6 +26,7 @@ RUN chmod 777 /home/nea-cas
 # copy code to the docker
 COPY --chown=nea-cas:nea-cas packages/Comprisk/ packages/Comprisk/
 COPY --chown=nea-cas:nea-cas packages/Dataflux/ packages/Dataflux/
+COPY --chown=nea-cas:nea-cas packages/Toking/ packages/Toking/
 COPY --chown=nea-cas:nea-cas scripts/ scripts/
 COPY --chown=nea-cas:nea-cas pyproject.toml pyproject.toml
 COPY --chown=nea-cas:nea-cas environment/production/models models/
