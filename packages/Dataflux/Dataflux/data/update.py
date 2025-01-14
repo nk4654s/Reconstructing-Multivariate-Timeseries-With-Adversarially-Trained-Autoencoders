@@ -5,7 +5,7 @@ from tqdm import tqdm
 import pandas as pd
 from botocore.exceptions import ClientError
 
-from Dataflux.helper import get_day_list, compress, decompress, get_sensor_name_to_uuid
+from Dataflux.helper import get_day_list, compress, decompress, get_sensors, SensorRegisterFormat, filter_upload
 from Dataflux.data.download import DataDownloader
 from Dataflux.data.s3io import S3Bucket, DataType
 
@@ -46,9 +46,13 @@ class DataUpdater(S3Bucket):
         update_callable (UpdateCallable): The callable which generates the data to be added.
     """
 
-    def __init__(self, machine_uuid: str, update_callable: UpdateCallable) -> None:
+    def __init__(self, machine_uuid: str, update_callable: UpdateCallable, debug: bool = False) -> None:
         super().__init__(machine_uuid)
         self._callable = update_callable
+
+        self._debug = debug
+        self._score_substring = "Malfunction"
+        self._sensor_format = SensorRegisterFormat.NAME_TO_UUID
 
     def update(self, start_ts: int, end_ts: int, time_delta: int) -> None:
         """
@@ -67,7 +71,8 @@ class DataUpdater(S3Bucket):
         days = get_day_list((start, end))
 
         assert self._uuid, "A machine UUID must be defined."
-        score_uuids = get_sensor_name_to_uuid(self._uuid)
+        sensor_filter = filter_upload(sensor_format=self._sensor_format, include=self._score_substring)
+        score_uuids = get_sensors(self._uuid, self._sensor_format, sensor_filter, debug=self._debug)
 
         # create the S3 bucket connection and download the files for each day
         downloader = DataDownloader(self._uuid, file_postfix="virtual")
