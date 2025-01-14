@@ -1,4 +1,4 @@
-name: Comprisk Tests
+name: Toking Tests
 
 on:
   workflow_call:
