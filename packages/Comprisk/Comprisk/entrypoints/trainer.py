@@ -11,7 +11,7 @@ from lightning import LightningModule
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 
-from Dataflux.pytorch import Dataset
+from Dataflux.pytorch import Dataset, DatasetTypes
 
 from Comprisk.anomaly import ScoreTransformer
 from Comprisk.helper import ModelLoader
@@ -141,7 +141,10 @@ def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset,
         dataset (Dataset): The dataset to train the ScoreTransformer on.
     """
     dataset_args = dataset.get_args()
-    dataset.set_stride(dataset_args.sequence_out)
+    stride = dataset_args.sequence_in
+    if dataset_args.behavior != DatasetTypes.AUTOENCODER:
+        stride = dataset_args.sequence_out
+    dataset.set_stride(stride)
 
     # load the (best) trained model back
     loader = ModelLoader(model_dir)
