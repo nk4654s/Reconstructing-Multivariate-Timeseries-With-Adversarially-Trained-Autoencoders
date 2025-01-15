@@ -23,8 +23,8 @@ def cli_main():
     logger.debug("Starting CompriskCLI")
     cli = CompriskLoadCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
 
-    logger.debug("Logging model: %s", cli.model.__class__.__name__)
     base_path = get_config_folder(cli)
+    logger.info("Logging model: %s", base_path)
 
     # load the dataset and configure it to work with the trained model
     dataset = cli.datamodule.valset
@@ -34,11 +34,16 @@ def cli_main():
 
     if dataset is None:
         logger.error("No dataset available for training the ScoreTransformer. Make sure to define the validation set path.")
-        exit(1)
+        exit(0)
 
     # load the model with the helper class, then apply the model on the dataset
     meta_path = os.path.join(base_path, "metadata")
     train_score_transformer(base_path, meta_path, dataset, vars(cli.config.score))
+
+    logger.info(
+        "Finished ScoreTransformer training for machine %s.",
+        dataset.UUID,
+    )
 
 
 if __name__ == "__main__":

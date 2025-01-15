@@ -83,7 +83,7 @@ def cli_main():
     # remove the temporary downloaded dataset again
     # shutil.rmtree(get_dataset_path(args.dataset), ignore_errors = True)
     logger.info(
-        "Uploaded from %s to %s for machine %s",
+        "Finished uploading from %s to %s for machine %s",
         data.get_day(0),
         data.get_day(len(data) - 1),
         data.UUID,

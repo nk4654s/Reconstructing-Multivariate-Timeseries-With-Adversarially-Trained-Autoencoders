@@ -2,6 +2,7 @@
 apply the loaded model on the configured dataset. The prediction will be
 saved next to the model's log folder as graph comparing prediction
 vs. target."""
+
 import os
 import shutil
 from uuid import UUID
@@ -26,8 +27,8 @@ def cli_main():
     logger.debug("Starting CompriskCLI")
     cli = CompriskLoadCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
 
-    logger.info("Logging model: %s", cli.model.__class__.__name__)
     base_path = get_config_folder(cli)
+    logger.info("Logging model: %s", base_path)
 
     # load the dataset and configure it to work with the trained model
     cli.datamodule.set_path(cli.config.dataset, None)
@@ -40,10 +41,15 @@ def cli_main():
     # load the model with the helper class, then apply the model on the dataset
     loader = ModelLoader(base_path)
     score = loader.get_score_transformer()
-    target, predicted = loader.predict_loop(dataset, modifier=(
-        cli.config.anomaly.name,
-        cli.config.anomaly.factor
-    ))
+    logger.info("Loaded score transformer (mode=%s)", score.mode)
+
+    logger.info(
+        "Run prediction loop on dataset (samples=%s) which can take some time.",
+        len(dataset),
+    )
+    target, predicted = loader.predict_loop(
+        dataset, modifier=(cli.config.anomaly.name, cli.config.anomaly.factor)
+    )
 
     # visualize the loaded dataset
     prefix = "analysis"
@@ -64,6 +70,9 @@ def cli_main():
     score.transform(predicted, target, visualize=score_vis_path, factors=0.1)
 
     # rename the columns, which might be required
+    logger.info(
+        "Downloading uuid to sensor table for sensor renaming in visualizations."
+    )
     sensors_name_dict = get_sensors(UUID(dataset.UUID))
     predicted = predicted.rename(columns=sensors_name_dict, errors="ignore")
     target = target.rename(columns=sensors_name_dict, errors="ignore")
@@ -87,6 +96,12 @@ def cli_main():
         ["Prediction", "Target"],
         grid_size=5,
         save=os.path.join(base_path, "hrs=12.png"),
+    )
+
+    logger.info(
+        "Finished analyzing model %s on machine %s.",
+        loader.model.__class__.__name__,
+        dataset.UUID,
     )
 
 

@@ -21,15 +21,16 @@ from Comprisk.cli import CompriskCLI
 
 from Comprisk import logger
 
+
 def get_trainer_callback(trainer, callback_name: str) -> Callback | None:
     """
     Finds the given callback class in the trainer callbacks list. If the
     callback could not be found, then the returned value is None.
-    
+
     Args:
         trainer (Any): The trainer object with the list of configured callbacks.
         callback_name (str): The `lightning.Callback` class.
-    
+
     Returns:
         Callback: The callback object, if found.
     """
@@ -44,7 +45,7 @@ def save_training_meta(base_path: str, dataset: Dataset) -> None:
     This function creates the model's metadata folder and generates the
     training dataset correlation matrix, as well as copies the dataset's
     normalizer.
-    
+
     Args:
         base_path (str): The path where the metadata folder will be created.
         dataset (Dataset): The dataset used for training.
@@ -78,7 +79,9 @@ def run_trainer(cli: CompriskCLI) -> str:
         sub_path = f"{cli.model.__class__.__name__}/{cli.config.tag}"
 
     logger.debug("Defining TensorBoard logger for %s", sub_path)
-    tb_logger = TensorBoardLogger(f"environment/{cli.config.environment}/models", name=sub_path)
+    tb_logger = TensorBoardLogger(
+        f"environment/{cli.config.environment}/models", name=sub_path
+    )
     cli.trainer.logger = tb_logger
     os.makedirs(tb_logger.log_dir)
     logger.debug("Using log folder %s", tb_logger.log_dir)
@@ -98,7 +101,7 @@ def run_trainer(cli: CompriskCLI) -> str:
     data = cli.datamodule.trainset
     metafolder = os.path.join(tb_logger.log_dir, "metadata")
     save_training_meta(metafolder, data)
-    
+
     # check if a model should be finetuned
     if cli.config.finetune:
         config_path = os.path.dirname(cli.config.finetune)
@@ -115,23 +118,26 @@ def run_trainer(cli: CompriskCLI) -> str:
     # run methods after fit
     cli.after_fit()
 
-    # if a model was finetuned, make sure to have the same hparams.yaml in the
+    # if a model was fine tuned, make sure to have the same hparams.yaml in the
     # output folder.
     # FIXME: this should not be a problem, this is a workaround
     if cli.config.finetune:
         config_path = os.path.dirname(cli.config.finetune)
         if os.path.exists(os.path.join(tb_logger.log_dir, "hparams.yaml")):
             os.remove(os.path.join(tb_logger.log_dir, "hparams.yaml"))
-        shutil.copyfile(os.path.join(config_path, "hparams.yaml"),
-                        os.path.join(tb_logger.log_dir, "hparams.yaml"))
-    
+        shutil.copyfile(
+            os.path.join(config_path, "hparams.yaml"),
+            os.path.join(tb_logger.log_dir, "hparams.yaml"),
+        )
+
     valset: Dataset = cli.datamodule.valset
     train_score_transformer(tb_logger.log_dir, metafolder, valset)
     return tb_logger.log_dir
 
 
-def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset,
-                            transformer_args: Dict = {}) -> None:
+def train_score_transformer(
+    model_dir: str, meta_dir: str, dataset: Dataset, transformer_args: Dict = {}
+) -> None:
     """This method trains the ScoreTransformer given the model and dataset. Usually, this is immediately done on the
     validation set after a training.
 
@@ -144,6 +150,11 @@ def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset,
     stride = dataset_args.sequence_in
     if dataset_args.behavior != DatasetTypes.AUTOENCODER:
         stride = dataset_args.sequence_out
+
+    logger.info(
+        "Run prediction loop on dataset (samples=%s) which can take some time.",
+        len(dataset),
+    )
     dataset.set_stride(stride)
 
     # load the (best) trained model back
@@ -154,6 +165,7 @@ def train_score_transformer(model_dir: str, meta_dir: str, dataset: Dataset,
     # fit and save the score transformer
     score = ScoreTransformer(**transformer_args)
     score.fit(predicted, target)
+    logger.info("Fitted ScoreTransformer (mode=%) successfully.", score.mode)
 
     score_path = os.path.join(meta_dir, "score_transformer.pkl")
     with open(score_path, mode="wb") as f:
@@ -172,11 +184,19 @@ def cli_main():
     model_folder = run_trainer(cli)
 
     # delete dataset paths from the saved config file
-    with open(os.path.join(model_folder, "config.yaml"), mode="r+", encoding="utf-8") as f:
+    with open(
+        os.path.join(model_folder, "config.yaml"), mode="r+", encoding="utf-8"
+    ) as f:
         model_args = yaml.safe_load(f)
         model_args["data"]["train"] = None
         model_args["data"]["validate"] = None
         yaml.safe_dump(model_args, f)
+
+    logger.info(
+        "Finished training model %s on machine %s.",
+        cli.model.__class__.__name__,
+        cli.datamodule.trainset.UUID,
+    )
 
 
 if __name__ == "__main__":
