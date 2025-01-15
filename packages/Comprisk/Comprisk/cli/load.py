@@ -27,7 +27,7 @@ class CompriskLoadCLI(CompriskCLI):
         logger.debug(start_str)
         logger.debug("Initializing CompriskCLI for inference")
 
-        debug = os.environ.get("CAS_DEBUG_MODE", "0") == "1"
+        debug = os.environ.get("CAS_DEBUG_MODE", "0") != "0"
         logger.info("Publishing scores to test device? %s", "yes" if debug else "no")
 
     def before_fit(self):

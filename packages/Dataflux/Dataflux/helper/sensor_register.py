@@ -8,13 +8,16 @@ from Toking import get_access_token
 
 class SensorRegisterFormat(Enum):
     """This enum describes how the sensor dictionary looks like. Either with UUIDs or sensor names as the key."""
+
     UUID_TO_NAME = auto()
     NAME_TO_UUID = auto()
 
 
-def filter_upload(registered: List = None,
-                  sensor_format: SensorRegisterFormat = SensorRegisterFormat.UUID_TO_NAME,
-                  include: str = "Malfunction") -> Callable:
+def filter_upload(
+    registered: List = None,
+    sensor_format: SensorRegisterFormat = SensorRegisterFormat.UUID_TO_NAME,
+    include: str = "Malfunction",
+) -> Callable:
     """This filter makes sure to only include sensors which are in the registered list of sensors and have
     the `include` string in their names. The `registered` can contain either UUIDs or sensor names, make sure to
     define the `sensor_format` correctly.
@@ -27,25 +30,35 @@ def filter_upload(registered: List = None,
     Returns:
         Callable: A function used to filter sensors. Provide this function to `get_sensors()`.
     """
+
     def _filter(sensor_register: Dict) -> Dict:
         filtered = {}
 
         if sensor_format == SensorRegisterFormat.UUID_TO_NAME:
             uuids = sensor_register.keys() if not registered else registered
-            names = [name.split(" ")[0] for uuid, name in sensor_register.items() if uuid in uuids]
+            names = [
+                name.split(" ")[0]
+                for uuid, name in sensor_register.items()
+                if uuid in uuids
+            ]
 
             for uuid, name in sensor_register.items():
                 if include in name and name.split(" ")[0] in names:
                     filtered[uuid] = name
         else:
             names = sensor_register.keys() if not registered else registered
-            names = [name.split(" ")[0] for name, _ in sensor_register.items() if name in names]
+            names = [
+                name.split(" ")[0]
+                for name, _ in sensor_register.items()
+                if name in names
+            ]
 
             for name, uuid in sensor_register.items():
                 if include in name and name.split(" ")[0] in names:
                     filtered[uuid] = name
 
         return filtered
+
     return _filter
 
 
@@ -53,11 +66,12 @@ def filter_empty(sensor_register: Dict) -> Dict:
     return sensor_register
 
 
-def get_sensors(machine_uuid: UUID,
-                sensor_format: SensorRegisterFormat = SensorRegisterFormat.UUID_TO_NAME,
-                sensor_filter: Callable = filter_empty,
-                debug: bool = False
-                ) -> Dict[str, str] | None:
+def get_sensors(
+    machine_uuid: UUID,
+    sensor_format: SensorRegisterFormat = SensorRegisterFormat.UUID_TO_NAME,
+    sensor_filter: Callable = filter_empty,
+    debug: bool = False,
+) -> Dict[str, str] | None:
     """This function returns a dictionary of sensor.
 
     Args:
@@ -75,14 +89,10 @@ def get_sensors(machine_uuid: UUID,
 
     url = "https://stage.graphql.api.xplore.ac/"
     payload = (
-        '{"query":"query getMachine {\n  machine {\n    getMachine'
-        + f'(machineId: \\"{str(machine_uuid)}\\") '
-        + "{\n      name\n \t\t\tsensors { properties\n\t\t\t\tid\n\t\t\t\tname\n"
-        + "\t\t\t\ttype\n\t\t\t\tkind {\n\t\t\t\t\tis_plc\n\t\t\t\t\tis_hidden\n\t"
-        + "\t\t\t\tis_virtual\n\t\t\t\t\tis_setpoint\n\t\t\t\t\tis_plc_alarm\n\t"
-        + "\t\t\t\tis_high_frequency\n\t\t\t\t\tis_infrastructure\n\t\t\t\t}"
-        + '\n\t\t\t}\n    }\n  }\n}","operationName":"getMachine"}'
-    )
+        '{"query":"query getMachine { machine { getMachine(machineId: \\"machine_uuid_substr\\") { name sensors { ' +
+        'properties id name type kind { is_plc is_hidden is_virtual is_setpoint is_plc_alarm is_high_frequency ' +
+        'is_infrastructure } } } } }","operationName":"getMachine"}'
+    ).replace("machine_uuid_substr", str(machine_uuid))
 
     headers = {
         "Content-Type": "application/json",
