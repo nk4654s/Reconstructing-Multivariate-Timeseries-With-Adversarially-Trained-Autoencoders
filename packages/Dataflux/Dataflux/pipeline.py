@@ -1,9 +1,12 @@
 """The pipeline combines both, the preprocessing.py and postprocessing.py which comes in handy
 when processing a dataset using a defined yaml-config.
 """
+
 import os
 import shutil
 from datetime import datetime, timedelta, timezone
+from typing import List, Tuple
+
 from Dataflux.cli import CLIArgumentParser
 from Dataflux.cli.cli import FluxConfigManager
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
@@ -31,16 +34,11 @@ def download(flux: FluxConfigManager) -> None:
     interval_list = []
     if flux.args.intervals and not flux.args.latest:
         for interval in flux.args.intervals:
-            interval = interval.split(
-
-            )
+            interval = interval.split()
 
             end = datetime.fromisoformat(interval[1])
             end = end.replace(hour=23, minute=59, second=59)
-            interval_list.append((
-                datetime.fromisoformat(interval[0]),
-                end
-            ))
+            interval_list.append((datetime.fromisoformat(interval[0]), end))
 
     # get the current date and subtract 1 hour to get the model's input
     if flux.args.latest:
@@ -51,15 +49,24 @@ def download(flux: FluxConfigManager) -> None:
 
         now = datetime.now(tz=timezone.utc)
         past = now - timedelta(seconds=3600 + offset)
-        interval_list = [(past, now)]
+        interval_list: List[Tuple[datetime.date, datetime.date]] = [(past, now)]
+        past.strftime("%Y-%m-%d %H:%M:%S")
 
     # exit on wrong inputs
     if not interval_list:
         method = "Latest" if flux.args.latest else "Config Intervals"
-        logger.error("Interval list should not be empty. Used method '%s' to get dates.", method)
+        logger.error(
+            "Interval list should not be empty. Used method '%s' to get dates.", method
+        )
         exit(1)
 
-    logger.info("Downloading interval %s", interval_list)
+    logger.info(
+        "Downloading interval %s",
+        [
+            (p.strftime("%Y-%m-%d %H:%M:%S"), n.strftime("%Y-%m-%d %H:%M:%S"))
+            for (p, n) in interval_list
+        ],
+    )
     downloader = ContinuousDataDownloader(machine_uuid, interval_list)
     downloader.set_data_type(DataType.MEASUREMENTS)
 
@@ -103,7 +110,7 @@ def pipeline(flux: FluxConfigManager) -> str:
     modules = flux.get_modules()
 
     if os.path.exists(flux.args.folder) and not flux.args.overwrite:
-        logger.debug("Dataset folder exists, overwrite is set to False.")
+        logger.warning("Dataset folder exists, overwrite is set to False.")
         exit(0)
 
     if flux.args.overwrite and os.path.exists(flux.args.folder):
@@ -128,8 +135,8 @@ def pipeline(flux: FluxConfigManager) -> str:
     process(flux)
 
     # 3. copy the pipeline configuration used for consistency
-    config_path = os.path.join(flux.args.folder, "metadata", "config.yaml") # type: ignore
-    shutil.copyfile(flux.args.config, config_path)
+    config_path = os.path.join(flux.args.folder, "metadata", "config.yaml")  # type: ignore
+    shutil.copyfile(flux.args.config_path, config_path)
     return flux.args.folder
 
 

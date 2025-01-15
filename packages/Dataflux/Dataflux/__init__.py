@@ -40,4 +40,3 @@ DEBUG_MODE = True if os.environ.get("CAS_DEBUG_MODE", False) else False
 # switch logging mode depending on DEBUG_MODE
 logging_mode = logging.DEBUG if DEBUG_MODE else logging.INFO
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
-logger.debug("Running in debug mode.")

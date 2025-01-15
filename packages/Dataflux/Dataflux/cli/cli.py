@@ -12,6 +12,7 @@ class FluxConfigManager:
         # initialize the namespace and add the config to it
         self.args = Namespace()
         setattr(self.args, "config", build_config(config_path))
+        setattr(self.args, "config_path", config_path)
 
         # build the namespace based on the config's content
         for key, value in DEFAULT_ARGUMENTS.items():
@@ -26,7 +27,6 @@ class FluxConfigManager:
         # store all processing modules as classes, expand the modules by those configured in the config file
         self._modules = default_modules if default_modules else []
         self._modules = expand_module_list(self._modules, self.args.config)
-        self.args.config = config_path
 
         # build the config dictionary holding modules and init_args
         self._config = []
@@ -37,14 +37,12 @@ class FluxConfigManager:
             return None
 
         setattr(self.args, "latest", value)
-        setattr(self.args.config, "latest", value)
 
     def set_folder(self, value: str) -> None:
         if value is None:
             return None
 
         setattr(self.args, "folder", value)
-        setattr(self.args.config, "folder", value)
 
 
     def _load_modules_from_args(self) -> None:
