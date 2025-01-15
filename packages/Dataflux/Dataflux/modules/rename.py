@@ -5,7 +5,7 @@ from typing import Dict
 import pandas as pd
 
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
-from Dataflux.helper import Metadata, Meta, get_sensor_uuid_to_name
+from Dataflux.helper import Metadata, Meta, get_sensors
 from Dataflux.modules.normalize import NormalizeFit
 
 from Dataflux import logger
@@ -48,7 +48,7 @@ class Rename(FileWorkerCallable):
             metadata.load(os.path.dirname(file_path))
 
             uuid = metadata[Meta.MACHINE_UUID]
-            self._sensor_names = get_sensor_uuid_to_name(uuid)
+            self._sensor_names = get_sensors(uuid)
             assert self._sensor_names, "No sensor name dictionary available."
 
         if self._enable:

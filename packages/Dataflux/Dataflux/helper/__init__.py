@@ -7,9 +7,10 @@ from Dataflux.helper.utils import (
     class_for_name,
     fullname,
 )
-from Dataflux.helper.database import (
-    get_sensor_uuid_to_name,
-    get_sensor_name_to_uuid,
+from Dataflux.helper.sensor_register import (
+    get_sensors,
+    filter_upload,
+    SensorRegisterFormat
 )
 from Dataflux.helper.compression import compress, decompress
 from Dataflux.helper.metadata import Meta, Metadata
@@ -24,8 +25,9 @@ __all__ = [
     "line_str_to_array",
     "class_for_name",
     "fullname",
-    "get_sensor_uuid_to_name",
-    "get_sensor_name_to_uuid",
+    "get_sensors",
+    "filter_upload",
+    "SensorRegisterFormat",
     "compress",
     "decompress",
     "Meta",

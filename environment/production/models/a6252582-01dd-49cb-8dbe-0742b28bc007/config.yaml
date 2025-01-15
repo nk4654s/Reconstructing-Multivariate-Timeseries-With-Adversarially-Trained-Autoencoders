@@ -1,0 +1,285 @@
+# lightning.pytorch==2.5.0.post0
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 32
+  logger: null
+  callbacks:
+  - class_path: lightning.pytorch.callbacks.EarlyStopping
+    init_args:
+      monitor: validate/MSELoss
+      min_delta: 1.0e-06
+      patience: 4
+      verbose: false
+      mode: min
+      strict: true
+      check_finite: true
+      stopping_threshold: null
+      divergence_threshold: null
+      check_on_train_epoch_end: null
+      log_rank_zero_only: false
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: checkpoints
+      filename: epoch={epoch}-val={validate/MSELoss:.6f}
+      monitor: validate/MSELoss
+      verbose: false
+      save_last: null
+      save_top_k: 3
+      save_weights_only: false
+      mode: min
+      auto_insert_metric_name: false
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: 1
+      save_on_train_epoch_end: null
+      enable_version_counter: true
+  fast_dev_run: false
+  max_epochs: 25
+  min_epochs: null
+  max_steps: -1
+  min_steps: null
+  max_time: null
+  limit_train_batches: null
+  limit_val_batches: null
+  limit_test_batches: null
+  limit_predict_batches: null
+  overfit_batches: 0.0
+  val_check_interval: null
+  check_val_every_n_epoch: 1
+  num_sanity_val_steps: null
+  log_every_n_steps: 1
+  enable_checkpointing: null
+  enable_progress_bar: null
+  enable_model_summary: null
+  accumulate_grad_batches: 1
+  gradient_clip_val: 1.0
+  gradient_clip_algorithm: null
+  deterministic: null
+  benchmark: null
+  inference_mode: true
+  use_distributed_sampler: true
+  profiler: null
+  detect_anomaly: false
+  barebones: false
+  plugins: null
+  sync_batchnorm: false
+  reload_dataloaders_every_n_epochs: 0
+  default_root_dir: null
+model:
+  class_path: Comprisk.model.ae.rnn.EncDecAD
+  init_args:
+    num_hidden_layers: 3
+    num_hidden_dim: 64
+    dropout_prob: 0.4
+    loss: MSELoss
+    activation: tanh
+    optimizer: Adam
+    lr: 0.0001
+    lr_decay: 0.9
+data:
+  train: environment/dev/datasets/thyssen-vd1-trainset-phase-1
+  validate: environment/dev/datasets/thyssen-vd1-valset-phase-1
+  sequence_in: 60
+  sequence_out: 0
+  features_in:
+  - 369afc93-5604-45a1-92ff-ae9915ba9cf4
+  - 6cd3f4a0-05de-4a5f-9384-34d2edd5054d
+  - 6d6f8beb-4e55-4b00-913c-5e87a1a8078d
+  - 0fde253b-8465-40f8-84ac-4f385096d467
+  - 9cf511a4-7a9a-488f-b642-4a946f27c808
+  - 5630cba4-cc34-4b94-b6a7-0b55f250ffca
+  - a56ad64c-174e-4da8-aa62-66dfc9bd62ad
+  - c3f86569-e2fc-494a-9700-d03ce4bc11d2
+  - f206e180-1a19-4b73-a2a5-cf610fa3b19d
+  - 1ce899b2-116e-4a6f-b1b0-23efe1d8add1
+  - d40dc717-9f74-4f5c-98f7-0aadb3b6ae69
+  - 5fcfe669-fc3a-4aaf-a734-6a54dc9c86c1
+  - 3817b57e-2901-44a8-ba97-00ca5a2446a3
+  - 40266713-aba1-42f3-a8ce-ed76e9072034
+  - 0269fbad-b2db-4677-9fc0-2814a0bf193b
+  - 023a0e7a-849e-4acd-ad7f-c011be125745
+  - c5991d25-d729-4a9f-93f0-cebe60de6672
+  - e1e5679e-816a-4d41-b35d-144595cdacbd
+  - 52994e88-8cc2-49bb-aa2c-2362949da765
+  - ccdaffdd-0632-4dd4-ac41-773d128c3623
+  - 893f38b8-9199-429c-96d0-67756a464df1
+  - d1c046b2-caaf-4c0b-bb08-53a0e32346b8
+  features_out:
+  - 369afc93-5604-45a1-92ff-ae9915ba9cf4
+  - 6cd3f4a0-05de-4a5f-9384-34d2edd5054d
+  - 6d6f8beb-4e55-4b00-913c-5e87a1a8078d
+  - 9cf511a4-7a9a-488f-b642-4a946f27c808
+  - 5630cba4-cc34-4b94-b6a7-0b55f250ffca
+  - a56ad64c-174e-4da8-aa62-66dfc9bd62ad
+  - f206e180-1a19-4b73-a2a5-cf610fa3b19d
+  - 1ce899b2-116e-4a6f-b1b0-23efe1d8add1
+  - d40dc717-9f74-4f5c-98f7-0aadb3b6ae69
+  - 0269fbad-b2db-4677-9fc0-2814a0bf193b
+  - 52994e88-8cc2-49bb-aa2c-2362949da765
+  - ccdaffdd-0632-4dd4-ac41-773d128c3623
+  - 893f38b8-9199-429c-96d0-67756a464df1
+  - d1c046b2-caaf-4c0b-bb08-53a0e32346b8
+  skip: 1
+  stride: 1
+  behavior: autoencoder
+  batch_size: 128
+  shuffle: true
+  num_workers: 6
+  persistent_workers: true
+  pin_memory: true
+tag: a6252582-01dd-49cb-8dbe-0742b28bc007
+environment: dev
+finetune: null
+find_batch_size: false
+tuner_config: null
+tuner_trials: 1
+score:
+  mode: linear
+optimizer: null
+lr_scheduler: null
+data:
+  batch_size: 128
+  behavior: autoencoder
+  features_in:
+  - 369afc93-5604-45a1-92ff-ae9915ba9cf4
+  - 6cd3f4a0-05de-4a5f-9384-34d2edd5054d
+  - 6d6f8beb-4e55-4b00-913c-5e87a1a8078d
+  - 0fde253b-8465-40f8-84ac-4f385096d467
+  - 9cf511a4-7a9a-488f-b642-4a946f27c808
+  - 5630cba4-cc34-4b94-b6a7-0b55f250ffca
+  - a56ad64c-174e-4da8-aa62-66dfc9bd62ad
+  - c3f86569-e2fc-494a-9700-d03ce4bc11d2
+  - f206e180-1a19-4b73-a2a5-cf610fa3b19d
+  - 1ce899b2-116e-4a6f-b1b0-23efe1d8add1
+  - d40dc717-9f74-4f5c-98f7-0aadb3b6ae69
+  - 5fcfe669-fc3a-4aaf-a734-6a54dc9c86c1
+  - 3817b57e-2901-44a8-ba97-00ca5a2446a3
+  - 40266713-aba1-42f3-a8ce-ed76e9072034
+  - 0269fbad-b2db-4677-9fc0-2814a0bf193b
+  - 023a0e7a-849e-4acd-ad7f-c011be125745
+  - c5991d25-d729-4a9f-93f0-cebe60de6672
+  - e1e5679e-816a-4d41-b35d-144595cdacbd
+  - 52994e88-8cc2-49bb-aa2c-2362949da765
+  - ccdaffdd-0632-4dd4-ac41-773d128c3623
+  - 893f38b8-9199-429c-96d0-67756a464df1
+  - d1c046b2-caaf-4c0b-bb08-53a0e32346b8
+  features_out:
+  - 369afc93-5604-45a1-92ff-ae9915ba9cf4
+  - 6cd3f4a0-05de-4a5f-9384-34d2edd5054d
+  - 6d6f8beb-4e55-4b00-913c-5e87a1a8078d
+  - 9cf511a4-7a9a-488f-b642-4a946f27c808
+  - 5630cba4-cc34-4b94-b6a7-0b55f250ffca
+  - a56ad64c-174e-4da8-aa62-66dfc9bd62ad
+  - f206e180-1a19-4b73-a2a5-cf610fa3b19d
+  - 1ce899b2-116e-4a6f-b1b0-23efe1d8add1
+  - d40dc717-9f74-4f5c-98f7-0aadb3b6ae69
+  - 0269fbad-b2db-4677-9fc0-2814a0bf193b
+  - 52994e88-8cc2-49bb-aa2c-2362949da765
+  - ccdaffdd-0632-4dd4-ac41-773d128c3623
+  - 893f38b8-9199-429c-96d0-67756a464df1
+  - d1c046b2-caaf-4c0b-bb08-53a0e32346b8
+  num_workers: 6
+  persistent_workers: true
+  pin_memory: true
+  sequence_in: 60
+  sequence_out: 0
+  shuffle: true
+  skip: 1
+  stride: 1
+  train: null
+  validate: null
+environment: dev
+find_batch_size: false
+finetune: null
+lr_scheduler: null
+model:
+  class_path: Comprisk.model.ae.rnn.EncDecAD
+  init_args:
+    activation: tanh
+    dropout_prob: 0.4
+    loss: MSELoss
+    lr: 0.0001
+    lr_decay: 0.9
+    num_hidden_dim: 64
+    num_hidden_layers: 3
+    optimizer: Adam
+optimizer: null
+score:
+  mode: linear
+seed_everything: 0
+tag: a6252582-01dd-49cb-8dbe-0742b28bc007
+trainer:
+  accelerator: auto
+  accumulate_grad_batches: 1
+  barebones: false
+  benchmark: null
+  callbacks:
+  - class_path: lightning.pytorch.callbacks.EarlyStopping
+    init_args:
+      check_finite: true
+      check_on_train_epoch_end: null
+      divergence_threshold: null
+      log_rank_zero_only: false
+      min_delta: 1.0e-06
+      mode: min
+      monitor: validate/MSELoss
+      patience: 4
+      stopping_threshold: null
+      strict: true
+      verbose: false
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      auto_insert_metric_name: false
+      dirpath: checkpoints
+      enable_version_counter: true
+      every_n_epochs: 1
+      every_n_train_steps: null
+      filename: epoch={epoch}-val={validate/MSELoss:.6f}
+      mode: min
+      monitor: validate/MSELoss
+      save_last: null
+      save_on_train_epoch_end: null
+      save_top_k: 3
+      save_weights_only: false
+      train_time_interval: null
+      verbose: false
+  check_val_every_n_epoch: 1
+  default_root_dir: null
+  detect_anomaly: false
+  deterministic: null
+  devices: auto
+  enable_checkpointing: null
+  enable_model_summary: null
+  enable_progress_bar: null
+  fast_dev_run: false
+  gradient_clip_algorithm: null
+  gradient_clip_val: 1.0
+  inference_mode: true
+  limit_predict_batches: null
+  limit_test_batches: null
+  limit_train_batches: null
+  limit_val_batches: null
+  log_every_n_steps: 1
+  logger: null
+  max_epochs: 25
+  max_steps: -1
+  max_time: null
+  min_epochs: null
+  min_steps: null
+  num_nodes: 1
+  num_sanity_val_steps: null
+  overfit_batches: 0.0
+  plugins: null
+  precision: 32
+  profiler: null
+  reload_dataloaders_every_n_epochs: 0
+  strategy: auto
+  sync_batchnorm: false
+  use_distributed_sampler: true
+  val_check_interval: null
+tuner_config: null
+tuner_trials: 1

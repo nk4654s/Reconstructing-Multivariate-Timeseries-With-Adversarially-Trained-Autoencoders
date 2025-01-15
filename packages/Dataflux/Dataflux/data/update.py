@@ -5,7 +5,14 @@ from tqdm import tqdm
 import pandas as pd
 from botocore.exceptions import ClientError
 
-from Dataflux.helper import get_day_list, compress, decompress, get_sensor_name_to_uuid
+from Dataflux.helper import (
+    get_day_list,
+    compress,
+    decompress,
+    get_sensors,
+    SensorRegisterFormat,
+    filter_upload,
+)
 from Dataflux.data.download import DataDownloader
 from Dataflux.data.s3io import S3Bucket, DataType
 
@@ -14,7 +21,7 @@ from Dataflux import logger
 
 class UpdateCallable:
     """
-    This class defines the callable which is executed by the DataUpdater. This should 
+    This class defines the callable which is executed by the DataUpdater. This should
     generate a series (or a list of series) to be added to the virtual sensor list.
     """
 
@@ -46,9 +53,15 @@ class DataUpdater(S3Bucket):
         update_callable (UpdateCallable): The callable which generates the data to be added.
     """
 
-    def __init__(self, machine_uuid: str, update_callable: UpdateCallable) -> None:
+    def __init__(
+        self, machine_uuid: str, update_callable: UpdateCallable, debug: bool = False
+    ) -> None:
         super().__init__(machine_uuid)
         self._callable = update_callable
+
+        self._debug = debug
+        self._score_substring = "Malfunction"
+        self._sensor_format = SensorRegisterFormat.NAME_TO_UUID
 
     def update(self, start_ts: int, end_ts: int, time_delta: int) -> None:
         """
@@ -66,8 +79,18 @@ class DataUpdater(S3Bucket):
         end = datetime.fromtimestamp(end_ts, timezone.utc)
         days = get_day_list((start, end))
 
-        assert self._uuid, "A machine UUID must be defined."
-        score_uuids = get_sensor_name_to_uuid(self._uuid)
+        sensor_filter = filter_upload(
+            sensor_format=self._sensor_format, include=self._score_substring
+        )
+        score_uuids = get_sensors(
+            self._uuid, self._sensor_format, sensor_filter, debug=self._debug
+        )
+        if not score_uuids:
+            logger.error(
+                "No sensors to upload to, is '%s' missing in the sensor names?",
+                self._score_substring,
+            )
+            return None
 
         # create the S3 bucket connection and download the files for each day
         downloader = DataDownloader(self._uuid, file_postfix="virtual")
@@ -91,7 +114,9 @@ class DataUpdater(S3Bucket):
                     df.drop(columns=score_uuids.values(), errors="ignore", inplace=True)
                     df = decompress(df)
             except ClientError as _:
-                logger.debug(f"Could not find a TSV-file for day {day_str}, continue with empty DataFrame.")
+                logger.debug(
+                    f"Could not find a TSV-file for day {day_str}, continue with empty DataFrame."
+                )
                 df = pd.DataFrame()
 
             # 2. modify the dataframe with the callable
@@ -100,17 +125,26 @@ class DataUpdater(S3Bucket):
             result_df = result_df.round(3)
 
             # 3. rename human-readable column names to be machine-readable
-            drop = [name for name in result_df.columns.values if
-                    not score_uuids.get(name.split(" ")[0] + " (Malfunction AI) (%)", None)]
+            drop = [
+                name
+                for name in result_df.columns.values
+                if not score_uuids.get(
+                    name.split(" ")[0] + " (Malfunction AI) (%)", None
+                )
+            ]
             if len(drop) > 0:
                 logger.debug("Did not expect %s in header, removing from upload.", drop)
                 result_df.drop(columns=drop, inplace=True)
 
-            names = {name: score_uuids.get(name.split(" ")[0] + " (Malfunction AI) (%)", name) for name in
-                     list(result_df.columns.values)}
+            names = {
+                name: score_uuids.get(
+                    name.split(" ")[0] + " (Malfunction AI) (%)", name
+                )
+                for name in list(result_df.columns.values)
+            }
             result_df.rename(columns=names, inplace=True)
 
-            # 4. merge, then apply the same compressing rules 
+            # 4. merge, then apply the same compressing rules
             day = day.strftime("%Y/%m/%d")
 
             # 5. calculate the averages for the 2- and 10-minutes files
@@ -129,7 +163,9 @@ class DataUpdater(S3Bucket):
                 postfix = "average" if avg == 120 else "average-10m"
                 path = f"{self._uuid}/days/{day}/{self._uuid}-virtual.tsv-{postfix}"
 
-                df_avg = pd.merge(df_avg, df, how="outer", left_index=True, right_index=True)
+                df_avg = pd.merge(
+                    df_avg, df, how="outer", left_index=True, right_index=True
+                )
                 self.upload(df_avg, path)
 
             # 6. upload the original for the 1 second data
@@ -154,5 +190,10 @@ class DataUpdater(S3Bucket):
         tsv_bytes = gzip.compress(tsv.encode("utf-8"))
 
         # 3. upload dataframe to s3
-        self._client.put_object(Bucket=self._bucket, Key=f"{path}", Body=tsv_bytes,
-                                ContentType="text/tab-separated-values", ContentEncoding="gzip")
+        self._client.put_object(
+            Bucket=self._bucket,
+            Key=f"{path}",
+            Body=tsv_bytes,
+            ContentType="text/tab-separated-values",
+            ContentEncoding="gzip",
+        )

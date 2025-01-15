@@ -8,7 +8,7 @@ from uuid import UUID
 
 from Dataflux.pytorch import Dataset, DatasetArgs
 from Dataflux.visualization import show_dataframe
-from Dataflux.helper import get_sensor_uuid_to_name
+from Dataflux.helper import get_sensors
 
 from Comprisk.helper import get_config_folder, ModelLoader
 from Comprisk.model import BaseModel
@@ -64,7 +64,7 @@ def cli_main():
     score.transform(predicted, target, visualize=score_vis_path, factors=0.1)
 
     # rename the columns, which might be required
-    sensors_name_dict = get_sensor_uuid_to_name(UUID(dataset.UUID))
+    sensors_name_dict = get_sensors(UUID(dataset.UUID))
     predicted = predicted.rename(columns=sensors_name_dict, errors="ignore")
     target = target.rename(columns=sensors_name_dict, errors="ignore")
 

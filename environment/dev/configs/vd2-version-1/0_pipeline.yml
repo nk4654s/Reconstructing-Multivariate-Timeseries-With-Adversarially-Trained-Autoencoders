@@ -17,6 +17,23 @@ trainer:
     data.train: environment/dev/datasets/thyssen-vd2-trainset-phase-1
     data.validate: environment/dev/datasets/thyssen-vd2-valset-phase-1
 
+    data.sequence_in: 10
+    data.sequence_out: 0
+
+    trainer.max_epochs: 2
+  - config: configs/vd2-version-1/3_model.yml
+    tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
+
+    # overwrite the config's values
+    # for path values, the explicit path is required
+    data.train: environment/dev/datasets/thyssen-vd2-trainset-phase-1
+    data.validate: environment/dev/datasets/thyssen-vd2-valset-phase-1
+
+    data.sequence_in: 20
+    data.sequence_out: 0
+
+    trainer.max_epochs: 2
+
 score_trainer:
   score.mode: linear
   data.validate: environment/dev/datasets/thyssen-vd2-valset-phase-1

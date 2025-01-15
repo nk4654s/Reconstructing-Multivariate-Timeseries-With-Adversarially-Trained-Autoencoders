@@ -20,7 +20,7 @@ def get_dataset_path(dataset: str) -> str:
 
     Args:
         dataset (str): The path to the dataset yaml file.
-    
+
     Args:
         dataset (str): The path to the dataset root folder.
     """
@@ -37,11 +37,12 @@ class CompriskUpdateCallable(UpdateCallable):
             the model.
         total_key (str): The total malfunction probability key name.
     """
+
     def __init__(self, malfunction: pd.DataFrame) -> None:
         self._malfunction = malfunction
 
     def get_update(self, start: int, end: int, total_key: str) -> pd.DataFrame:
-        df = self._malfunction[self._malfunction.index  >= start]
+        df = self._malfunction[self._malfunction.index >= start]
         df = df[df.index <= end]
 
         # calculate the mean as total machine score, other metrics might be better
@@ -50,7 +51,6 @@ class CompriskUpdateCallable(UpdateCallable):
 
 
 def cli_main():
-    logger.debug("Starting CompriskCLI")
     cli = CompriskLoadCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
 
     logger.info("Logging model: %s", cli.model.__class__.__name__)
@@ -89,14 +89,19 @@ def cli_main():
 
     # update the dataset's virtual sensors in the S3 buckets with the scores
     time_steps = (data.get_timestamp(0), data.get_timestamp(len(data) - 1))
-    # FIXME: use `data.UUID`
-    updater = DataUpdater("5ac7f03f-f4e6-4b15-9bc6-21db798f9d25", CompriskUpdateCallable(score_data))
+
+    debug = os.environ.get("CAS_DEBUG_MODE", "0") == data.UUID
+    logger.info("Publishing scores to test device? %s", "yes" if debug else "no")
+
+    updater = DataUpdater(data.UUID, CompriskUpdateCallable(score_data), debug=debug)
     updater.set_data_type(DataType.MEASUREMENTS)
     updater.update(*time_steps, data.get_args().skip)
 
     # remove the temporary downloaded dataset again
     # shutil.rmtree(get_dataset_path(args.dataset), ignore_errors = True)
-    print(f"Generated and uploaded scores from {data.get_day(0)} to {data.get_day(len(data) - 1)}")
+    print(
+        f"Generated and uploaded scores from {data.get_day(0)} to {data.get_day(len(data) - 1)}"
+    )
 
 
 if __name__ == "__main__":
