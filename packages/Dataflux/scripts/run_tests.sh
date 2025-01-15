@@ -1,1 +1,1 @@
-uv run python -m unittest discover -s Dataflux/tests -p 'test_*.py'
+CAS_PROJECT_ROOT=$(pwd) uv run python -m unittest discover -s Dataflux/tests -p 'test_*.py'

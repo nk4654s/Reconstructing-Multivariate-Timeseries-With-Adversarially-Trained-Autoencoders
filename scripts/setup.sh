@@ -31,3 +31,4 @@ else
 fi
 
 echo "export CAS_DEBUG_MODE=1" >> "$HOME/$rc"
+echo "export CAS_PROJECT_ROOT=$(pwd)" >> "$HOME/$rc"

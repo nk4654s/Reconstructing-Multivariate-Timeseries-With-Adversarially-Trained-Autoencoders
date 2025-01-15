@@ -41,7 +41,9 @@ def get_logger(name: str, path: str = "logfile.log", level: int = logging.DEBUG)
     logger.addHandler(console_handler)
 
     # disable all other loggers
-    enabled = os.listdir("packages")
+    package_dir = os.environ.get("CAS_PROJECT_ROOT", "/app/packages")
+    enabled = os.listdir(package_dir)
+
     logger_list = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
     for child_logger in logger_list:
         for name in enabled:
