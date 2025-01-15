@@ -88,11 +88,30 @@ def get_sensors(
         machine_uuid = UUID("5ac7f03f-f4e6-4b15-9bc6-21db798f9d25")
 
     url = "https://stage.graphql.api.xplore.ac/"
-    payload = (
-        '{"query":"query getMachine { machine { getMachine(machineId: \\"machine_uuid_substr\\") { name sensors { ' +
-        'properties id name type kind { is_plc is_hidden is_virtual is_setpoint is_plc_alarm is_high_frequency ' +
-        'is_infrastructure } } } } }","operationName":"getMachine"}'
-    ).replace("machine_uuid_substr", str(machine_uuid))
+    payload = f"""
+        {{"query":"query getMachine {{
+          machine {{
+            getMachine(machineId: \\"{str(machine_uuid)}\\") {{
+              name
+              sensors {{
+                properties
+                id
+                name
+                type
+                kind {{
+                  is_plc
+                  is_hidden
+                  is_virtual
+                  is_setpoint
+                  is_plc_alarm
+                  is_high_frequency
+                  is_infrastructure
+                }}
+              }}
+            }}
+          }}
+        }}","operationName":"getMachine"}}
+        """
 
     headers = {
         "Content-Type": "application/json",
