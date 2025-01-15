@@ -16,7 +16,7 @@ from Dataflux.helper import (
 from Dataflux.data.download import DataDownloader
 from Dataflux.data.s3io import S3Bucket, DataType
 
-from Dataflux import logger
+from Comprisk import logger, DEBUG_MODE
 
 
 class UpdateCallable:
@@ -51,6 +51,7 @@ class DataUpdater(S3Bucket):
     Args:
         machine_uuid (str): The UUID of the machine to be updated.
         update_callable (UpdateCallable): The callable which generates the data to be added.
+        debug (bool): Enable or disable pushing values to the test device. Defaults to False.
     """
 
     def __init__(
@@ -97,7 +98,7 @@ class DataUpdater(S3Bucket):
         downloader.set_data_type(DataType.MEASUREMENTS)
 
         logger.debug(f"Updating TSV-files for {days}")
-        for day in tqdm(days, desc="Score to Virtual Sensors"):
+        for day in tqdm(days, desc="Score to Virtual Sensors", disable=not DEBUG_MODE):
             # 0. calculate the correct time steps for the day to update
             ts_1 = int(day.date().strftime("%s"))
             ts_1 = ts_1 if ts_1 > start_ts else start_ts

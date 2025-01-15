@@ -5,7 +5,7 @@ from Dataflux.helper import Metadata
 from .callable import FileWorkerCallable, CallableDependency
 from .worker import FileWorkerThread
 from .context import FileWorkerContext as Context
-from Dataflux import logger
+from Dataflux import logger, DEBUG_MODE
 
 
 class FileWorkerPool:
@@ -70,7 +70,7 @@ class FileWorkerPool:
         logger.debug("=" * 100)
         logger.debug("=" + " " * 41 + "Start Processing" + " " * 41 + "=")
         logger.debug("=" * 100)
-        with tqdm(total=len(self._modules), desc="Processing Dataset") as pbar:
+        with tqdm(total=len(self._modules), desc="Processing Dataset", disable=not DEBUG_MODE) as pbar:
             for module in self._modules:
                 module_name = module.__class__.__name__
                 pbar.set_description(f"Processing (module={module_name})")
@@ -98,7 +98,7 @@ class FileWorkerPool:
 
                 # run finish the main thread again
                 module.finish(self._context, self._metadata)
-                logger.info("Module %s finished processing.", module_name)
+                logger.info("Module %s finished processing on all %s threads.", module_name, len(self._workers))
                 pbar.update(1)
 
             pbar.set_description("Processing Done")

@@ -58,12 +58,6 @@ class CompriskCLI(LightningCLI):
 
     def before_fit(self):
         """Method executes before fit automatically."""
-        start_str = "-" * 40 + datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S") + "-" * 40
-        header_str = "-" * 100
-        logger.debug(header_str)
-        logger.debug(start_str)
-        logger.debug("Starting CompriskCLI for training")
-        
         # if the package should tune the model's hyperparameters, then reset the number
         # of training iterations
         if self.config.tuner_config:

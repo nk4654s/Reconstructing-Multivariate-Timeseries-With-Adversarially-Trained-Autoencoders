@@ -14,7 +14,7 @@ import pandas as pd
 from Dataflux.data.header import Header
 from Dataflux.data.s3io import S3Bucket
 from Dataflux.helper import Meta, Metadata, get_file, get_day_list, line_str_to_array
-from Dataflux import logger
+from Dataflux import logger, DEBUG_MODE
 
 
 def homogeneous_decompress(df: pd.DataFrame, index_key: str = "ts") -> pd.DataFrame:
@@ -186,10 +186,14 @@ class ContinuousDataDownloader(DataDownloader):
         if isinstance(interval, list):
             self._days = []
             for inter in interval:
-                assert inter[0] <= inter[1], "Start date must be before end date"
+                if inter[0] > inter[1]:
+                    logger.error("Start date must be before end date (%s > %s).", inter[0], inter[1])
+                    exit(0)
                 self._days += get_day_list((inter[0], inter[1]))
         else:
-            assert interval[0] <= interval[1], "Start date must be before end date"
+            if interval[0] <= interval[1]:
+                logger.error("Start date must be before end date (%s > %s).", interval[0], interval[1])
+                exit(0)
             self._days = get_day_list((interval[0], interval[1]))
 
     def day(self, i: int) -> datetime:
@@ -200,12 +204,15 @@ class ContinuousDataDownloader(DataDownloader):
         """
         return self._days[i]
     
-    def run(self, dir_name: str = "dataset") -> None:
+    def run(self, dir_name: str = "dataset") -> bool:
         """Downloads the dataframe from a S3 stream and downloads the dataframe as file.
 
         Args:
             dir_name (str): Path of the HDF5 file to be saved. If not provided, the current
             folder will be used. Defaults to "dataset".
+
+        Returns:
+            bool: True if the downloaded dataset is not empty, else false.
         """
         filename = str(self.machine_uuid) + ".feather"
 
@@ -217,7 +224,7 @@ class ContinuousDataDownloader(DataDownloader):
 
         # iterate over all streams and append their content to the dataframe
         length = len(self) if len(self) != 2 or self.day(1).day - self.day(0).day != 0 else 1
-        pbar = tqdm(total=length, desc="Downloading Dataset")
+        pbar = tqdm(total=length, desc="Downloading Dataset", disable=not DEBUG_MODE)
         for i in range(length):
             day = self.day(i).strftime("%Y-%m-%d")
             file_path = get_file(os.path.join(dir_name, filename), postfix=day)
@@ -259,12 +266,14 @@ class ContinuousDataDownloader(DataDownloader):
                 continue
 
 
-        logger.info("Finished downloading.")
-        logger.debug("Saving metadata info to %s", dir_name)
+        logger.info("Finished downloading %s files. Continuing with processing files.", len(files))
+        logger.debug("Saving metadata info to '%s'.", dir_name)
 
         meta.put(sum([f["recordings"] for f in files]), Meta.TOTAL_RECORDINGS)
         meta.put(files, Meta.FILES)
         meta.save(dir_name)
+
+        return len(files) != 0
 
     def __len__(self) -> int:
         return len(self._days)
