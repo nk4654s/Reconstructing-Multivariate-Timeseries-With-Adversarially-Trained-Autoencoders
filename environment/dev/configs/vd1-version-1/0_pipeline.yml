@@ -1,0 +1,35 @@
+environment: dev
+
+dataset:
+ - config: configs/vd1-version-1/1_dataset_train.yml
+ - config: configs/vd1-version-1/2_dataset_validate.yml
+ - config: configs/vd1-version-1/4_testset_june.yml
+
+# do not download the configuration file, but copy it to the model's output folder
+ - config: configs/vd1-version-1/5_dataset_upload.yml
+   copy_to_output: upload.yaml
+
+trainer:
+  - config: configs/vd1-version-1/3_model.yml
+    tag: a6252582-01dd-49cb-8dbe-0742b28bc007
+
+    # overwrite the config's values
+    # for path values, the explicit path is required
+    data.train: environment/dev/datasets/thyssen-vd1-trainset-phase-1
+    data.validate: environment/dev/datasets/thyssen-vd1-valset-phase-1
+
+    data.sequence_in: 60
+    data.sequence_out: 0
+
+score_trainer:
+  score.mode: linear
+  data.validate: environment/dev/datasets/thyssen-vd1-valset-phase-1
+  data.stride: 60
+
+analyzer:
+  - dataset: datasets/thyssen-vd1-valset-phase-1
+    prefix: analysis/validate
+    data.stride: 60
+  - dataset: datasets/thyssen-vd1-testset-june
+    prefix: analysis/test-june
+    data.stride: 60
