@@ -3,7 +3,7 @@ from typing import Dict, List, Callable
 from uuid import UUID
 import requests
 
-from Toking import get_access_token
+from Toking import Toking
 
 
 class SensorRegisterFormat(Enum):
@@ -115,7 +115,7 @@ def get_sensors(
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": get_access_token(),
+        "Authorization": Toking().get_access_token(),
     }
     try:
         response = requests.request(

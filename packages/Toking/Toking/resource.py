@@ -27,7 +27,7 @@ DEFAULTS = {
             "type": "str",
             "default": "",
             "help": "The default username. If empty, the username stored in AWS secret manager will be used.",
-        }
+        },
     },
 }
 
@@ -37,6 +37,9 @@ def get_arg_default(by_name: str) -> Any:
     val = d["default"]
 
     if "type" in d.keys():
-        return eval(d["type"])(val)
+        if isinstance(d["type"], str):
+            return eval(d["type"])(val)
+        else:
+            return d["type"](val)
 
     return val
