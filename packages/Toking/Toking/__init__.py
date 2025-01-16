@@ -1,3 +1,3 @@
-from Toking.aws import get_access_token
+from Toking.toking import Toking
 
-__all__ = ["get_access_token"]
+__all__ = ["Toking"]
