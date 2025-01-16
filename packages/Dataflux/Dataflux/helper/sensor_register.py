@@ -55,7 +55,7 @@ def filter_upload(
 
             for name, uuid in sensor_register.items():
                 if include in name and name.split(" ")[0] in names:
-                    filtered[uuid] = name
+                    filtered[name] = uuid
 
         return filtered
 
