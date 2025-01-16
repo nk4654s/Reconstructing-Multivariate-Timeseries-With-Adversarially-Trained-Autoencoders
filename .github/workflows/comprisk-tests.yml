@@ -21,3 +21,10 @@ jobs:
       - uses: astral-sh/ruff-action@v3
         with:
           src: "./packages/Comprisk"
+
+      # Run unit tests
+      - name: Run Unittests
+        id: comprisk-test
+        working-directory: ./packages/Comprisk
+        run: |
+          sh scripts/run_tests.sh
