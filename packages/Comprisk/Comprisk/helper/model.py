@@ -1,6 +1,5 @@
 """This module contains helper methods related to the models."""
 
-import operator
 import os
 import json
 import pickle
@@ -110,9 +109,12 @@ class ModelLoader:
             path (str): The path where the model is saved.
     """
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str = None, model: BaseModel = None) -> None:
+        if not path and not model:
+            raise ValueError("Expected to either get a path or model. Got None.")
+
         self._path = path
-        model = load_model(path, eval_mode=False)
+        model = model or load_model(path, eval_mode=False)
         assert model, f"Unable to load model, no checkpoints found for {path}."
         self.model: BaseModel = model
 
@@ -121,14 +123,24 @@ class ModelLoader:
         """The path where the model is saved."""
         return self._path
 
+    def _init_container(
+        self, length: int, features: int, window: int = 1, stride: int = 1
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        sensor_shape = (length * stride + window, features)
+        value_shape = (length * stride + window,)
+
+        targets = np.zeros(shape=sensor_shape, dtype=np.float32)
+        predict = np.zeros(shape=sensor_shape, dtype=np.float32)
+        counter = np.zeros(shape=value_shape, dtype=np.float32)
+        ts_index = np.zeros(shape=value_shape, dtype=np.float64)
+
+        return targets, predict, counter, ts_index
+
     def predict_loop(
         self,
         dataset: Dataset,
-        modifier: Tuple[str, float] = ("", 1.0),
         batch_size: int = 64,
-        step: int | None = None,
         num_workers: int = 4,
-        verbose: bool = True,
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """This method applies a model on a given dataset. For an AutoEncoder, the reconstructed
         output will be returned. For future prediction models, the prediction of the future is
@@ -136,8 +148,6 @@ class ModelLoader:
 
         Args:
             dataset (Dataset): The dataset to use.
-            modifier (Tuple[str, float]): The sensor name and factor to apply. This is handy to inject
-                some kind of anomaly.
             batch_size (int): The amount of sample to process at a time
 
         Returns
@@ -155,30 +165,14 @@ class ModelLoader:
             else args.sequence_in
         )
         features = args.features_out
-        # output_length = batch_size * window - batch_size * stride + window // 2
-        # assert window == stride, f"Something went wrong, the dataset's stride {stride} should equal the window size {window}."
 
         logger.debug("Predict on dataset %s (Original)", len(dataset))
-        logger.debug(
-            "Predict loop step size %s and batch size %s", step or skip, batch_size
-        )
+        logger.debug("Predict loop step size %s and batch size %s", skip, batch_size)
         logger.debug("Window size %s with stride %s", window, stride)
 
-        # 0. find the index of the sensor to modify with the given factor
-        modifier_name, factor = modifier
-        modifier_index = -1
-        if modifier_name:
-            modifier_index = operator.indexOf(args.names, modifier_name)
-
-        # 1. iterate over dataset, with shuffle deactivated
-        targets = np.zeros(
-            shape=(len(dataset) * stride + window, features), dtype=np.float32
-        )
-        predict = np.zeros(
-            shape=(len(dataset) * stride + window, features), dtype=np.float32
-        )
-        counter = np.zeros(shape=(len(dataset) * stride + window,), dtype=np.float32)
-        ts_index = np.zeros(shape=(len(dataset) * stride + window,), dtype=np.float64)
+        # initialize the containers which hold model input/output values
+        containers = self._init_container(len(dataset), features, window, stride)
+        targets, predict, counter, ts_index = containers
 
         inputs_indicies = [
             i for i, x in enumerate(args.names_in) if x in args.names_out
@@ -192,15 +186,12 @@ class ModelLoader:
             num_workers=num_workers,
             drop_last=False,
         )
+
         for i, inputs in enumerate(
             tqdm(loader, desc="Prediction with Model", disable=not DEBUG_MODE)
         ):
             inputs, _ = inputs
             inputs = inputs.to(device)
-
-            # modify the sensor if required, e.g. if an anomaly should be injected
-            if modifier_name:
-                inputs[:, :, modifier_index] = factor
 
             # run the prediction, the input equals the target for auto encoders
             model_pred = self.model.predict(inputs, as_array=True)
@@ -237,7 +228,6 @@ class ModelLoader:
             {n: predict[:, i] / counter for i, n in enumerate(names)}, index=ts_index
         )
 
-        # todo: recursive call to iterate over leftover then merge dataframes
         return targets, predict
 
     def get_score_transformer(self) -> ScoreTransformer:
