@@ -1,3 +1,3 @@
-from Dataflux.cli.cli import CLIArgumentParser
+from Dataflux.cli.cli import CLIArgumentParser, FluxConfigManager
 
-__all__ = ["CLIArgumentParser"]
+__all__ = ["CLIArgumentParser", "FluxConfigManager"]

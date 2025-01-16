@@ -9,7 +9,7 @@ To create custom modules, head to the `Dataflux.modules` create a `FileWorker` s
 
 ### Config Structure
 To download and process a dataset, run the command `flux-pipeline -c <path-to-config>`,
-where as the config should look something like:
+whereas the config should look something like:
 
 ```
 folder: dataset-name
@@ -29,6 +29,14 @@ Once a dataset has been downloaded, the subpackage provides a `pytorch` submodul
 dataset for machine learning. Install the Dataflux package as `pip`-package and import it.
 """
 import logging
+import os
+
 from Dataflux.logger import get_logger
 
-logger = get_logger(__name__, path="logfile", level=logging.DEBUG)
+
+# to enable the debug mode, the content of CAS_DEBUG_MODE does not matter, only if it exists
+DEBUG_MODE = True if os.environ.get("CAS_DEBUG_MODE", False) else False
+
+# switch logging mode depending on DEBUG_MODE
+logging_mode = logging.DEBUG if DEBUG_MODE else logging.INFO
+logger = get_logger(__name__, path="./logfile", level=logging_mode)

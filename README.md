@@ -20,13 +20,24 @@ installed manually.
 
 ### Development Environment
 Use the `setup.sh` script to set up the development environment, which comes with an installation of `uv`. After the 
-installation of `uv`, the project's dependencies will be installed. This may take a while.
+installation of `uv`, the project's dependencies will be installed. Make sure to run the following command within the 
+downloaded repository. The installation may take a while.
 
 ```commandline
 sh scripts/setup.sh
 ```
 
 > Note: `CPU` includes the framework `MPS` to accelerate training on Apple Silicon
+
+### Environment Variables
+CAS utilizes environment variables to configure the development environment. If the `setup.sh` script of the previous
+section was used to install everything, then all `ENV` vars should be configured correctly. Currently, the following
+variables are set:
+
+- `CAS_DEBUG_MODE=1` enables logging, set to `0` to disable logging. Generated AI scores will be uploaded to the test 
+    device, if `CAS_DEBUG_MODE=<machine-uuid>`.
+- `CAS_PROJECT_ROOT=$(pwd)` set the local repository as the project root, which is required for the logger to find all 
+  submodules of CAS.
 
 ### Documentation
 The developer documentation can be generated as `HTML`-files after installing the developer environment using the 

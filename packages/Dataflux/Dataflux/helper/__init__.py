@@ -14,7 +14,6 @@ from Dataflux.helper.sensor_register import (
 )
 from Dataflux.helper.compression import compress, decompress
 from Dataflux.helper.metadata import Meta, Metadata
-from Dataflux.logger import get_logger, LOGGING_ENABLED
 from Dataflux.helper.scaler import FluxScaler, ScalerMethod
 
 __all__ = [
@@ -32,8 +31,6 @@ __all__ = [
     "decompress",
     "Meta",
     "Metadata",
-    "get_logger",
-    "LOGGING_ENABLED",
     "FluxScaler",
     "ScalerMethod",
 ]

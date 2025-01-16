@@ -14,6 +14,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from Dataflux import DEBUG_MODE
 from Dataflux.pytorch import collate_fn, DatasetTypes
 from Dataflux.pytorch import Dataset
 
@@ -192,7 +193,7 @@ class ModelLoader:
             drop_last=False,
         )
         for i, inputs in enumerate(
-            tqdm(loader, desc="Prediction with Model", disable=not verbose)
+            tqdm(loader, desc="Prediction with Model", disable=not DEBUG_MODE)
         ):
             inputs, _ = inputs
             inputs = inputs.to(device)
