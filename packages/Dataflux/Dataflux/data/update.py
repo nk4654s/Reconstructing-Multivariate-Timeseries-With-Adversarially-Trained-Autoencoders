@@ -61,6 +61,7 @@ class DataUpdater(S3Bucket):
         self._callable = update_callable
 
         self._debug = debug
+        self._debug_uuid = "5ac7f03f-f4e6-4b15-9bc6-21db798f9d25"
         self._score_substring = "Malfunction"
         self._sensor_format = SensorRegisterFormat.NAME_TO_UUID
 
@@ -96,6 +97,8 @@ class DataUpdater(S3Bucket):
         # create the S3 bucket connection and download the files for each day
         downloader = DataDownloader(self._uuid, file_postfix="virtual")
         downloader.set_data_type(DataType.MEASUREMENTS)
+        uuid = self._debug_uuid if self._debug else self._uuid
+        logger.info("Upload virtual TSV-files to %s", uuid)
 
         logger.debug(f"Updating TSV-files for {days}")
         for day in tqdm(days, desc="Score to Virtual Sensors", disable=not DEBUG_MODE):
@@ -153,7 +156,7 @@ class DataUpdater(S3Bucket):
                 if avg < time_delta:
                     continue
 
-                # apply the mean as a rolling window with the step size beeing the window's size
+                # apply the mean as a rolling window with the step size being the window's size
                 # the window's size is calculated by the time delta between two datapoints and
                 # the resolution to be achieved
                 pool = avg // time_delta
@@ -162,15 +165,15 @@ class DataUpdater(S3Bucket):
                 df_avg = df_avg.round(3)
 
                 postfix = "average" if avg == 120 else "average-10m"
-                path = f"{self._uuid}/days/{day}/{self._uuid}-virtual.tsv-{postfix}"
+                path = f"{uuid}/days/{day}/{uuid}-virtual.tsv-{postfix}"
 
                 df_avg = pd.merge(
                     df_avg, df, how="outer", left_index=True, right_index=True
                 )
                 self.upload(df_avg, path)
 
-            # 6. upload the original for the 1 second data
-            path = f"{self._uuid}/days/{day}/{self._uuid}-virtual.tsv"
+            # 6. upload the original for the 1-second data
+            path = f"{uuid}/days/{day}/{uuid}-virtual.tsv"
             df = pd.merge(result_df, df, how="outer", left_index=True, right_index=True)
             self.upload(df, path)
 
