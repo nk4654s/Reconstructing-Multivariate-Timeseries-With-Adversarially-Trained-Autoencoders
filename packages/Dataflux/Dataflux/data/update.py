@@ -121,7 +121,7 @@ class DataUpdater(S3Bucket):
             day = start_date.strftime("%Y/%m/%d")
             path = f"{uuid}/days/{day}/{uuid}-virtual.tsv"
 
-            df = merge_dfs(result_df, df)
+            df = merge_dfs(df, result_df)
             self.upload(df, path)
 
             # 5. calculate the averages for the 2- and 10-minutes files
@@ -143,7 +143,7 @@ class DataUpdater(S3Bucket):
                 postfix = "average" if avg == 120 else "average-10m"
                 path = f"{uuid}/days/{day}/{uuid}-virtual.tsv-{postfix}"
 
-                df = merge_dfs(df_avg, df)
+                df = merge_dfs(df, df_avg)
                 self.upload(df, path)
 
     def upload(self, df: pd.DataFrame, path: str) -> None:
