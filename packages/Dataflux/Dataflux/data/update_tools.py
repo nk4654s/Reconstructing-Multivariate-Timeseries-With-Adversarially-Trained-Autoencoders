@@ -42,6 +42,12 @@ def merge_dfs(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     Returns:
         DataFrame: The merged DataFrame.
     """
+    if df1.empty:
+        return df2
+
+    if df2.empty:
+        return df1
+
     # duplicate columns will be labeled with an "_x" and "_y" where "_y" contains the update
     df = pd.merge(df1, df2, how="outer", left_index=True, right_index=True)
 

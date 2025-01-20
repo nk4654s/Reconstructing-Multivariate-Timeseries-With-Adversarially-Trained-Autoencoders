@@ -77,7 +77,7 @@ def cli_main():
 
     # update the dataset's virtual sensors in the S3 buckets with the scores
     time_steps = (data.get_timestamp(0), data.get_timestamp(len(data) - 1))
-    if flux:
+    if flux and not flux.args.latest:
         # there should be only one interval as the "latest" arg should be used
         init_interval = flux.args.intervals[0].split(" ")
         start, end = (datetime.fromisoformat(init_interval[0]), datetime.fromisoformat(init_interval[1]))
