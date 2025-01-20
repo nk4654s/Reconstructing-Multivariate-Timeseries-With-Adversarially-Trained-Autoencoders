@@ -1,0 +1,32 @@
+environment: dev
+
+dataset:
+ - config: configs/gasunie-version-1/1_dataset_train.yml
+ - config: configs/gasunie-version-1/2_dataset_validate.yml
+ - config: configs/gasunie-version-1/4_testset_water_pump.yml
+
+trainer:
+  - config: configs/gasunie-version-1/3_model.yml
+    tag: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
+
+    # overwrite the config's values
+    # for path values, the explicit path is required
+    data.train: environment/dev/datasets/gasunie-trainset-phase-1
+    data.validate: environment/dev/datasets/gasunie-valset-phase-1
+
+    data.sequence_in: 60
+    data.sequence_out: 0
+
+score_trainer:
+  score.mode: linear
+  data.validate: environment/dev/datasets/thyssen-vd1-valset-phase-1
+  data.stride: 60
+
+analyzer:
+  - dataset: datasets/gasunie-valset-phase-1
+    prefix: analysis/valset
+    data.stride: 60
+
+  - dataset: datasets/gasunie-testset-water-pump
+    prefix: analysis/test-water-pump
+    data.stride: 60

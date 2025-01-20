@@ -4,9 +4,10 @@ dataset:
  - config: configs/vd1-version-1/1_dataset_train.yml
  - config: configs/vd1-version-1/2_dataset_validate.yml
  - config: configs/vd1-version-1/4_testset_june.yml
+ - config: configs/vd1-version-1/5_testset_flowmeter.yml
 
 # do not download the configuration file, but copy it to the model's output folder
- - config: configs/vd1-version-1/5_dataset_upload.yml
+ - config: configs/vd1-version-1/6_dataset_upload.yml
    copy_to_output: upload.yaml
 
 trainer:
@@ -32,4 +33,7 @@ analyzer:
     data.stride: 60
   - dataset: datasets/thyssen-vd1-testset-june
     prefix: analysis/test-june
+    data.stride: 60
+  - dataset: datasets/thyssen-vd1-testset-flowmeter
+    prefix: analysis/test-flowmeter
     data.stride: 60

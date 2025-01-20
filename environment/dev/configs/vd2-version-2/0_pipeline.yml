@@ -4,10 +4,12 @@ environment: dev
 dataset:
  - config: configs/vd2-version-2/1_dataset_train.yml
  - config: configs/vd2-version-2/2_dataset_validate.yml
- - config: configs/vd2-version-2/5_testset_service.yml
  - config: configs/vd2-version-2/4_testset_coolant_flow.yml
+ - config: configs/vd2-version-2/5_testset_service.yml
+ - config: configs/vd2-version-2/6_testset_coolant_pressure.yml
+ - config: configs/vd2-version-2/7_testset_plc_alarm.yml
 # do not download the configuration file, but copy it to the model's output folder
- - config: configs/vd2-version-2/6_dataset_upload.yml
+ - config: configs/vd2-version-2/8_dataset_upload.yml
    copy_to_output: upload.yaml
 
 # 2. train the model using the tuned hyperparameters
@@ -38,4 +40,10 @@ analyzer:
 # 3. generate data on the last test dataset which includes the timespan where someone limited the coolant flow
   - dataset: datasets/thyssen-vd2-test-coolant
     prefix: analysis/coolant
+    data.stride: 60
+  - dataset: datasets/thyssen-vd2-test-coolant-pressure
+    prefix: analysis/coolant-pressure
+    data.stride: 60
+  - dataset: datasets/thyssen-vd2-test-plc-alarm
+    prefix: analysis/coolant-pressure
     data.stride: 60

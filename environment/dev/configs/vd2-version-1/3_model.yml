@@ -30,8 +30,8 @@ model:
     lr: 0.0001
     lr_decay: 0.9
     num_hidden_dim: 64
-    num_hidden_layers: 3
-    dropout_prob: 0.4
+    num_hidden_layers: 4
+    dropout_prob: 0.3
 
 data:
   train: define_in_pipeline
@@ -81,4 +81,4 @@ data:
   stride: 1
   batch_size: 128
   shuffle: true
-  num_workers: 6
+  num_workers: 8

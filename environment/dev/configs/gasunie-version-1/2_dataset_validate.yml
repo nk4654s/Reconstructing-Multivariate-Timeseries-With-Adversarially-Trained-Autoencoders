@@ -1,0 +1,52 @@
+folder: environment/dev/datasets/gasunie-valset-phase-1
+machine_uuid: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
+intervals:
+  - 2024-01-24 2024-02-01
+num_workers: 6
+overwrite: false
+
+modules:
+  # split wherever the motor is below 400 RPM
+  - class_path: Dataflux.modules.State
+    init_args:
+      key: b494f0c0-4446-4626-9eed-b8a8bba4f65d
+      lower: 400
+      upper: 900
+      alpha_threshold: 900
+      beta_threshold: 900
+  - class_path: Dataflux.modules.features.Features
+    init_args:
+      include:
+        - 3a116153-ce98-4139-b2e8-61faf5ec8329 # Flow_Cooling_Water_System_Upstream_to_Consumers_FIT0-423 (m³/h)
+        - 5c4a7fab-23e7-4d0c-8420-5a826f0fa27f # Flow_Leakage_Gas_1.st+2.nd_Cylinder_Packing_FIT0-389 (Nm³/h)
+        - c27dc520-081e-4876-a7b3-0f2efbf61ca3 # Gasdetection_Sensor_1_QS0-220 (%)
+        - 00a246dd-4ae4-452e-b026-b39c5f486889 # Gasdetection_Sensor_2_QS0-222 (%)
+        - b494f0c0-4446-4626-9eed-b8a8bba4f65d # Main_Motor_M0-331_Actual_Speed (rpm)
+        - 77f861c4-1b1b-44e4-839f-188fc76e328e # PT100_Temperature_Compressor_Room_TIT0-221 (°C)
+        - d67bd4d9-7568-4452-a81c-84029a2f10b9 # Pressure_Discharge_Side_1._Stage_PIT0-339 (bar)
+        - c32ea3cb-2ba3-4411-955a-7585050a462c # Pressure_Discharge_Side_2._Stage_PIT0-388 (bar)
+        - a7df6efc-91f1-423c-9896-69e7ef27692f # Pressure_Discharge_Side_2._Stage_PIT0-397 (bar)
+        - 13b3719a-2358-4a69-8895-41ee030100d3 # Pressure_Instrument_air_System_PIT0-142 (bar)
+        - 4174ecf6-af4b-44f3-bd2c-d3a7a2c68ece # Suction_Side_1._Stage_PIT0-319 (bar)
+        - f72fe32a-7537-4651-91af-91116ef20475 # Temperature_Cooling_Water_Upstream_Consumers_TIT0-420 (°C)
+        - 7a84feb3-e6a0-4c3f-ac37-5269f6ca5390 # Temperature_Discharge_Side_1._Stage_TIT0-334 (°C)
+        - 4a8833ef-fd17-49b4-99b0-585e7aac49f0 # Temperature_Discharge_Side_2._Stage_After_Cooler_TIT0-370 (°C)
+        - 90e96137-2b1c-4d1b-a4eb-68471b0cf829 # Temperature_Discharge_Side_2._Stage_After_Cooler_TIT0-378 (°C)
+        - 75247d9f-29e8-4140-8a3a-aa04d55483e5 # Temperature_Discharge_Side_2._Stage_TIT0-371 (°C)
+        - e44c6aca-cf06-434e-9257-4d15839c29ce # Temperature_Discharge_Valve_Crank_End_1._Stage_TT0-387 (°C)
+        - f9523a90-71ae-48d2-8e8b-f1288138eb28 # Temperature_Discharge_Valve_Crank_End_2._Stage_TT0-386 (°C)
+        - 35aaaa87-5803-44fe-abc0-e17bdca072c4 # Temperature_Discharge_Valve_Head_End_1._Stage_TT0-385 (°C)
+        - 4927d58d-b7ac-4bb5-9fd7-1257bb92b340 # Temperature_Discharge_Valve_Head_End_2._Stage_TT0-367 (°C)
+        - 35e974db-1ed9-414d-b39f-fa584443f559 # Temperature_Lube_Oil_Upstream_Bearings_TIT0-538 (°C)
+        - 3f9cf382-2e66-4805-9f44-8afe4ad6ba29 # Temperature_Suction_Side_1._Stage_TIT0-328 (°C)
+        - 5be01343-45c0-40af-a93f-9368aff5e73d # Temperature_Suction_Side_2._Stage_TIT0-341 (°C)
+        - 61707ebf-48ae-474f-a82d-067f5709ca26 # Vibration_Compressor_Frame_VT0-280 (mm/s)
+  - class_path: Dataflux.modules.normalize.NormalizeFit
+    init_args:
+      method: minmax
+      remove_outliers: false
+      exclude_keys:
+        - ts
+  - class_path: Dataflux.modules.normalize.NormalizeTransform
+    init_args:
+      from_other: environment/dev/datasets/gasunie-trainset-phase-1
