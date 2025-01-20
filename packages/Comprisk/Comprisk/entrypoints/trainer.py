@@ -165,7 +165,7 @@ def train_score_transformer(
     # fit and save the score transformer
     score = ScoreTransformer(**transformer_args)
     score.fit(predicted, target)
-    logger.info("Fitted ScoreTransformer (mode=%) successfully.", score.mode)
+    logger.info("Fitted ScoreTransformer (mode=%s) successfully.", score.mode)
 
     score_path = os.path.join(meta_dir, "score_transformer.pkl")
     with open(score_path, mode="wb") as f:

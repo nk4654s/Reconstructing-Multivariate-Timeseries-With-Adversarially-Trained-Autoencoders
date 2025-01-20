@@ -1,16 +1,9 @@
-from enum import Enum
-
 import os
 from uuid import UUID
 import boto3
 import boto3.session
 
-
-class DataType(Enum):
-    """This enum contains the bucket types."""
-
-    MEASUREMENTS = "xplore-measurements"
-    REPORTS = "xplore-reports"
+from Dataflux.data.types import DataType
 
 
 class S3Bucket:

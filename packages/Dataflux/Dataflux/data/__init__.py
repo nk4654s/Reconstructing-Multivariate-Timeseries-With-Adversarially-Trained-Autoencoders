@@ -9,7 +9,7 @@ from Dataflux.data.download import (
     EmptyStreamError,
 )
 from Dataflux.data.update import UpdateCallable, DataUpdater
-from Dataflux.data.s3io import DataType
+from Dataflux.data.types import DataType
 
 __all__ = [
     "DataDownloader",

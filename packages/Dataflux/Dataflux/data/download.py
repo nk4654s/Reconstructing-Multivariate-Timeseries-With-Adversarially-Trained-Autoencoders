@@ -54,12 +54,15 @@ class DataDownloader(S3Bucket):
     Args:
         machine_uuid (str): The unique ID of the machine to download data from.
     """
-    def __init__(self, machine_uuid: str | UUID, file_postfix: str = "") -> None:
+    def __init__(self, machine_uuid: str | UUID, file_postfix: str = "", appendix: str = "") -> None:
         super().__init__(machine_uuid)
 
         self._postfix = f"-{file_postfix}" if file_postfix else ""
+        self._appendix = f"-{appendix}" if appendix else ""
         self._header = None
         self._pool = Pool(12)
+
+        logger.info("Download TSV-files from %s with postfix='%s'", self._uuid, file_postfix)
 
     def get_stream(self, day: str | date) -> gzip.GzipFile | TextIO:
         """
@@ -82,9 +85,9 @@ class DataDownloader(S3Bucket):
         else:
             day = day.strftime("%Y/%m/%d")
 
-        path = f"{self._uuid}/days/{day}/{self._uuid}{self._postfix}.tsv"
+        path = f"{self._uuid}/days/{day}/{self._uuid}{self._postfix}.tsv{self._appendix}"
 
-        # open and unconmpress the s3 stream given the bucket and path
+        # open and uncompressed the s3 stream given the bucket and path
         data = self._client.get_object(Bucket=self._bucket, Key=f"{path}")[
             "Body"
         ].read()
@@ -166,6 +169,8 @@ class DataDownloader(S3Bucket):
             logger.error("Caught error %s", e)
 
         df = df if df is not None else pd.DataFrame()
+        time = datetime.fromtimestamp(df["ts"].values[0]) if "ts" in df.columns.values else 0
+        logger.debug("Downloaded df (shape=%s) starting at %s", df.shape, time)
         return df
 
 
