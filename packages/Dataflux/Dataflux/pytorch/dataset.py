@@ -247,7 +247,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         features_out = self._features_out if self._features_out else self._cache.columns
 
         x = np.zeros((self._num_input, len(features_in)), dtype=np.float32)
-        y = np.zeros((self._num_input, len(features_out)), dtype=np.float32)
+        y = np.zeros((self._num_output, len(features_out)), dtype=np.float32)
 
         for i, name in enumerate(features_in):
             x[:, i] = sensors[name].to_numpy()[index:start_idx]

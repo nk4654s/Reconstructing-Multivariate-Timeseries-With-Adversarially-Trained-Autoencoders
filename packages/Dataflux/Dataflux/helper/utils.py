@@ -4,7 +4,7 @@ import importlib
 import os
 import uuid
 from typing import Callable, Tuple, List
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -164,8 +164,8 @@ def get_day_list(interval: Tuple[datetime, datetime]) -> List[datetime]:
     days = [start]
 
     # Loop through each day in the interval
-    start = datetime(start.year, start.month, start.day)
-    end_ = datetime(end.year, end.month, end.day)
+    start = datetime(start.year, start.month, start.day, tzinfo=timezone.utc)
+    end_ = datetime(end.year, end.month, end.day, tzinfo=timezone.utc)
     for i in range(1, (end_ - start).days):
         # Calculate the date by adding the timedelta to the start date
         day = start + timedelta(days=i)

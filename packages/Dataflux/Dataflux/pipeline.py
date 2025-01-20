@@ -50,9 +50,9 @@ def download(flux: FluxConfigManager) -> None:
             if isinstance(m, State) and m.force_trim:
                 offset += m.alpha
 
-        logger.debug("Latest tag offset=%s", 7200 + offset)
+        logger.debug("Latest tag offset=%s", 3600 + offset)
         now = datetime.now(tz=timezone.utc)
-        past = now - timedelta(seconds=7200 + offset)
+        past = now - timedelta(seconds=3600 + offset)
         interval_list: List[Tuple[datetime.date, datetime.date]] = [(past, now)]
         past.strftime("%Y-%m-%d %H:%M:%S")
 
