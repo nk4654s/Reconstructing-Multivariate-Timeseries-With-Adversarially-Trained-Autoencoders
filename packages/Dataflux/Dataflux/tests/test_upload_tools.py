@@ -73,3 +73,16 @@ class TestMachineSplit(unittest.TestCase):
         self.assertTrue((df["A"] == df_c["A"]).all())
         self.assertTrue((df["B"] == df_c["B"]).all())
         self.assertTrue((df.index == df_c.index).all())
+
+    def test_merge_with_malformed_header(self):
+        df_a = pd.DataFrame(
+            {"ts": range(10), "A": range(10), "A_x": range(10)}
+        ).set_index(keys=["ts"])
+        df_c = self.df_c.copy()
+
+        df_a.loc[5:, "A"] = np.nan
+        df_a["B"] = [i + 10 for i in range(10)]
+        df_c["B"] = df_a["B"]
+
+        fail = lambda: merge_dfs(df_a, self.df_b)
+        self.assertRaises(pd.errors.MergeError, fail)

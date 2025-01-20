@@ -16,6 +16,7 @@ from Dataflux.data.s3io import S3Bucket
 from Dataflux.data.update_tools import UpdateCallable, get_downloaders, merge_dfs, safe_download
 
 from Comprisk import logger, DEBUG_MODE
+from Dataflux.helper.utils import is_valid_uuid
 
 
 class DataUpdater(S3Bucket):
@@ -151,17 +152,23 @@ class DataUpdater(S3Bucket):
         if "ts" in df.columns:
             df.drop(columns="ts", inplace=True)
 
-        # 1. sort the columns by uuid-names
+        # sort the columns by uuid-names
         df = df.reindex(sorted(df.columns), axis=1)
         df.reset_index(inplace=True)
         df = df.astype({"ts": "int64"})
         df.set_index("ts", inplace=True)
 
-        # 2. export dataframe as tsv-file
+        # check if the header columns contain UUIDs only
+        for name in df.columns.values:
+            if not is_valid_uuid(name):
+                logger.warning("Upload failed due to malformed TSV header, got invalid UUID=%s", name)
+                return None
+
+        # export dataframe as tsv-file
         tsv = df.to_csv(sep="\t")
         tsv_bytes = gzip.compress(tsv.encode("utf-8"))
 
-        # 3. upload dataframe to s3
+        # upload dataframe to s3
         self._client.put_object(
             Bucket=self._bucket,
             Key=f"{path}",
