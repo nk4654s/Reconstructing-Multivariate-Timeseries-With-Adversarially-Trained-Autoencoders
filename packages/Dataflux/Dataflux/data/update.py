@@ -126,6 +126,8 @@ class DataUpdater(S3Bucket):
                 continue
 
             self.upload(df, path)
+            logger.debug("Uploaded df (shape=%s) starting at %s", df.shape, datetime.fromtimestamp(df.index[0], timezone.utc))
+            logger.debug("Uploaded df (shape=%s) starting at %s", result_df.shape, datetime.fromtimestamp(result_df.index[0], timezone.utc))
 
             # 5. calculate the averages for the 2- and 10-minutes files
             for i, avg in enumerate([120, 600]):
@@ -151,6 +153,7 @@ class DataUpdater(S3Bucket):
                     continue
 
                 self.upload(df, path)
+
     def upload(self, df: pd.DataFrame, path: str) -> None:
         # df = compress(df.reset_index())
         df = compress(df)

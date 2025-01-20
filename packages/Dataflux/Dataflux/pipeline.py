@@ -51,7 +51,7 @@ def download(flux: FluxConfigManager) -> None:
                 offset += m.alpha
 
         now = datetime.now(tz=timezone.utc)
-        past = now - timedelta(seconds=3600 + offset)
+        past = now - timedelta(seconds=7200 + offset)
         interval_list: List[Tuple[datetime.date, datetime.date]] = [(past, now)]
         past.strftime("%Y-%m-%d %H:%M:%S")
 
