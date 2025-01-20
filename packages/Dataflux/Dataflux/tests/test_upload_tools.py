@@ -84,5 +84,7 @@ class TestMachineSplit(unittest.TestCase):
         df_a["B"] = [i + 10 for i in range(10)]
         df_c["B"] = df_a["B"]
 
-        fail = lambda: merge_dfs(df_a, self.df_b)
+        def fail():
+            merge_dfs(df_a, self.df_b)
+
         self.assertRaises(pd.errors.MergeError, fail)
