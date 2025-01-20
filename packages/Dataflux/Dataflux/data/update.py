@@ -122,6 +122,9 @@ class DataUpdater(S3Bucket):
             path = f"{uuid}/days/{day}/{uuid}-virtual.tsv"
 
             df = merge_dfs(df, result_df)
+            if df.empty:
+                continue
+
             self.upload(df, path)
 
             # 5. calculate the averages for the 2- and 10-minutes files
@@ -144,8 +147,10 @@ class DataUpdater(S3Bucket):
                 path = f"{uuid}/days/{day}/{uuid}-virtual.tsv-{postfix}"
 
                 df = merge_dfs(df, df_avg)
-                self.upload(df, path)
+                if df.empty:
+                    continue
 
+                self.upload(df, path)
     def upload(self, df: pd.DataFrame, path: str) -> None:
         # df = compress(df.reset_index())
         df = compress(df)
