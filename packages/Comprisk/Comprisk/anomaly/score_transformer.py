@@ -73,4 +73,4 @@ class ScoreTransformer(BaseTransformer):
             show_dataframe([scores], ["Malfunction"], y_label="% -  lower is better",
                         grid_size=5, y_limit=(0, 1), save=visualize, show=show)
     
-        return scores
+        return 1 - scores
