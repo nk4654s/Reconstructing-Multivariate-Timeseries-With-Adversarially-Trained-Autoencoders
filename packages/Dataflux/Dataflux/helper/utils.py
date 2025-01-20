@@ -2,6 +2,7 @@
 
 import importlib
 import os
+import uuid
 from typing import Callable, Tuple, List
 from datetime import datetime, date, timedelta
 import pandas as pd
@@ -14,6 +15,15 @@ rcParams.update({"figure.autolayout": True})
 
 def fullname(module):
     return str(module).split("'")[1]
+
+
+def is_valid_uuid(value: str):
+    """Returns true if the given string is a valid UUID, otherwise this function returns false."""
+    try:
+        uuid.UUID(value)
+        return True
+    except ValueError:
+        return False
 
 
 def class_for_name(module_name: str, class_name: str):

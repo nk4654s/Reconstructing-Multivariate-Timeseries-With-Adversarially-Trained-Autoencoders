@@ -35,10 +35,13 @@ def download(flux: FluxConfigManager) -> None:
     if flux.args.intervals and not flux.args.latest:
         for interval in flux.args.intervals:
             interval = interval.split()
+            start = datetime.fromisoformat(interval[0])
 
             end = datetime.fromisoformat(interval[1])
-            end = end.replace(hour=23, minute=59, second=59)
-            interval_list.append((datetime.fromisoformat(interval[0]), end))
+            if interval[0] == interval[1]:
+                end = end.replace(hour=23, minute=59, second=59)
+
+            interval_list.append((start, end))
 
     # get the current date and subtract 1 hour to get the model's input
     if flux.args.latest:

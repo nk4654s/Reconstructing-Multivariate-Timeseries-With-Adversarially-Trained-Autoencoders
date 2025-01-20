@@ -47,9 +47,7 @@ def cli_main():
         "Run prediction loop on dataset (samples=%s) which can take some time.",
         len(dataset),
     )
-    target, predicted = loader.predict_loop(
-        dataset, modifier=(cli.config.anomaly.name, cli.config.anomaly.factor)
-    )
+    target, predicted = loader.predict_loop(dataset)
 
     # visualize the loaded dataset
     prefix = "analysis"

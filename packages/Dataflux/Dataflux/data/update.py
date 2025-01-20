@@ -1,46 +1,22 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import gzip
 
 from tqdm import tqdm
 import pandas as pd
-from botocore.exceptions import ClientError
 
 from Dataflux.helper import (
     get_day_list,
     compress,
-    decompress,
     get_sensors,
     SensorRegisterFormat,
     filter_upload,
 )
-from Dataflux.data.download import DataDownloader
-from Dataflux.data.s3io import S3Bucket, DataType
+
+from Dataflux.data.s3io import S3Bucket
+from Dataflux.data.update_tools import UpdateCallable, get_downloaders, merge_dfs, safe_download
 
 from Comprisk import logger, DEBUG_MODE
-
-
-class UpdateCallable:
-    """
-    This class defines the callable which is executed by the DataUpdater. This should
-    generate a series (or a list of series) to be added to the virtual sensor list.
-    """
-
-    def get_update(self, start: int, end: int, total_key: str) -> pd.DataFrame:
-        """
-        This method generates the update for the given timeframe.
-
-        Args:
-            start (int): The start time steps of the timeframe to be updated.
-            end (int): The end time steps of the timeframe to be updated.
-            total_key (str): The key of the column showing the max over all sensor values.
-
-        Returns:
-            pd.DataFrame: The updated data.
-        """
-        raise NotImplementedError()
-
-    def __call__(self, start: int, end: int, total_key: str) -> pd.DataFrame:
-        return self.get_update(start, end, total_key)
+from Dataflux.helper.utils import is_valid_uuid
 
 
 class DataUpdater(S3Bucket):
@@ -80,6 +56,7 @@ class DataUpdater(S3Bucket):
         start = datetime.fromtimestamp(start_ts, timezone.utc)
         end = datetime.fromtimestamp(end_ts, timezone.utc)
         days = get_day_list((start, end))
+        days = [(days[i], days[i + 1]) for i in range(len(days) - 1)]
 
         sensor_filter = filter_upload(
             sensor_format=self._sensor_format, include=self._score_substring
@@ -95,36 +72,28 @@ class DataUpdater(S3Bucket):
             return None
 
         # create the S3 bucket connection and download the files for each day
-        downloader = DataDownloader(self._uuid, file_postfix="virtual")
-        downloader.set_data_type(DataType.MEASUREMENTS)
         uuid = self._debug_uuid if self._debug else self._uuid
-        logger.info("Upload virtual TSV-files to %s", uuid)
+        downloaders = get_downloaders(uuid)
 
         logger.debug(f"Updating TSV-files for {days}")
-        for day in tqdm(days, desc="Score to Virtual Sensors", disable=not DEBUG_MODE):
-            # 0. calculate the correct time steps for the day to update
-            ts_1 = int(day.date().strftime("%s"))
-            ts_1 = ts_1 if ts_1 > start_ts else start_ts
+        for start_date, end_date in tqdm(
+            days, desc="Score to Virtual Sensors", disable=not DEBUG_MODE
+        ):
+            # 0. get the correct time steps for the day to update
+            ts_1 = start_date.timestamp()
+            ts_2 = end_date.timestamp()
 
-            ts_2 = int((day.date() + timedelta(days=1)).strftime("%s"))
-            ts_2 = ts_2 if ts_2 < end_ts else end_ts
-
-            # 1. download the DataFrame and ensure homogeneous time steps
-            day_str = day.strftime("%Y-%m-%d")
-            try:
-                df = downloader.get_dataframe(day_str)
-                if not df.empty:
-                    df.set_index("ts", inplace=True)
-                    df.drop(columns=score_uuids.values(), errors="ignore", inplace=True)
-                    df = decompress(df)
-            except ClientError as _:
-                logger.debug(
-                    f"Could not find a TSV-file for day {day_str}, continue with empty DataFrame."
-                )
-                df = pd.DataFrame()
+            # 1. download the DataFrame and decompress it
+            day_str = start_date.strftime("%Y-%m-%d")
+            df = safe_download(downloaders[0], day_str)
 
             # 2. modify the dataframe with the callable
             # round to 3 decimals, as the front-end can not show more
+            logger.debug(
+                "Get scores of time frame %s to %s",
+                datetime.fromtimestamp(ts_1),
+                datetime.fromtimestamp(ts_2),
+            )
             result_df = self._callable(ts_1, ts_2, total_key="Total")
             result_df = result_df.round(3)
 
@@ -144,38 +113,38 @@ class DataUpdater(S3Bucket):
                 name: score_uuids.get(
                     name.split(" ")[0] + " (Malfunction AI) (%)", name
                 )
-                for name in list(result_df.columns.values)
+                for name in result_df.columns.values
             }
             result_df.rename(columns=names, inplace=True)
 
             # 4. merge, then apply the same compressing rules
-            day = day.strftime("%Y/%m/%d")
+            day = start_date.strftime("%Y/%m/%d")
+            path = f"{uuid}/days/{day}/{uuid}-virtual.tsv"
+
+            df = merge_dfs(result_df, df)
+            self.upload(df, path)
 
             # 5. calculate the averages for the 2- and 10-minutes files
-            for avg in [600, 120]:
+            for i, avg in enumerate([120, 600]):
                 if avg < time_delta:
                     continue
+
+                # get the current avg file
+                df = safe_download(downloaders[i + 1], day_str)
 
                 # apply the mean as a rolling window with the step size being the window's size
                 # the window's size is calculated by the time delta between two datapoints and
                 # the resolution to be achieved
                 pool = avg // time_delta
                 df_avg = result_df.rolling(window=pool, step=pool, center=True).mean()
-                df_avg = df_avg.iloc[1:-1]
+                df_avg = df_avg.iloc[1:]
                 df_avg = df_avg.round(3)
 
                 postfix = "average" if avg == 120 else "average-10m"
                 path = f"{uuid}/days/{day}/{uuid}-virtual.tsv-{postfix}"
 
-                df_avg = pd.merge(
-                    df_avg, df, how="outer", left_index=True, right_index=True
-                )
-                self.upload(df_avg, path)
-
-            # 6. upload the original for the 1-second data
-            path = f"{uuid}/days/{day}/{uuid}-virtual.tsv"
-            df = pd.merge(result_df, df, how="outer", left_index=True, right_index=True)
-            self.upload(df, path)
+                df = merge_dfs(df_avg, df)
+                self.upload(df, path)
 
     def upload(self, df: pd.DataFrame, path: str) -> None:
         # df = compress(df.reset_index())
@@ -183,17 +152,23 @@ class DataUpdater(S3Bucket):
         if "ts" in df.columns:
             df.drop(columns="ts", inplace=True)
 
-        # 1. sort the columns by uuid-names
+        # sort the columns by uuid-names
         df = df.reindex(sorted(df.columns), axis=1)
         df.reset_index(inplace=True)
         df = df.astype({"ts": "int64"})
         df.set_index("ts", inplace=True)
 
-        # 2. export dataframe as tsv-file
+        # check if the header columns contain UUIDs only
+        for name in df.columns.values:
+            if not is_valid_uuid(name):
+                logger.warning("Upload failed due to malformed TSV header, got invalid UUID=%s", name)
+                return None
+
+        # export dataframe as tsv-file
         tsv = df.to_csv(sep="\t")
         tsv_bytes = gzip.compress(tsv.encode("utf-8"))
 
-        # 3. upload dataframe to s3
+        # upload dataframe to s3
         self._client.put_object(
             Bucket=self._bucket,
             Key=f"{path}",

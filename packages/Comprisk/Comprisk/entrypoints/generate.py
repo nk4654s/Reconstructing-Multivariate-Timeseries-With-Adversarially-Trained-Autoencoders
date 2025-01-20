@@ -1,4 +1,6 @@
 import os.path
+from datetime import datetime
+
 import pandas as pd
 
 from Dataflux.cli import FluxConfigManager
@@ -46,6 +48,7 @@ def cli_main():
     # If the dataset is given as a folder, there is no need to download it again
     datamodule_args_modified = cli.config.data.as_dict()
     datamodule_args_modified["shuffle"] = False
+    flux = None
     if os.path.isfile(cli.config.dataset):
         flux = FluxConfigManager(cli.config.dataset)
         datamodule_args_modified["train"] = flux_pipeline(flux)
@@ -74,6 +77,11 @@ def cli_main():
 
     # update the dataset's virtual sensors in the S3 buckets with the scores
     time_steps = (data.get_timestamp(0), data.get_timestamp(len(data) - 1))
+    if flux:
+        # there should be only one interval as the "latest" arg should be used
+        init_interval = flux.args.intervals[0].split(" ")
+        start, end = (datetime.fromisoformat(init_interval[0]), datetime.fromisoformat(init_interval[1]))
+        time_steps = (start.timestamp(), end.timestamp())
 
     debug = os.environ.get("CAS_DEBUG_MODE", "0") == data.UUID
     updater = DataUpdater(data.UUID, CompriskUpdateCallable(score_data), debug=debug)

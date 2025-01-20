@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-from Dataflux.data.update import decompress, compress 
+from Dataflux.helper import decompress, compress
 
 class TestCompressDecompress(unittest.TestCase):
     """
