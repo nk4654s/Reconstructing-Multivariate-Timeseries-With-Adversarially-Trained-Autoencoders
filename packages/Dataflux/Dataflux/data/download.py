@@ -170,7 +170,7 @@ class DataDownloader(S3Bucket):
 
         df = df if df is not None else pd.DataFrame()
         time = datetime.fromtimestamp(df["ts"].values[0]) if "ts" in df.columns.values else 0
-        logger.debug("Downloaded df (shape=%s) starting at %s", df.shape, time)
+        logger.debug("Downloaded (shape=%s) starting at %s from %s", df.shape, time, self.machine_uuid)
         return df
 
 

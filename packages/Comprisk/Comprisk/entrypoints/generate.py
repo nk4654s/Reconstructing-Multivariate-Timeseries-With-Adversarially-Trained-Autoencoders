@@ -65,15 +65,13 @@ def cli_main():
         exit(0)
 
     # update the dataset's virtual sensors in the S3 buckets with the scores
-    now = datetime.now(tz=timezone.utc)
-    past = now - timedelta(hours=1)
-    time_steps = (past.timestamp(), now.timestamp())
+    end = datetime.now(tz=timezone.utc)
+    start = end - timedelta(hours=1)
 
     if flux and not flux.args.latest:
         # there should be only one interval as the "latest" arg should be used
         init_interval = flux.args.intervals[0].split(" ")
         start, end = (datetime.fromisoformat(init_interval[0]), datetime.fromisoformat(init_interval[1]))
-        time_steps = (start.timestamp(), end.timestamp())
 
     # load the trained model from disk and create the dataset object for the
     # previously downloaded dataset
@@ -85,6 +83,11 @@ def cli_main():
     end_date = datetime.fromtimestamp(data.get_timestamp(len(data) - 1), timezone.utc)
     logger.info("Dataset goes until %s", end_date.strftime("%Y-%m-%d %H:%M:%S"))
 
+    # exit early, if the dataset does not include the timestamps requested
+    if end_date < start:
+        logger.warning("The dataset does not include the required data range.")
+        exit(0)
+
     # execute the model on the dataset and calculate the scores
     score_data = loader.predict_loop(data)
     score_data = score.transform(*score_data, factors=0.1)
@@ -92,14 +95,14 @@ def cli_main():
     debug = os.environ.get("CAS_DEBUG_MODE", "0") == data.UUID
     updater = DataUpdater(data.UUID, CompriskUpdateCallable(score_data), debug=debug)
     updater.set_data_type(DataType.MEASUREMENTS)
-    updater.update(*time_steps, data.get_args().skip)
+    updater.update(start, end, data.get_args().skip)
 
     # remove the temporary downloaded dataset again
     # shutil.rmtree(get_dataset_path(args.dataset), ignore_errors = True)
     logger.info(
         "Finished uploading from %s to %s for machine %s",
-        datetime.fromtimestamp(time_steps[0], timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
-        datetime.fromtimestamp(time_steps[1], timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+        start.strftime("%Y-%m-%d %H:%M:%S"),
+        end.strftime("%Y-%m-%d %H:%M:%S"),
         data.UUID,
     )
 

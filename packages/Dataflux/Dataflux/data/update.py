@@ -40,21 +40,17 @@ class DataUpdater(S3Bucket):
         self._score_substring = "Malfunction"
         self._sensor_format = SensorRegisterFormat.NAME_TO_UUID
 
-    def update(self, start_ts: int, end_ts: int, time_delta: int) -> None:
+    def update(self, start: datetime, end: datetime, time_delta: int) -> None:
         """
         This method updates the data in the S3 for the given time frame. This method downloads the
         data from the S3 and then calls the callable to generate the new data. The newly generated
         data is compressed, added to the downloaded TSV-file and uploaded again.
 
         Args:
-            start_ts (int): The start time steps of the timeframe to be updated.
-            end_ts (int): The end time steps of the timeframe to be updated.
+            start (datetime): The start time of the timeframe to be updated.
+            end (datetime): The end time of the timeframe to be updated.
             time_delta (int): The delta in seconds between two timestamps.
         """
-        # get start and end days
-        start = datetime.fromtimestamp(start_ts, timezone.utc)
-        end = datetime.fromtimestamp(end_ts, timezone.utc)
-
         days = [dt for dt in daterange(start, end)]
         sensor_filter = filter_upload(
             sensor_format=self._sensor_format, include=self._score_substring
@@ -89,8 +85,8 @@ class DataUpdater(S3Bucket):
             # round to 3 decimals, as the front-end can not show more
             logger.debug(
                 "Get scores of time frame %s to %s",
-                datetime.fromtimestamp(ts_1),
-                datetime.fromtimestamp(ts_2),
+                start_date.strftime("%Y-%m-%d %H:%M:%S"),
+                end_date.strftime("%Y-%m-%d %H:%M:%S"),
             )
             result_df = self._callable(ts_1, ts_2, total_key="Total")
             result_df = result_df.round(3)
@@ -140,7 +136,7 @@ class DataUpdater(S3Bucket):
                 # the resolution to be achieved
                 pool = avg // time_delta
                 df_avg = result_df.rolling(window=pool, step=pool, center=True).mean()
-                df_avg = df_avg.iloc[1:]
+                df_avg = df_avg.iloc[1:-1]
                 df_avg = df_avg.round(3)
 
                 postfix = "average" if avg == 120 else "average-10m"
@@ -171,6 +167,7 @@ class DataUpdater(S3Bucket):
                 return None
 
         # export dataframe as tsv-file
+        df = df.round(3)
         tsv = df.to_csv(sep="\t")
         tsv_bytes = gzip.compress(tsv.encode("utf-8"))
 
