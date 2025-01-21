@@ -9,6 +9,7 @@ from Dataflux.modules.rename import Rename
 from Dataflux.modules.filter import Filter
 from Dataflux.modules.consistency import Consistency
 from Dataflux.modules.state import State
+from Dataflux.modules.slice import Slice
 
 from Dataflux.modules.position_bypass import PositionBypassValve
 
@@ -20,6 +21,7 @@ __all__ = [
     "Filter",
     "Consistency",
     "State",
+    "Slice",
     "PositionBypassValve",
     "Features",
     "NormalizeFit",

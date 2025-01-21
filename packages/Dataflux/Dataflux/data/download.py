@@ -62,7 +62,7 @@ class DataDownloader(S3Bucket):
         self._header = None
         self._pool = Pool(12)
 
-        logger.info("Download TSV-files from %s with postfix='%s'", self._uuid, file_postfix)
+        logger.debug("Download TSV-files from %s with postfix='%s' and '%s'", self._uuid, file_postfix, appendix)
 
     def get_stream(self, day: str | date) -> gzip.GzipFile | TextIO:
         """

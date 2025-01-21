@@ -10,11 +10,12 @@ from typing import List, Tuple
 from Dataflux.cli import CLIArgumentParser
 from Dataflux.cli.cli import FluxConfigManager
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
+from Dataflux.helper import daterange
 from Dataflux.helper.metadata import Meta, Metadata
 from Dataflux.data import ContinuousDataDownloader, DataType
 
 from Dataflux import logger
-from Dataflux.modules import State
+from Dataflux.modules import Slice
 
 
 modules = []
@@ -45,16 +46,15 @@ def download(flux: FluxConfigManager) -> None:
 
     # get the current date and subtract 1 hour to get the model's input
     if flux.args.latest:
-        offset = 0
-        for m in modules:
-            if isinstance(m, State) and m.force_trim:
-                offset += m.alpha
+        end = datetime.now(tz=timezone.utc)
+        start = end - timedelta(hours=1)
 
-        logger.debug("Latest tag offset=%s", 3600 + offset)
-        now = datetime.now(tz=timezone.utc)
-        past = now - timedelta(seconds=3600 + offset)
-        interval_list: List[Tuple[datetime.date, datetime.date]] = [(past, now)]
-        past.strftime("%Y-%m-%d %H:%M:%S")
+        modules.append(Slice(start.timestamp(), end.timestamp()))
+
+        start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = end.replace(hour=23, minute=59, second=59, microsecond=999999)
+        interval_list: List[Tuple[datetime.date, datetime.date]] = [dt for dt in daterange(start, end)]
+        end.strftime("%Y-%m-%d %H:%M:%S")
 
     # exit on wrong inputs
     if not interval_list:

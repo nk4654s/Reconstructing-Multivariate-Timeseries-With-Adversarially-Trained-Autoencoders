@@ -143,19 +143,14 @@ class State(FileWorkerCallable):
     """
 
     def __init__(self, key: str = "Laeuft", lower: Union[int, float] = 1, upper: Union[int, float] = 1,
-                 alpha_threshold: int = 10800, beta_threshold: int = 900, force: bool = False):
+                 alpha_threshold: int = 10800, beta_threshold: int = 900):
         self._key_substring = key
         self._key = ""
         self._lower = lower
         self._upper = upper
-        self._force = force
         self._alpha = alpha_threshold
         self._beta = beta_threshold
         self._update = {}
-
-    @property
-    def force_trim(self) -> bool:
-        return self._force
 
     @property
     def alpha(self) -> int:
@@ -211,7 +206,7 @@ class State(FileWorkerCallable):
         uuid = context.get(Context.UUID)
 
         # save all dataframes
-        if df_splits[0].shape != df.shape or self._force:
+        if df_splits[0].shape != df.shape:
             df_splits = remove_threshold(df_splits, self._alpha, self._beta)
 
         new_files = []

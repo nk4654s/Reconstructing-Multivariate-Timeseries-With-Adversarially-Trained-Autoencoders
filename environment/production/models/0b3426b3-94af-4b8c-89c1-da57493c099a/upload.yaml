@@ -1,6 +1,8 @@
 folder: upload
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 latest: true
+#intervals:
+#  - 2025-01-20T23:00:00 2025-01-21T12:00:00
 overwrite: true
 
 modules:
@@ -14,7 +16,6 @@ modules:
       upper: 1.1
       alpha_threshold: 10800
       beta_threshold: 0
-      force: true
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "PositionBypassregelventilPCV74381 (%)"

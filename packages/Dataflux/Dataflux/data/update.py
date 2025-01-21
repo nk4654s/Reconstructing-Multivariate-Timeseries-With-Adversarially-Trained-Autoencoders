@@ -5,7 +5,6 @@ from tqdm import tqdm
 import pandas as pd
 
 from Dataflux.helper import (
-    get_day_list,
     compress,
     get_sensors,
     SensorRegisterFormat,
@@ -16,7 +15,7 @@ from Dataflux.data.s3io import S3Bucket
 from Dataflux.data.update_tools import UpdateCallable, get_downloaders, merge_dfs, safe_download
 
 from Comprisk import logger, DEBUG_MODE
-from Dataflux.helper.utils import is_valid_uuid
+from Dataflux.helper.utils import is_valid_uuid, daterange
 
 
 class DataUpdater(S3Bucket):
@@ -55,9 +54,8 @@ class DataUpdater(S3Bucket):
         # get start and end days
         start = datetime.fromtimestamp(start_ts, timezone.utc)
         end = datetime.fromtimestamp(end_ts, timezone.utc)
-        days = get_day_list((start, end))
-        days = [(days[i], days[i + 1]) for i in range(len(days) - 1)]
 
+        days = [dt for dt in daterange(start, end)]
         sensor_filter = filter_upload(
             sensor_format=self._sensor_format, include=self._score_substring
         )
@@ -126,8 +124,8 @@ class DataUpdater(S3Bucket):
                 continue
 
             self.upload(df, path)
-            logger.debug("Uploaded df (shape=%s) starting at %s", df.shape, datetime.fromtimestamp(df.index[0], timezone.utc))
-            logger.debug("Uploaded df (shape=%s) starting at %s", result_df.shape, datetime.fromtimestamp(result_df.index[0], timezone.utc))
+            logger.debug("Upload starting at %s", datetime.fromtimestamp(ts_1, timezone.utc))
+            logger.debug("Upload until %s", datetime.fromtimestamp(ts_2, timezone.utc))
 
             # 5. calculate the averages for the 2- and 10-minutes files
             for i, avg in enumerate([120, 600]):
