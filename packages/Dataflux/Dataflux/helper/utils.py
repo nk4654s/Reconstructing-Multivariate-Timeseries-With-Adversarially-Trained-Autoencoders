@@ -3,7 +3,7 @@
 import importlib
 import os
 import uuid
-from typing import Callable, Tuple, List
+from typing import Callable, Tuple, List, Iterator
 from datetime import datetime, date, timedelta, timezone
 import pandas as pd
 import numpy as np
@@ -145,6 +145,30 @@ def simple_graph(data_x: List[str], data_y: List[float]) -> Callable:
         return ax
 
     return graph
+
+
+def daterange(start_date, end_date) -> Iterator[Tuple[datetime, datetime]]:
+    """This function iterates over the start and end dates and returns the intervals with a timedelta of 1 day.
+
+    Args:
+        start_date: The start date.
+        end_date: The end date.
+
+    Returns:
+        Iterator[Tuple[datetime, datetime]]: An iterator returning tuples of the start time and end time.
+
+    """
+    curr_day = start_date
+    end_of_day = curr_day.replace(hour=23, minute=59, second=59, microsecond=999999) # set time part to 23:59:59
+
+    while end_of_day <= end_date:
+        yield curr_day, end_of_day
+        curr_day = curr_day.replace(hour=0, minute=0, second=0) # set time part to 00:00:00
+        curr_day += timedelta(days=1)
+        end_of_day = curr_day.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    if curr_day < end_date: # handle the last day if it's not a full day
+        yield curr_day, min(end_date, end_of_day)
 
 
 def get_day_list(interval: Tuple[datetime, datetime]) -> List[datetime]:

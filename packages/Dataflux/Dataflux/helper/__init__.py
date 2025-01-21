@@ -1,5 +1,6 @@
 from Dataflux.helper.utils import (
     get_day_list,
+    daterange,
     to_float,
     get_file,
     simple_graph,
@@ -18,6 +19,7 @@ from Dataflux.helper.scaler import FluxScaler, ScalerMethod
 
 __all__ = [
     "get_day_list",
+    "daterange",
     "to_float",
     "get_file",
     "simple_graph",
