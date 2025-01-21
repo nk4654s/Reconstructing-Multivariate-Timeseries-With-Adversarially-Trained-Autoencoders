@@ -1,7 +1,6 @@
 import os
-from typing import Dict, List
+from typing import Dict
 from threading import Lock
-import numpy as np
 import pandas as pd
 
 from Dataflux import logger
@@ -12,7 +11,6 @@ from Dataflux.diskio import (
     CALLABLE_RETURN_TYPE,
 )
 from Dataflux.helper import Metadata, Meta
-from Dataflux.modules.normalize import NormalizeFit
 
 mutex = Lock()
 
