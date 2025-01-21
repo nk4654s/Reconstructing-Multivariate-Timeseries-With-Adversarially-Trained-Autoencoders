@@ -6,8 +6,6 @@ for MODEL_FOLDER in "$DIRECTORY"/*; do
       CONFIG="$MODEL_FOLDER/config.yaml"
       UPLOAD="$MODEL_FOLDER/upload.yaml"
 
-      uv run flux-pipeline -c "$UPLOAD" --folder upload --latest
-      uv run comprisk-generator -c "$CONFIG" --dataset upload
-      rm -rf upload
+      uv run comprisk-generator -c "$CONFIG" --dataset "$UPLOAD" --data.stride 1
   fi
 done
