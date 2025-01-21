@@ -12,7 +12,12 @@ from Dataflux.helper import (
 )
 
 from Dataflux.data.s3io import S3Bucket
-from Dataflux.data.update_tools import UpdateCallable, get_downloaders, merge_dfs, safe_download
+from Dataflux.data.update_tools import (
+    UpdateCallable,
+    get_downloaders,
+    merge_dfs,
+    safe_download,
+)
 
 from Comprisk import logger, DEBUG_MODE
 from Dataflux.helper.utils import is_valid_uuid, daterange
@@ -116,11 +121,10 @@ class DataUpdater(S3Bucket):
             path = f"{uuid}/days/{day}/{uuid}-virtual.tsv"
 
             df = merge_dfs(df, result_df)
-            if df.empty:
-                continue
-
             self.upload(df, path)
-            logger.debug("Upload starting at %s", datetime.fromtimestamp(ts_1, timezone.utc))
+            logger.debug(
+                "Upload starting at %s", datetime.fromtimestamp(ts_1, timezone.utc)
+            )
             logger.debug("Upload until %s", datetime.fromtimestamp(ts_2, timezone.utc))
 
             # 5. calculate the averages for the 2- and 10-minutes files
@@ -143,9 +147,6 @@ class DataUpdater(S3Bucket):
                 path = f"{uuid}/days/{day}/{uuid}-virtual.tsv-{postfix}"
 
                 df = merge_dfs(df, df_avg)
-                if df.empty:
-                    continue
-
                 self.upload(df, path)
 
     def upload(self, df: pd.DataFrame, path: str) -> None:
@@ -160,10 +161,18 @@ class DataUpdater(S3Bucket):
         df = df.astype({"ts": "int64"})
         df.set_index("ts", inplace=True)
 
+        # check if the df is empty for some reason
+        if df.empty:
+            logger.warning("Attempted to upload empty dataframe.")
+            return None
+
         # check if the header columns contain UUIDs only
         for name in df.columns.values:
             if not is_valid_uuid(name):
-                logger.warning("Upload failed due to malformed TSV header, got invalid UUID=%s", name)
+                logger.warning(
+                    "Upload failed due to malformed TSV header, got invalid UUID=%s",
+                    name,
+                )
                 return None
 
         # export dataframe as tsv-file
