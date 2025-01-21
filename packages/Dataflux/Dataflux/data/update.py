@@ -177,6 +177,7 @@ class DataUpdater(S3Bucket):
 
         # export dataframe as tsv-file
         df = df.round(3)
+        logger.debug("Upload size %s of %s", df.shape, path)
         tsv = df.to_csv(sep="\t")
         tsv_bytes = gzip.compress(tsv.encode("utf-8"))
 
