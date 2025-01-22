@@ -161,7 +161,7 @@ def parse_datestring(date_str: str, force_utc: bool = True) -> datetime:
         return date_obj
 
     if not is_utc:
-        return date_obj.astimezone(timezone.utc)
+        return datetime.fromisoformat(date_str + "Z")
 
     return date_obj
 

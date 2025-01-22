@@ -16,7 +16,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(date_obj, datetime(2025, 1, 22, tzinfo=timezone.utc))
 
     def test_date_parse_without_utc(self):
-        date_str = "2025-01-22T01:00:00"
+        date_str = "2025-01-22T00:00:00"
 
         date_obj = parse_datestring(date_str)
         self.assertEqual(date_obj, datetime(2025, 1, 22, tzinfo=timezone.utc))
