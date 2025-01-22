@@ -28,7 +28,7 @@ def is_valid_uuid(value: str):
 
 def class_for_name(module_name: str, class_name: str):
     """This function finds the class given the module and class name
-    
+
     Args:
         module_name (str): The module path where the class is located.
         class_name (str): The name of the class.
@@ -58,9 +58,9 @@ def get_file(
         post_fix (str, optional): The postfix to be added (does not replace the
         increasing postfix-number)
     """
-    assert (
-        file_path.count(".") == 1
-    ), "File requires an extension (format: <file-name>.<extension>)"
+    assert file_path.count(".") == 1, (
+        "File requires an extension (format: <file-name>.<extension>)"
+    )
     # create folder of file if required
     folder_path = os.path.dirname(file_path)
     folder_exists = os.path.exists(folder_path)
@@ -147,7 +147,28 @@ def simple_graph(data_x: List[str], data_y: List[float]) -> Callable:
     return graph
 
 
-def daterange(start_date, end_date) -> Iterator[Tuple[datetime, datetime]]:
+def parse_datestring(date_str: str, force_utc: bool = True) -> datetime:
+    """This function parses a given date into a python datetime object. On default, this method forces the output date
+    to be in the UTC format. This means, a given date string will be in UTC even when not explicitly stated.
+
+    Args:
+        date_str (str): The date string e.g. '2025-01-22' or '2025-01-22T00:00:00Z'.
+        force_utc (bool): Whether to force the output to be in UTC or not. Defaults to true.
+    """
+    is_utc = date_str[-1].upper() == "Z"
+    date_obj = datetime.fromisoformat(date_str)
+    if not force_utc:
+        return date_obj
+
+    if not is_utc:
+        return date_obj.astimezone(timezone.utc)
+
+    return date_obj
+
+
+def daterange(
+    start_date: datetime, end_date: datetime
+) -> Iterator[Tuple[datetime, datetime]]:
     """This function iterates over the start and end dates and returns the intervals with a timedelta of 1 day.
 
     Args:
@@ -159,15 +180,19 @@ def daterange(start_date, end_date) -> Iterator[Tuple[datetime, datetime]]:
 
     """
     curr_day = start_date
-    end_of_day = curr_day.replace(hour=23, minute=59, second=59, microsecond=999999) # set time part to 23:59:59
+    end_of_day = curr_day.replace(
+        hour=23, minute=59, second=59, microsecond=999999
+    )  # set time part to 23:59:59
 
     while end_of_day <= end_date:
         yield curr_day, end_of_day
-        curr_day = curr_day.replace(hour=0, minute=0, second=0) # set time part to 00:00:00
+        curr_day = curr_day.replace(
+            hour=0, minute=0, second=0
+        )  # set time part to 00:00:00
         curr_day += timedelta(days=1)
         end_of_day = curr_day.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    if curr_day < end_date: # handle the last day if it's not a full day
+    if curr_day < end_date:  # handle the last day if it's not a full day
         yield curr_day, min(end_date, end_of_day)
 
 
