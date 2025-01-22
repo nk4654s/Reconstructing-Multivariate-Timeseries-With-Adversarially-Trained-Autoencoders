@@ -1,5 +1,6 @@
 from datetime import datetime
 import gzip
+from typing import List, Dict
 
 from tqdm import tqdm
 import pandas as pd
@@ -17,7 +18,7 @@ from Dataflux.data.update_tools import (
     get_downloaders,
     merge_dfs,
     safe_download,
-    safe_df_avg
+    safe_df_avg,
 )
 
 from Comprisk import logger, DEBUG_MODE
@@ -121,10 +122,18 @@ class DataUpdater(S3Bucket):
 
             # 3. rename human-readable column names to be machine-readable
             result_df = self._rename_with_register(result_df)
+            download_cols = {
+                n: hash(df[n].dropna().sum()) for n in result_df.columns.values
+            }
 
             # 4. merge, then apply the same compressing rules
             df = merge_dfs(df, result_df)
-            self.upload(df, f"{uuid}/days/{day_str.replace("-", "/")}/{uuid}-virtual.tsv", download_size)
+            self.upload(
+                df,
+                f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}-virtual.tsv",
+                download_size,
+                download_cols,
+            )
 
             # 5. calculate the averages for the 2- and 10-minutes files
             for i, avg in enumerate([120, 600]):
@@ -134,6 +143,9 @@ class DataUpdater(S3Bucket):
                 # get the current avg file
                 df = safe_download(downloaders[i + 1], day_str)
                 download_size = len(df)
+                download_cols = {
+                    n: hash(df[n].dropna().sum()) for n in result_df.columns.values
+                }
                 logger.debug(
                     "Downloaded virtual sensors (len=%s) [%ss]", download_size, avg
                 )
@@ -149,10 +161,16 @@ class DataUpdater(S3Bucket):
 
                 # check and upload the updated/merged df
                 postfix = "average" if avg == 120 else "average-10m"
-                path = f"{uuid}/days/{day_str.replace("-", "/")}/{uuid}-virtual.tsv-{postfix}"
-                self.upload(df, path, download_size)
+                path = f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}-virtual.tsv-{postfix}"
+                self.upload(df, path, download_size, download_cols)
 
-    def upload(self, df: pd.DataFrame, path: str, previous_size: int) -> None:
+    def upload(
+        self,
+        df: pd.DataFrame,
+        path: str,
+        previous_size: int,
+        previous_columns: Dict[str, int],
+    ) -> None:
         logger.debug("Upload new virtual sensors (len=%s)", len(df))
         df = compress(df)
 
@@ -160,6 +178,21 @@ class DataUpdater(S3Bucket):
         if len(df) < previous_size:
             logger.warning("Attempted to upload smaller dataframe.")
             return None
+
+        if len(previous_columns) < df.shape[1]:
+            logger.warning("Attempted to upload less columns than were on AWS.")
+            return None
+
+        # make sure to keep previously existing columns
+        columns = {n: df[n].dropna().sum() for n in df.columns.values}
+        for name, val in previous_columns.items():
+            if name not in columns.keys():
+                logger.warning("Attempted to remove %s when updating.", name)
+                return None
+
+            if name not in self._score_uuids.values() and [name] != val:
+                logger.warning("Forbidden modification attempt in column %s", name)
+                return None
 
         # check if the header columns contain UUIDs only, this should work as the 'ts' is the index not a column
         for name in df.columns.values:
