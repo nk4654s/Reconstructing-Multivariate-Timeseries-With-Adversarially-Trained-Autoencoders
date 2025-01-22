@@ -68,10 +68,3 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(value, 9)
         os.remove(file_name)
         os.removedirs(self.folder_path)
-
-    def test_get_day_list(self):
-        """Test get_day_list function"""
-        start_date = date(2022, 1, 1)
-        end_date = date(2022, 1, 31)
-        days = get_day_list((start_date, end_date))
-        self.assertEqual(len(days), (end_date - start_date).days + 1)

@@ -171,32 +171,32 @@ def daterange(start_date, end_date) -> Iterator[Tuple[datetime, datetime]]:
         yield curr_day, min(end_date, end_of_day)
 
 
-def get_day_list(interval: Tuple[datetime, datetime]) -> List[datetime]:
+def get_day_list(start_date: datetime, end_date: datetime) -> List[datetime]:
     """
     Get a list of days from an interval (tuple) of days (inclusive).
 
     Args:
-        interval (Tuple[date, date]): A tuple containing the start and end dates.
+        start_date: The start date.
+        end_date: The end date.
 
     Returns:
         List[date]: A list of dates within the given interval.
     """
-    # Calculate the difference between the start and end dates
-    start, end = interval
+    tz = start_date.tzinfo
 
     # Initialize an empty list to store the days
-    days = [start]
+    days = [start_date]
 
     # Loop through each day in the interval
-    start = datetime(start.year, start.month, start.day, tzinfo=timezone.utc)
-    end_ = datetime(end.year, end.month, end.day, tzinfo=timezone.utc)
-    for i in range(1, (end_ - start).days):
+    start_date = datetime(start_date.year, start_date.month, start_date.day, tzinfo=tz)
+    end_ = datetime(end_date.year, end_date.month, end_date.day, tzinfo=tz)
+    for i in range(1, (end_ - start_date).days):
         # Calculate the date by adding the timedelta to the start date
-        day = start + timedelta(days=i)
+        day = start_date + timedelta(days=i)
         # Add the day to the list
         days.append(day)
-    
-    days.append(end)
+
+    days.append(end_date)
 
     # Return the list of days
     return days
