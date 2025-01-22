@@ -66,8 +66,5 @@ folder. This will trigger GitHub actions and start the specified workflow immedi
 > Note: Press [here](https://github.com/neaxplore/xplore-ai-cas/tree/master/environment/production/models/README.md) 
 > to learn more about the production folder structure.
 
-If you would like to have a command to copy and paste into the CLI, then use the template:
-
-```commandline
-docker build -f dockerfiles/docker.dockerfile -t cas-uv:latest .
-```
+If you would like to run the docker locally, some configuration is required. To learn more about how this works, click 
+[here](https://github.com/neaxplore/xplore-ai-cas/tree/master/dockerfiles/README.md).
