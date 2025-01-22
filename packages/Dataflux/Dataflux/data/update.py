@@ -1,6 +1,6 @@
 from datetime import datetime
 import gzip
-from typing import List, Dict
+from typing import Dict
 
 from tqdm import tqdm
 import pandas as pd
