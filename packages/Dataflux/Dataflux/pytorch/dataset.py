@@ -1,11 +1,8 @@
 """This module contains the Dataset class, required to train a NN."""
 
-import os
-import pickle
 from typing import List, Tuple
 import numpy as np
 import torch
-import pandas as pd
 
 from Dataflux.pytorch.args import DatasetArgs, DatasetTypes, dataset_type_from_string
 from Dataflux.helper import Meta, Metadata as FileMetadata
@@ -19,7 +16,7 @@ class EmptyDatasetError(Exception):
     pass
 
 
-class Dataset(torch.utils.data.Dataset): # type: ignore
+class Dataset(torch.utils.data.Dataset):  # type: ignore
     """
     A custom PyTorch dataset class that loads and processes data from Feather files. This class uses
     the DataFrameCache to load dataframes from memory, which can improve performance.
@@ -64,7 +61,10 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
 
         if behavior == DatasetTypes.AUTOENCODER:
             self._num_output = 0
-            logger.info("The output sequence does not exist when loading the dataset in 'AUTOENCODER' mode. Overwriting parameter to have the value '0'")
+            logger.info(
+                "The output sequence does not exist when loading the dataset in 'AUTOENCODER' mode. "
+                + "Overwriting parameter to have the value '0'"
+            )
 
         self._id = self._metadata[Meta.MACHINE_UUID]
         self._base_dir = path
@@ -90,19 +90,17 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
             behavior_=behavior,
             names=self._cache.columns,
             names_in=feature_names_in,
-            names_out=feature_names_out
+            names_out=feature_names_out,
         )
 
     @property
     def UUID(self) -> str:
-        """Returns the unique ID of this.
-        """
+        """Returns the unique ID of this."""
         return self._id
 
     @property
     def directory(self) -> str:
-        """Returns the base directory of this dataset.
-        """
+        """Returns the base directory of this dataset."""
         return self._base_dir
 
     @property
@@ -110,7 +108,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         """Outputs the shape of this dataset as `number_of_samples`,
         `input_window_size`, `number_of_features`.
         """
-        return (len(self._tree) // self._stride, self._num_input, self._num_features)
+        return len(self._tree) // self._stride, self._num_input, self._num_features
 
     def get_args(self) -> DatasetArgs:
         """Outputs the metadata of the dataset.
@@ -121,78 +119,24 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         return self._args.copy()
 
     def set_stride(self, stride: int) -> None:
-        """Sets the stride value for this dataset.
-        """
-        assert stride > 0  and stride <= self._num_input
+        """Sets the stride value for this dataset."""
+        assert 0 < stride <= self._num_input
         self._args.stride = stride
         self._stride = stride
-    
+
     def set_behavior(self, behavior: DatasetTypes | str) -> None:
         """Sets the behavior of this dataset.
 
         Args:
-            type_ (DatasetType | str): The new behavior of this dataset.
+            behavior (DatasetType | str): The new behavior of this dataset.
         """
-        behavior = dataset_type_from_string(behavior) if isinstance(behavior, str) else behavior
+        behavior = (
+            dataset_type_from_string(behavior)
+            if isinstance(behavior, str)
+            else behavior
+        )
         self._args.behavior = behavior
         self._behavior = behavior
-
-    def scale(self, data: List | np.ndarray | pd.DataFrame) -> pd.DataFrame:
-        """Method scales the given data using the normalizer of the dataset.
-        The input must match the feature list provided by `self.get_meta().column_names`.
-
-        Args:
-            data (List | np.array | pd.DataFrame): The data to scale back.
-
-        Returns:
-            pd.DataFrame: The scaled back data.
-        """
-        m = self._metadata[Meta.NORMALIZER]
-        path = m[Meta.NORM_PATH.name]
-        with open(path, "rb") as f:
-            scaler = pickle.load(f)
-            scaler.set_output(transform="pandas")
-
-        if isinstance(data, list):
-            data = np.array(data)
-
-        if len(data.shape) == 1:
-            data = np.expand_dims(data, axis=-1)
-
-        if not isinstance(data, pd.DataFrame):
-            data_dict = {key: data[:, i] for i, key in enumerate(self._args.names)}
-            data = pd.DataFrame(data_dict)
-
-        return scaler.transform(data)
-
-    def scale_back(self, data: List | np.ndarray | pd.DataFrame) -> pd.DataFrame:
-        """Method scales back the given data using the normalizer of the dataset.
-        The input must match the feature list provided by `self.get_meta().column_names`.
-
-        Args:
-            data (List | np.array | pd.DataFrame): The data to scale back.
-
-        Returns:
-            pd.DataFrame: The scaled back data.
-        """
-        m = self._metadata[Meta.NORMALIZER]
-        path = m[Meta.NORM_PATH.name].split(os.path.sep, maxsplit=1)[-1]
-        path = os.path.join(self._base_dir, path)
-        with open(path, "rb") as f:
-            scaler = pickle.load(f)
-
-        if isinstance(data, list):
-            data = np.array(data)
-
-        if len(data.shape) == 1:
-            data = np.expand_dims(data, axis=-1)
-
-        if not isinstance(data, pd.DataFrame):
-            data_dict = {key: data[:, i] for i, key in enumerate(self._args.names)}
-            data = pd.DataFrame(data_dict)
-
-        scaled = scaler.inverse_transform(data)
-        return pd.DataFrame(scaled, columns=self._args.names)
 
     def get_day(self, index: int) -> Tuple[str, float]:
         """Returns the day and hours the machine is on for the provided index
@@ -200,13 +144,13 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
 
         Args:
             index (int): The index of the dataset.
-        
+
         Returns:
             Tuple: Day as string and hours the machine is on as float.
         """
         day, index = self._tree.search(index * self._stride)
         seconds = index * self._skip * self._stride
-        minutes = seconds / 60 
+        minutes = seconds / 60
         hour = minutes / 60
         return day, hour
 
@@ -215,7 +159,7 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
 
         Args:
             index (int): The index of the timestamp.
-        
+
         Returns:
             int: The timestamp of the provided index value.
         """
@@ -247,19 +191,20 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
         features_out = self._features_out if self._features_out else self._cache.columns
 
         x = np.zeros((self._num_input, len(features_in)), dtype=np.float32)
-        y = np.zeros((self._num_output, len(features_out)), dtype=np.float32)
 
         for i, name in enumerate(features_in):
             x[:, i] = sensors[name].to_numpy()[index:start_idx]
 
         # if the dataset will be used to train an autoencoder, then the input should match the output
         if self._behavior == DatasetTypes.AUTOENCODER:
+            y = np.zeros((self._num_input, len(features_out)), dtype=np.float32)
             for i, name in enumerate(features_out):
                 y[:, i] = sensors[name].to_numpy()[index:start_idx]
 
             return x, y
 
         # get only the output features
+        y = np.zeros((self._num_output, len(features_out)), dtype=np.float32)
         for i, name in enumerate(features_out):
             y[:, i] = sensors[name].to_numpy()[start_idx:end_idx]
 
@@ -279,11 +224,18 @@ class Dataset(torch.utils.data.Dataset): # type: ignore
 
 
 if __name__ == "__main__":
-    dataset = Dataset("../../../../environment/dev/datasets/thyssen-vd2-trainset-phase-1",
-                      50, 25,
-                      feature_names_in=["SaugtemperaturErsteStufeTETIT74328 (°C)", "Biomethandurchfluss (m^3/min)"],
-                      feature_names_out=["Biomethandurchfluss (m^3/min)"],
-                      cache_size=-1, skip=1)
+    dataset = Dataset(
+        "../../../../environment/dev/datasets/thyssen-vd2-trainset-phase-1",
+        50,
+        25,
+        feature_names_in=[
+            "SaugtemperaturErsteStufeTETIT74328 (°C)",
+            "Biomethandurchfluss (m^3/min)",
+        ],
+        feature_names_out=["Biomethandurchfluss (m^3/min)"],
+        cache_size=-1,
+        skip=1,
+    )
     print(dataset.get_args())
 
     for i in range(len(dataset)):
