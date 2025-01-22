@@ -8,12 +8,13 @@ from Dataflux.data.download import (
     ContinuousDataDownloader,
     EmptyStreamError,
 )
-from Dataflux.data.update import UpdateCallable, DataUpdater
+from Dataflux.data.update import UpdateCallable, DataUpdater, EmptyScoreRegister
 from Dataflux.data.types import DataType
 
 __all__ = [
     "DataDownloader",
     "ContinuousDataDownloader",
+    "EmptyScoreRegister",
     "EmptyStreamError",
     "UpdateCallable",
     "DataUpdater",

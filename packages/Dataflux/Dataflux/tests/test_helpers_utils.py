@@ -1,9 +1,8 @@
 """Dataflux/data/utils.py"""
 import os
 import unittest
-from datetime import date
 import numpy as np
-from Dataflux.helper import get_day_list, get_file, to_float
+from Dataflux.helper import get_file, to_float
 
 class TestUtils(unittest.TestCase):
     def setUp(self):
