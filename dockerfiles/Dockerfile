@@ -1,4 +1,4 @@
-FROM ubuntu:20.04 as cas-base
+FROM ubuntu:20.04 AS cas-base
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Remove any third-party apt sources to avoid issues with expiring keys.
@@ -24,15 +24,22 @@ ENV HOME=/home/nea-cas
 RUN chmod 777 /home/nea-cas
 
 # copy code to the docker
+COPY --chown=nea-cas:nea-cas pyproject.toml pyproject.toml
+COPY --chown=nea-cas:nea-cas uv.lock uv.lock
+COPY --chown=nea-cas:nea-cas scripts/ scripts/
+COPY --chown=nea-cas:nea-cas environment/production/models models
+
+# install uv project
+RUN uv sync --no-dev --no-sources --frozen
+
+FROM cas-base
+WORKDIR /app
+USER nea-cas
+
 COPY --chown=nea-cas:nea-cas packages/Comprisk/ packages/Comprisk/
 COPY --chown=nea-cas:nea-cas packages/Dataflux/ packages/Dataflux/
 COPY --chown=nea-cas:nea-cas packages/Toking/ packages/Toking/
-COPY --chown=nea-cas:nea-cas scripts/ scripts/
-COPY --chown=nea-cas:nea-cas pyproject.toml pyproject.toml
-COPY --chown=nea-cas:nea-cas environment/production/models models/
 
-# install uv project
-RUN uv sync
+RUN uv sync --all-groups
 
-FROM cas-base
 ENTRYPOINT sh scripts/upload.sh

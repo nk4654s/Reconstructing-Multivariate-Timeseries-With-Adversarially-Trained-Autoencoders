@@ -1,3 +1,4 @@
+#!/usr/bin/python -u
 DIRECTORY="/app/models"
 
 # Loop through files in the target directory

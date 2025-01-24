@@ -1,4 +1,5 @@
 from Dataflux.helper.utils import (
+    parse_datestring,
     get_day_list,
     daterange,
     to_float,
@@ -18,6 +19,7 @@ from Dataflux.helper.metadata import Meta, Metadata
 from Dataflux.helper.scaler import FluxScaler, ScalerMethod
 
 __all__ = [
+    "parse_datestring",
     "get_day_list",
     "daterange",
     "to_float",

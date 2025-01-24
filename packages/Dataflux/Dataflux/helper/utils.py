@@ -4,7 +4,7 @@ import importlib
 import os
 import uuid
 from typing import Callable, Tuple, List, Iterator
-from datetime import datetime, date, timedelta, timezone
+from datetime import datetime, date, timedelta
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -28,7 +28,7 @@ def is_valid_uuid(value: str):
 
 def class_for_name(module_name: str, class_name: str):
     """This function finds the class given the module and class name
-    
+
     Args:
         module_name (str): The module path where the class is located.
         class_name (str): The name of the class.
@@ -58,9 +58,9 @@ def get_file(
         post_fix (str, optional): The postfix to be added (does not replace the
         increasing postfix-number)
     """
-    assert (
-        file_path.count(".") == 1
-    ), "File requires an extension (format: <file-name>.<extension>)"
+    assert file_path.count(".") == 1, (
+        "File requires an extension (format: <file-name>.<extension>)"
+    )
     # create folder of file if required
     folder_path = os.path.dirname(file_path)
     folder_exists = os.path.exists(folder_path)
@@ -147,7 +147,28 @@ def simple_graph(data_x: List[str], data_y: List[float]) -> Callable:
     return graph
 
 
-def daterange(start_date, end_date) -> Iterator[Tuple[datetime, datetime]]:
+def parse_datestring(date_str: str, force_utc: bool = True) -> datetime:
+    """This function parses a given date into a python datetime object. On default, this method forces the output date
+    to be in the UTC format. This means, a given date string will be in UTC even when not explicitly stated.
+
+    Args:
+        date_str (str): The date string e.g. '2025-01-22' or '2025-01-22T00:00:00Z'.
+        force_utc (bool): Whether to force the output to be in UTC or not. Defaults to true.
+    """
+    is_utc = date_str[-1].upper() == "Z"
+    date_obj = datetime.fromisoformat(date_str)
+    if not force_utc:
+        return date_obj
+
+    if not is_utc:
+        return datetime.fromisoformat(date_str + "Z")
+
+    return date_obj
+
+
+def daterange(
+    start_date: datetime, end_date: datetime
+) -> Iterator[Tuple[datetime, datetime]]:
     """This function iterates over the start and end dates and returns the intervals with a timedelta of 1 day.
 
     Args:
@@ -159,44 +180,48 @@ def daterange(start_date, end_date) -> Iterator[Tuple[datetime, datetime]]:
 
     """
     curr_day = start_date
-    end_of_day = curr_day.replace(hour=23, minute=59, second=59, microsecond=999999) # set time part to 23:59:59
+    end_of_day = curr_day.replace(
+        hour=23, minute=59, second=59, microsecond=999999
+    )  # set time part to 23:59:59
 
     while end_of_day <= end_date:
         yield curr_day, end_of_day
-        curr_day = curr_day.replace(hour=0, minute=0, second=0) # set time part to 00:00:00
+        curr_day = curr_day.replace(
+            hour=0, minute=0, second=0
+        )  # set time part to 00:00:00
         curr_day += timedelta(days=1)
         end_of_day = curr_day.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    if curr_day < end_date: # handle the last day if it's not a full day
+    if curr_day < end_date:  # handle the last day if it's not a full day
         yield curr_day, min(end_date, end_of_day)
 
 
-def get_day_list(interval: Tuple[datetime, datetime]) -> List[datetime]:
+def get_day_list(start_date: datetime, end_date: datetime) -> List[datetime]:
     """
     Get a list of days from an interval (tuple) of days (inclusive).
 
     Args:
-        interval (Tuple[date, date]): A tuple containing the start and end dates.
+        start_date: The start date.
+        end_date: The end date.
 
     Returns:
         List[date]: A list of dates within the given interval.
     """
-    # Calculate the difference between the start and end dates
-    start, end = interval
+    tz = start_date.tzinfo
 
     # Initialize an empty list to store the days
-    days = [start]
+    days = [start_date]
 
     # Loop through each day in the interval
-    start = datetime(start.year, start.month, start.day, tzinfo=timezone.utc)
-    end_ = datetime(end.year, end.month, end.day, tzinfo=timezone.utc)
-    for i in range(1, (end_ - start).days):
+    start_date = datetime(start_date.year, start_date.month, start_date.day, tzinfo=tz)
+    end_ = datetime(end_date.year, end_date.month, end_date.day, tzinfo=tz)
+    for i in range(1, (end_ - start_date).days):
         # Calculate the date by adding the timedelta to the start date
-        day = start + timedelta(days=i)
+        day = start_date + timedelta(days=i)
         # Add the day to the list
         days.append(day)
-    
-    days.append(end)
+
+    days.append(end_date)
 
     # Return the list of days
     return days

@@ -90,6 +90,7 @@ class Toking:
             username=username,
             password=password,
             pool_id=get_arg_default("pool_id"),
+            pool_region=get_arg_default("region_name"),
             client_id=get_arg_default("client_id"),
         )
 
@@ -132,6 +133,6 @@ def main():
 
 
 if __name__ == "__main__":
-    #main()
+    # main()
     Toking().get_access_token()
     Toking().get_access_token()
