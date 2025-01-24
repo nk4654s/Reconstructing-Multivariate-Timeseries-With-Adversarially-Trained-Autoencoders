@@ -15,6 +15,22 @@ class TestModelLoader(unittest.TestCase):
 
         self.loader = ModelLoader(model=self.model)
 
+    def test_forward_forecast_equal_stride(self):
+        dataset = DummyDataset(
+            DummyMode.RANDOM,
+            n_samples=100,
+            n_features=3,
+            n_sequence=40,
+            n_future=20,
+            stride=20
+        )
+
+        model_class = class_for_name("Comprisk.model.dummy", "DummyModel")
+        model = model_class(self.factor, self.features_in, self.features_in)
+        loader = ModelLoader(model=model)
+        inputs, prediction = loader.predict_loop(dataset, batch_size=4, num_workers=1)
+        self.assertTrue((abs(prediction - inputs * self.factor) < 1e-5).all().all())
+
     def test_forward_pass_stride_equal_window(self):
         """Test ModelLoader.predict_loop"""
         dataset = DummyDataset(

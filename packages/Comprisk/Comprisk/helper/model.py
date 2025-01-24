@@ -106,12 +106,14 @@ class ModelLoader:
         self.model.set_output_behavior(args.behavior, args.sequence_out)
         skip = args.skip
         stride = args.stride
-        window = (
-            args.sequence_out
-            if args.behavior != DatasetTypes.AUTOENCODER
-            else args.sequence_in
-        )
         features = args.features_out
+
+        # depending on the dataset type, different window sizes are possible
+        ts_offset = 0
+        window = args.sequence_in
+        if args.behavior == DatasetTypes.PREDICTIVE:
+            window = args.sequence_out
+            ts_offset = args.sequence_in * skip
 
         logger.debug("Predict on dataset %s (Original)", len(dataset))
         logger.debug("Predict loop step size %s and batch size %s", skip, batch_size)
@@ -120,10 +122,6 @@ class ModelLoader:
         # initialize the containers which hold model input/output values
         containers = self._init_container(len(dataset), features, window, stride)
         targets, predict, counter, ts_index = containers
-
-        inputs_indicies = [
-            i for i, x in enumerate(args.names_in) if x in args.names_out
-        ]
 
         collate = collate_fn
         loader = DataLoader(
@@ -137,25 +135,25 @@ class ModelLoader:
         for i, inputs in enumerate(
             tqdm(loader, desc="Prediction with Model", disable=not DEBUG_MODE)
         ):
-            inputs, _ = inputs
+            inputs, expected_outputs = inputs
+            expected_outputs = expected_outputs.cpu().numpy()
             inputs = inputs.to(device)
 
             # run the prediction, the input equals the target for auto encoders
-            model_pred = self.model.predict(inputs, as_array=True)
-            inputs = inputs.cpu().numpy()
+            outputs = self.model.predict(inputs, as_array=True)
 
-            batch_size_, _, _ = model_pred.shape
+            batch_size_, _, _ = outputs.shape
             for j in range(0, batch_size_):
                 idx = 0 if i == 0 else i * batch_size * stride
                 idx = idx + j * stride
 
-                window_, _ = inputs[j].shape
+                window_, _ = outputs[j].shape
                 window_ = min(window_, len(targets[idx : idx + window_]))
-                targets[idx : idx + window_] += inputs[j][:, inputs_indicies]
-                predict[idx : idx + window_] += model_pred[j]
+                targets[idx : idx + window_] += expected_outputs[j]
+                predict[idx : idx + window_] += outputs[j]
                 counter[idx : idx + window_] += np.ones(shape=(window_,))
 
-                ts = dataset.get_timestamp(i * batch_size + j)
+                ts = dataset.get_timestamp(i * batch_size + j) + ts_offset
                 ts_index[idx : idx + window_] = [ts + k * skip for k in range(window_)]
 
         limit = counter.argmin()

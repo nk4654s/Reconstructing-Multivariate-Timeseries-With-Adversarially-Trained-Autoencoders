@@ -30,6 +30,7 @@ class DummyDataset(torch.utils.data.Dataset):
         n_samples: int,
         n_features: int,
         n_sequence: int,
+        n_future: int = 0,
         stride: int = 1,
     ) -> None:
         # init data
@@ -43,12 +44,12 @@ class DummyDataset(torch.utils.data.Dataset):
         # init args
         self._args = DatasetArgs(
             sequence_in=n_sequence,
-            sequence_out=0,
+            sequence_out=n_future,
             features_in=n_features,
             features_out=n_features,
             skip=1,
             stride=stride,
-            behavior_=DatasetTypes.AUTOENCODER,
+            behavior_=DatasetTypes.AUTOENCODER if n_future == 0 else DatasetTypes.PREDICTIVE,
             names_in=[str(i) for i in range(n_features)],
             names_out=[str(i) for i in range(n_features)],
             names=[str(i) for i in range(n_features)],
@@ -66,4 +67,9 @@ class DummyDataset(torch.utils.data.Dataset):
     def __getitem__(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
         i_0 = index * self._args.stride
         i_t = index * self._args.stride + self._args.sequence_in
-        return self._data[i_0:i_t], np.array([])
+        i_n = index * self._args.stride + self._args.sequence_in + self._args.sequence_out
+
+        if self._args.sequence_out > 0:
+            return self._data[i_t:i_n], self._data[i_t:i_n]
+
+        return self._data[i_0:i_n], self._data[i_0:i_n]

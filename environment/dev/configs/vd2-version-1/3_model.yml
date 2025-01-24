@@ -22,7 +22,7 @@ trainer:
   log_every_n_steps: 1
 
 model:
-  class_path: Comprisk.model.ae.rnn.EncDecAD
+  class_path: Comprisk.model.auto_encoder.rnn.EncDecAD
   init_args:
     activation: tanh
     loss: MSELoss
