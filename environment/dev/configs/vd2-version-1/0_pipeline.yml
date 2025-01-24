@@ -18,7 +18,7 @@ trainer:
     data.validate: environment/dev/datasets/thyssen-vd2-valset-phase-1
 
     data.sequence_in: 60
-    data.sequence_out: 0
+    data.sequence_out: 0 # reduces RAM usage during training
     data.stride: 1
     data.batch_size: 128
 
