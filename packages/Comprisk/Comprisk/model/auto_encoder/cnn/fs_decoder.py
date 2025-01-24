@@ -4,7 +4,7 @@ from typing import Dict
 import torch
 from torch import nn
 
-from Comprisk.model.ae import DecoderBase
+from Comprisk.model.auto_encoder import DecoderBase
 
 
 class FSDecoder(DecoderBase):

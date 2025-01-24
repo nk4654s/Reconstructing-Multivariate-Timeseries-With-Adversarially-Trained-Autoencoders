@@ -8,9 +8,8 @@ def loss_fn(y: pd.DataFrame, y_hat: pd.DataFrame) -> pd.DataFrame:
 
 
 class BaseTransformer:
-    """The ScoreTransformer learns the loss distribution of a trained model over the training data
-    to translate a loss value into a score between 0 and 1. Here, 0 means the model is working fine,
-    while 1 means something is wrong with the input data.
+    """The BaseTransformer class defines the structure of each ScoreTransformer to be used by a model. The
+        transformer uses the difference of the predicted and expected model output to calculate a score between 0 and 1.
     """
 
     def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -> "BaseTransformer":
@@ -28,7 +27,7 @@ class BaseTransformer:
 
     def transform(self, predicted: pd.DataFrame, target: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """This method transforms the model's (expected) output to a score between 0 and 1 where 1 is the best case.
-        First, the method calculates the difference between the data and then it transforms each feature individually.
+        First, the method calculates the difference between the data, and then it transforms each feature individually.
 
         Args:
             predicted (pd.DataFrame): The model's output.

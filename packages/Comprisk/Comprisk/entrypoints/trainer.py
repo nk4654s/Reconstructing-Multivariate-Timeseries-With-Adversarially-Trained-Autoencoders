@@ -12,6 +12,8 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 
 from Dataflux.pytorch import Dataset, DatasetTypes
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
 
 from Comprisk.anomaly import ScoreTransformer
 from Comprisk.helper import ModelLoader
@@ -19,7 +21,10 @@ from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
 
-from Comprisk import logger
+
+
+# switch logging mode depending on DEBUG_MODE
+logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
 def get_trainer_callback(trainer, callback_name: str) -> Callback | None:

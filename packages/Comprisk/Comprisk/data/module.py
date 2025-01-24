@@ -1,9 +1,3 @@
-"""This module manages multiple datasets and loads them in the required
-training stages. Moreover, the module relies on the `Dataflux` package
-which downloads and pre-processes a dataset. Also, the `Dataflux`
-package provides classes and methods to load a processed dataset and
-to sample as efficient as possible."""
-
 from copy import deepcopy
 from typing import List
 
@@ -12,8 +6,12 @@ from torch.utils.data import DataLoader
 
 from Dataflux.pytorch import Dataset, collate_fn, DatasetTypes
 from Dataflux.pytorch import RandomBatchSampler as RBS
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
 
-from Comprisk import logger
+
+# switch logging mode depending on DEBUG_MODE
+logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
 class DataModule(L.LightningDataModule):

@@ -8,13 +8,19 @@ from Dataflux.helper import parse_datestring
 from Dataflux.pytorch import EmptyDatasetError
 from Dataflux.data import DataUpdater, UpdateCallable, DataType, EmptyScoreRegister
 from Dataflux.pipeline import pipeline as flux_pipeline
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
 
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskLoadCLI
-from Comprisk.helper import get_config_folder, ModelLoader
+from Comprisk.helper.structure import get_config_folder
+from Comprisk.helper import ModelLoader
 from Comprisk.model import BaseModel
 
-from Comprisk import logger
+
+
+# switch logging mode depending on DEBUG_MODE
+logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
 class CompriskUpdateCallable(UpdateCallable):

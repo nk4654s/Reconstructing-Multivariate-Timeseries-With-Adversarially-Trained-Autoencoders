@@ -9,7 +9,7 @@ import operator
 import yaml
 from optuna import Trial
 from Comprisk.data import DataModule
-from Comprisk.helper import class_for_name, get_config_path
+from Comprisk.helper.structure import class_for_name, get_config_path
 from Comprisk.cli.cli import CompriskCLI
 from Comprisk.tune.provider import SuggestionProvider, TunedProvider
 

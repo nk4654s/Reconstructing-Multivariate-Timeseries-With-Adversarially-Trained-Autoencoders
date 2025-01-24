@@ -4,7 +4,13 @@ import pandas as pd
 from Comprisk.anomaly.base_transformer import BaseTransformer
 from Comprisk.anomaly.variants import LinearTransformer, SigmoidTransformer, AnaTransformer
 from Dataflux.visualization import show_dataframe
-from Comprisk import logger
+
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
+
+
+# switch logging mode depending on DEBUG_MODE
+logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
 class ScoreTransformer(BaseTransformer):

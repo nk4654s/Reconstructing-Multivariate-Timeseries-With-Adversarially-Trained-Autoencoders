@@ -26,7 +26,7 @@ def get_logger(name: str, path: str = "logfile.log", level: int = logging.DEBUG)
     # setup the logger
     logger = logging.getLogger(name)
     formatter = logging.Formatter(
-        fmt="%(asctime)s [%(name)-12.12s] [%(levelname)-5.5s]  %(message)s",
+        fmt="%(asctime)s [%(name)-20.20s] [%(levelname)-5.5s]  %(message)s",
         defaults={
             "name": name.split(".", maxsplit=1)[0][:12]
         }

@@ -4,7 +4,7 @@ Multi-sensor Anomaly Detection](https://arxiv.org/pdf/1607.00148.pdf). The AutoE
 from typing import Tuple, List
 import torch
 import torch.nn as nn
-from Comprisk.model.ae import EncoderBase, DecoderBase, AutoEncoder
+from Comprisk.model.auto_encoder import EncoderBase, DecoderBase, AutoEncoder
 
 
 class EDAEncoder(EncoderBase):

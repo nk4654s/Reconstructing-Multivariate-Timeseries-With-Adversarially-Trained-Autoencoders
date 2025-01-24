@@ -10,13 +10,18 @@ from uuid import UUID
 from Dataflux.pytorch import Dataset, DatasetArgs
 from Dataflux.visualization import show_dataframe
 from Dataflux.helper import get_sensors
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
 
-from Comprisk.helper import get_config_folder, ModelLoader
+from Comprisk.helper.structure import get_config_folder
+from Comprisk.helper import ModelLoader
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskLoadCLI
 
-from Comprisk import logger
+
+# switch logging mode depending on DEBUG_MODE
+logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
 def cli_main():

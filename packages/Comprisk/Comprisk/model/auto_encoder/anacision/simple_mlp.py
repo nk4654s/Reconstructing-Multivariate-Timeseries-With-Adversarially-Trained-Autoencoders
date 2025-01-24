@@ -3,7 +3,7 @@ from typing import Dict
 import torch
 from torch import nn
 
-from Comprisk.model.ae.base import EncoderBase, DecoderBase
+from Comprisk.model.auto_encoder.base import EncoderBase, DecoderBase
 
 
 class AnacisionEncoder(EncoderBase):

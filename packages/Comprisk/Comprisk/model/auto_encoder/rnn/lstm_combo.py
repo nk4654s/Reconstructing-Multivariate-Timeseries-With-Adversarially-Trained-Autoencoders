@@ -1,7 +1,7 @@
 """This module contains auto encoder modules based on LSTM layers."""
 import torch
 import torch.nn as nn
-from Comprisk.model.ae import EncoderBase, DecoderBase
+from Comprisk.model.auto_encoder import EncoderBase, DecoderBase
 
 
 class LSTMEncoder(EncoderBase):

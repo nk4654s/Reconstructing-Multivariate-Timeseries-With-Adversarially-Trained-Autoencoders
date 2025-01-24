@@ -2,7 +2,7 @@ import unittest
 
 from Dataflux.pytorch.dummy_dataset import DummyDataset, DummyMode
 
-from Comprisk.helper.file_structure import class_for_name
+from Comprisk.helper.structure import class_for_name
 from Comprisk.helper import  ModelLoader
 
 class TestModelLoader(unittest.TestCase):

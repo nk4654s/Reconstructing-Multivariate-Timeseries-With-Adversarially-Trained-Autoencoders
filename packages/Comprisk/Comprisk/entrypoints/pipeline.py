@@ -7,7 +7,6 @@ from argparse import ArgumentParser
 import yaml
 
 
-
 def model_folder_structure(path: str = "models", structure: List[str] = []) -> List[str]:
     """
     This function creates a list of folders that contains the model's config file.

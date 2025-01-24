@@ -4,7 +4,7 @@ from typing import List
 import torch
 from torch import nn
 
-from Comprisk.model.ae import EncoderBase
+from Comprisk.model.auto_encoder import EncoderBase
 
 
 class FSEncoder(EncoderBase):

@@ -4,15 +4,20 @@ will be learned based on the resulting loss. Only use configure this entry
 point with a trained model and the matching validation dataset."""
 import os
 
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
 
 from Comprisk.entrypoints.trainer import train_score_transformer
 
-from Comprisk.helper import get_config_folder
+from Comprisk.helper.structure import get_config_folder
 from Comprisk.model import BaseModel
 from Comprisk.data import DataModule
 from Comprisk.cli import CompriskLoadCLI
 
-from Comprisk import logger
+
+
+# switch logging mode depending on DEBUG_MODE
+logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
 def cli_main():

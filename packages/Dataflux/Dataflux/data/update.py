@@ -21,7 +21,7 @@ from Dataflux.data.update_tools import (
     safe_df_avg,
 )
 
-from Comprisk import logger, DEBUG_MODE
+from Dataflux import logger, DEBUG_MODE
 from Dataflux.helper.utils import is_valid_uuid, daterange
 
 

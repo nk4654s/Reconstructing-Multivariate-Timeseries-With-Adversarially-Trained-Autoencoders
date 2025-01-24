@@ -1,9 +1,56 @@
-from Dataflux import DEBUG_MODE, logging_mode
-from Dataflux.logger import get_logger
+"""
+## Overview
+This package includes code to train a model that can either evaluate the current state of a compressor or predict its
+future behavior based on given data. The necessary dataset for training this model is available and must be
+preprocessed using the Dataflux package, which you can find
+[here](https://github.com/neaxplore/xplore-ai-dataflux/tree/master). The `Dataflux` package is a requirement
+for running this software code.
 
+Each submodule of the software contributes to different parts of the overall package. Model architectures are defined
+in the `model` section, hyperparameter tuning takes place in the `tune` folder, and anomaly detection calculations are
+handled within the `anomaly` module. The installed package comes with multiple command line interfaces which work
+together in the `comprisk-pipeline`. The `cli` submodule in Dataflux is responsible for managing any configurations
+needed when starting up the program.
 
-# switch logging mode depending on DEBUG_MODE
-logger = get_logger(__name__, path="./logfile", level=logging_mode)
+## Configuration
+The following `yaml` contains a template a configuration file for running the `comprisk-pipeline` software, which is
+used to train models on compressor data. The configuration defines different steps in the pipeline such as loading the
+dataset (from `dataset` section), training and validating the model (`trainer` and `score_trainer` sections
+respectively), and analyzing the results (`analyzer` section which is optional).
 
-__all__ = ["DEBUG_MODE", "logger"]
+```yaml
+environment: [dev | production]
 
+dataset:
+    - config: [path to dataflux pipeline]
+    - config: [path to dataflux pipeline]
+    - ...
+
+trainer:
+    - config: [path to model configuration]
+
+    # overwriting values of the model configuration is possible
+    data.sequence_in: [integer]
+
+score_trainer:
+    score.mode: [check out Comprisk.anomaly.variants]
+
+analyzer:
+    - dataset: [path to downloaded dataset]
+    prefix: [tag name (must be unique)]
+    - dataset: [path to downloaded dataset]
+    prefix: [tag name (must be unique)]
+    - ...
+```
+"""
+
+import Comprisk.data as data
+import Comprisk.cli as cli
+import Comprisk.helper as helper
+import Comprisk.model as model
+import Comprisk.tune as tune
+import Comprisk.anomaly as anomaly
+
+from Dataflux import DEBUG_MODE
+
+__all__ = ["DEBUG_MODE", "anomaly", "cli", "data", "helper", "model", "tune"]
