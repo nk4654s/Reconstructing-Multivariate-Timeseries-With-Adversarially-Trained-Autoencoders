@@ -94,23 +94,20 @@ def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
         hparams = yaml.safe_load(f)
         sub_modules = {}
 
+        # get the model class, then remove the key/value pair from hparams
+        model_class = class_for_name(*hparams["class_path"].rsplit(".", maxsplit=1))
+        del hparams["class_path"]
+
         for drop in [key for key in hparams.keys() if key.startswith("_")]:
-            if drop == "class_path":
-                continue
             del hparams[drop]
 
         for key, value in hparams.items():
-            if drop == "class_path":
-                continue
-
             if isinstance(value, dict):
                 libpath = value["class_path"]
                 module = class_for_name(*libpath.rsplit(".", maxsplit=1))
                 sub_modules[key] = module(**value["init_args"])
             else:
                 sub_modules[key] = value
-
-        model_class = class_for_name(*hparams["class_path"].rsplit(".", maxsplit=1))
         return model_class, sub_modules
 
 
@@ -122,16 +119,28 @@ def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
         path (str): The path where the model checkpoints were saved.
         eval_mode (bool): Weather to set the loaded model to eval mode or not. Defaults to True.
     """
+    # get the best checkpoint
     checkpoints = get_checkpoints(path)
     checkpoints = sorted(checkpoints, key=lambda x: float(x[:-5].split("val=")[-1]))
     if len(checkpoints) == 0:
         logger.warning("Could not find a checkpoint to load a model from. (%s)", path)
         return None
 
-    # 1. get dataset configuration: start, end, step size (size of input window)
-    model_class, sub_modules = init_modules(path)
-    model = model_class.load_from_checkpoint(
-        os.path.join(path, "checkpoints", checkpoints[0]), **sub_modules
+    # get the model configuration to find the model class
+    with open(os.path.join(path, "config.yaml")) as f:
+        config = yaml.safe_load(f)
+        cls = config["model"].get("class_path", None)
+        if not cls:
+            logger.error("The model 'class_path' must be defined in the 'config.yaml' nested in 'model'.")
+            return None
+
+        cls = class_for_name(*cls.rsplit(".", maxsplit=1))
+
+    # initialize the mode
+    #model_class, sub_modules = init_modules(path)
+    logger.debug("Attempt to load model class %s", cls.__name__)
+    model = cls.load_from_checkpoint(
+        os.path.join(path, "checkpoints", checkpoints[0]),# **sub_modules
     )
 
     logger.info("Loaded model %s from %s", checkpoints[0], path)

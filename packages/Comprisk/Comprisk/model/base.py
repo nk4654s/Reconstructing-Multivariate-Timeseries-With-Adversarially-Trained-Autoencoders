@@ -77,7 +77,7 @@ class BaseModel(L.LightningModule):
         self.hparams["features_in"] = self._features_in
         self.hparams["features_out"] = self._features_out
         self.hparams["behavior"] = self._behavior.value
-        self.hparams["class_path"] = f"{self.__module__}.{self.__class__.__name__}"
+        #self.hparams["class_path"] = f"{self.__module__}.{self.__class__.__name__}"
 
         self.save_hyperparameters(self.hparams)
 

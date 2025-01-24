@@ -57,9 +57,11 @@ class ModelLoader:
             raise ValueError("Expected to either get a path or model. Got None.")
 
         self._path = path
-        model = model or load_model(path, eval_mode=False)
-        assert model, f"Unable to load model, no checkpoints found for {path}."
-        self.model: BaseModel = model
+        self.model: BaseModel = model or load_model(path, eval_mode=False)
+
+        if not self.model:
+            raise ValueError("Unable to load model")
+        logger.info("ModelLoader fully initialized.")
 
     @property
     def path(self) -> str:
