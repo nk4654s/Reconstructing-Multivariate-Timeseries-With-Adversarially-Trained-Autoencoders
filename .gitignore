@@ -37,3 +37,4 @@ logfile*
 
 # specific
 /.venv/
+.env

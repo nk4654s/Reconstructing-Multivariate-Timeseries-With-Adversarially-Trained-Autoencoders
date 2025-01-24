@@ -5,7 +5,18 @@ import pandas as pd
 
 from Dataflux.data.download import DataDownloader
 from Dataflux.data.types import DataType
-from Dataflux.helper import decompress
+
+
+def safe_df_avg(df: pd.DataFrame, avg_size: int, delta: int) -> pd.DataFrame:
+    # apply the mean as a rolling window with the step size being the window's size
+    # the window's size is calculated by the time delta between two datapoints and
+    # the resolution to be achieved
+    pool = avg_size // delta
+    df = df.rolling(window=pool, step=pool, center=True).mean()
+    df = df.dropna(how="all")
+    df = df.round(3)
+
+    return df
 
 
 def merge_dfs(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
@@ -42,6 +53,16 @@ def merge_dfs(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     Returns:
         DataFrame: The merged DataFrame.
     """
+    # ensure the correct index type
+    for df in [df1, df2]:
+        if df is None:
+            continue
+
+        df = df.reindex(sorted(df.columns), axis=1)
+        df.reset_index(inplace=True)
+        df = df.astype({"ts": "int64"})
+        df.set_index("ts", inplace=True)
+
     if df1.empty:
         return df2
 
@@ -88,7 +109,6 @@ def safe_download(downloader: DataDownloader, day: str) -> pd.DataFrame:
     df = downloader.get_dataframe(day)
     if not df.empty:
         df.set_index("ts", inplace=True)
-        df = decompress(df)
 
     return df
 

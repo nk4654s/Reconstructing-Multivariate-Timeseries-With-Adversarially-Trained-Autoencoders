@@ -19,6 +19,18 @@ class TestMachineSplit(unittest.TestCase):
             keys=["ts"]
         )
 
+    def test_no_ts_index(self):
+        df_a = self.df_a.reset_index()
+        df_a.drop(columns=["ts"], inplace=True)
+
+        df_b = self.df_b.reset_index()
+        df_b.drop(columns=["ts"], inplace=True)
+
+        def fail():
+            merge_dfs(df_a, df_b)
+
+        self.assertRaises(KeyError, fail)
+
     def test_merge_appending_df(self):
         df = merge_dfs(self.df_a, self.df_b)
 

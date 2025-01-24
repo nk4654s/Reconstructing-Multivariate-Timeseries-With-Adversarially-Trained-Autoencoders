@@ -194,12 +194,12 @@ class ContinuousDataDownloader(DataDownloader):
                 if inter[0] > inter[1]:
                     logger.error("Start date must be before end date (%s > %s).", inter[0], inter[1])
                     exit(0)
-                self._days += get_day_list((inter[0], inter[1]))
+                self._days += get_day_list(inter[0], inter[1])
         else:
             if interval[0] <= interval[1]:
                 logger.error("Start date must be before end date (%s > %s).", interval[0], interval[1])
                 exit(0)
-            self._days = get_day_list((interval[0], interval[1]))
+            self._days = get_day_list(interval[0], interval[1])
 
     def day(self, i: int) -> datetime:
         """Returns the day according to the index.
