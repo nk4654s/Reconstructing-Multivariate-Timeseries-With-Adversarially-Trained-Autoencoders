@@ -34,7 +34,7 @@ class CompriskUpdateCallable(UpdateCallable):
         df = df[df.index <= end]
 
         # calculate the mean as total machine score, other metrics might be better
-        df[total_key] = df.max(axis=1)
+        df[total_key] = df.min(axis=1)
         return df
 
 
@@ -63,7 +63,10 @@ def cli_main():
     if flux and not flux.args.latest:
         # there should be only one interval as the "latest" arg should be used
         init_interval = flux.args.intervals[0].split()
-        start, end = (parse_datestring(init_interval[0]), parse_datestring(init_interval[1]))
+        start, end = (
+            parse_datestring(init_interval[0]),
+            parse_datestring(init_interval[1]),
+        )
 
     # catch the case, where the machine is offline and the dataset is empty
     try:
@@ -95,7 +98,12 @@ def cli_main():
 
     try:
         debug = os.environ.get("CAS_DEBUG_MODE", "0") == data.UUID
-        updater = DataUpdater(data.UUID, CompriskUpdateCallable(score_data), debug=debug)
+        updater = DataUpdater(
+            data.UUID,
+            CompriskUpdateCallable(score_data),
+            debug=debug,
+            force_upload=cli.config.force_upload,
+        )
         updater.set_data_type(DataType.MEASUREMENTS)
         updater.update(start, end, data.get_args().skip)
     except EmptyScoreRegister as e:

@@ -41,10 +41,13 @@ class DataUpdater(S3Bucket):
     """
 
     def __init__(
-        self, machine_uuid: str, update_callable: UpdateCallable, debug: bool = False
+        self, machine_uuid: str, update_callable: UpdateCallable, force_upload: bool = False, debug: bool = False
     ) -> None:
         super().__init__(machine_uuid)
         self._callable = update_callable
+        self._force = force_upload
+        if force_upload and not debug:
+            raise ValueError("Force upload can only be enabled if debug=True.")
 
         self._debug = debug
         self._debug_uuid = "5ac7f03f-f4e6-4b15-9bc6-21db798f9d25"
@@ -146,7 +149,9 @@ class DataUpdater(S3Bucket):
                 df = safe_download(downloaders[i + 1], day_str)
                 download_size = len(df)
                 download_cols = {
-                    n: hash(df[n].dropna().sum()) for n in df.columns.values if n not in result_df.columns.values
+                    n: hash(df[n].dropna().sum())
+                    for n in df.columns.values
+                    if n not in result_df.columns.values
                 }
                 logger.debug(
                     "Downloaded virtual sensors (len=%s) [%ss]", download_size, avg
@@ -166,6 +171,41 @@ class DataUpdater(S3Bucket):
                 path = f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}-virtual.tsv-{postfix}"
                 self.upload(df, path, download_size, download_cols)
 
+    def check(
+        self, df: pd.DataFrame, previous_size: int, previous_columns: Dict[str, int]
+    ) -> bool:
+        # do not get smaller
+        if len(df) < previous_size:
+            logger.warning("Attempted to upload smaller dataframe.")
+            return False
+
+        if len(previous_columns) > df.shape[1]:
+            logger.warning("Attempted to upload less columns than were on AWS.")
+            return False
+
+        # make sure to keep previously existing columns
+        columns = {
+            n: df[n].dropna().sum() for n in df.columns.values if n in previous_columns
+        }
+        for name, val in previous_columns.items():
+            if name not in columns.keys():
+                logger.warning("Attempted to remove %s when updating.", name)
+                return False
+
+            if name not in self._score_uuids.values() and columns[name] != val:
+                logger.warning("Forbidden modification attempt in column %s", name)
+                return False
+
+        # check if the header columns contain UUIDs only, this should work as the 'ts' is the index not a column
+        for name in df.columns.values:
+            if not is_valid_uuid(name):
+                logger.warning(
+                    "Upload failed due to malformed TSV header, got invalid UUID=%s",
+                    name,
+                )
+                return False
+        return True
+
     def upload(
         self,
         df: pd.DataFrame,
@@ -175,37 +215,8 @@ class DataUpdater(S3Bucket):
     ) -> None:
         logger.debug("Upload new virtual sensors (len=%s)", len(df))
         df = compress(df)
-
-        # do not get smaller
-        if len(df) < previous_size:
-            logger.warning("Attempted to upload smaller dataframe.")
+        if not self._force and not self.check(df, previous_size, previous_columns):
             return None
-
-        if len(previous_columns) > df.shape[1]:
-            logger.warning("Attempted to upload less columns than were on AWS.")
-            return None
-
-        # make sure to keep previously existing columns
-        columns = {
-            n: df[n].dropna().sum() for n in df.columns.values if n in previous_columns
-        }
-        for name, val in previous_columns.items():
-            if name not in columns.keys():
-                logger.warning("Attempted to remove %s when updating.", name)
-                return None
-
-            if name not in self._score_uuids.values() and [name] != val:
-                logger.warning("Forbidden modification attempt in column %s", name)
-                return None
-
-        # check if the header columns contain UUIDs only, this should work as the 'ts' is the index not a column
-        for name in df.columns.values:
-            if not is_valid_uuid(name):
-                logger.warning(
-                    "Upload failed due to malformed TSV header, got invalid UUID=%s",
-                    name,
-                )
-                return None
 
         # export dataframe as tsv-file
         df = df.round(3)
