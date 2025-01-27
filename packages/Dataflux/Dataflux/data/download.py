@@ -74,6 +74,10 @@ class DataDownloader(S3Bucket):
             appendix,
         )
 
+    @property
+    def appendix(self) -> str:
+        return self._appendix
+
     def get_stream(self, day: str | date) -> List[str]:
         """
         Opens and returns the stream from the S3 bucket given the day.
