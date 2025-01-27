@@ -1,0 +1,61 @@
+folder: environment/production/datasets/thyssen-vd2-valset-phase-2
+machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
+intervals:
+  - 2023-08-01 2023-08-09 # use the validation set of phase 1
+  - 2024-09-01 2024-09-09 # update the validation set using phase 2
+num_workers: 8
+overwrite: false
+
+modules:
+  - class_path: Dataflux.modules.Rename
+    init_args:
+      enable: True
+  - class_path: Dataflux.modules.State
+    init_args:
+      key: "Laeuft"
+      lower: 0.9
+      upper: 1.1
+      alpha_threshold: 3600
+      beta_threshold: 600
+  - class_path: Dataflux.modules.state.State
+    init_args:
+      key: "PositionBypassregelventilPCV74381 (%)"
+      lower: -0.99
+      upper: 0.01
+      alpha_threshold: 900
+      beta_threshold: 900
+
+  - class_path: Dataflux.modules.features.Features
+    init_args:
+      include:
+        - SaugtemperaturZweiteStufeTETIT74341 (°C)
+        - SaugdruckZweiteStufePIT74340 (bar)
+        - SchwingungsmessungTriebwerkVT74280 (mm/s)
+        - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)
+        - KühlwassertemperaturnachKühlerTETIT74422 (°C)
+        - EnddruckZweiteStufePIT74397 (bar)
+        - KühlwasserdurchflussmengeFIT74423 (m^3/min)
+        - KühlwasserdrucknachPumpePIT74425 (bar)
+        - PackungsleckageFIT74389 (Nm3h)
+        - SaugtemperaturErsteStufeTETIT74328 (°C)
+        - EnddruckErsteStufePIT74339 (bar)
+        - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
+        - Wicklungstemperatur (°C)
+        - Motorlager (°C)
+        - SaugdruckErsteStufePIT74319 (bar)
+        - VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)
+        - EndtemperaturZweiteStufenachKühlerTETIT74378 (°C)
+        - KompressordrehzahlSE74201 (rpm)
+        - EndtemperaturZweiteStufeTETIT74371 (°C)
+        - EndtemperaturErsteStufeTETIT74334 (°C)
+        - DifferenzdruckTriebwerksölPDIT74553 (bar)
+        - Biomethandurchfluss (m^3/min)
+  - class_path: Dataflux.modules.normalize.NormalizeFit
+    init_args:
+      method: minmax
+      remove_outliers: false
+      exclude_keys:
+        - ts
+  - class_path: Dataflux.modules.normalize.NormalizeTransform
+    init_args:
+      from_other: environment/dev/datasets/thyssen-vd2-trainset-phase-2

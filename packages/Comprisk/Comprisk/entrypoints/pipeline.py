@@ -116,6 +116,7 @@ def cli_main():
 
         # train the model
         args = ["comprisk-trainer", "-c", os.path.join("environment", env, config)]
+        args += ["--environment", env]
         args += ["--finetune", latest_config] if latest_config else []
         for key, value in trainer.items():
             args += [f"--{key}", value]

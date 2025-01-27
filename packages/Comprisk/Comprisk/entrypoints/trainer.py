@@ -22,7 +22,6 @@ from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
 
 
-
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
@@ -78,10 +77,12 @@ def run_trainer(cli: CompriskCLI) -> str:
     Returns:
         str: The path where the model was saved.
     """
-    # set up the logger
+    # set up the logger depending on the environment
     sub_path = cli.model.__class__.__name__
     if cli.config.tag:
         sub_path = f"{cli.model.__class__.__name__}/{cli.config.tag}"
+    if cli.config.environment == "production":
+        sub_path = cli.config.tag
 
     logger.debug("Defining TensorBoard logger for %s", sub_path)
     tb_logger = TensorBoardLogger(
