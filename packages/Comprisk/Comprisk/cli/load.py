@@ -14,8 +14,7 @@ class CompriskLoadCLI(CompriskCLI):
         super().add_arguments_to_parser(parser)
         parser.add_argument("--prefix", type=str, default=None)
         parser.add_argument("--dataset", type=str, default=None)
-        parser.add_argument("--anomaly.name", type=str, default=None)
-        parser.add_argument("--anomaly.factor", type=float, default=None)
+        parser.add_argument("--force-upload", action="store_true", default=False)
 
     def before_fit(self):
         pass

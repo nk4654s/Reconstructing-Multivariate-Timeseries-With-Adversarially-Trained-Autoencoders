@@ -1,11 +1,12 @@
 """This module contains classes to download the raw TSV-files from the S3 bucket and handles
 the parsing."""
+
 import gzip
 import os
 from datetime import date, datetime
-from io import BytesIO, TextIOWrapper
+from io import BytesIO
 from multiprocessing import Pool
-from typing import List, TextIO, Tuple
+from typing import List, Tuple
 from uuid import UUID
 from tqdm import tqdm
 import numpy as np
@@ -43,6 +44,7 @@ def homogeneous_decompress(df: pd.DataFrame, index_key: str = "ts") -> pd.DataFr
 
 class EmptyStreamError(Exception):
     """Raised when the stream is empty."""
+
     def __init__(self, day: str) -> None:
         super().__init__(f"Stream of '{day}' is empty")
 
@@ -54,7 +56,10 @@ class DataDownloader(S3Bucket):
     Args:
         machine_uuid (str): The unique ID of the machine to download data from.
     """
-    def __init__(self, machine_uuid: str | UUID, file_postfix: str = "", appendix: str = "") -> None:
+
+    def __init__(
+        self, machine_uuid: str | UUID, file_postfix: str = "", appendix: str = ""
+    ) -> None:
         super().__init__(machine_uuid)
 
         self._postfix = f"-{file_postfix}" if file_postfix else ""
@@ -62,20 +67,25 @@ class DataDownloader(S3Bucket):
         self._header = None
         self._pool = Pool(12)
 
-        logger.debug("Download TSV-files from %s with postfix='%s' and '%s'", self._uuid, file_postfix, appendix)
+        logger.debug(
+            "Download TSV-files from %s with postfix='%s' and '%s'",
+            self._uuid,
+            file_postfix,
+            appendix,
+        )
 
-    def get_stream(self, day: str | date) -> gzip.GzipFile | TextIO:
+    def get_stream(self, day: str | date) -> List[str]:
         """
         Opens and returns the stream from the S3 bucket given the day.
 
         Args:
             day (str | date): The day to open the stream from. Should be either in the format
                 `YYYY-MM-DD` or `YYYY/MM/DD`.
-        
+
         Raises:
             S3.Client.exceptions.NoSuchKey
             S3.Client.exceptions.InvalidObjectState
-        
+
         Returns:
             TextIO: The stream from the S3 bucket given the day.
         """
@@ -85,16 +95,18 @@ class DataDownloader(S3Bucket):
         else:
             day = day.strftime("%Y/%m/%d")
 
-        path = f"{self._uuid}/days/{day}/{self._uuid}{self._postfix}.tsv{self._appendix}"
+        path = (
+            f"{self._uuid}/days/{day}/{self._uuid}{self._postfix}.tsv{self._appendix}"
+        )
 
         # open and uncompressed the s3 stream given the bucket and path
-        data = self._client.get_object(Bucket=self._bucket, Key=f"{path}")[
-            "Body"
-        ].read()
-        stream = gzip.open(BytesIO(data), mode="rt")
-        stream.seek(0)
+        data = self._client.get_object(Bucket=self._bucket, Key=f"{path}")
+        stream = gzip.open(BytesIO(data["Body"].read()), mode="rt", encoding="utf-8")
+        logger.debug("AWS object content length=%s", data["ContentLength"])
 
-        return stream
+        lines = stream.readlines()
+        logger.debug("Read lines in total=%s", len(lines))
+        return lines
 
     def parse_header(self, line: str) -> Header:
         """This method parses a line into a header.
@@ -109,26 +121,23 @@ class DataDownloader(S3Bucket):
         incoming.values = line.rstrip("\n").split("\t")
         return incoming
 
-    def parse_stream(self, stream: gzip.GzipFile | TextIO) -> pd.DataFrame | None:
+    def parse_stream(self, lines: List[str]) -> pd.DataFrame:
         """
         This method parses the stream into a pandas DataFrame. If the stream is empty,
         it will return `None`. Otherwise, each line is parsed into an array of float32
         values.
 
         Args:
-            stream (TextIO): The stream to parse into a pandas DataFrame
+            lines (List[str]): The list of lines read from AWS using the `get_stream()` method.
 
         Returns:
             pd.DataFrame: The parsed pandas DataFrame.
         """
-        assert isinstance(stream, TextIOWrapper), "Stream must be an uncompressed file-like."
-
-        # check if the dataframe is empty and set it up accordingly
-        # also check if the header is consistent with the stream's one
-        # if not, save the progress so far and continue on a fresh dataframe instance
-        lines = stream.readlines()
         if len(lines) <= 1:
-            return None
+            logger.warning(
+                "Got an empty stream (header? %s).", "yes" if len(lines) == 1 else "no"
+            )
+            return pd.DataFrame()
 
         header = self.parse_header(lines.pop(0))
 
@@ -156,21 +165,33 @@ class DataDownloader(S3Bucket):
 
         Raises:
             EmptyStreamError (Exception): If the stream is empty.
-        
+
         Returns:
             pd.DataFrame: The parsed pandas DataFrame.
         """
         df = None
         try:
-            stream = self.get_stream(day)
-            df = self.parse_stream(stream)
+            lines = self.get_stream(day)
+            df = self.parse_stream(lines)
+            if df.empty:
+                logger.warning("Downloaded empty DataFrame.")
+
         except BaseException as e:
             logger.error("Unable to download dataset: %s", day)
             logger.error("Caught error %s", e)
 
         df = df if df is not None else pd.DataFrame()
-        time = datetime.fromtimestamp(df["ts"].values[0]) if "ts" in df.columns.values else 0
-        logger.debug("Downloaded (shape=%s) starting at %s from %s", df.shape, time, self.machine_uuid)
+        time = (
+            datetime.fromtimestamp(df["ts"].values[0])
+            if "ts" in df.columns.values
+            else 0
+        )
+        logger.debug(
+            "Downloaded (shape=%s) starting at %s from %s",
+            df.shape,
+            time,
+            self.machine_uuid,
+        )
         return df
 
 
@@ -182,8 +203,12 @@ class ContinuousDataDownloader(DataDownloader):
         machine_uuid (str | UUID): The machine uuid to download data from.
         interval (List[Tuple[date, date]] | Tuple[date, date]): The interval to download data from.
     """
-    def __init__(self, machine_uuid: str | UUID,
-                 interval: List[Tuple[datetime, datetime]] | Tuple[datetime, datetime]) -> None:
+
+    def __init__(
+        self,
+        machine_uuid: str | UUID,
+        interval: List[Tuple[datetime, datetime]] | Tuple[datetime, datetime],
+    ) -> None:
         super().__init__(machine_uuid)
 
         # the interval can either be a single interval provided as tuple of two days
@@ -192,12 +217,20 @@ class ContinuousDataDownloader(DataDownloader):
             self._days = []
             for inter in interval:
                 if inter[0] > inter[1]:
-                    logger.error("Start date must be before end date (%s > %s).", inter[0], inter[1])
+                    logger.error(
+                        "Start date must be before end date (%s > %s).",
+                        inter[0],
+                        inter[1],
+                    )
                     exit(0)
                 self._days += get_day_list(inter[0], inter[1])
         else:
             if interval[0] <= interval[1]:
-                logger.error("Start date must be before end date (%s > %s).", interval[0], interval[1])
+                logger.error(
+                    "Start date must be before end date (%s > %s).",
+                    interval[0],
+                    interval[1],
+                )
                 exit(0)
             self._days = get_day_list(interval[0], interval[1])
 
@@ -208,7 +241,7 @@ class ContinuousDataDownloader(DataDownloader):
             i (int): The index of the day
         """
         return self._days[i]
-    
+
     def run(self, dir_name: str = "dataset") -> bool:
         """Downloads the dataframe from a S3 stream and downloads the dataframe as file.
 
@@ -228,7 +261,9 @@ class ContinuousDataDownloader(DataDownloader):
         files = []
 
         # iterate over all streams and append their content to the dataframe
-        length = len(self) if len(self) != 2 or self.day(1).day - self.day(0).day != 0 else 1
+        length = (
+            len(self) if len(self) != 2 or self.day(1).day - self.day(0).day != 0 else 1
+        )
         pbar = tqdm(total=length, desc="Downloading Dataset", disable=not DEBUG_MODE)
         for i in range(length):
             day = self.day(i).strftime("%Y-%m-%d")
@@ -259,19 +294,23 @@ class ContinuousDataDownloader(DataDownloader):
                         df = df[df["ts"] <= self.day(i).timestamp()]
 
                     df.to_feather(file_path)
-                    files.append({
-                        Meta.DAY.name: day,
-                        "recordings": len(df),
-                        "features": df.shape[1]
-                    })
+                    files.append(
+                        {
+                            Meta.DAY.name: day,
+                            "recordings": len(df),
+                            "features": df.shape[1],
+                        }
+                    )
                 pbar.update(1)
             except EmptyStreamError:
                 logger.debug("Stream for day %s is empty, skipping file download.", day)
                 pbar.update(1)
                 continue
 
-
-        logger.info("Finished downloading %s files. Continuing with processing files.", len(files))
+        logger.info(
+            "Finished downloading %s files. Continuing with processing files.",
+            len(files),
+        )
         logger.debug("Saving metadata info to '%s'.", dir_name)
 
         meta.put(sum([f["recordings"] for f in files]), Meta.TOTAL_RECORDINGS)
