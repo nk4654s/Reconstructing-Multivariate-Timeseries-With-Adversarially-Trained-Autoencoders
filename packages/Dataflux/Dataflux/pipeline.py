@@ -4,7 +4,7 @@ when processing a dataset using a defined yaml-config.
 
 import os
 import shutil
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import List, Tuple
 
 from Dataflux.cli import CLIArgumentParser
