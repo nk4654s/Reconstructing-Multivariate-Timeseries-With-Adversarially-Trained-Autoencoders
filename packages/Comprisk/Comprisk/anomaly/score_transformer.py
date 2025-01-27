@@ -62,8 +62,7 @@ class ScoreTransformer(BaseTransformer):
             show (bool): Whether to show the graph or not.
             
         Returns:
-            (pd.DataFrame): The transformed loss values in the range of 0 to 1. 0 is best
-                and 1 is worst.
+            (pd.DataFrame): The transformed loss values in the range of 0 to 1, whereas 1 is the best score.
         """
         assert self._transformer
         scores = self._transformer.transform(predicted, target, **kwargs)

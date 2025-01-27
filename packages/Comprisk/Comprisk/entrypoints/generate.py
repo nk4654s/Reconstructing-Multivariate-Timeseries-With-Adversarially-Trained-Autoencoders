@@ -57,11 +57,11 @@ def cli_main():
         datamodule_args_modified["train"] = cli.config.dataset
 
     # update the dataset's virtual sensors in the S3 buckets with the scores
-    end = datetime.now(tz=timezone.utc).replace(microsecond=999999)
-    start = (end - timedelta(hours=1)).replace(microsecond=0)
-
+    start = datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start.replace(hour=23, minute=59, second=59, microsecond=999999)
     if flux and not flux.args.latest:
-        # there should be only one interval as the "latest" arg should be used
+        # if flux was used to download a dataset and the `latest` tag is not used, then overwrite the interval
+        # to upload to
         init_interval = flux.args.intervals[0].split()
         start, end = (
             parse_datestring(init_interval[0]),
