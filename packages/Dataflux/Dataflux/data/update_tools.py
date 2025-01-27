@@ -55,7 +55,7 @@ def merge_dfs(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     """
     # ensure the correct index type
     for df in [df1, df2]:
-        if df is None:
+        if df is None or df.empty:
             continue
 
         df = df.reindex(sorted(df.columns), axis=1)

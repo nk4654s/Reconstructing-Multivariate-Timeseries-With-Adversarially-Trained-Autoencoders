@@ -123,7 +123,9 @@ class DataUpdater(S3Bucket):
             # 3. rename human-readable column names to be machine-readable
             result_df = self._rename_with_register(result_df)
             download_cols = {
-                n: hash(df[n].dropna().sum()) for n in result_df.columns.values
+                n: hash(df[n].dropna().sum())
+                for n in df.columns.values
+                if n not in result_df.columns.values
             }
 
             # 4. merge, then apply the same compressing rules
@@ -144,7 +146,7 @@ class DataUpdater(S3Bucket):
                 df = safe_download(downloaders[i + 1], day_str)
                 download_size = len(df)
                 download_cols = {
-                    n: hash(df[n].dropna().sum()) for n in result_df.columns.values
+                    n: hash(df[n].dropna().sum()) for n in df.columns.values if n not in result_df.columns.values
                 }
                 logger.debug(
                     "Downloaded virtual sensors (len=%s) [%ss]", download_size, avg
@@ -179,12 +181,14 @@ class DataUpdater(S3Bucket):
             logger.warning("Attempted to upload smaller dataframe.")
             return None
 
-        if len(previous_columns) < df.shape[1]:
+        if len(previous_columns) > df.shape[1]:
             logger.warning("Attempted to upload less columns than were on AWS.")
             return None
 
         # make sure to keep previously existing columns
-        columns = {n: df[n].dropna().sum() for n in df.columns.values}
+        columns = {
+            n: df[n].dropna().sum() for n in df.columns.values if n in previous_columns
+        }
         for name, val in previous_columns.items():
             if name not in columns.keys():
                 logger.warning("Attempted to remove %s when updating.", name)
