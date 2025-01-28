@@ -13,13 +13,16 @@ class FluxEntrypoint(EntrypointBase):
 
     def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
         dataset_paths = {
-            "train": context.config.data.train,
-            "validate": context.config.data.validate
+            "train": os.path.join(context.base_folder, context.environment.value, context.config.data.train),
+            "validate": os.path.join(context.base_folder, context.environment.value, context.config.data.validate),
         }
 
-        download_required = False
+        if "__path__" in context.config.data:
+            del context.config.data.__path__
+
         datamodule_args_modified = context.config.data
         for key, path in dataset_paths.items():
+            datamodule_args_modified[key] = path
             if os.path.isdir(path):
                 continue
 
@@ -29,12 +32,10 @@ class FluxEntrypoint(EntrypointBase):
 
             # update the comprisk context to let it know where to find the dataset
             datamodule_args_modified[key] = folder_path
-            download_required = True
 
         # finalize the context
-        if download_required:
-            context.config.data.train = datamodule_args_modified["train"]
-            context.config.data.validate = datamodule_args_modified["validate"]
-            context.datamodule = DataModule(**datamodule_args_modified)
+        context.config.data.train = datamodule_args_modified["train"]
+        context.config.data.validate = datamodule_args_modified["validate"]
+        context.datamodule = DataModule(**datamodule_args_modified)
 
         return context

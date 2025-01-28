@@ -1,3 +1,24 @@
+# CAS specific
+environment: dev
+tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
+upload_config: configs/vd2-version-1/3_upload.yml
+score_transformer:
+  mode: linear
+
+# model configuration
+model:
+  class_path: Comprisk.model.auto_encoder.rnn.MultimodalRecurrentAutoEncoder
+  init_args:
+    activation: tanh
+    loss: MSELoss
+    optimizer: Adam
+    lr: 0.0001
+    lr_decay: 0.9
+    num_hidden_dim: 64
+    num_hidden_layers: 4
+    dropout_prob: 0.3
+
+# trainer and dataset config
 seed_everything: true
 trainer:
   accelerator: mps
@@ -18,27 +39,15 @@ trainer:
         dirpath: checkpoints
 
   precision: 32
-  max_epochs: 25
+  max_epochs: 5
   gradient_clip_val: 1.0
   log_every_n_steps: 1
 
-model:
-  class_path: Comprisk.model.auto_encoder.rnn.MultimodalRecurrentAutoEncoder
-  init_args:
-    activation: tanh
-    loss: MSELoss
-    optimizer: Adam
-    lr: 0.0001
-    lr_decay: 0.9
-    num_hidden_dim: 64
-    num_hidden_layers: 4
-    dropout_prob: 0.3
-
 data:
-  train: define_in_pipeline
-  validate: define_in_pipeline
+  train: configs/vd2-version-1/1_dataset_train.yml
+  validate: configs/vd2-version-1/2_dataset_validate.yml
   sequence_in: 60
-  sequence_out: 60
+  sequence_out: 0
   features_in:
     - Biomethandurchfluss (m^3/min)
     - DifferenzdruckTriebwerksölPDIT74553 (bar)
