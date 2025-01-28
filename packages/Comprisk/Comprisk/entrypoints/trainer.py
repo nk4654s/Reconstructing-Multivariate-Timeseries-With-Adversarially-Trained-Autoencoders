@@ -47,21 +47,14 @@ class TrainerEntrypoint(EntrypointBase):
         self._checkpoint_path = None
         self._metadata_path = None
 
-    @property
-    def logging_path(self) -> str:
-        return self._logging_path
-
     def _set_logging_path(self, context: EntrypointContext) -> None:
         # set up the logger depending on the environment
         sub_path = context.model.__class__.__name__
         if context.config.tag:
             sub_path = f"{sub_path}/{context.config.tag}"
 
-        if context.environment == Environment.PRODUCTION:
-            sub_path = context.config.tag
-
         logger.debug("Defining TensorBoard logger for %s", sub_path)
-        path = f"environment/{context.environment.value}/models"
+        path = os.path.join(context.base_folder, context.environment.value, "models")
         tb_logger = TensorBoardLogger(path, sub_path)
         self._logging_path = tb_logger.log_dir
         context.trainer.logger = tb_logger
@@ -74,7 +67,7 @@ class TrainerEntrypoint(EntrypointBase):
         # suffix number
         checkpoint = get_trainer_callback(context.trainer, ModelCheckpoint.__name__)
         if checkpoint:
-            self._checkpoint_path = os.path.join(self.logging_path, "checkpoints")
+            self._checkpoint_path = os.path.join(self._logging_path, "checkpoints")
             os.makedirs(self._checkpoint_path)
             checkpoint.dirpath = self._checkpoint_path
 
@@ -84,7 +77,7 @@ class TrainerEntrypoint(EntrypointBase):
     def _set_metadata_path(self, context: EntrypointContext) -> None:
         # save model metadata to log folder, which should not exist yet
         dataset_path = context.datamodule.trainset.directory
-        self._metadata_path = os.path.join(self.logging_path, "metadata")
+        self._metadata_path = os.path.join(self._logging_path, "metadata")
         os.makedirs(self._metadata_path)
 
         # copy the normalizer of the training data to the model
@@ -112,6 +105,28 @@ class TrainerEntrypoint(EntrypointBase):
         context.model = loader.get_model()
         context.model.train()
 
+        # move the upload config if provided
+        # when the model was loaded, there should be the upload yaml next to the training config
+        upload_config_path = os.path.join(context.config_folder, "upload.yaml")
+        if context.config.upload_config and not loader.from_disk:
+            upload_config_path = os.path.join(
+                context.base_folder,
+                context.environment.value,
+                context.config.upload_config,
+            )
+
+        # if copying the upload.yaml fails, then abort training and cleanup
+        try:
+            shutil.copyfile(
+                os.path.join(upload_config_path),
+                os.path.join(self._logging_path, "upload.yaml"),
+            )
+        except FileNotFoundError as e:
+            logger.error(e)
+            logger.critical("Could not find upload.yaml in %s", context.config_folder)
+            shutil.rmtree(self._logging_path)
+            exit(0)
+
         # start the training
         logger.debug("Starting training")
         context.trainer.fit(context.model, context.datamodule)
@@ -121,11 +136,11 @@ class TrainerEntrypoint(EntrypointBase):
         # FIXME: this should not be a problem, this is a workaround
         if context.config.finetune:
             config_path = os.path.dirname(context.config.finetune)
-            if os.path.exists(os.path.join(self.logging_path, "hparams.yaml")):
-                os.remove(os.path.join(self.logging_path, "hparams.yaml"))
+            if os.path.exists(os.path.join(self._logging_path, "hparams.yaml")):
+                os.remove(os.path.join(self._logging_path, "hparams.yaml"))
             shutil.copyfile(
                 os.path.join(config_path, "hparams.yaml"),
-                os.path.join(self.logging_path, "hparams.yaml"),
+                os.path.join(self._logging_path, "hparams.yaml"),
             )
 
         logger.info(
@@ -134,5 +149,5 @@ class TrainerEntrypoint(EntrypointBase):
             context.datamodule.trainset.UUID,
         )
 
-        context.config_folder = self.logging_path
+        context.config_folder = self._logging_path
         return context

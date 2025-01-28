@@ -48,6 +48,7 @@ class CompriskCLI(LightningCLI):
         parser.add_argument("--tag", type=str, default=None)
         parser.add_argument("--environment", type=str, default="dev")
         parser.add_argument("--prefix", type=str, default="analysis")
+        parser.add_argument("--upload-config", type=str, default=None)
         parser.add_argument("--force-upload", action="store_true", default=False)
         parser.add_argument("--tuner-config", nargs="?")
         parser.add_argument("--tuner-trials", type=int, default=1)
@@ -69,7 +70,6 @@ class CompriskCLI(LightningCLI):
             trainer_args["callbacks"] = self.trainer.callbacks # type: ignore
             trainer_args["max_epochs"] = 1
             self.trainer = Trainer(**trainer_args)
-
 
     def after_fit(self):
         """Method executes after fit automatically."""

@@ -1,3 +1,5 @@
+import os.path
+
 from Dataflux import get_logger, logging_mode
 
 from Comprisk.cli import CompriskCLI
@@ -85,6 +87,13 @@ def cli_generate() -> None:
     CompriskCLI object and sets up the command-line interface.
     """
     cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+
+    # check if the upload.yaml is in the config folder, otherwise an upload is not possible
+    cli.config.data.validate = os.path.join(get_config_folder(cli), "upload.yaml")
+    if not os.path.exists(cli.config.data.validate):
+        logger.error("Unable to find upload configuration: %s", cli.config.data.validate)
+        return
+
     pipeline = Pipeline(entrypoints=[
         flux,
         generate
@@ -93,7 +102,7 @@ def cli_generate() -> None:
 
 
 if __name__ == "__main__":
-    #cli_train()
+    cli_train()
     #cli_train_score_transformer()
     #cli_analyze()
-    cli_generate()
+    #cli_generate()

@@ -30,6 +30,7 @@ class EntrypointContext:
     model: BaseModel
     datamodule: DataModule
     trainer: Trainer
+    base_folder: str = "environment"
     environment_: InitVar[Environment | str] = Environment.DEVELOPMENT
     environment: Environment = field(init=False)
 
@@ -50,7 +51,7 @@ class Pipeline:
     def __init__(self, entrypoints: List[EntrypointBase]) -> None:
         self._entrypoints = entrypoints
 
-    def run(self, context: EntrypointContext) -> Tuple[str, int]:
+    def run(self, context: EntrypointContext) -> Tuple[int, str]:
         for i, entry in enumerate(self._entrypoints):
             context: EntrypointContext = entry(context)
-            yield entry.__class__.__name__, i
+            yield i, entry.__class__.__name__

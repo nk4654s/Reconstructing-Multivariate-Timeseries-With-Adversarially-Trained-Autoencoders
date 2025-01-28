@@ -1,5 +1,10 @@
-"""This module contains the entrypoints for the **Comprisk** package. The entrypoints are required to train, load, and
-analyze a model. Available entrypoints can be found in the package's `setup.py`."""
+"""
+## Overview
+This module defines the entrypoints packed together to build a pipeline. Each entrypoint module implements unique
+tasks, such as downloading and processing a dataset, training the model, or running evaluations. A pipeline combines
+these module in a way to form an executable pipeline. A pipeline can be run using the CLI after installing `Comprisk`.
+To learn more about the generic entrypoint structure check out `Comprisk.entrypoints.base` for more information.
+"""
 
 from Comprisk.entrypoints.base import (
     EntrypointContext,
@@ -14,13 +19,13 @@ from Comprisk.entrypoints.flux import FluxEntrypoint
 from Comprisk.entrypoints.generate import GeneratorEntrypoint
 
 __all__ = [
-    "Environment",
     "EntrypointContext",
     "EntrypointBase",
     "Pipeline",
     "AnalyzerEntrypoint",
+    "GeneratorEntrypoint",
+    "FluxEntrypoint",
     "TrainerEntrypoint",
     "TrainScoreTransformerEntrypoint",
-    "FluxEntrypoint",
-    "GeneratorEntrypoint"
+    "Environment",
 ]
