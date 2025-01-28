@@ -13,34 +13,34 @@ together in the `comprisk-pipeline`. The `cli` submodule in Dataflux is responsi
 needed when starting up the program.
 
 ## Configuration
-The following `yaml` contains a template a configuration file for running the `comprisk-pipeline` software, which is
+The following `yaml` contains a template a configuration file for running the `comprisk-train` software, which is
 used to train models on compressor data. The configuration defines different steps in the pipeline such as loading the
-dataset (from `dataset` section), training and validating the model (`trainer` and `score_trainer` sections
-respectively), and analyzing the results (`analyzer` section which is optional).
+dataset (from `data` section), training and validating the model (`model`, `trainer` and `score_transformer` sections
+respectively).
 
 ```yaml
 environment: [dev | production]
+tag: [str | machine's UUID]
+upload_config: [path to dataflux pipeline]
 
-dataset:
-    - config: [path to dataflux pipeline]
-    - config: [path to dataflux pipeline]
-    - ...
+score_transformer:
+  mode: [check out Comprisk.anomaly.variants]
+
+model:
+  class_path: [package path to model]
+  init_args:
+    ...
 
 trainer:
-    - config: [path to model configuration]
+  accelerator: [cpu | cuda | mps | auto]
+  max_epochs: [number of training epochs]
+  callbacks:
+    ...
 
-    # overwriting values of the model configuration is possible
-    data.sequence_in: [integer]
-
-score_trainer:
-    score.mode: [check out Comprisk.anomaly.variants]
-
-analyzer:
-    - dataset: [path to downloaded dataset]
-    prefix: [tag name (must be unique)]
-    - dataset: [path to downloaded dataset]
-    prefix: [tag name (must be unique)]
-    - ...
+data:
+  train: [path to dataflux pipeline | dataset folder]
+  validate: [path to dataflux pipeline | dataset folder]
+  ...
 ```
 """
 
