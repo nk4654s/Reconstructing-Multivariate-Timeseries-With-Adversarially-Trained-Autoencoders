@@ -112,7 +112,7 @@ def pipeline(flux: FluxConfigManager) -> str:
 
     if os.path.exists(flux.args.folder) and not flux.args.overwrite:
         logger.warning("Dataset folder exists, overwrite is set to False.")
-        exit(0)
+        return flux.args.folder
 
     if flux.args.overwrite and os.path.exists(flux.args.folder):
         shutil.rmtree(flux.args.folder)

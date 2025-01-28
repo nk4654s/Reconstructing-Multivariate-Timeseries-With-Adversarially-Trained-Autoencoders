@@ -3,7 +3,6 @@
 import os
 import pickle
 from typing import Dict, Tuple, List
-from lightning import LightningModule
 import numpy as np
 import pandas as pd
 
@@ -49,7 +48,8 @@ class ModelLoader:
         path (str): The path where the model is saved. Defaults to `None`.
         model (BaseModel): The model to use. Defaults to `None`.
 
-    > Note: Make sure to either set `path` or `model`. If both were set, then the provided `model` will be used.
+    > Note: Make sure to either set `path` or `model`. If both were set, then the provided `model` will be used if there
+        is no model in `path/checkpoints`
     """
 
     def __init__(self, path: str = None, model: BaseModel = None) -> None:
@@ -57,11 +57,31 @@ class ModelLoader:
             raise ValueError("Expected to either get a path or model. Got None.")
 
         self._path = path
-        self.model: BaseModel = model or load_model(path, eval_mode=False)
+        self._from_disk = self._check_load_from_disk()
+        if self._from_disk:
+            self.model: BaseModel = load_model(path, eval_mode=False)
+        else:
+            self.model = model
 
         if not self.model:
             raise ValueError("Unable to load model")
-        logger.info("ModelLoader fully initialized.")
+        logger.info("ModelLoader loaded from disk '%s'.", "yes" if self._from_disk else "no")
+
+    def _check_load_from_disk(self) -> bool:
+        folders = [_ for _ in os.listdir(self._path)]
+        if "checkpoints" not in folders:
+            return False
+
+        checkpoint_path = os.path.join(self._path, "checkpoints")
+        for checkpoint in os.listdir(checkpoint_path):
+            if ".ckpt" in checkpoint:
+                return True
+
+        return False
+
+    @property
+    def from_disk(self) -> bool:
+        return self._from_disk
 
     @property
     def path(self) -> str:
@@ -187,7 +207,7 @@ class ModelLoader:
             "Could not find 'score_transformer.pkl' in model metadata path."
         )
 
-    def get_model(self) -> LightningModule:
+    def get_model(self) -> BaseModel:
         """A simple getter for the loaded model during object initialization.
 
         Returns:

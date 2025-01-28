@@ -208,7 +208,7 @@ requires-dist = [
     { name = "scikit-learn", specifier = ">=1.6.0" },
     { name = "scipy", specifier = ">=1.15.0" },
     { name = "setuptools", specifier = ">=75.8.0" },
-    { name = "tensorboard", specifier = ">=1.15.1" },
+    { name = "tensorboard", specifier = "==2.18.0" },
     { name = "torch", specifier = ">=2.5.1" },
     { name = "torchinfo", specifier = ">=1.8.0" },
     { name = "tqdm", specifier = ">=4.67.1" },

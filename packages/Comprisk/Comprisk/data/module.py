@@ -1,3 +1,4 @@
+import os.path
 from copy import deepcopy
 from typing import List
 
@@ -102,26 +103,26 @@ class DataModule(L.LightningDataModule):
             train (str): The path of the training dataset.
             validate (str): The path of the validation dataset.
         """
-        if not train and not validate:
-            return
-
         self._collate_fn = collate_fn
         # online collate normalizes the dataset on the fly
         # self._collate_fn = online_collate_train
 
-        if train:
+        if train and os.path.isdir(train):
             self._train = Dataset(
                 path=train,
                 **self._dataset_args
             )
             logger.debug("Dataset (train) consists of %s samples", len(self._train))
 
-        if validate:
+        if validate and os.path.isdir(validate):
             self._val = Dataset(
                 path=validate,
                 **self._dataset_args
             )
             logger.debug("Dataset (validate) consists of %s samples", len(self._val))
+
+        if not train and not validate:
+            return
 
         logger.debug("Dataset datapoint skip is set to %s", self._dataset_args["skip"])
         logger.debug("Dataset window stride is set to %s", self._dataset_args["stride"])

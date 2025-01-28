@@ -10,6 +10,6 @@ for MODEL_FOLDER in "$DIRECTORY"/*; do
       CONFIG="$MODEL_FOLDER/$LATEST/config.yaml"
       UPLOAD="$MODEL_FOLDER/$LATEST/upload.yaml"
 
-      uv run comprisk-generator -c "$CONFIG" --dataset "$UPLOAD" --data.stride 1
+      uv run comprisk-generate -c "$CONFIG" --data.validate "$UPLOAD" --data.stride 1
   fi
 done

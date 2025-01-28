@@ -1,21 +1,15 @@
 import os.path
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import pandas as pd
 
-from Dataflux.cli import FluxConfigManager
-from Dataflux.helper import parse_datestring
-from Dataflux.pytorch import EmptyDatasetError
+from Comprisk.entrypoints import EntrypointBase, EntrypointContext
 from Dataflux.data import DataUpdater, UpdateCallable, DataType, EmptyScoreRegister
-from Dataflux.pipeline import pipeline as flux_pipeline
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
 from Comprisk.data import DataModule
-from Comprisk.cli import CompriskLoadCLI
-from Comprisk.helper.structure import get_config_folder
 from Comprisk.helper import ModelLoader
-from Comprisk.model import BaseModel
 
 
 
@@ -44,86 +38,59 @@ class CompriskUpdateCallable(UpdateCallable):
         return df
 
 
-def cli_main():
-    cli = CompriskLoadCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+class GeneratorEntrypoint(EntrypointBase):
+    def __init__(self) -> None:
+        super().__init__()
 
-    base_path = get_config_folder(cli)
-    logger.info("Logging model: %s", base_path)
-
-    # download and process the dataset, the config file contains the requested
-    # time frame to generate the scores for
-    # If the dataset is given as a folder, there is no need to download it again
-    datamodule_args_modified = cli.config.data.as_dict()
-    datamodule_args_modified["shuffle"] = False
-    flux = None
-    if os.path.isfile(cli.config.dataset):
-        flux = FluxConfigManager(cli.config.dataset)
-        datamodule_args_modified["train"] = flux_pipeline(flux)
-    else:
-        datamodule_args_modified["train"] = cli.config.dataset
-
-    # update the dataset's virtual sensors in the S3 buckets with the scores
-    start = datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    end = start.replace(hour=23, minute=59, second=59, microsecond=999999)
-    if flux and not flux.args.latest:
-        # if flux was used to download a dataset and the `latest` tag is not used, then overwrite the interval
-        # to upload to
-        init_interval = flux.args.intervals[0].split()
-        start, end = (
-            parse_datestring(init_interval[0]),
-            parse_datestring(init_interval[1]),
+        self._start = datetime.now(tz=timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
         )
+        self._end = self._start + timedelta(days=1)
 
-    # catch the case, where the machine is offline and the dataset is empty
-    try:
-        data = DataModule(**datamodule_args_modified).trainset
+    def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
+        # get the upload dataset which must be set as validation set, disable training parameters such as shuffle
+        datamodule_args_modified = context.config.data.as_dict()
+        datamodule_args_modified["shuffle"] = False
+
+        # catch the case, where the machine is offline and the dataset is empty
+        data = DataModule(**datamodule_args_modified).valset
         if data is None:
-            raise EmptyDatasetError()
-    except EmptyDatasetError:
-        logger.warning("The dataset is empty, nothing to generate. Exiting gracefully.")
-        exit(0)
+            logger.warning("The dataset is empty, nothing to generate. Exiting gracefully.")
+            return context
 
-    # load the trained model from disk and create the dataset object for the
-    # previously downloaded dataset
-    loader = ModelLoader(base_path)
-    # TODO: load parameter `factor` and hand over to transform
-    score = loader.get_score_transformer()
+        # load the trained model from disk and create the dataset object for the
+        # previously downloaded dataset
+        loader = ModelLoader(path=context.config_folder)
+        if not loader.from_disk:
+            logger.warning("ModelLoader did not load a model from disk.")
+            return context
 
-    logger.info("Loaded score transformer (mode=%s)", score.mode)
-    end_date = datetime.fromtimestamp(data.get_timestamp(len(data) - 1), timezone.utc)
-    logger.info("Dataset goes until %s", end_date.strftime("%Y-%m-%d %H:%M:%S"))
+        # TODO: load parameter `factor` and hand over to transform
+        score = loader.get_score_transformer()
+        score_data = loader.predict_loop(data)
+        score_data = score.transform(*score_data, factors=0.1)
 
-    # exit early, if the dataset does not include the timestamps requested
-    if end_date < start:
-        logger.warning("The dataset does not include the required data range.")
-        exit(0)
+        # update the remote TSV files
+        try:
+            debug = os.environ.get("CAS_DEBUG_MODE", "0") == data.UUID
+            updater = DataUpdater(
+                data.UUID,
+                CompriskUpdateCallable(score_data),
+                debug=debug,
+                force_upload=context.config.force_upload,
+            )
+            updater.set_data_type(DataType.MEASUREMENTS)
+            updater.update(self._start, self._end, data.get_args().skip)
+        except EmptyScoreRegister as e:
+            logger.error("Could not update files: %s", e)
 
-    # execute the model on the dataset and calculate the scores
-    score_data = loader.predict_loop(data)
-    score_data = score.transform(*score_data, factors=0.1)
-
-    try:
-        debug = os.environ.get("CAS_DEBUG_MODE", "0") == data.UUID
-        updater = DataUpdater(
+        # remove the temporary downloaded dataset again
+        # shutil.rmtree(get_dataset_path(args.dataset), ignore_errors = True)
+        logger.info(
+            "App finished from for machine %s (%s to %s)",
+            self._start.strftime("%Y-%m-%d %H:%M:%S"),
+            self._end.strftime("%Y-%m-%d %H:%M:%S"),
             data.UUID,
-            CompriskUpdateCallable(score_data),
-            debug=debug,
-            force_upload=cli.config.force_upload,
         )
-        updater.set_data_type(DataType.MEASUREMENTS)
-        updater.update(start, end, data.get_args().skip)
-    except EmptyScoreRegister as e:
-        logger.error("Could not update files: %s", e)
 
-    # remove the temporary downloaded dataset again
-    # shutil.rmtree(get_dataset_path(args.dataset), ignore_errors = True)
-    logger.info(
-        "App finished from for machine %s (%s to %s)",
-        start.strftime("%Y-%m-%d %H:%M:%S"),
-        end.strftime("%Y-%m-%d %H:%M:%S"),
-        data.UUID,
-    )
-
-
-if __name__ == "__main__":
-    cli_main()
+        return context
