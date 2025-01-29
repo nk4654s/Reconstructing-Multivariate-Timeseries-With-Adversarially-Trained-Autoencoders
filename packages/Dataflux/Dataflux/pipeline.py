@@ -97,7 +97,7 @@ def process(flux: FluxConfigManager) -> None:
     metadata.save(flux.args.folder)
 
 
-def pipeline(flux: FluxConfigManager) -> str:
+def pipeline(flux: FluxConfigManager) -> Tuple[str | None]:
     """This function executes the flux pipeline given the FluxConfigManager which holds the required information.
 
     Args:
@@ -107,6 +107,9 @@ def pipeline(flux: FluxConfigManager) -> str:
     Returns: The output folder.
 
     """
+    if flux.args.config == {}:
+        return None
+
     global modules
     modules = flux.get_modules()
 

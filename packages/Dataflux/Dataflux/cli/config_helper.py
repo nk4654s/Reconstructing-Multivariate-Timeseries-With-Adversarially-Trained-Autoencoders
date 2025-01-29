@@ -17,10 +17,10 @@ def build_config(path: str) -> Dict:
         Dict[str, Any]: The config as dictionary with the class types instead of
             the strings for the class paths defined with the key 'class_path'.
     """
-    if path is None:
+    if path is None or not os.path.isfile(path):
+        # FIXME: logging
         return {}
 
-    assert os.path.isfile(path), f"{path} is not a file."
     with open(path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
