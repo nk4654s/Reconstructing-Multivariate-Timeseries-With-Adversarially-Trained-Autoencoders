@@ -8,6 +8,20 @@ from Comprisk.entrypoints.base import EntrypointContext, EntrypointBase
 
 
 class FluxEntrypoint(EntrypointBase):
+    """
+    This entrypoint class handles loading a datamodule using `Dataflux.pytorch.dataset`. The required path variables
+    are located in the configuration file under `data.train` / `data.validate` and accept both, the path to a
+    downloaded dataset or `Dataflux` pipeline configuration.
+
+    When fine-tuning a model using a different dataset, load the model as follows
+
+    ```
+    comprisk-train -c path_to_trained_model/config.yaml
+    ```
+
+    Then create a new configuration file defining the content of the `data` key and add the path to it to the
+    `comprisk-train` entrypoint using `--data`.
+    """
     def __init__(self) -> None:
         super().__init__()
 

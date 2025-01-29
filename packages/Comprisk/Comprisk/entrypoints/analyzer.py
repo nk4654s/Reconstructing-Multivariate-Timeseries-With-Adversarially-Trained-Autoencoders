@@ -18,6 +18,13 @@ logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
 class AnalyzerEntrypoint(EntrypointBase):
+    """
+    This entrypoint takes a trained model and runs inference it on the validation set. Then the results are plotted in
+    a graph located in the model's output folder. To customize the folder's name, use the `--prefix folder_name`
+    argument.
+
+    If a different dataset should be used, then overwrite the validation set using `--data.validate`.
+    """
     def __init__(self, linear_factors: float | List[float] = 0.1) -> None:
         super().__init__()
 
