@@ -8,7 +8,6 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from Comprisk.entrypoints.base import (
     EntrypointBase,
     EntrypointContext,
-    Environment,
 )
 
 from Dataflux import logging_mode
@@ -130,18 +129,6 @@ class TrainerEntrypoint(EntrypointBase):
         # start the training
         logger.debug("Starting training")
         context.trainer.fit(context.model, context.datamodule)
-
-        # if a model was fine tuned, make sure to have the same hparams.yaml in the
-        # output folder.
-        # FIXME: this should not be a problem, this is a workaround
-        if context.config.finetune:
-            config_path = os.path.dirname(context.config.finetune)
-            if os.path.exists(os.path.join(self._logging_path, "hparams.yaml")):
-                os.remove(os.path.join(self._logging_path, "hparams.yaml"))
-            shutil.copyfile(
-                os.path.join(config_path, "hparams.yaml"),
-                os.path.join(self._logging_path, "hparams.yaml"),
-            )
 
         logger.info(
             "Finished training model %s on machine %s.",

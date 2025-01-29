@@ -11,10 +11,17 @@ class FluxEntrypoint(EntrypointBase):
     def __init__(self) -> None:
         super().__init__()
 
+    def _get_path(self, path: str, context: EntrypointContext) -> str:
+        base_path = os.path.join(context.base_folder, context.environment.value)
+        if path.startswith(base_path):
+            return path
+
+        return os.path.join(base_path, path)
+
     def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
         dataset_paths = {
-            "train": os.path.join(context.base_folder, context.environment.value, context.config.data.train),
-            "validate": os.path.join(context.base_folder, context.environment.value, context.config.data.validate),
+            "train": self._get_path(context.config.data.train, context),
+            "validate": self._get_path(context.config.data.validate, context)
         }
 
         if "__path__" in context.config.data:
