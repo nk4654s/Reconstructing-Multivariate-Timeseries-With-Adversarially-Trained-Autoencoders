@@ -183,11 +183,6 @@ class DataDownloader(S3Bucket):
             logger.error("Caught error %s", e)
 
         df = df if df is not None else pd.DataFrame()
-        time = (
-            datetime.fromtimestamp(df["ts"].values[0])
-            if "ts" in df.columns.values
-            else 0
-        )
         return df
 
 

@@ -39,18 +39,27 @@ class CompriskUpdateCallable(UpdateCallable):
 
 
 class GeneratorEntrypoint(EntrypointBase):
+    """
+    This entrypoint loads a model and runs inference on the dataset acquired using the `upload.yaml` dataset. For
+    convenience, the `Comprisk.entrypoints.FluxEntrypoint` should be called before this entrypoint in the pipeline.
+    Then, by calling `comprisk-generate -c path_to_trained_model_config.yaml --data.validate path_to_upload.yaml` the
+    scores will be generated and uploaded to the same machine as stated in the `upload.yaml`. Note: by setting the
+    `CAS_DEBUG_MODE` environment variable to the same UUID, the scores will be uploaded to a test device.
+    """
     def __init__(self) -> None:
         super().__init__()
 
-        self._start = datetime.now(tz=timezone.utc).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        self._start = datetime.now(tz=timezone.utc)
+        if self._start.hour < 2:
+            # before 2 AM, generate the last full day and today
+            self._start = self._start - timedelta(days=1)
+
+        self._start = self._start.replace(hour=0, minute=0, second=0, microsecond=0)
         self._end = self._start + timedelta(days=1)
 
     def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
         # get the upload dataset which must be set as validation set, disable training parameters such as shuffle
         datamodule_args_modified = context.config.data.as_dict()
-        datamodule_args_modified["shuffle"] = False
 
         # catch the case, where the machine is offline and the dataset is empty
         data = DataModule(**datamodule_args_modified).valset

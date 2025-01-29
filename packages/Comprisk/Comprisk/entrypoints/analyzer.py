@@ -1,6 +1,5 @@
 import os
 import shutil
-from typing import List
 from uuid import UUID
 
 from Comprisk.entrypoints import EntrypointBase, EntrypointContext
@@ -25,10 +24,9 @@ class AnalyzerEntrypoint(EntrypointBase):
 
     If a different dataset should be used, then overwrite the validation set using `--data.validate`.
     """
-    def __init__(self, linear_factors: float | List[float] = 0.1) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self._linear_factors = linear_factors
         self._scores_path = None
         self._full_frame_path = None
 
@@ -65,7 +63,7 @@ class AnalyzerEntrypoint(EntrypointBase):
         self._create_analysis_folder(context)
 
         # transforms the loss between prediction and target to a score between 0 and 1.
-        score.transform(predicted, target, visualize=self._scores_path, factors=self._linear_factors)
+        score.transform(predicted, target, visualize=self._scores_path, factors=0.1)
         logger.info("Downloading uuid to sensor table for sensor renaming in visualizations.")
         sensors_name_dict = get_sensors(UUID(dataset.UUID))
         predicted = predicted.rename(columns=sensors_name_dict, errors="ignore")

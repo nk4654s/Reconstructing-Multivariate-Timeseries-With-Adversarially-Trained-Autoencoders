@@ -21,7 +21,7 @@ logger = get_logger(__name__, path="logfile", level=logging_mode)
 flux = FluxEntrypoint()
 score = TrainScoreTransformerEntrypoint()
 train = TrainerEntrypoint()
-analyze = AnalyzerEntrypoint(linear_factors=0.1)
+analyze = AnalyzerEntrypoint()
 generate = GeneratorEntrypoint()
 
 
@@ -49,8 +49,7 @@ def cli_train() -> None:
     pipeline = Pipeline(entrypoints=[
         flux,
         train,
-        score,
-        analyze
+        score
     ])
     pipeline_runner(pipeline, cli)
 

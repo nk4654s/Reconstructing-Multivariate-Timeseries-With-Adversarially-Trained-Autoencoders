@@ -14,6 +14,11 @@ logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
 class TrainScoreTransformerEntrypoint(EntrypointBase):
+    """
+    This entrypoint loads a given model and runs the prediction loop on the validation set. Then, by calculating the
+     loss between prediction and expected values, the Comprisk.anomaly.ScoreTransformer is fitted. Finally, the
+     entrypoint stores the trained ScoreTransformer in the models output directory under `metadata`.
+    """
     def __init__(self) -> None:
         super().__init__()
 
