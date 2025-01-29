@@ -4,7 +4,7 @@ when processing a dataset using a defined yaml-config.
 
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Tuple
 
 from Dataflux.cli import CLIArgumentParser
@@ -46,7 +46,10 @@ def download(flux: FluxConfigManager) -> None:
 
     # get the current date and subtract 1 hour to get the model's input
     if flux.args.latest:
-        start = datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        start = datetime.now(tz=timezone.utc)
+        if start.hour < 2:
+            start = start - timedelta(days=1)
+        start = start.replace(hour=0, minute=0, second=0, microsecond=0)
         end = start.replace(hour=23, minute=59, second=59, microsecond=999999)
 
         modules.append(Slice(start.timestamp(), end.timestamp()))

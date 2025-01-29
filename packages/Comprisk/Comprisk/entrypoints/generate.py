@@ -49,14 +49,6 @@ class GeneratorEntrypoint(EntrypointBase):
     def __init__(self) -> None:
         super().__init__()
 
-        self._start = datetime.now(tz=timezone.utc)
-        if self._start.hour < 2:
-            # before 2 AM, generate the last full day and today
-            self._start = self._start - timedelta(days=1)
-
-        self._start = self._start.replace(hour=0, minute=0, second=0, microsecond=0)
-        self._end = self._start + timedelta(days=1)
-
     def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
         # get the upload dataset which must be set as validation set, disable training parameters such as shuffle
         datamodule_args_modified = context.config.data.as_dict()
@@ -66,6 +58,10 @@ class GeneratorEntrypoint(EntrypointBase):
         if data is None:
             logger.warning("The dataset is empty, nothing to generate. Exiting gracefully.")
             return context
+
+        # get the dataset's start and end time
+        start = datetime.fromtimestamp(data.get_timestamp(0), tz=timezone.utc)
+        end = datetime.fromtimestamp(data.get_timestamp(-1), tz=timezone.utc)
 
         # load the trained model from disk and create the dataset object for the
         # previously downloaded dataset
@@ -89,7 +85,7 @@ class GeneratorEntrypoint(EntrypointBase):
                 force_upload=context.config.force_upload,
             )
             updater.set_data_type(DataType.MEASUREMENTS)
-            updater.update(self._start, self._end, data.get_args().skip)
+            updater.update(start, end, data.get_args().skip)
         except EmptyScoreRegister as e:
             logger.error("Could not update files: %s", e)
 
@@ -97,8 +93,8 @@ class GeneratorEntrypoint(EntrypointBase):
         # shutil.rmtree(get_dataset_path(args.dataset), ignore_errors = True)
         logger.info(
             "App finished from for machine %s (%s to %s)",
-            self._start.strftime("%Y-%m-%d %H:%M:%S"),
-            self._end.strftime("%Y-%m-%d %H:%M:%S"),
+            start.strftime("%Y-%m-%d %H:%M:%S"),
+            end.strftime("%Y-%m-%d %H:%M:%S"),
             data.UUID,
         )
 

@@ -148,6 +148,9 @@ class Dataset(torch.utils.data.Dataset):  # type: ignore
         Returns:
             Tuple: Day as string and hours the machine is on as float.
         """
+        if index == -1:
+            index = len(self) - 1
+
         day, index = self._tree.search(index * self._stride)
         seconds = index * self._skip * self._stride
         minutes = seconds / 60
@@ -163,6 +166,9 @@ class Dataset(torch.utils.data.Dataset):  # type: ignore
         Returns:
             int: The timestamp of the provided index value.
         """
+        if index == -1:
+            index = len(self) - 1
+
         index *= self._stride
 
         # find the day and the correct index for that file

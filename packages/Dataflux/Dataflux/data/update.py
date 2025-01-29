@@ -175,7 +175,7 @@ class DataUpdater(S3Bucket):
                 df = merge_dfs(df, df_avg)
 
                 # check and upload the updated/merged df
-                path = f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}-virtual.tsv-{downloader.appendix}"
+                path = f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}-virtual.tsv{downloader.appendix}"
                 self.upload(df, path, download_size, download_cols)
 
     def check(
