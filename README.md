@@ -48,11 +48,35 @@ sh scripts/docs.sh
 ```
 
 ## Usage
-The AI training is handled Comprisk and mainly performed using the `comprisk-pipeline` command. To apply a model for
-testing, use the `comprisk-analyzer` command. Both are explained in more detail 
-[here](https://github.com/neaxplore/xplore-ai-cas/tree/master/packages/Comprisk#usage-locally).
+### Training
+The AI training is handled Comprisk and mainly performed using the `comprisk-train` command, which uses a `YAML` 
+configuration file to define the training pipeline. After installing the developer environment and building the 
+documentation head to `docs/Comprisk/index.html`. Here, the configuration's structure is explained in more detail. 
+Depending on the environment, the training configuration file should be located in the `configs` folder next to the 
+`dataflux` files. Then, use the following command to start a training.
 
-> Note: For production usage of a model, check out the `Docker` section of this document.
+```commandline
+comprisk-train -c path_to_config
+```
+
+### Fine-Tuning
+Use the same command as for training when fine-tuning a model, but re-use the `config.yaml` file in the model's output 
+folder. This will automatically load the best checkpoint and continue training using the same settings as before. If a 
+different dataset should be used, set `--data.train path_to_dataflux_config` (repeat this for `validate`). Alternatively
+define another config containing the values of `data` only (name this file e.g. `update.yml`). Then use the following 
+command.
+
+```commandline
+comprisk-train -c path_to_config_of_trained_model --data path_to_update.yml
+```
+
+### Evaluation
+To apply a model for testing, use the `comprisk-analyze` command and provide a dataset to use given the argument 
+`--data.validate path_to_dataflux_config`.
+
+```commandline
+comprisk-analyze -c path_to_config_of_trained_model --data.validate path_to_dataflux_config
+```
 
 ## Docker
 This repository uses docker to deploy all trained models located in the production environment. The model folder must

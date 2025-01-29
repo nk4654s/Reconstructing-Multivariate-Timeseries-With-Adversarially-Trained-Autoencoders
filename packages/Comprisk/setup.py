@@ -32,26 +32,22 @@ setup(
     author="Jonas Leuchtenberger",
     python_requires=">=3.9",
     classifiers=[],
-    description="AI training suite to predict a  compressor's health state and future sequence curve.",
+    description="AI training suite to predict a compressor's health state and future sequence curve.",
     install_requirements=requirements,
     keywords="Compressors,AI,Amazon S3,S3",
     name="Comprisk",
     entry_points={
         "console_scripts": [
-            "comprisk-analyzer=Comprisk.entrypoints.analyzer:cli_main",
-            "comprisk-generator=Comprisk.entrypoints.generate:cli_main",
-            "comprisk-pipeline=Comprisk.entrypoints.pipeline:cli_main",
-            "comprisk-train-score=Comprisk.entrypoints.scoring:cli_main",
-            "comprisk-trainer=Comprisk.entrypoints.trainer:cli_main",
-            "comprisk-tuner=Comprisk.entrypoints.tuner:cli_main",
+            "comprisk-analyze=Comprisk.pipeline:cli_analyze",
+            "comprisk-score=Comprisk.pipeline:cli_train_score_transformer",
+            "comprisk-train=Comprisk.pipeline:cli_train",
+            "comprisk-generate=Comprisk.pipeline:cli_generate",
         ]
     },
-    packages=find_packages(include=[
-        "Comprisk", "Comprisk.*"
-    ]),
+    packages=find_packages(include=["Comprisk", "Comprisk.*"]),
     package_dir={"Comprisk": "Comprisk"},
     include_package_data=True,
     url="https://github.com/neaxplore/xplore-ai-comprisk",
     version=VERSION,
-    zip_safe=True
+    zip_safe=True,
 )

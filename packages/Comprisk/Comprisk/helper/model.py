@@ -1,15 +1,11 @@
 """This module contains helper methods related to the models."""
 
 import os
-import json
 import pickle
-from typing import Dict, Tuple, Type, List, Union
-from lightning import LightningModule
+from typing import Dict, Tuple, List
 import numpy as np
 import pandas as pd
-import yaml
 
-import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -18,72 +14,15 @@ from Dataflux.pytorch import collate_fn, DatasetTypes
 from Dataflux.pytorch import Dataset
 
 from Comprisk.anomaly import ScoreTransformer
-from Comprisk.helper.file_structure import class_for_name, get_checkpoints
-from Comprisk.model.base import BaseModel
+from Comprisk.helper.structure import load_model
+from Comprisk.model import BaseModel
 
-from Comprisk import logger
-
-
-def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
-    """This method loads the hyperparameters of an already trained model
-    and initializes the model's sub_modules if existing.
-
-    Args:
-        path (str): The folder path where the model is saved.
-
-    Returns:
-        Tuple: The class of the model to load and a dictionary of
-            initialized submodules modules.
-    """
-    hparam_path = os.path.join(path, "hparams.yaml")
-    with open(hparam_path, mode="r", encoding="UTF-8") as f:
-        hparams = yaml.safe_load(f)
-        sub_modules = {}
-
-        for drop in [key for key in hparams.keys() if key.startswith("_")]:
-            if drop == "class_path":
-                continue
-            del hparams[drop]
-
-        for key, value in hparams.items():
-            if drop == "class_path":
-                continue
-
-            if isinstance(value, dict):
-                libpath = value["class_path"]
-                module = class_for_name(*libpath.rsplit(".", maxsplit=1))
-                sub_modules[key] = module(**value["init_args"])
-            else:
-                sub_modules[key] = value
-
-        model_class = class_for_name(*hparams["class_path"].rsplit(".", maxsplit=1))
-        return model_class, sub_modules
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
 
 
-def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
-    """This method loads the best checkpoint of a model. Requires checkpoints of model to have
-    the filename structure `...val=<validation_loss>.ckpt`.
-
-    Args:
-        path (str): The path where the model checkpoints were saved.
-        eval_mode (bool): Weather to set the loaded model to eval mode or not. Defaults to True.
-    """
-    checkpoints = get_checkpoints(path)
-    checkpoints = sorted(checkpoints, key=lambda x: float(x[:-5].split("val=")[-1]))
-    if len(checkpoints) == 0:
-        logger.warning("Could not find a checkpoint to load a model from. (%s)", path)
-        return None
-
-    # 1. get dataset configuration: start, end, step size (size of input window)
-    model_class, sub_modules = init_modules(path)
-    model = model_class.load_from_checkpoint(
-        os.path.join(path, "checkpoints", checkpoints[0]), **sub_modules
-    )
-
-    logger.info("Loaded model %s from %s", checkpoints[0], path)
-    if eval_mode:
-        model.eval()
-    return model
+# switch logging mode depending on DEBUG_MODE
+logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
 def store_model_output(
@@ -103,10 +42,14 @@ def store_model_output(
 
 class ModelLoader:
     """This class handles loading the model and related objects/configurations from the model's
-    output directory.
+    output directory. The loading is handled by Comprisk.helper.structure.load_model
 
-        Args:
-            path (str): The path where the model is saved.
+    Args:
+        path (str): The path where the model is saved. Defaults to `None`.
+        model (BaseModel): The model to use. Defaults to `None`.
+
+    > Note: Make sure to either set `path` or `model`. If both were set, then the provided `model` will be used if there
+        is no model in `path/checkpoints`
     """
 
     def __init__(self, path: str = None, model: BaseModel = None) -> None:
@@ -114,13 +57,36 @@ class ModelLoader:
             raise ValueError("Expected to either get a path or model. Got None.")
 
         self._path = path
-        model = model or load_model(path, eval_mode=False)
-        assert model, f"Unable to load model, no checkpoints found for {path}."
-        self.model: BaseModel = model
+        self._from_disk = self._check_load_from_disk()
+        if self._from_disk:
+            self.model: BaseModel = load_model(path, eval_mode=False)
+        else:
+            self.model = model
+
+        if not self.model:
+            raise ValueError("Unable to load model")
+        logger.info("ModelLoader loaded from disk '%s'.", "yes" if self._from_disk else "no")
+
+    def _check_load_from_disk(self) -> bool:
+        folders = [_ for _ in os.listdir(self._path)]
+        if "checkpoints" not in folders:
+            return False
+
+        checkpoint_path = os.path.join(self._path, "checkpoints")
+        for checkpoint in os.listdir(checkpoint_path):
+            if ".ckpt" in checkpoint:
+                return True
+
+        return False
+
+    @property
+    def from_disk(self) -> bool:
+        return self._from_disk
 
     @property
     def path(self) -> str:
-        """The path where the model is saved."""
+        """The path where the loaded model was loaded from. The loading process was handled by
+        Comprisk.helper.structure.load_model"""
         return self._path
 
     def _init_container(
@@ -148,10 +114,11 @@ class ModelLoader:
 
         Args:
             dataset (Dataset): The dataset to use.
-            batch_size (int): The amount of sample to process at a time
+            batch_size (int): The amount of sample to process at a time. Defaults to `64`.
+            num_workers (int): The number of threads feeding data from the dataset to the model. Defaults to `4`.
 
         Returns
-            Tuple[pd.DataFrame, pd.DataFrame]: Pandas dataframes containing the prediction and input.
+            Tuple[pd.DataFrame, pd.DataFrame]: Pandas dataframes containing the (1) input and (2) prediction.
         """
         self.model.eval()
         device = self.model.device
@@ -159,12 +126,14 @@ class ModelLoader:
         self.model.set_output_behavior(args.behavior, args.sequence_out)
         skip = args.skip
         stride = args.stride
-        window = (
-            args.sequence_out
-            if args.behavior != DatasetTypes.AUTOENCODER
-            else args.sequence_in
-        )
         features = args.features_out
+
+        # depending on the dataset type, different window sizes are possible
+        ts_offset = 0
+        window = args.sequence_in
+        if args.behavior == DatasetTypes.PREDICTIVE:
+            window = args.sequence_out
+            ts_offset = args.sequence_in * skip
 
         logger.debug("Predict on dataset %s (Original)", len(dataset))
         logger.debug("Predict loop step size %s and batch size %s", skip, batch_size)
@@ -173,10 +142,6 @@ class ModelLoader:
         # initialize the containers which hold model input/output values
         containers = self._init_container(len(dataset), features, window, stride)
         targets, predict, counter, ts_index = containers
-
-        inputs_indicies = [
-            i for i, x in enumerate(args.names_in) if x in args.names_out
-        ]
 
         collate = collate_fn
         loader = DataLoader(
@@ -190,25 +155,25 @@ class ModelLoader:
         for i, inputs in enumerate(
             tqdm(loader, desc="Prediction with Model", disable=not DEBUG_MODE)
         ):
-            inputs, _ = inputs
+            inputs, expected_outputs = inputs
+            expected_outputs = expected_outputs.cpu().numpy()
             inputs = inputs.to(device)
 
             # run the prediction, the input equals the target for auto encoders
-            model_pred = self.model.predict(inputs, as_array=True)
-            inputs = inputs.cpu().numpy()
+            outputs = self.model.predict(inputs, as_array=True)
 
-            batch_size_, _, _ = model_pred.shape
+            batch_size_, _, _ = outputs.shape
             for j in range(0, batch_size_):
                 idx = 0 if i == 0 else i * batch_size * stride
                 idx = idx + j * stride
 
-                window_, _ = inputs[j].shape
+                window_, _ = outputs[j].shape
                 window_ = min(window_, len(targets[idx : idx + window_]))
-                targets[idx : idx + window_] += inputs[j][:, inputs_indicies]
-                predict[idx : idx + window_] += model_pred[j]
+                targets[idx : idx + window_] += expected_outputs[j]
+                predict[idx : idx + window_] += outputs[j]
                 counter[idx : idx + window_] += np.ones(shape=(window_,))
 
-                ts = dataset.get_timestamp(i * batch_size + j)
+                ts = dataset.get_timestamp(i * batch_size + j) + ts_offset
                 ts_index[idx : idx + window_] = [ts + k * skip for k in range(window_)]
 
         limit = counter.argmin()
@@ -242,28 +207,10 @@ class ModelLoader:
             "Could not find 'score_transformer.pkl' in model metadata path."
         )
 
-    def get_model(self) -> LightningModule:
+    def get_model(self) -> BaseModel:
         """A simple getter for the loaded model during object initialization.
 
         Returns:
             Any: The loaded model.
         """
         return self.model
-
-    def get_normalization(self) -> pd.DataFrame | None:
-        norm_path = os.path.join(self._path, "metadata", "normalizer.json")
-        if not os.path.exists(norm_path):
-            return None
-
-        norm_data = {}
-        with open(norm_path, "r", encoding="UTF-8") as f:
-            norm_file = json.load(f)
-            for i, key in enumerate(norm_file["NORM_KEYS"]):
-                norm_data[key] = (
-                    norm_file["NORM_VAL_A"][i],
-                    norm_file["NORM_VAL_B"][i],
-                )
-
-        # TODO: should create a custom Normalize-class to handle this?
-        norm_data = pd.DataFrame(norm_data)
-        return norm_data

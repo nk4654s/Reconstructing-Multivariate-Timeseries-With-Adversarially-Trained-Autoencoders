@@ -74,6 +74,10 @@ class DataDownloader(S3Bucket):
             appendix,
         )
 
+    @property
+    def appendix(self) -> str:
+        return self._appendix
+
     def get_stream(self, day: str | date) -> List[str]:
         """
         Opens and returns the stream from the S3 bucket given the day.
@@ -102,10 +106,8 @@ class DataDownloader(S3Bucket):
         # open and uncompressed the s3 stream given the bucket and path
         data = self._client.get_object(Bucket=self._bucket, Key=f"{path}")
         stream = gzip.open(BytesIO(data["Body"].read()), mode="rt", encoding="utf-8")
-        logger.debug("AWS object content length=%s", data["ContentLength"])
 
         lines = stream.readlines()
-        logger.debug("Read lines in total=%s", len(lines))
         return lines
 
     def parse_header(self, line: str) -> Header:
@@ -181,17 +183,6 @@ class DataDownloader(S3Bucket):
             logger.error("Caught error %s", e)
 
         df = df if df is not None else pd.DataFrame()
-        time = (
-            datetime.fromtimestamp(df["ts"].values[0])
-            if "ts" in df.columns.values
-            else 0
-        )
-        logger.debug(
-            "Downloaded (shape=%s) starting at %s from %s",
-            df.shape,
-            time,
-            self.machine_uuid,
-        )
         return df
 
 

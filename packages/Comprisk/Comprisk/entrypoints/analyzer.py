@@ -1,107 +1,87 @@
-"""This module loads a model using the **Comprisk.cli.CompriskCLI** and
-apply the loaded model on the configured dataset. The prediction will be
-saved next to the model's log folder as graph comparing prediction
-vs. target."""
-
 import os
 import shutil
 from uuid import UUID
 
-from Dataflux.pytorch import Dataset, DatasetArgs
+from Comprisk.entrypoints import EntrypointBase, EntrypointContext
+from Dataflux.pytorch import Dataset
 from Dataflux.visualization import show_dataframe
 from Dataflux.helper import get_sensors
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
 
-from Comprisk.helper import get_config_folder, ModelLoader
-from Comprisk.model import BaseModel
-from Comprisk.data import DataModule
-from Comprisk.cli import CompriskLoadCLI
-
-from Comprisk import logger
+from Comprisk.helper import ModelLoader
 
 
-def cli_main():
+# switch logging mode depending on DEBUG_MODE
+logger = get_logger(__name__, path="./logfile", level=logging_mode)
+
+
+class AnalyzerEntrypoint(EntrypointBase):
     """
-    The main entry point for the Comprisk CLI. This function initializes the
-    CompriskCLI object and sets up the command-line interface.
+    This entrypoint takes a trained model and runs inference it on the validation set. Then the results are plotted in
+    a graph located in the model's output folder. To customize the folder's name, use the `--prefix folder_name`
+    argument.
+
+    If a different dataset should be used, then overwrite the validation set using `--data.validate`.
     """
-    logger.debug("Starting CompriskCLI")
-    cli = CompriskLoadCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+    def __init__(self) -> None:
+        super().__init__()
 
-    base_path = get_config_folder(cli)
-    logger.info("Logging model: %s", base_path)
+        self._scores_path = None
+        self._full_frame_path = None
 
-    # load the dataset and configure it to work with the trained model
-    cli.datamodule.set_path(cli.config.dataset, None)
-    dataset = cli.datamodule.trainset
-    if cli.config.dataset:
-        args = dataset.get_args().as_dict()
-        args["path"] = cli.config.dataset
-        dataset = Dataset(**args)
+    def _get_dataset(self, context: EntrypointContext) -> Dataset:
+        # load the dataset using the datamodule
+        context.datamodule.set_path(None, context.config.data.validate)
+        return context.datamodule.valset
 
-    # load the model with the helper class, then apply the model on the dataset
-    loader = ModelLoader(base_path)
-    score = loader.get_score_transformer()
-    logger.info("Loaded score transformer (mode=%s)", score.mode)
+    def _create_analysis_folder(self, context: EntrypointContext):
+        # create prefix sub-folders
+        prefix = "analysis" if not context.config.prefix else context.config.prefix
+        base_path = os.path.join(context.config_folder, prefix)
 
-    logger.info(
-        "Run prediction loop on dataset (samples=%s) which can take some time.",
-        len(dataset),
-    )
-    target, predicted = loader.predict_loop(dataset)
+        if os.path.exists(base_path):
+            shutil.rmtree(base_path)
+        os.makedirs(base_path)
 
-    # visualize the loaded dataset
-    prefix = "analysis"
-    base_path = os.path.join(get_config_folder(cli), prefix)
+        self._scores_path = os.path.join(base_path, "scores.png")
+        self._full_frame_path = os.path.join(base_path, "full.png")
 
-    # create prefix sub-folders
-    if cli.config.prefix:
-        prefix = cli.config.prefix
-        base_path = os.path.join(get_config_folder(cli), prefix)
+    def __call__(
+        self, context: EntrypointContext, *args, **kwargs
+    ) -> EntrypointContext:
+        dataset = self._get_dataset(context)
 
-    if os.path.exists(base_path):
-        shutil.rmtree(base_path)
-    os.makedirs(base_path)
+        # load the model with the helper class, then apply the model on the dataset
+        loader = ModelLoader(context.config_folder, context.model)
+        score = loader.get_score_transformer()
+        logger.info("Loaded score transformer (mode=%s)", score.mode)
+        logger.info("Run prediction loop on dataset (samples=%s).", len(dataset))
+        target, predicted = loader.predict_loop(dataset)
 
-    # transforms the loss between prediction and target to a score between 0 and 1.
-    score_vis_path = os.path.join(base_path, "score-transformed.png")
-    # TODO get the 'factors' parameter from a config file which should be generated where the model got stored
-    score.transform(predicted, target, visualize=score_vis_path, factors=0.1)
+        # visualize the loaded dataset
+        self._create_analysis_folder(context)
 
-    # rename the columns, which might be required
-    logger.info(
-        "Downloading uuid to sensor table for sensor renaming in visualizations."
-    )
-    sensors_name_dict = get_sensors(UUID(dataset.UUID))
-    predicted = predicted.rename(columns=sensors_name_dict, errors="ignore")
-    target = target.rename(columns=sensors_name_dict, errors="ignore")
+        # transforms the loss between prediction and target to a score between 0 and 1.
+        score.transform(predicted, target, visualize=self._scores_path, factors=0.1)
+        logger.info("Downloading uuid to sensor table for sensor renaming in visualizations.")
+        sensors_name_dict = get_sensors(UUID(dataset.UUID))
+        predicted = predicted.rename(columns=sensors_name_dict, errors="ignore")
+        target = target.rename(columns=sensors_name_dict, errors="ignore")
 
-    # save the whole prediction of the dataset
-    dataset_args: DatasetArgs = dataset.get_args()
-    days = round(len(dataset) * dataset_args.skip // 60 // 60 // 24)
-    logger.debug("Visualizing whole dataset (samples=%s)", len(dataset))
-    show_dataframe(
-        [predicted, target],
-        ["Prediction", "Target"],
-        grid_size=5,
-        save=os.path.join(base_path, f"days={days}.png"),
-    )
+        # save the whole prediction of the dataset
+        logger.debug("Visualizing whole dataset (samples=%s)", len(dataset))
+        show_dataframe(
+            [predicted, target],
+            ["Prediction", "Target"],
+            grid_size=5,
+            save=self._full_frame_path,
+        )
 
-    # save the prediction of three days of the dataset
-    twelve_hrs = (12 * 60 * 60) // dataset_args.skip
-    logger.debug("Visualizing reduced dataset (samples=%s)", 3 * twelve_hrs)
-    show_dataframe(
-        [predicted.iloc[:twelve_hrs], target.iloc[:twelve_hrs]],
-        ["Prediction", "Target"],
-        grid_size=5,
-        save=os.path.join(base_path, "hrs=12.png"),
-    )
+        logger.info(
+            "Finished analyzing model %s on machine %s.",
+            loader.model.__class__.__name__,
+            dataset.UUID,
+        )
 
-    logger.info(
-        "Finished analyzing model %s on machine %s.",
-        loader.model.__class__.__name__,
-        dataset.UUID,
-    )
-
-
-if __name__ == "__main__":
-    cli_main()
+        return context

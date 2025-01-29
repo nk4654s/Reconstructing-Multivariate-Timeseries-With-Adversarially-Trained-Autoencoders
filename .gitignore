@@ -27,7 +27,7 @@ environment/production/datasets/
 # exclude logs
 *.sqlite3
 logs/
-logfile*
+logfile-bug
 
 # MacOS specific files
 .DS_Store

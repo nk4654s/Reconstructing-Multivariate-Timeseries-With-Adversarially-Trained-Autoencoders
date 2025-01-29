@@ -11,6 +11,16 @@ def linear(x: pd.DataFrame, factor: np.ndarray, translate: np.ndarray) -> pd.Dat
 
 
 class LinearTransformer(BaseTransformer):
+    """
+    This score transformer uses the statistics of the model's performance to learn the loss distribution's quantiles.
+    Using a linear transformation defined by the quantiles, future loss values are clipped into the range 0 to 1.
+
+    > Note: the `transform()` method accepts a list of `factors` to manually scale scores after training.
+
+    Args:
+        noise_floor (float): The quantile of the distribution defining the loss noise floor. Defaults to `0.5`.
+        outer_border (float): How far a loss can deviate to be defined as upper limit. Defaults to `0.999`
+    """
     def __init__(self, noise_floor: float = 0.500, outer_border: float = 0.999) -> None:
         self._scaler = StandardScaler()
 

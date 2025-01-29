@@ -1,25 +1,25 @@
-"""This module creates a model summary and plots it."""
-
 import os
-import pickle
 import shutil
-from typing import Dict
-
+import lightning as L
 import yaml
+
 from lightning.pytorch.callbacks.callback import Callback
-from lightning import LightningModule
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 
-from Dataflux.pytorch import Dataset, DatasetTypes
+from Comprisk.entrypoints.base import (
+    EntrypointBase,
+    EntrypointContext,
+)
 
-from Comprisk.anomaly import ScoreTransformer
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
+
 from Comprisk.helper import ModelLoader
-from Comprisk.model import BaseModel
-from Comprisk.data import DataModule
-from Comprisk.cli import CompriskCLI
 
-from Comprisk import logger
+
+# switch logging mode depending on DEBUG_MODE
+logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
 def get_trainer_callback(trainer, callback_name: str) -> Callback | None:
@@ -40,164 +40,137 @@ def get_trainer_callback(trainer, callback_name: str) -> Callback | None:
     return None
 
 
-def save_training_meta(base_path: str, dataset: Dataset) -> None:
+class TrainerEntrypoint(EntrypointBase):
     """
-    This function creates the model's metadata folder and generates the
-    training dataset correlation matrix, as well as copies the dataset's
-    normalizer.
+    This entrypoints builds on the FluxEntrypoint and uses the datasets to train a model. First, the model's
+    output folders were created. The structure is as follows
 
-    Args:
-        base_path (str): The path where the metadata folder will be created.
-        dataset (Dataset): The dataset used for training.
+    ```
+    model_name/tag/version_num/
+    ├── checkpoints/
+    │   ├── model-0.pkl
+    │   └── ...
+    ├── metadata/
+    │   ├── dataset_config.yaml
+    │   └── normalizer.pkl
+    ├── config.yaml
+    └── upload.yaml
+    ```
+
+    Lightning stores the used configuration file automatically in the model's output folder. Additionally, the
+    entrypoint generates the upload configuration next to it. This file contains information about the latest
+    sensor input and pre-processing. When generating the scores in production, this file will be utilized.
     """
-    # create the metadata base dir
-    os.makedirs(base_path)
+    def __init__(self) -> None:
+        super().__init__()
 
-    # copy the normalizer of the training data to the model
-    normfile = os.path.join(dataset.directory, "metadata", "normalizer.pkl")
-    shutil.copyfile(normfile, os.path.join(base_path, "normalizer.pkl"))
+        self._logging_path = None
+        self._checkpoint_path = None
+        self._metadata_path = None
 
-    # copy the dataset config of the training data to the model
-    config_file = os.path.join(dataset.directory, "metadata", "config.yaml")
-    shutil.copyfile(config_file, os.path.join(base_path, "dataset_config.yaml"))
+    def _set_logging_path(self, context: EntrypointContext) -> None:
+        # set up the logger depending on the environment
+        sub_path = context.model.__class__.__name__
+        if context.config.tag:
+            sub_path = f"{sub_path}/{context.config.tag}"
 
+        logger.debug("Defining TensorBoard logger for %s", sub_path)
+        path = os.path.join(context.base_folder, context.environment.value, "models")
+        tb_logger = TensorBoardLogger(path, sub_path)
+        self._logging_path = tb_logger.log_dir
+        context.trainer.logger = tb_logger
+        os.makedirs(tb_logger.log_dir)
+        logger.debug("Using log folder %s", tb_logger.log_dir)
 
-def run_trainer(cli: CompriskCLI) -> str:
-    """
-    This function trains a model given the cli which contains all parameters, e.g.
-    for the model itself or the dataset.
+    def _set_checkpoint_path(self, context: EntrypointContext) -> None:
+        # set up the model saving as configuring the checkpoint path in the yaml config does not
+        # work. The config file does not know the model's output folder name with the increasing
+        # suffix number
+        checkpoint = get_trainer_callback(context.trainer, ModelCheckpoint.__name__)
+        if checkpoint:
+            self._checkpoint_path = os.path.join(self._logging_path, "checkpoints")
+            os.makedirs(self._checkpoint_path)
+            checkpoint.dirpath = self._checkpoint_path
 
-    Args:
-        cli (CompriskCLI): The CLI containing all parameters for training.
+        else:
+            logger.warning("ModelCheckpoint callback not defined in yaml-config.")
 
-    Returns:
-        str: The path where the model was saved.
-    """
-    # set up the logger
-    sub_path = cli.model.__class__.__name__
-    if cli.config.tag:
-        sub_path = f"{cli.model.__class__.__name__}/{cli.config.tag}"
+    def _set_metadata_path(self, context: EntrypointContext) -> None:
+        # save model metadata to log folder, which should not exist yet
+        dataset_path = context.datamodule.trainset.directory
+        self._metadata_path = os.path.join(self._logging_path, "metadata")
+        os.makedirs(self._metadata_path)
 
-    logger.debug("Defining TensorBoard logger for %s", sub_path)
-    tb_logger = TensorBoardLogger(
-        f"environment/{cli.config.environment}/models", name=sub_path
-    )
-    cli.trainer.logger = tb_logger
-    os.makedirs(tb_logger.log_dir)
-    logger.debug("Using log folder %s", tb_logger.log_dir)
+        # copy the normalizer of the training data to the model
+        norm_file = os.path.join(dataset_path, "metadata", "normalizer.pkl")
+        shutil.copyfile(norm_file, os.path.join(self._metadata_path, "normalizer.pkl"))
 
-    # set up the model saving as configuring the checkpoint path in the yaml config does not
-    # work. The config file does not know the model's output folder name with the increasing
-    # suffix number
-    checkpoint = get_trainer_callback(cli.trainer, ModelCheckpoint.__name__)
-    if checkpoint:
-        os.makedirs(tb_logger.log_dir + "/checkpoints/")
-        checkpoint.dirpath = tb_logger.log_dir + "/checkpoints/"
-
-    else:
-        logger.warning("ModelCheckpoint callback not defined in yaml-config.")
-
-    # save model metadata to log folder
-    data = cli.datamodule.trainset
-    metafolder = os.path.join(tb_logger.log_dir, "metadata")
-    save_training_meta(metafolder, data)
-
-    # check if a model should be finetuned
-    if cli.config.finetune:
-        config_path = os.path.dirname(cli.config.finetune)
-        loader = ModelLoader(config_path)
-        model = loader.get_model()
-        model.train()
-    else:
-        model: LightningModule = cli.model
-
-    # train
-    logger.debug("Starting training")
-    cli.trainer.fit(model, cli.datamodule)
-
-    # run methods after fit
-    cli.after_fit()
-
-    # if a model was fine tuned, make sure to have the same hparams.yaml in the
-    # output folder.
-    # FIXME: this should not be a problem, this is a workaround
-    if cli.config.finetune:
-        config_path = os.path.dirname(cli.config.finetune)
-        if os.path.exists(os.path.join(tb_logger.log_dir, "hparams.yaml")):
-            os.remove(os.path.join(tb_logger.log_dir, "hparams.yaml"))
+        # copy the dataset config of the training data to the model
+        config_file = os.path.join(dataset_path, "metadata", "config.yaml")
         shutil.copyfile(
-            os.path.join(config_path, "hparams.yaml"),
-            os.path.join(tb_logger.log_dir, "hparams.yaml"),
+            config_file, os.path.join(self._metadata_path, "dataset_config.yaml")
         )
 
-    valset: Dataset = cli.datamodule.valset
-    train_score_transformer(tb_logger.log_dir, metafolder, valset)
-    return tb_logger.log_dir
+    def _save_upload_config(self, context: EntrypointContext, source: str = None) -> None:
+        if source:
+            # a source path is given, the previous model should contain an upload.yaml file
+            config_path = os.path.join(source, "upload.yaml")
 
+        elif os.path.isfile(context.config.data.train):
+            # copy the training configuration to the output folder
+            config_path = os.path.join(context.config.data.train)
 
-def train_score_transformer(
-    model_dir: str, meta_dir: str, dataset: Dataset, transformer_args: Dict = {}
-) -> None:
-    """This method trains the ScoreTransformer given the model and dataset. Usually, this is immediately done on the
-    validation set after a training.
+        else:
+            # the train path is a folder and not a dataflux config file
+            config_path = os.path.join(context.config.data.train, "metadata", "config.yaml")
 
-    Args:
-        model_dir (str): The model's directory.
-        meta_dir (str): The model's metadata directory.
-        dataset (Dataset): The dataset to train the ScoreTransformer on.
-    """
-    dataset_args = dataset.get_args()
-    stride = dataset_args.sequence_in
-    if dataset_args.behavior != DatasetTypes.AUTOENCODER:
-        stride = dataset_args.sequence_out
+        upload_path = os.path.join(self._logging_path, "upload.yaml")
+        shutil.copyfile(config_path, upload_path)
+        logger.debug("Copied %s to %s", config_path, upload_path)
 
-    logger.info(
-        "Run prediction loop on dataset (samples=%s) which can take some time.",
-        len(dataset),
-    )
-    dataset.set_stride(stride)
+        # make sure to have the key values set
+        with open(upload_path, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+            config["folder"] = "upload"
+            config["latest"] = True
+            config.pop("intervals", None)
 
-    # load the (best) trained model back
-    loader = ModelLoader(model_dir)
-    loader.model.set_output_behavior(dataset_args.behavior, dataset_args.sequence_out)
-    predicted, target = loader.predict_loop(dataset)
+        with open(upload_path, mode="w", encoding="utf-8") as f:
+            yaml.safe_dump(config, f)
 
-    # fit and save the score transformer
-    score = ScoreTransformer(**transformer_args)
-    score.fit(predicted, target)
-    logger.info("Fitted ScoreTransformer (mode=%s) successfully.", score.mode)
+    def __call__(
+        self, context: EntrypointContext, *args, **kwargs
+    ) -> EntrypointContext:
+        # set up the logging and checkpoint directory
+        self._set_logging_path(context)
+        self._set_checkpoint_path(context)
 
-    score_path = os.path.join(meta_dir, "score_transformer.pkl")
-    with open(score_path, mode="wb") as f:
-        pickle.dump(score, f)
+        # save model metadata to log folder
+        self._set_metadata_path(context)
 
+        # check if a model should be fine-tuned
+        loader = ModelLoader(path=context.config_folder, model=context.model)
+        context.model = loader.get_model()
+        context.model.train()
 
-def cli_main():
-    """
-    The main entry point for the Comprisk CLI. This function initializes the
-    CompriskCLI object and sets up the command-line interface.
-    """
-    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+        # use a different seed then set if the model was loaded from disk
+        # this ensures different probabilities (e.g. for the Dropout layer) in the model
+        if loader.from_disk:
+            context.config.seed_everything += 1
+            L.seed_everything(context.config.seed_everything)
 
-    # run methods before fit, then train
-    cli.before_fit()
-    model_folder = run_trainer(cli)
+        self._save_upload_config(context, loader.path)
 
-    # delete dataset paths from the saved config file
-    with open(
-        os.path.join(model_folder, "config.yaml"), mode="r+", encoding="utf-8"
-    ) as f:
-        model_args = yaml.safe_load(f)
-        model_args["data"]["train"] = None
-        model_args["data"]["validate"] = None
-        yaml.safe_dump(model_args, f)
+        # start the training
+        logger.debug("Starting training (seed=%s)", context.config.seed_everything)
+        context.trainer.fit(context.model, context.datamodule)
 
-    logger.info(
-        "Finished training model %s on machine %s.",
-        cli.model.__class__.__name__,
-        cli.datamodule.trainset.UUID,
-    )
+        logger.info(
+            "Finished training model %s on machine %s.",
+            context.model.__class__.__name__,
+            context.datamodule.trainset.UUID,
+        )
 
-
-if __name__ == "__main__":
-    cli_main()
+        context.config_folder = self._logging_path
+        context.config.data.shuffle = False
+        return context

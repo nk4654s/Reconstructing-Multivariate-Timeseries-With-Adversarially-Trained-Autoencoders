@@ -1,50 +1,56 @@
-"""This module loads a model using the **Comprisk.cli.CompriskCLI** and
-apply the loaded model on the configured dataset. The ScoreTransformer
-will be learned based on the resulting loss. Only use configure this entry
-point with a trained model and the matching validation dataset."""
 import os
+import pickle
+
+from Dataflux import logging_mode
+from Dataflux.pytorch import DatasetTypes
+from Dataflux.logger import get_logger
+
+from Comprisk.entrypoints.base import EntrypointBase, EntrypointContext
+from Comprisk.anomaly import ScoreTransformer
+from Comprisk.helper import ModelLoader
+
+# switch logging mode depending on DEBUG_MODE
+logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
-from Comprisk.entrypoints.trainer import train_score_transformer
-
-from Comprisk.helper import get_config_folder
-from Comprisk.model import BaseModel
-from Comprisk.data import DataModule
-from Comprisk.cli import CompriskLoadCLI
-
-from Comprisk import logger
-
-
-def cli_main():
+class TrainScoreTransformerEntrypoint(EntrypointBase):
     """
-    The main entry point for the Comprisk CLI. This function initializes the
-    CompriskCLI object and sets up the command-line interface.
+    This entrypoint loads a given model and runs the prediction loop on the validation set. Then, by calculating the
+     loss between prediction and expected values, the Comprisk.anomaly.ScoreTransformer is fitted. Finally, the
+     entrypoint stores the trained ScoreTransformer in the models output directory under `metadata`.
     """
-    logger.debug("Starting CompriskCLI")
-    cli = CompriskLoadCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+    def __init__(self) -> None:
+        super().__init__()
 
-    base_path = get_config_folder(cli)
-    logger.info("Logging model: %s", base_path)
+    def __call__(
+        self, context: EntrypointContext, *args, **kwargs
+    ) -> EntrypointContext:
+        dataset_args = context.datamodule.valset.get_args()
+        stride = dataset_args.sequence_in
+        if dataset_args.behavior != DatasetTypes.AUTOENCODER:
+            stride = dataset_args.sequence_out
 
-    # load the dataset and configure it to work with the trained model
-    dataset = cli.datamodule.valset
-    if cli.config.dataset:
-        cli.datamodule.set_path(None, cli.config.dataset)
-        dataset = cli.datamodule.valset
+        logger.info(
+            "Run prediction loop on valset (samples=%s) which can take some time.",
+            len(context.datamodule.valset),
+        )
+        context.datamodule.valset.set_stride(stride)
 
-    if dataset is None:
-        logger.error("No dataset available for training the ScoreTransformer. Make sure to define the validation set path.")
-        exit(0)
+        # load the (best) trained model back
+        loader = ModelLoader(path=context.config_folder, model=context.model)
+        if not loader.from_disk:
+            logger.warning("Attempted to fit ScoreTransformer on an untrained model.")
+            return context
 
-    # load the model with the helper class, then apply the model on the dataset
-    meta_path = os.path.join(base_path, "metadata")
-    train_score_transformer(base_path, meta_path, dataset, vars(cli.config.score))
+        predicted, target = loader.predict_loop(context.datamodule.valset)
 
-    logger.info(
-        "Finished ScoreTransformer training for machine %s.",
-        dataset.UUID,
-    )
+        # fit and save the score transformer
+        score = ScoreTransformer(**vars(context.config.score_transformer))
+        score.fit(predicted, target)
+        logger.info("Fitted ScoreTransformer (mode=%s) successfully.", score.mode)
 
+        score_path = os.path.join(loader.path, "metadata", "score_transformer.pkl")
+        with open(score_path, mode="wb") as f:
+            pickle.dump(score, f)
 
-if __name__ == "__main__":
-    cli_main()
+        return context

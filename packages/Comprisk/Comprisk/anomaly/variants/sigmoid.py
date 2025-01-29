@@ -15,6 +15,15 @@ def sigmoid(x: np.ndarray, smooth: np.ndarray, factor: np.ndarray | float = 1.0)
 
 
 class SigmoidTransformer(BaseTransformer):
+    """The SigmoidTransformer uses a sigmoid $$f(x)=1/(1+e^-x)$$ to clip the model's expected/predicted output
+    difference into the range 0  to 1. First, the loss values are standardized using the sklearn StandardScaler. Then,
+    the median of the standardized loss values is computed and used to transform the sigmoid on the
+    x-axis.
+
+    Args:
+        noise_floor (float): The quantile of the distribution defining the loss noise floor. Defaults to `0.687`.
+        upper_bound (float): How far a loss can deviate to be defined as upper limit. Defaults to `0.999`
+    """
     def __init__(self, noise_floor: float = 0.687, upper_bound: float = 0.999) -> None:
         self._scaler = StandardScaler()
 

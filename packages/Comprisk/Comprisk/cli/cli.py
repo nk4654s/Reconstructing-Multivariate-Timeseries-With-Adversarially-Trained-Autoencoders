@@ -7,10 +7,14 @@ from lightning.pytorch.cli import (
     LightningArgumentParser,
     LightningCLI,
 )
-from lightning.pytorch.tuner.tuning import Tuner
+
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
 
 from Comprisk.anomaly import ScoreTransformer
-from Comprisk import logger
+
+# switch logging mode depending on DEBUG_MODE
+logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
 def generate_class_arguments(cls, prefix: str, parser: LightningArgumentParser) -> None:
@@ -43,8 +47,9 @@ class CompriskCLI(LightningCLI):
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--tag", type=str, default=None)
         parser.add_argument("--environment", type=str, default="dev")
-        parser.add_argument("--finetune", "-f", type=str, default=None)
-        parser.add_argument("--find-batch-size", default=False, action="store_true")
+        parser.add_argument("--prefix", type=str, default="analysis")
+        parser.add_argument("--upload-config", type=str, default=None)
+        parser.add_argument("--force-upload", action="store_true", default=False)
         parser.add_argument("--tuner-config", nargs="?")
         parser.add_argument("--tuner-trials", type=int, default=1)
 
@@ -54,7 +59,7 @@ class CompriskCLI(LightningCLI):
         parser.link_arguments("data.behavior", "model.init_args.behavior", apply_on="instantiate")
 
         # generate arguments for the custom classes
-        generate_class_arguments(ScoreTransformer, "score", parser)
+        generate_class_arguments(ScoreTransformer, "score_transformer", parser)
 
     def before_fit(self):
         """Method executes before fit automatically."""
@@ -65,15 +70,6 @@ class CompriskCLI(LightningCLI):
             trainer_args["callbacks"] = self.trainer.callbacks # type: ignore
             trainer_args["max_epochs"] = 1
             self.trainer = Trainer(**trainer_args)
-
-        # tune the learning rate and batch size if required
-        # this operation may take a while before the training can start
-        tuner = Tuner(self.trainer)
-        # find best batch size
-        if self.config.find_batch_size:
-            logger.debug("Tuning batch size")
-            tuner.scale_batch_size(self.model, mode="power", init_val=128)
-
 
     def after_fit(self):
         """Method executes after fit automatically."""

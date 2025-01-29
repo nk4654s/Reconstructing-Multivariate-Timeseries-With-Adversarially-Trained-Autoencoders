@@ -4,7 +4,7 @@ when processing a dataset using a defined yaml-config.
 
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Tuple
 
 from Dataflux.cli import CLIArgumentParser
@@ -46,7 +46,10 @@ def download(flux: FluxConfigManager) -> None:
 
     # get the current date and subtract 1 hour to get the model's input
     if flux.args.latest:
-        start = datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        start = datetime.now(tz=timezone.utc)
+        if start.hour < 2:
+            start = start - timedelta(days=1)
+        start = start.replace(hour=0, minute=0, second=0, microsecond=0)
         end = start.replace(hour=23, minute=59, second=59, microsecond=999999)
 
         modules.append(Slice(start.timestamp(), end.timestamp()))
@@ -97,7 +100,7 @@ def process(flux: FluxConfigManager) -> None:
     metadata.save(flux.args.folder)
 
 
-def pipeline(flux: FluxConfigManager) -> str:
+def pipeline(flux: FluxConfigManager) -> Tuple[str | None]:
     """This function executes the flux pipeline given the FluxConfigManager which holds the required information.
 
     Args:
@@ -107,12 +110,15 @@ def pipeline(flux: FluxConfigManager) -> str:
     Returns: The output folder.
 
     """
+    if flux.args.config == {}:
+        return None
+
     global modules
     modules = flux.get_modules()
 
     if os.path.exists(flux.args.folder) and not flux.args.overwrite:
         logger.warning("Dataset folder exists, overwrite is set to False.")
-        exit(0)
+        return flux.args.folder
 
     if flux.args.overwrite and os.path.exists(flux.args.folder):
         shutil.rmtree(flux.args.folder)

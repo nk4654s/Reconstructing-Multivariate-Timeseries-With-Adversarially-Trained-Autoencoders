@@ -8,14 +8,19 @@ import torch
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.optim.optimizer import Optimizer
 from Dataflux.pytorch import DatasetTypes, dataset_type_from_string, BATCH_TYPE
-from Comprisk.helper import (
+from Comprisk.helper.structure import (
     r2_score,
     get_loss_by_name,
     get_optimizer_by_name,
     get_activation_from_string,
 )
 
-from Comprisk import logger
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
+
+
+# switch logging mode depending on DEBUG_MODE
+logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
 class BaseModel(L.LightningModule):
@@ -72,7 +77,6 @@ class BaseModel(L.LightningModule):
         self.hparams["features_in"] = self._features_in
         self.hparams["features_out"] = self._features_out
         self.hparams["behavior"] = self._behavior.value
-        self.hparams["class_path"] = f"{self.__module__}.{self.__class__.__name__}"
 
         self.save_hyperparameters(self.hparams)
 

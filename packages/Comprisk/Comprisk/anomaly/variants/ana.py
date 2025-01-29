@@ -11,6 +11,18 @@ def linear(x: pd.DataFrame, factor: np.ndarray, translate: np.ndarray) -> pd.Dat
 
 
 class AnaTransformer(BaseTransformer):
+    """
+    This score transformer was developed by the company Anacision and uses the statistics of the model's performance
+    to learn the loss distribution. Using a linear transformation defined by the learned distribution, future loss
+    values are clipped into the range 0 to 1.
+
+    Args:
+        noise_deviation (float): How far a loss can deviate from the learned distribution before it becomes
+            significant. Defaults to `1.0`.
+        threshold_deviation (float): How far a loss can deviate to be defined as upper limit. Defaults to `5.0`
+        threshold (float): The value, which should be reached when hitting the upper limit. Defaults to `0.8`.
+        clip_below_zero (bool): Force values to be in the range 0 to 1. Defaults to true.
+    """
     def __init__(self, noise_deviation: float = 1.0, threshold_deviation: float = 5.0,
                  threshold: float = 0.8, clip_below_zero: bool = True) -> None:
 

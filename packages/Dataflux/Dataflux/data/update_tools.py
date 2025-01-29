@@ -1,5 +1,5 @@
 """This module implements tools supporting the TSV file upload process."""
-from typing import List
+from typing import List, Tuple
 
 import pandas as pd
 
@@ -84,7 +84,7 @@ def merge_dfs(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def get_downloaders(uuid: str) -> List[DataDownloader]:
+def get_downloaders(uuid: str) -> List[Tuple[DataDownloader, int]]:
     """This method initializes downloaders for al virtual tsv files.
 
     Returns:
@@ -92,15 +92,15 @@ def get_downloaders(uuid: str) -> List[DataDownloader]:
             DataDownloader classes. Each class downloads 'virtual' TSV-files with the appendix
             '', '-average', '-average-10m'.
     """
-    appendix = ["", "average", "average-10m"]
+    appendix = [("", 1), ("average", 120), ("average-10m", 600), ("ai", 1), ("ai-average", 120), ("ai-average-10m", 600)]
 
     # generate downloaders for file *-virtual.tsv(-average, -average-10m)
     output = []
-    for key in appendix:
+    for key, seconds in appendix:
         downloader = DataDownloader(uuid, file_postfix="virtual", appendix=key)
         downloader.set_data_type(DataType.MEASUREMENTS)
 
-        output.append(downloader)
+        output.append((downloader, seconds))
 
     return output
 

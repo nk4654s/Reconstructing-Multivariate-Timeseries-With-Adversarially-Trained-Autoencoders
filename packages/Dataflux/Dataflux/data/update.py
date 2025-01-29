@@ -21,7 +21,7 @@ from Dataflux.data.update_tools import (
     safe_df_avg,
 )
 
-from Comprisk import logger, DEBUG_MODE
+from Dataflux import logger, DEBUG_MODE
 from Dataflux.helper.utils import is_valid_uuid, daterange
 
 
@@ -41,7 +41,11 @@ class DataUpdater(S3Bucket):
     """
 
     def __init__(
-        self, machine_uuid: str, update_callable: UpdateCallable, force_upload: bool = False, debug: bool = False
+        self,
+        machine_uuid: str,
+        update_callable: UpdateCallable,
+        force_upload: bool = False,
+        debug: bool = False,
     ) -> None:
         super().__init__(machine_uuid)
         self._callable = update_callable
@@ -110,10 +114,9 @@ class DataUpdater(S3Bucket):
         ):
             # 0. get the correct time steps for the day to update
             ts_1, ts_2 = start_date.timestamp(), end_date.timestamp()
-
-            # 1. download the DataFrame and decompress it
             day_str = start_date.strftime("%Y-%m-%d")
-            df = safe_download(downloaders[0], day_str)
+
+            df = safe_download(downloaders[0][0], day_str)
             download_size = len(df)
             logger.debug("Downloaded virtual sensors (len=%s)", download_size)
 
@@ -133,20 +136,25 @@ class DataUpdater(S3Bucket):
 
             # 4. merge, then apply the same compressing rules
             df = merge_dfs(df, result_df)
-            self.upload(
-                df,
-                f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}-virtual.tsv",
-                download_size,
-                download_cols,
-            )
+            for downloader, avg in downloaders:
+                if avg != 1:
+                    continue
+
+                self.upload(
+                    df,
+                    f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}-virtual.tsv"
+                    + downloader.appendix,
+                    download_size,
+                    download_cols,
+                )
 
             # 5. calculate the averages for the 2- and 10-minutes files
-            for i, avg in enumerate([120, 600]):
-                if avg < time_delta:
+            for downloader, avg in downloaders:
+                if avg == 1 or avg < time_delta:
                     continue
 
                 # get the current avg file
-                df = safe_download(downloaders[i + 1], day_str)
+                df = safe_download(downloader, day_str)
                 download_size = len(df)
                 download_cols = {
                     n: hash(df[n].dropna().sum())
@@ -167,8 +175,7 @@ class DataUpdater(S3Bucket):
                 df = merge_dfs(df, df_avg)
 
                 # check and upload the updated/merged df
-                postfix = "average" if avg == 120 else "average-10m"
-                path = f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}-virtual.tsv-{postfix}"
+                path = f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}-virtual.tsv{downloader.appendix}"
                 self.upload(df, path, download_size, download_cols)
 
     def check(

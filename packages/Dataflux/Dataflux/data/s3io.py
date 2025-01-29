@@ -14,8 +14,6 @@ class S3Bucket:
         self._bucket = os.getenv("S3_BUCKET", DataType.MEASUREMENTS.value)
         self._client = boto3.client("s3")
 
-        boto3.set_stream_logger("")
-
     def set_data_type(self, data_type: DataType) -> None:
         """
         Usually, the bucket type will be retrieved from the environment variables.

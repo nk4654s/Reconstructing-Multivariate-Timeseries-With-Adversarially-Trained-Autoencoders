@@ -1,0 +1,145 @@
+# lightning.pytorch==2.5.0.post0
+seed_everything: 0
+trainer:
+  accelerator: cpu
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 32
+  logger: null
+  callbacks:
+  - class_path: lightning.pytorch.callbacks.EarlyStopping
+    init_args:
+      monitor: validate/MSELoss
+      min_delta: 1.0e-06
+      patience: 4
+      verbose: false
+      mode: min
+      strict: true
+      check_finite: true
+      stopping_threshold: null
+      divergence_threshold: null
+      check_on_train_epoch_end: null
+      log_rank_zero_only: false
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: checkpoints
+      filename: epoch={epoch}-val={validate/MSELoss:.6f}
+      monitor: validate/MSELoss
+      verbose: false
+      save_last: null
+      save_top_k: 3
+      save_weights_only: false
+      mode: min
+      auto_insert_metric_name: false
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: 1
+      save_on_train_epoch_end: null
+      enable_version_counter: true
+  fast_dev_run: false
+  max_epochs: 5
+  min_epochs: null
+  max_steps: -1
+  min_steps: null
+  max_time: null
+  limit_train_batches: null
+  limit_val_batches: null
+  limit_test_batches: null
+  limit_predict_batches: null
+  overfit_batches: 0.0
+  val_check_interval: null
+  check_val_every_n_epoch: 1
+  num_sanity_val_steps: null
+  log_every_n_steps: 1
+  enable_checkpointing: null
+  enable_progress_bar: null
+  enable_model_summary: null
+  accumulate_grad_batches: 1
+  gradient_clip_val: 1.0
+  gradient_clip_algorithm: null
+  deterministic: null
+  benchmark: null
+  inference_mode: true
+  use_distributed_sampler: true
+  profiler: null
+  detect_anomaly: false
+  barebones: false
+  plugins: null
+  sync_batchnorm: false
+  reload_dataloaders_every_n_epochs: 0
+  default_root_dir: null
+model:
+  class_path: Comprisk.model.auto_encoder.rnn.MultimodalRecurrentAutoEncoder
+  init_args:
+    num_hidden_layers: 4
+    num_hidden_dim: 64
+    dropout_prob: 0.3
+    loss: MSELoss
+    activation: tanh
+    optimizer: Adam
+    lr: 0.0001
+    lr_decay: 0.9
+data:
+  train: environment/dev/datasets/thyssen-vd2-trainset-phase-2
+  validate: environment/dev/datasets/thyssen-vd2-valset-phase-2
+  sequence_in: 60
+  sequence_out: 0
+  features_in:
+  - Biomethandurchfluss (m^3/min)
+  - DifferenzdruckTriebwerksölPDIT74553 (bar)
+  - EndtemperaturZweiteStufenachKühlerTETIT74378 (°C)
+  - EnddruckZweiteStufePIT74397 (bar)
+  - EndtemperaturZweiteStufeTETIT74371 (°C)
+  - EndtemperaturErsteStufeTETIT74334 (°C)
+  - EnddruckErsteStufePIT74339 (bar)
+  - SaugtemperaturZweiteStufeTETIT74341 (°C)
+  - KompressordrehzahlSE74201 (rpm)
+  - KühlwassertemperaturnachKühlerTETIT74422 (°C)
+  - KühlwasserdurchflussmengeFIT74423 (m^3/min)
+  - KühlwasserdrucknachPumpePIT74425 (bar)
+  - Motorlager (°C)
+  - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
+  - PackungsleckageFIT74389 (Nm3h)
+  - SaugdruckZweiteStufePIT74340 (bar)
+  - SchwingungsmessungTriebwerkVT74280 (mm/s)
+  - SaugtemperaturErsteStufeTETIT74328 (°C)
+  - SaugdruckErsteStufePIT74319 (bar)
+  - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)
+  - VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)
+  - Wicklungstemperatur (°C)
+  features_out:
+  - Biomethandurchfluss (m^3/min)
+  - DifferenzdruckTriebwerksölPDIT74553 (bar)
+  - EnddruckErsteStufePIT74339 (bar)
+  - EndtemperaturErsteStufeTETIT74334 (°C)
+  - EndtemperaturZweiteStufeTETIT74371 (°C)
+  - EndtemperaturZweiteStufenachKühlerTETIT74378 (°C)
+  - KühlwassertemperaturnachKühlerTETIT74422 (°C)
+  - KühlwasserdurchflussmengeFIT74423 (m^3/min)
+  - KühlwasserdrucknachPumpePIT74425 (bar)
+  - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
+  - PackungsleckageFIT74389 (Nm3h)
+  - SaugdruckZweiteStufePIT74340 (bar)
+  - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)
+  - VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)
+  - Wicklungstemperatur (°C)
+  skip: 1
+  stride: 1
+  behavior: autoencoder
+  batch_size: 128
+  shuffle: true
+  num_workers: 6
+  persistent_workers: true
+  pin_memory: true
+tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
+environment: production
+prefix: analysis
+upload_config: configs/vd2-version-1/3_upload.yml
+force_upload: false
+tuner_config: null
+tuner_trials: 1
+score_transformer:
+  mode: linear
+optimizer: null
+lr_scheduler: null
