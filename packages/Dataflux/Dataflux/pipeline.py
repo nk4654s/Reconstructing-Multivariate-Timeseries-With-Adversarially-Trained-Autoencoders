@@ -46,19 +46,18 @@ def download(flux: FluxConfigManager) -> None:
 
     # get the current date and subtract 1 hour to get the model's input
     if flux.args.latest:
-        start = datetime.now(tz=timezone.utc)
-        if start.hour < 2:
-            start = start - timedelta(days=1)
-        start = start.replace(hour=0, minute=0, second=0, microsecond=0)
-        end = start.replace(hour=23, minute=59, second=59, microsecond=999999)
+        end = datetime.now(tz=timezone.utc)
+        start = end - timedelta(hours=2)
 
         modules.append(Slice(start.timestamp(), end.timestamp()))
+        start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = end.replace(hour=23, minute=59, second=59, microsecond=999999)
+
         interval_list: List[Tuple[datetime.date, datetime.date]] = [dt for dt in daterange(start, end)]
-        end.strftime("%Y-%m-%d %H:%M:%S")
 
     # exit on wrong inputs
     if not interval_list:
-        method = "Latest" if flux.args.latest else "Config Intervals"
+        method = "latest" if flux.args.latest else "intervals"
         logger.error(
             "Interval list should not be empty. Used method '%s' to get dates.", method
         )

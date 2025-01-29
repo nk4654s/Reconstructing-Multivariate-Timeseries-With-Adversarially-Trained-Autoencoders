@@ -53,12 +53,16 @@ class Slice(FileWorkerCallable):
         return None, None
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
+        files = []
         for i, file_info in enumerate(metadata[Meta.FILES]):
             day = file_info[Meta.DAY.name]
-            update = self._update.pop(day, file_info)
+            update = self._update.pop(day, None)
             if update:
-                metadata[Meta.FILES][i]["recordings"] = update
+                info = metadata[Meta.FILES][i]
+                info["recordings"] = update
+                files.append(info)
 
+        metadata.put(files, Meta.FILES)
         metadata.put(
             sum([i["recordings"] for i in metadata[Meta.FILES]]), Meta.TOTAL_RECORDINGS
         )
