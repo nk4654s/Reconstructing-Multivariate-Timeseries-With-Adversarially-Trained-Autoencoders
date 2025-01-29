@@ -1,5 +1,7 @@
 import os
 import shutil
+import lightning as L
+import yaml
 
 from lightning.pytorch.callbacks.callback import Callback
 from lightning.pytorch.callbacks import ModelCheckpoint
@@ -39,6 +41,26 @@ def get_trainer_callback(trainer, callback_name: str) -> Callback | None:
 
 
 class TrainerEntrypoint(EntrypointBase):
+    """
+    This entrypoints builds on the FluxEntrypoint and uses the datasets to train a model. First, the model's
+    output folders were created. The structure is as follows
+
+    ```
+    model_name/tag/version_num/
+    ├── checkpoints/
+    │   ├── model-0.pkl
+    │   └── ...
+    ├── metadata/
+    │   ├── dataset_config.yaml
+    │   └── normalizer.pkl
+    ├── config.yaml
+    └── upload.yaml
+    ```
+
+    Lightning stores the used configuration file automatically in the model's output folder. Additionally, the
+    entrypoint generates the upload configuration next to it. This file contains information about the latest
+    sensor input and pre-processing. When generating the scores in production, this file will be utilized.
+    """
     def __init__(self) -> None:
         super().__init__()
 
@@ -89,6 +111,33 @@ class TrainerEntrypoint(EntrypointBase):
             config_file, os.path.join(self._metadata_path, "dataset_config.yaml")
         )
 
+    def _save_upload_config(self, context: EntrypointContext, source: str = None) -> None:
+        if source:
+            # a source path is given, the previous model should contain an upload.yaml file
+            config_path = os.path.join(source, "upload.yaml")
+
+        elif os.path.isfile(context.config.data.train):
+            # copy the training configuration to the output folder
+            config_path = os.path.join(context.config.data.train)
+
+        else:
+            # the train path is a folder and not a dataflux config file
+            config_path = os.path.join(context.config.data.train, "metadata", "config.yaml")
+
+        upload_path = os.path.join(self._logging_path, "upload.yaml")
+        shutil.copyfile(config_path, upload_path)
+        logger.debug("Copied %s to %s", config_path, upload_path)
+
+        # make sure to have the key values set
+        with open(upload_path, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+            config["folder"] = "upload"
+            config["latest"] = True
+            config.pop("intervals", None)
+
+        with open(upload_path, mode="w", encoding="utf-8") as f:
+            yaml.safe_dump(config, f)
+
     def __call__(
         self, context: EntrypointContext, *args, **kwargs
     ) -> EntrypointContext:
@@ -104,30 +153,16 @@ class TrainerEntrypoint(EntrypointBase):
         context.model = loader.get_model()
         context.model.train()
 
-        # move the upload config if provided
-        # when the model was loaded, there should be the upload yaml next to the training config
-        upload_config_path = os.path.join(context.config_folder, "upload.yaml")
-        if context.config.upload_config and not loader.from_disk:
-            upload_config_path = os.path.join(
-                context.base_folder,
-                context.environment.value,
-                context.config.upload_config,
-            )
+        # use a different seed then set if the model was loaded from disk
+        # this ensures different probabilities (e.g. for the Dropout layer) in the model
+        if loader.from_disk:
+            context.config.seed_everything += 1
+            L.seed_everything(context.config.seed_everything)
 
-        # if copying the upload.yaml fails, then abort training and cleanup
-        try:
-            shutil.copyfile(
-                os.path.join(upload_config_path),
-                os.path.join(self._logging_path, "upload.yaml"),
-            )
-        except FileNotFoundError as e:
-            logger.error(e)
-            logger.critical("Could not find upload.yaml in %s", context.config_folder)
-            shutil.rmtree(self._logging_path)
-            exit(0)
+        self._save_upload_config(context, loader.path)
 
         # start the training
-        logger.debug("Starting training")
+        logger.debug("Starting training (seed=%s)", context.config.seed_everything)
         context.trainer.fit(context.model, context.datamodule)
 
         logger.info(
@@ -137,4 +172,5 @@ class TrainerEntrypoint(EntrypointBase):
         )
 
         context.config_folder = self._logging_path
+        context.config.data.shuffle = False
         return context

@@ -1,8 +1,7 @@
 _instantiator: lightning.pytorch.cli.instantiate_module
-class_path: Comprisk.model.ae.rnn.EncDecAD
 activation: tanh
 behavior: autoencoder
-dropout_prob: 0.4
+dropout_prob: 0.3
 features_in:
 - Biomethandurchfluss (m^3/min)
 - "DifferenzdruckTriebwerks\xF6lPDIT74553 (bar)"
@@ -46,5 +45,5 @@ loss: MSELoss
 lr: 0.0001
 lr_decay: 0.9
 num_hidden_dim: 64
-num_hidden_layers: 3
+num_hidden_layers: 4
 optimizer: Adam

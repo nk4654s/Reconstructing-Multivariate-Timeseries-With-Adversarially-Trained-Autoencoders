@@ -14,7 +14,6 @@ modules:
       upper: 1.1
       alpha_threshold: 10800
       beta_threshold: 0
-      force: true
   - class_path: Dataflux.modules.state.State
     init_args:
       key: "PositionBypassregelventilPCV74381 (%)"
