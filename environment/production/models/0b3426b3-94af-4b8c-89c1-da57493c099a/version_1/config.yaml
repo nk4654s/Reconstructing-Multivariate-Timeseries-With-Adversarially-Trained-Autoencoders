@@ -81,8 +81,8 @@ model:
     lr: 0.0001
     lr_decay: 0.9
 data:
-  train: environment/dev/datasets/thyssen-vd2-trainset-phase-2
-  validate: environment/dev/datasets/thyssen-vd2-valset-phase-2
+  train: datasets/thyssen-vd2-trainset-phase-2
+  validate: datasets/thyssen-vd2-valset-phase-2
   sequence_in: 60
   sequence_out: 0
   features_in:

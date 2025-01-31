@@ -1,4 +1,4 @@
-folder: environment/dev/datasets/thyssen-vd2-service
+folder: datasets/thyssen-vd2-service
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
   - 2024-08-10 2024-09-20
@@ -46,4 +46,4 @@ modules:
         - ts
   - class_path: Dataflux.modules.normalize.NormalizeTransform
     init_args:
-      from_other: environment/dev/datasets/thyssen-vd2-trainset-phase-2
+      from_other: datasets/thyssen-vd2-trainset-phase-2
