@@ -142,7 +142,7 @@ class DataUpdater(S3Bucket):
 
                 self.upload(
                     df,
-                    f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}-virtual.tsv"
+                    f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}{downloader.postfix}.tsv"
                     + downloader.appendix,
                     download_size,
                     download_cols,
@@ -175,7 +175,7 @@ class DataUpdater(S3Bucket):
                 df = merge_dfs(df, df_avg)
 
                 # check and upload the updated/merged df
-                path = f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}-virtual.tsv{downloader.appendix}"
+                path = f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}{downloader.postfix}.tsv{downloader.appendix}"
                 self.upload(df, path, download_size, download_cols)
 
     def check(
@@ -238,3 +238,5 @@ class DataUpdater(S3Bucket):
             ContentType="text/tab-separated-values",
             ContentEncoding="gzip",
         )
+
+        logger.debug("Finished upload to %s", path)
