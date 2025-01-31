@@ -1,4 +1,7 @@
 import os
+from typing import Dict
+
+import yaml
 
 from Comprisk.data import DataModule
 from Dataflux.cli import FluxConfigManager
@@ -32,6 +35,26 @@ class FluxEntrypoint(EntrypointBase):
 
         return os.path.join(base_path, path)
 
+    def _adjust_config_paths(self, context: EntrypointContext, path: str) -> Dict:
+        if os.path.isdir(path):
+            return {}
+
+        with open(path, mode="r") as f:
+            config = yaml.safe_load(f)
+
+            # add the base path prefix depending on the configured environment
+            config["folder"] = self._get_path(context, config["folder"])
+
+            for i, module in enumerate(config.get("modules", [])):
+                if module["class_path"] == "Dataflux.modules.normalize.NormalizeTransform":
+                    args = module.get("init_args", {})
+                    norm_path = args.get("from_other", None)
+                    if norm_path:
+                        config["modules"][i]["init_args"]["from_other"] = self._get_path(context, norm_path)
+                    break
+
+        return config
+
     def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
         dataset_paths = {
             "train": self._get_path(context, context.config.data.train),
@@ -48,7 +71,8 @@ class FluxEntrypoint(EntrypointBase):
                 continue
 
             # use dataflux to download the dataset
-            flux = FluxConfigManager(path)
+            config = self._adjust_config_paths(context, path)
+            flux = FluxConfigManager(path, custom_config=config)
             folder_path = flux_pipeline(flux)
 
             # update the comprisk context to let it know where to find the dataset
