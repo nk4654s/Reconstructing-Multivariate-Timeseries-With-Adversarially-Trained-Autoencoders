@@ -5,7 +5,7 @@ when processing a dataset using a defined yaml-config.
 import os
 import shutil
 from datetime import datetime, timezone, timedelta
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from Dataflux.cli import CLIArgumentParser
 from Dataflux.cli.cli import FluxConfigManager
@@ -99,7 +99,7 @@ def process(flux: FluxConfigManager) -> None:
     metadata.save(flux.args.folder)
 
 
-def pipeline(flux: FluxConfigManager) -> Tuple[str | None]:
+def pipeline(flux: FluxConfigManager) -> Union[str | None]:
     """This function executes the flux pipeline given the FluxConfigManager which holds the required information.
 
     Args:
@@ -109,7 +109,7 @@ def pipeline(flux: FluxConfigManager) -> Tuple[str | None]:
     Returns: The output folder.
 
     """
-    if flux.args.config == {}:
+    if flux.args.config == {} or flux.args.folder is None:
         return None
 
     global modules

@@ -8,6 +8,10 @@ from Dataflux.cli import FluxConfigManager
 from Dataflux.pipeline import pipeline as flux_pipeline
 
 from Comprisk.entrypoints.base import EntrypointContext, EntrypointBase
+from Dataflux.pytorch import EmptyDatasetError
+from Dataflux import get_logger, logging_mode
+
+logger = get_logger(__name__, "logfile", logging_mode)
 
 
 class FluxEntrypoint(EntrypointBase):
@@ -30,13 +34,13 @@ class FluxEntrypoint(EntrypointBase):
 
     def _get_path(self, context: EntrypointContext, path: str) -> str:
         base_path = os.path.join(context.base_folder, context.environment.value)
-        if path.startswith(base_path):
-            return path
+        if not path.startswith(base_path):
+            path = os.path.join(base_path, path)
 
-        return os.path.join(base_path, path)
+        return path if os.path.exists(path) else None
 
     def _adjust_config_paths(self, context: EntrypointContext, path: str) -> Dict:
-        if os.path.isdir(path):
+        if path is None or os.path.isdir(path):
             return {}
 
         with open(path, mode="r") as f:
@@ -67,7 +71,7 @@ class FluxEntrypoint(EntrypointBase):
         datamodule_args_modified = context.config.data
         for key, path in dataset_paths.items():
             datamodule_args_modified[key] = path
-            if os.path.isdir(path):
+            if path is None or os.path.isdir(path):
                 continue
 
             # use dataflux to download the dataset
@@ -79,8 +83,11 @@ class FluxEntrypoint(EntrypointBase):
             datamodule_args_modified[key] = folder_path
 
         # finalize the context
-        context.config.data.train = datamodule_args_modified["train"]
-        context.config.data.validate = datamodule_args_modified["validate"]
-        context.datamodule = DataModule(**datamodule_args_modified)
+        try:
+            context.config.data.train = datamodule_args_modified["train"]
+            context.config.data.validate = datamodule_args_modified["validate"]
+            context.datamodule = DataModule(**datamodule_args_modified)
+        except EmptyDatasetError:
+            logger.error("Unable to load dataset: EmptyDatasetError")
 
         return context
