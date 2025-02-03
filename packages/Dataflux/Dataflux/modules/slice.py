@@ -1,4 +1,3 @@
-import os
 from typing import Dict
 from threading import Lock
 import pandas as pd
@@ -10,7 +9,7 @@ from Dataflux.diskio import (
     CallableDependency,
     CALLABLE_RETURN_TYPE,
 )
-from Dataflux.helper import Metadata, Meta
+from Dataflux.diskio.meta import FileMeta, Metadata
 
 mutex = Lock()
 
@@ -32,38 +31,21 @@ class Slice(FileWorkerCallable):
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {Slice.__name__: CallableDependency.FINAL}
 
-    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
-        df = pd.read_feather(file_path)
+    def run(self, fm: FileMeta, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
+        df = pd.read_feather(fm.path)
         df = df.set_index("ts")
-
-        day = os.path.basename(file_path).split("_", maxsplit=1)[-1]
-        day = day.split(".")[0]
-        os.remove(file_path)
 
         # check if the df is within the timespan
         if df.index[-1] < self._start_ts or df.index[0] > self._end_ts:
-            return None, [file_path]
+            return None, fm
 
         df = df.loc[self._start_ts : self._end_ts]
         df = df.reset_index()
-        df.to_feather(file_path)
-
-        self._update[day] = len(df)
+        df.to_feather(fm.path)
 
         return None, None
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
-        files = []
-        for i, file_info in enumerate(metadata[Meta.FILES]):
-            day = file_info[Meta.DAY.name]
-            update = self._update.pop(day, None)
-            if update:
-                info = metadata[Meta.FILES][i]
-                info["recordings"] = update
-                files.append(info)
-
-        metadata.put(files, Meta.FILES)
-        metadata.put(
-            sum([i["recordings"] for i in metadata[Meta.FILES]]), Meta.TOTAL_RECORDINGS
-        )
-        logger.debug("Total length now %s", metadata[Meta.TOTAL_RECORDINGS])
+        # requesting the metadata as dict recalculates the total number of recordings
+        _ = metadata.as_dict()
+        logger.debug("Slicing finished: length=%s", metadata.total_recordings)

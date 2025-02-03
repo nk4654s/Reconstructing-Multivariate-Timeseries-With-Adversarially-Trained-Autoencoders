@@ -14,7 +14,8 @@ import pandas as pd
 
 from Dataflux.data.header import Header
 from Dataflux.data.s3io import S3Bucket
-from Dataflux.helper import Meta, Metadata, get_file, get_day_list, line_str_to_array
+from Dataflux.diskio.meta import Metadata, FileMeta
+from Dataflux.helper import get_file, get_day_list, line_str_to_array
 from Dataflux import logger, DEBUG_MODE
 
 
@@ -250,10 +251,7 @@ class ContinuousDataDownloader(DataDownloader):
         filename = str(self.machine_uuid) + ".feather"
 
         # organize modules and build metadata as information for modules
-        meta = Metadata()
-        meta.put(dir_name, Meta.PATH)
-        meta.put(str(self.machine_uuid), Meta.MACHINE_UUID)
-        files = []
+        meta = Metadata(dir_name, self.machine_uuid)
 
         # iterate over all streams and append their content to the dataframe
         length = (
@@ -276,7 +274,6 @@ class ContinuousDataDownloader(DataDownloader):
                         pbar.update(1)
                         continue
 
-                    meta.put(self.day(i).strftime("%Y-%m-%d"), Meta.DAY)
                     # remove timestamps if the day started at a given time
                     if i == 0:
                         df = df[df["ts"] >= self.day(i).timestamp()]
@@ -288,14 +285,11 @@ class ContinuousDataDownloader(DataDownloader):
                     if i == len(self) - 1:
                         df = df[df["ts"] <= self.day(i).timestamp()]
 
+                    # store the file and its file metadata
                     df.to_feather(file_path)
-                    files.append(
-                        {
-                            Meta.DAY.name: day,
-                            "recordings": len(df),
-                            "features": df.shape[1],
-                        }
-                    )
+                    file_meta = FileMeta(path=file_path)
+                    meta.files[file_path] = file_meta
+
                 pbar.update(1)
             except EmptyStreamError:
                 logger.debug("Stream for day %s is empty, skipping file download.", day)
@@ -304,15 +298,12 @@ class ContinuousDataDownloader(DataDownloader):
 
         logger.info(
             "Finished downloading %s files. Continuing with processing files.",
-            len(files),
+            len(meta.files),
         )
         logger.debug("Saving metadata info to '%s'.", dir_name)
-
-        meta.put(sum([f["recordings"] for f in files]), Meta.TOTAL_RECORDINGS)
-        meta.put(files, Meta.FILES)
         meta.save(dir_name)
 
-        return len(files) != 0
+        return len(meta.files) != 0
 
     def __len__(self) -> int:
         return len(self._days)

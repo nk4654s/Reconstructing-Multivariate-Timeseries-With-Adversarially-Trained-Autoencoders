@@ -12,6 +12,8 @@ class FileWorkerContext:
     """
 
     DIRECTORY = auto()
+    DELETED_FILES = auto()
+    ADDED_FILES = auto()
     UUID = auto()
 
     def __init__(self) -> None:
@@ -37,7 +39,10 @@ class FileWorkerContext:
             value (Any): The new element to be appended to the list.
         """
         container = self._content.get(key, [])
-        container.append(value)
+        if isinstance(value, list):
+            container += value
+        else:
+            container.append(value)
         self._content[key] = container
 
     def get(self, key: Any) -> Any:

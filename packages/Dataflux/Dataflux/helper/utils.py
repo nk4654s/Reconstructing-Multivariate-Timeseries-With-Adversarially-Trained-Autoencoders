@@ -3,12 +3,16 @@
 import importlib
 import os
 import uuid
+from copy import copy
 from typing import Callable, Tuple, List, Iterator
 from datetime import datetime, date, timedelta
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
+
+from Dataflux import logger
+from Dataflux.diskio.meta import FileMeta, Metadata
 
 rcParams.update({"figure.autolayout": True})
 
@@ -248,3 +252,64 @@ def get_week_of_year(day_in_week: date | datetime):
 
     # Return the week number from the ISO calendar
     return date_obj.isocalendar()[1]
+
+
+def deterministic_split_algorithm(
+    meta: Metadata, percentage: float
+) -> Tuple[List, List]:
+    """
+    This function splits the days of a dataset's metadata into two lists. The first list contains
+    the days which make up `1 - percentage` of total recordings. The second list contains the remaining days.
+
+    Args:
+        meta (Metadata): Metadata object containing the days.
+        percentage (float): The percentage of days that should be in the split list.
+
+    Returns:
+        Tuple[List]: A tuple containing two lists. The first list contains the first `1 - percentage`
+            and the second list contains the remaining days.
+    """
+    # requesting the metadata as dict recalculates the total number of recordings
+    _ = meta.as_dict()
+
+    # get the days in a sorted manner
+    days: List[FileMeta] = [v for v in meta.files.values()]
+    days = sorted(days, key=lambda fm: fm.samples)
+    total_recordings = meta.total_recordings
+
+    # copy the list of days as the algorithm will remove files from one list and
+    # add them to another list
+    trimmed_days = copy(days)
+    target_recordings = int(total_recordings * percentage)
+
+    # add days to the list until the target_recordings is reached
+    selected_days: List[FileMeta] = []
+    iterative_recordings = 0
+    for i in range(len(days)):
+        if iterative_recordings >= target_recordings:
+            break
+
+        # also, remove the day from the list of days to be trimmed
+        fm: FileMeta = trimmed_days.pop(i - len(selected_days))
+        selected_days.append(fm)
+        iterative_recordings += fm.samples
+
+    # as the list of days is sorted, we can attempt to remove some days from the selected
+    # list and put them back to the trimmed list
+    while iterative_recordings - selected_days[0].samples > target_recordings:
+        fm = selected_days.pop(0)
+        iterative_recordings -= fm.samples
+        trimmed_days.append(fm)
+
+    # log some data
+    actual_percentage = round(iterative_recordings / total_recordings * 100, 2)
+    logger.debug(
+        "Targeted %s%% and settled on %s%%", percentage * 100, actual_percentage
+    )
+    logger.debug(
+        "Training set has %s days and validation set has %s",
+        len(trimmed_days),
+        len(selected_days),
+    )
+
+    return trimmed_days, selected_days

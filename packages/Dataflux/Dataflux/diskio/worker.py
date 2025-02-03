@@ -6,12 +6,15 @@ from typing import List
 from .callable import FileWorkerCallable
 from .context import FileWorkerContext
 from Dataflux import logger
+from Dataflux.diskio.meta.file_meta import FileMeta, FileState
+
+mutex = threading.Lock()
 
 
 class FileWorkerThread(threading.Thread):
-    """The FileWorkerThread enables processing multiple files simultaneosly.
+    """The FileWorkerThread enables processing multiple files simultaneously.
     """
-    def __init__(self, module: FileWorkerCallable, files: List[str], context: FileWorkerContext, name: str) -> None:
+    def __init__(self, module: FileWorkerCallable, files: List[FileMeta], context: FileWorkerContext, name: str) -> None:
         """Initializes a Worker object.
 
         Args:
@@ -19,12 +22,14 @@ class FileWorkerThread(threading.Thread):
             context (FileWorkerContext): FileWorkerContext to be used by the callable.
         """
         super().__init__(name=name)
-        self._files = files
-        self._context = context
+        self._files: List[FileMeta] = files
         self._module = module
-    
+
+        # context is shared over self and other threads
+        self._context = context
+
     @property
-    def files(self) -> List[str]:
+    def files(self) -> List[FileMeta]:
         return self._files
     
     def add_file(self, path: str) -> None:
@@ -42,7 +47,7 @@ class FileWorkerThread(threading.Thread):
     def run(self) -> None:
         logger.debug("Thread %s processes %s files", self.name, len(self._files))
         # process the files using the current module
-        new_files, del_files = [], []
+        add_files = []
         for f in self._files:
             if not os.path.exists(f):
                 continue
@@ -51,26 +56,11 @@ class FileWorkerThread(threading.Thread):
             # if the module contains faulty code, catch the exception and remove the
             # file from the pipeline
             try:
-                to_add, to_delete = self._module.run(f, self._context)
+                add = self._module.run(f, self._context)
+                add_files += add if add else []
             except BaseException as e:
                 logger.error("An error occurred working on file %s with module %s.", f, self.name)
                 logger.error("%s", e)
-                to_add, to_delete = [], [f]
+                f.state = FileState.DELETED
 
-            if to_add:
-                new_files += to_add if isinstance(to_add, list) else [to_add]
-            
-            if to_delete:
-                del_files += to_delete if isinstance(to_delete, list) else [to_delete]
-        
-        if len(del_files) > 0:
-            logger.debug("Thread of %s deleted %s files", self.name, len(del_files))
-            for path in del_files:
-                self._files.remove(path)
-                if os.path.exists(path):
-                    os.remove(path)
-
-        if len(new_files) > 0:
-            logger.debug("Thread of %s self-extended by %s files", self.name, len(new_files))
-            for path in new_files:
-                self.add_file(path)
+        self._files += add_files

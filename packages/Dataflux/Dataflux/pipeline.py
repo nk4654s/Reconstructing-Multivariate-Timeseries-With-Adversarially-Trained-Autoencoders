@@ -11,7 +11,7 @@ from Dataflux.cli import CLIArgumentParser
 from Dataflux.cli.cli import FluxConfigManager
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
 from Dataflux.helper import daterange
-from Dataflux.helper.metadata import Meta, Metadata
+from Dataflux.diskio.meta.metadata import Meta, Metadata
 from Dataflux.data import ContinuousDataDownloader, DataType
 
 from Dataflux import logger

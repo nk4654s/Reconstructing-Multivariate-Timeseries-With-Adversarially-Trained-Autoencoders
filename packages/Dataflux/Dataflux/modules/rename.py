@@ -1,11 +1,11 @@
 """This module replaces the sensor UUID with a human readable text."""
 from enum import Enum, auto
-import os
 from typing import Dict
 import pandas as pd
 
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
-from Dataflux.helper import Metadata, Meta, get_sensors
+from Dataflux.diskio.meta import FileMeta, Metadata
+from Dataflux.helper import get_sensors
 from Dataflux.modules.normalize import NormalizeFit
 
 from Dataflux import logger
@@ -35,26 +35,22 @@ class Rename(FileWorkerCallable):
             NormalizeFit.__name__: CallableDependency.NOT_BEFORE
         }
 
-    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
-        df = pd.read_feather(file_path)
+    def run(self, fm: FileMeta, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
+        df = pd.read_feather(fm.path)
         if df.empty or isinstance(df, pd.Series):
-            return None, [file_path]
+            return None, fm
 
         if self._sensor_names is None:
             logger.debug("Module enabled: %s", "yes" if self._enable else "no")
 
             # initial call of this module, download uuid -> name dictionary
-            metadata = Metadata()
-            metadata.load(os.path.dirname(file_path))
-
-            uuid = metadata[Meta.MACHINE_UUID]
-            self._sensor_names = get_sensors(uuid)
+            self._sensor_names = get_sensors(fm.uuid)
             assert self._sensor_names, "No sensor name dictionary available."
 
         if self._enable:
             df.rename(columns=self._sensor_names, inplace=True)
         
-        df.to_feather(file_path)
+        df.to_feather(fm.path)
         if len(self._names) == 0:
             self._names = set(df.columns.values)
         else:

@@ -3,7 +3,7 @@ import unittest
 import pandas as pd
 import numpy as np
 
-from Dataflux.modules.state import trim, split, multi_split
+from Dataflux.helper.dataframe_ops import trim, split, multi_split
 
 class TestMachineSplit(unittest.TestCase):
     def setUp(self) -> None:

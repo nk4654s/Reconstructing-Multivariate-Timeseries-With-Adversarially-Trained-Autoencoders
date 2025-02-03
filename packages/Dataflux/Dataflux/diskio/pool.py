@@ -1,8 +1,9 @@
 """This module contains the FileWorkerPool"""
+import os.path
 from typing import List, Dict
 from tqdm import tqdm
-from Dataflux.helper import Metadata
 from .callable import FileWorkerCallable, CallableDependency
+from Dataflux.diskio.meta import FileMeta, FileState, Metadata
 from .worker import FileWorkerThread
 from .context import FileWorkerContext as Context
 from Dataflux import logger, DEBUG_MODE
@@ -89,9 +90,24 @@ class FileWorkerPool:
 
                     active.append(thread)
 
+                # get the result of all threads
+                result_files: List[FileMeta] = []
                 for thread in active:
                     thread.join()
+                    result_files += thread.files
 
+                # update metadata, remove deleted files
+                for f in result_files:
+                    if f.state == FileState.DELETED:
+                        fm = self._metadata.files.pop(f.path, None)
+                        if fm and os.path.exists(fm.path):
+                            os.remove(fm.path)
+
+                    else:
+                        self._metadata.files[f.path] = f
+
+                # update all threads
+                for thread in active:
                     # update the files as some might be added or deleted by the thread
                     thread_id = int(thread.name.split("_")[-1])
                     self._workers[thread_id]["files"] = thread.files
