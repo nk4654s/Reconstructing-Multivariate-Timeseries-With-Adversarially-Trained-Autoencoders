@@ -49,9 +49,11 @@ class GeneratorEntrypoint(EntrypointBase):
     def __init__(self) -> None:
         super().__init__()
 
+        self._updater_cls = DataUpdater
+
     def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
         # get the upload dataset which must be set as validation set, disable training parameters such as shuffle
-        datamodule_args_modified = context.config.data.as_dict()
+        datamodule_args_modified = vars(context.config.data)
 
         # catch the case, where the machine is offline and the dataset is empty
         data = DataModule(**datamodule_args_modified).valset
@@ -66,7 +68,7 @@ class GeneratorEntrypoint(EntrypointBase):
 
         # load the trained model from disk and create the dataset object for the
         # previously downloaded dataset
-        loader = ModelLoader(path=context.config_folder)
+        loader = ModelLoader(path=context.config_folder, model=context.model)
         if not loader.from_disk:
             logger.warning("ModelLoader did not load a model from disk.")
             return context
@@ -79,7 +81,7 @@ class GeneratorEntrypoint(EntrypointBase):
         # update the remote TSV files
         try:
             debug = os.environ.get("CAS_DEBUG_MODE", "0") == data.UUID
-            updater = DataUpdater(
+            updater = self._updater_cls(
                 data.UUID,
                 CompriskUpdateCallable(score_data),
                 debug=debug,

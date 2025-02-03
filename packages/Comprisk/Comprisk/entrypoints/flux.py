@@ -35,13 +35,13 @@ class FluxEntrypoint(EntrypointBase):
     def _get_path(self, context: EntrypointContext, path: str, check_exists: bool = True) -> str:
         _original_path = path
         base_path = os.path.join(context.base_folder, context.environment.value)
-        if not path.startswith(base_path):
+        if path and not path.startswith(base_path):
             path = os.path.join(base_path, path)
 
-        if check_exists:
+        if path and check_exists:
             path = path if os.path.exists(path) else None
 
-        logger.debug("Path-name: %s to %s", _original_path, path)
+        logger.debug("Got path-name: %s to %s", _original_path, path)
         return path
 
     def _adjust_config_paths(self, context: EntrypointContext, path: str) -> Dict:
@@ -73,11 +73,11 @@ class FluxEntrypoint(EntrypointBase):
         if "__path__" in context.config.data:
             del context.config.data.__path__
 
-        datamodule_args_modified = context.config.data
+        datamodule_args_modified = vars(context.config.data)
         for key, path in dataset_paths.items():
             datamodule_args_modified[key] = path
             if path is None or os.path.isdir(path):
-                logger.debug("Not required: flux-pipeline(%s)", path)
+                logger.debug("Flux not required: flux-pipeline(%s)", path)
                 continue
 
             # use dataflux to download the dataset
