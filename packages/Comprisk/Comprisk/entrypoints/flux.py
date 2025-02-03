@@ -32,12 +32,17 @@ class FluxEntrypoint(EntrypointBase):
     def __init__(self) -> None:
         super().__init__()
 
-    def _get_path(self, context: EntrypointContext, path: str) -> str:
+    def _get_path(self, context: EntrypointContext, path: str, check_exists: bool = True) -> str:
+        _original_path = path
         base_path = os.path.join(context.base_folder, context.environment.value)
         if not path.startswith(base_path):
             path = os.path.join(base_path, path)
 
-        return path if os.path.exists(path) else None
+        if check_exists:
+            path = path if os.path.exists(path) else None
+
+        logger.debug("Path-name: %s to %s", _original_path, path)
+        return path
 
     def _adjust_config_paths(self, context: EntrypointContext, path: str) -> Dict:
         if path is None or os.path.isdir(path):
@@ -47,7 +52,7 @@ class FluxEntrypoint(EntrypointBase):
             config = yaml.safe_load(f)
 
             # add the base path prefix depending on the configured environment
-            config["folder"] = self._get_path(context, config["folder"])
+            config["folder"] = self._get_path(context, config["folder"], check_exists=False)
 
             for i, module in enumerate(config.get("modules", [])):
                 if module["class_path"] == "Dataflux.modules.normalize.NormalizeTransform":
@@ -72,11 +77,15 @@ class FluxEntrypoint(EntrypointBase):
         for key, path in dataset_paths.items():
             datamodule_args_modified[key] = path
             if path is None or os.path.isdir(path):
+                logger.debug("Not required: flux-pipeline(%s)", path)
                 continue
 
             # use dataflux to download the dataset
             config = self._adjust_config_paths(context, path)
             flux = FluxConfigManager(path, custom_config=config)
+
+            logger.debug("Executing flux-pipeline(%s)", path)
+            logger.debug("Using custom flux-config: %s", "yes" if config else "no")
             folder_path = flux_pipeline(flux)
 
             # update the comprisk context to let it know where to find the dataset
@@ -90,4 +99,6 @@ class FluxEntrypoint(EntrypointBase):
         except EmptyDatasetError:
             logger.error("Unable to load dataset: EmptyDatasetError")
 
+        logger.debug("Loaded (train) from %s", context.config.data.train)
+        logger.debug("Loaded (val) from %s", context.config.data.validate)
         return context

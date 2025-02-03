@@ -55,6 +55,7 @@ class GeneratorEntrypoint(EntrypointBase):
 
         # catch the case, where the machine is offline and the dataset is empty
         data = DataModule(**datamodule_args_modified).valset
+        logger.debug("Loaded (val) from %s", data.directory)
         if data is None:
             logger.warning("The dataset is empty, nothing to generate. Exiting gracefully.")
             return context
