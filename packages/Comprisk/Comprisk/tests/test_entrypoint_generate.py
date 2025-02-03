@@ -2,7 +2,6 @@ import os
 import shutil
 import unittest
 from argparse import Namespace
-from pyexpat import features
 
 import yaml
 
