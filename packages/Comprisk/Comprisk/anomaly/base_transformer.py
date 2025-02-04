@@ -36,4 +36,4 @@ class BaseTransformer:
         Returns:
             pd.DataFrame: The scores given the input format.
         """
-        return pd.DataFrame()
+        return predicted

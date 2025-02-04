@@ -9,6 +9,7 @@ import pandas as pd
 
 
 class FileState(Enum):
+    """This enum describes the FileMeta's current state."""
     ADDED = auto()
     MODIFIED = auto()
     DELETED = auto()
@@ -17,6 +18,17 @@ class FileState(Enum):
 
 @dataclass
 class FileMeta:
+    """
+    This class describes a dataset's file object.
+
+    Args:
+        path (str): The file name.
+        base_path (str): The path to the file (excluding the file name). Defaults to "".
+        state (FileState): The file's state. Defaults to `FileState.SAME` which corresponds to no changes.
+        day (datetime): The day which will be read from the files appendix automatically.
+        uuid (UUID): The UUID which will be read from the file name automatically.
+        features (int): The number of columns
+    """
     path: str
     base_path: str = ""
     state: FileState = FileState.SAME
@@ -38,6 +50,10 @@ class FileMeta:
 
     @property
     def full_path(self) -> str:
+        """
+        Returns:
+            str: The full path concatenation of the base path and file name.
+        """
         return os.path.join(self.base_path, self.path)
 
     def as_dict(self) -> Dict:

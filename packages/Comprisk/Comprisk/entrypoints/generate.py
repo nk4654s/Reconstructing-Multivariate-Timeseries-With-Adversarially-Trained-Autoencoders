@@ -50,6 +50,7 @@ class GeneratorEntrypoint(EntrypointBase):
         super().__init__()
 
         self._updater_cls = DataUpdater
+        self._loader_cls = ModelLoader
 
     def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
         # get the upload dataset which must be set as validation set, disable training parameters such as shuffle
@@ -68,7 +69,7 @@ class GeneratorEntrypoint(EntrypointBase):
 
         # load the trained model from disk and create the dataset object for the
         # previously downloaded dataset
-        loader = ModelLoader(path=context.config_folder, model=context.model)
+        loader = self._loader_cls(path=context.config_folder, model=context.model)
         if not loader.from_disk:
             logger.warning("ModelLoader did not load a model from disk.")
             return context
