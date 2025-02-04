@@ -94,7 +94,7 @@ class FileWorkerPool:
                 result_files: List[FileMeta] = []
                 for thread in active:
                     thread.join()
-                    result_files += thread.files if thread.files else []
+                    result_files += thread.files
 
                 # update metadata, remove deleted files
                 for f in result_files:

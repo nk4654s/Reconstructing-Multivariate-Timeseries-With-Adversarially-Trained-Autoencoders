@@ -103,5 +103,5 @@ def cli_generate() -> None:
 if __name__ == "__main__":
     #cli_train()
     #cli_train_score_transformer()
-    #cli_analyze()
-    cli_generate()
+    cli_analyze()
+    #cli_generate()

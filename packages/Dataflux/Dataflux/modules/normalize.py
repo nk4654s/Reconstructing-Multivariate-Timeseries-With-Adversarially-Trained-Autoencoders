@@ -79,13 +79,13 @@ class NormalizeFit(FileWorkerCallable):
         if self._remove:
             df = remove_outlier(df)
             fm.samples = len(df)
-            df.to_feather(fm.path)
+            fm.save(df)
 
-            # get minimum and maximum values from previous files
-            scaler = self._get_scaler(context)
-            scaler.fit(df)
+        # get minimum and maximum values from previous files
+        scaler = self._get_scaler(context)
+        scaler.fit(df)
 
-            context.put(ContextParam.SCALER, scaler)
+        context.put(ContextParam.SCALER, scaler)
         return fm
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
