@@ -2,7 +2,6 @@
 
 from typing import Dict, List
 
-import pandas as pd
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
 from Dataflux.diskio.meta import FileMeta, Metadata, FileState
 

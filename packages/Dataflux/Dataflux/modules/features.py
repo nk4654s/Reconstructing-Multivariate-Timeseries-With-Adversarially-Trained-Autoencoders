@@ -1,6 +1,5 @@
 from typing import Dict, List
 import numpy as np
-import pandas as pd
 
 from Dataflux import logger
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE

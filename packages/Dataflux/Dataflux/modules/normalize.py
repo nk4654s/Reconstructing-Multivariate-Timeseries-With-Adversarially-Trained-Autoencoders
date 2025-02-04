@@ -2,7 +2,6 @@ import os
 from threading import Lock
 from typing import Dict, List
 import numpy as np
-import pandas as pd
 import pickle
 
 from Dataflux import logger

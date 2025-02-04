@@ -1,6 +1,5 @@
 from typing import Dict
 from threading import Lock
-import pandas as pd
 
 from Dataflux import logger
 from Dataflux.diskio import (

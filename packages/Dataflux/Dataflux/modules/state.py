@@ -8,7 +8,6 @@ from Dataflux.diskio import FileWorkerCallable, CallableDependency, CALLABLE_RET
 from Dataflux.diskio import FileWorkerContext as Context
 from Dataflux.diskio.meta import FileMeta, FileState, Metadata
 from Dataflux import logger
-from Dataflux.helper import get_file
 from Dataflux.helper.dataframe_ops import multi_split, remove_threshold
 from Dataflux.modules.normalize import NormalizeFit
 from Dataflux.modules.features import Features
