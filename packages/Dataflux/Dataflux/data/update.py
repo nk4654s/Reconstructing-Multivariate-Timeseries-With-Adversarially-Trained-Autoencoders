@@ -178,8 +178,9 @@ class DataUpdater(S3Bucket):
                 path = f"{uuid}/days/{day_str.replace('-', '/')}/{uuid}{downloader.postfix}.tsv{downloader.appendix}"
                 self.upload(df, path, download_size, download_cols)
 
+    @staticmethod
     def check(
-        self, df: pd.DataFrame, previous_size: int, previous_columns: Dict[str, int]
+        df: pd.DataFrame, previous_size: int, previous_columns: Dict[str, int]
     ) -> bool:
         # do not get smaller
         if len(df) < previous_size:
@@ -199,7 +200,7 @@ class DataUpdater(S3Bucket):
                 logger.warning("Attempted to remove %s when updating.", name)
                 return False
 
-            if name not in self._score_uuids.values() and columns[name] != val:
+            if name not in previous_columns.values() and columns[name] != val:
                 logger.warning("Forbidden modification attempt in column %s", name)
                 return False
 
@@ -222,7 +223,7 @@ class DataUpdater(S3Bucket):
     ) -> None:
         logger.debug("Upload new virtual sensors (len=%s)", len(df))
         df = compress(df)
-        if not self._force and not self.check(df, previous_size, previous_columns):
+        if not self._force and not DataUpdater.check(df, previous_size, previous_columns):
             return None
 
         # export dataframe as tsv-file
