@@ -6,7 +6,7 @@ import pandas as pd
 import pickle
 
 from Dataflux import logger
-from Dataflux.diskio.meta import FileMeta, Metadata
+from Dataflux.diskio.meta import FileMeta, Metadata, FileState
 from Dataflux.helper import FluxScaler, ScalerMethod
 from Dataflux.helper.dataframe_ops import remove_outlier
 from Dataflux.diskio import (
@@ -72,7 +72,7 @@ class NormalizeFit(FileWorkerCallable):
     def run(self, fm: FileMeta, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         # Load the file into a pandas DataFrame, sort by column names to ensure that
         # dataframe is consistent
-        df = pd.read_feather(fm.path)
+        df = fm.read()
         df = df.reindex(sorted(df.columns), axis=1)  # type: ignore
 
         # find and remove outliers
@@ -86,7 +86,7 @@ class NormalizeFit(FileWorkerCallable):
             scaler.fit(df)
 
             context.put(ContextParam.SCALER, scaler)
-        return None, None
+        return fm
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         logger.debug("Finished fitting the normalizer. Used method %s", self._method)
@@ -152,17 +152,18 @@ class NormalizeTransform(FileWorkerCallable):
         # if there is no scaler, remove all files...
         scaler = self._get_scaler(context)
         if not scaler:
-            return None, fm
+            fm.state = FileState.DELETED
+            return fm
 
         # read the file as pandas dataframe and sort by column names
         # to be consistent with the fitted values
-        df = pd.read_feather(fm.path)
+        df = fm.read()
         df = df.reindex(sorted(df.columns), axis=1)  # type: ignore
 
         # use the scaler to transform the loaded data
         normed = scaler.transform(df, dtype=np.float32)
-        normed.to_feather(fm.path)
-        return None, None
+        fm.save(normed)
+        return fm
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         # get the fitted values and method

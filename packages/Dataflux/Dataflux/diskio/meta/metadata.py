@@ -13,7 +13,7 @@ from Dataflux.diskio.meta import FileMeta
 class Metadata:
     path: str
     uuid: UUID
-    files: Dict[str, FileMeta] = field(default_factory=list)
+    files: Dict[str, FileMeta] = field(default_factory=dict)
     total_recordings: int = 0
 
     def as_dict(self) -> Dict:
@@ -23,10 +23,10 @@ class Metadata:
             files[d.pop("path")] = d
 
         return {
-            "machine_uuid": self.uuid,
+            "uuid": str(self.uuid),
             "path": self.path,
             "files": files,
-            "total_recordings": sum([f.samples for f in self.files])
+            "total_recordings": sum([f.samples for f in self.files.values()])
         }
 
     @property
@@ -39,7 +39,9 @@ class Metadata:
         Args:
             base_dir (str): Path of the root_folder to save metadata in.
         """
-        file_path = os.path.join(base_dir, "metadata", "info.yaml")
+        meta_dir = os.path.join(base_dir, "metadata")
+        os.makedirs(meta_dir, exist_ok=True)
+        file_path = os.path.join(meta_dir, "info.yaml")
         with open(file_path, "w", encoding="utf-8") as f:
             yaml.safe_dump(self.as_dict(), f)
 
@@ -54,9 +56,14 @@ class Metadata:
         file_path = os.path.join(base_path, "metadata", "info.yaml")
         with open(file_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
+            files = {}
+            for path, values in data["files"].items():
+                values["path"] = path
+                files[path] = FileMeta.from_dict(values, base_path=base_path)
+
             return Metadata(
                 path=data["path"],
                 uuid=data["uuid"],
-                files={k: FileMeta.from_dict(v, base_path=base_path) for k, v in data["files"].items()},
+                files=files,
                 total_recordings=data["total_recordings"],
             )

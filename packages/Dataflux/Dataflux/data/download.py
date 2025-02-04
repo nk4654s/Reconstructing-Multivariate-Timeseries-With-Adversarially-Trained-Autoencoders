@@ -287,7 +287,8 @@ class ContinuousDataDownloader(DataDownloader):
 
                     # store the file and its file metadata
                     df.to_feather(file_path)
-                    file_meta = FileMeta(path=file_path)
+                    base_dir, file_path = os.path.dirname(file_path), os.path.basename(file_path)
+                    file_meta = FileMeta(path=file_path, base_path=base_dir)
                     meta.files[file_path] = file_meta
 
                 pbar.update(1)

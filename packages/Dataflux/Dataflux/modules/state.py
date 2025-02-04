@@ -8,6 +8,7 @@ from Dataflux.diskio import FileWorkerCallable, CallableDependency, CALLABLE_RET
 from Dataflux.diskio import FileWorkerContext as Context
 from Dataflux.diskio.meta import FileMeta, FileState, Metadata
 from Dataflux import logger
+from Dataflux.helper import get_file
 from Dataflux.helper.dataframe_ops import multi_split, remove_threshold
 from Dataflux.modules.normalize import NormalizeFit
 from Dataflux.modules.features import Features
@@ -65,13 +66,14 @@ class State(FileWorkerCallable):
     
     def run(self, fm: FileMeta, context: Context) -> CALLABLE_RETURN_TYPE:
         # read and remove the dataset file, if everything is fine, it will eb created again
-        df = pd.read_feather(fm.path)
+        df = fm.read()
         if df.empty or isinstance(df, pd.Series):
-            return None, fm
+            fm.state = FileState.DELETED
+            return fm
         
         # find similar key
         if not self._find_corresponding_key(column_names=df.columns.values):
-            return None, None
+            return fm
 
         # split the dataset into multiple smaller ones by removing values
         # smaller or greater than the boundaries
@@ -79,24 +81,27 @@ class State(FileWorkerCallable):
 
         # if the resulting amount of splits is 0, then remove the file
         if len(df_splits) == 0:
-            return None, fm
+            fm.state = FileState.DELETED
+            return fm
         
 
         # save all dataframes
         if df_splits[0].shape != df.shape:
             df_splits = remove_threshold(df_splits, self._alpha, self._beta)
 
-        new_files = []
+        files = []
         base_path = os.path.dirname(fm.path)
         for i, df in enumerate(df_splits):
             postfix = "" if i == 0 else f"_{i}"
-            path = os.path.join(base_path, f"{fm.uuid}_{fm.day}{postfix}.feather")
-            df.to_feather(path)
+            file_name = fm.build_file_name(postfix)
 
             if i > 0:
-                new_files.append(FileMeta(path=path, state=FileState.ADDED))
+                fm = FileMeta(path=file_name, base_path=base_path, state=FileState.ADDED)
 
-        return new_files, None
+            fm.save(df)
+            files.append(fm)
+
+        return files
 
     def finish(self, context: Context, metadata: Metadata) -> None:
         # requesting the metadata as dict recalculates the total number of recordings

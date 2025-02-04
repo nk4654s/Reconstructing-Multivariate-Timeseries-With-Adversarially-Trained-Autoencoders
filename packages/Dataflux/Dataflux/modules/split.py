@@ -4,8 +4,8 @@ from typing import Dict
 
 
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
-from Dataflux.diskio.meta.file_meta import FileMeta
-from Dataflux.helper import Metadata, deterministic_split_algorithm
+from Dataflux.diskio.meta import FileMeta, Metadata
+from Dataflux.helper import deterministic_split_algorithm
 from Dataflux import logger
 
 
@@ -43,7 +43,7 @@ class SplitDataset(FileWorkerCallable):
         return {SplitDataset.__name__: CallableDependency.FINAL}
 
     def run(self, fm: FileMeta, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
-        return None, None
+        return fm
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         if not self.active:

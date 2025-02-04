@@ -94,7 +94,7 @@ class FileWorkerPool:
                 result_files: List[FileMeta] = []
                 for thread in active:
                     thread.join()
-                    result_files += thread.files
+                    result_files += thread.files if thread.files else []
 
                 # update metadata, remove deleted files
                 for f in result_files:
@@ -104,7 +104,8 @@ class FileWorkerPool:
                             os.remove(fm.path)
 
                     else:
-                        self._metadata.files[f.path] = f
+                        path = os.path.dirname(f.path)
+                        self._metadata.files[path] = f
 
                 # update all threads
                 for thread in active:

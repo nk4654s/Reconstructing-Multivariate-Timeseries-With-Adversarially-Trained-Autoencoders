@@ -4,7 +4,7 @@ from typing import Dict
 import pandas as pd
 
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
-from Dataflux.diskio.meta import FileMeta, Metadata
+from Dataflux.diskio.meta import FileMeta, Metadata, FileState
 from Dataflux.helper import get_sensors
 from Dataflux.modules.normalize import NormalizeFit
 
@@ -36,9 +36,10 @@ class Rename(FileWorkerCallable):
         }
 
     def run(self, fm: FileMeta, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
-        df = pd.read_feather(fm.path)
+        df = fm.read()
         if df.empty or isinstance(df, pd.Series):
-            return None, fm
+            fm.state = FileState.DELETED
+            return fm
 
         if self._sensor_names is None:
             logger.debug("Module enabled: %s", "yes" if self._enable else "no")
@@ -50,12 +51,12 @@ class Rename(FileWorkerCallable):
         if self._enable:
             df.rename(columns=self._sensor_names, inplace=True)
         
-        df.to_feather(fm.path)
+        fm.save(df)
         if len(self._names) == 0:
             self._names = set(df.columns.values)
         else:
             self._names = self._names.intersection(set(df.columns.values))
-        return None, None
+        return fm
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         context.put(ColumnContext.HEADER, self._names)

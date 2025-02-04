@@ -4,7 +4,7 @@ from typing import Dict, List
 
 import pandas as pd
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
-from Dataflux.diskio.meta import FileMeta, Metadata
+from Dataflux.diskio.meta import FileMeta, Metadata, FileState
 
 from Dataflux import logger
 from Dataflux.modules.rename import Rename
@@ -28,7 +28,7 @@ class Filter(FileWorkerCallable):
         return {Rename.__name__: CallableDependency.BEFORE}
 
     def run(self, fm: FileMeta, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
-        df = pd.read_feather(fm.path)
+        df = fm.read()
         
         for filter_dict in self._filters:
             key = filter_dict["name"]
@@ -37,9 +37,10 @@ class Filter(FileWorkerCallable):
 
             # mark the file to be deleted if the filter's boundaries do not fit
             if df[key].min() < lower or df[key].max() > upper:
-                return None, [fm]
+                fm.state = FileState.DELETED
+                return fm
 
-        return None, None
+        return fm
             
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         logger.debug("Filter finished: %s", [n["name"] for n in self._filters])

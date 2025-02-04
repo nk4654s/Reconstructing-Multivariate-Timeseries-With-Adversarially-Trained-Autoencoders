@@ -49,8 +49,14 @@ class FileWorkerFactory:
         logger.debug("One worker processes %d files", s)
         logger.debug("Using %d workers", self._num_workers)
         for i in range(0, n, s):  # i=0, i=25, i=75, ...
+            worker_files = []
+            for f in files[i:i+s]:
+                base_path = os.path.dirname(f)
+                file_name = os.path.basename(f)
+                worker_files.append(FileMeta(file_name, base_path=base_path))
+
             worker = {
-                "files": [FileMeta(f) for f in files[i : i + s]],
+                "files": worker_files,
                 "context": self._context,
             }
             self._pool.register_worker(worker)

@@ -9,7 +9,7 @@ from Dataflux.diskio import (
     CallableDependency,
     CALLABLE_RETURN_TYPE,
 )
-from Dataflux.diskio.meta import FileMeta, Metadata
+from Dataflux.diskio.meta import FileMeta, Metadata, FileState
 
 mutex = Lock()
 
@@ -32,18 +32,19 @@ class Slice(FileWorkerCallable):
         return {Slice.__name__: CallableDependency.FINAL}
 
     def run(self, fm: FileMeta, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
-        df = pd.read_feather(fm.path)
+        df = fm.read()
         df = df.set_index("ts")
 
         # check if the df is within the timespan
         if df.index[-1] < self._start_ts or df.index[0] > self._end_ts:
-            return None, fm
+            fm.state = FileState.DELETED
+            return fm
 
         df = df.loc[self._start_ts : self._end_ts]
         df = df.reset_index()
-        df.to_feather(fm.path)
+        fm.save(df)
 
-        return None, None
+        return fm
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         # requesting the metadata as dict recalculates the total number of recordings

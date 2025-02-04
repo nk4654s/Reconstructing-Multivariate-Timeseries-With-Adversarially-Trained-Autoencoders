@@ -38,7 +38,7 @@ class FileMeta:
     samples: int = field(init=False)
 
     def __post_init__(self) -> None:
-        df = pd.read_feather(os.path.join(self.base_path, self.path))
+        df = self.read()
         self.samples, self.features = df.shape
 
         file_name = self.path.rsplit(os.path.sep, maxsplit=1)[-1]
@@ -59,10 +59,22 @@ class FileMeta:
     def as_dict(self) -> Dict:
         return {
             "path": self.path,
-            "day": self.day.strptime("YYYY-MM-DD"),
+            "day": self.day.strftime("%Y-%m-%d"),
             "features": self.features,
             "samples": self.samples,
         }
+
+    def build_file_name(self, postfix: str = "") -> str:
+        postfix = f"_{postfix}" if postfix else postfix
+        day_str = self.day.strftime("%Y-%m-%d")
+        return f"{str(self.uuid)}_{day_str}{postfix}.feather"
+
+    def read(self) -> pd.DataFrame:
+        return pd.read_feather(self.full_path)
+
+    def save(self, df: pd.DataFrame) -> None:
+        self.state = FileState.MODIFIED
+        return df.to_feather(self.full_path)
 
     @staticmethod
     def from_dict(d: Dict, base_path: str = "") -> "FileMeta":
