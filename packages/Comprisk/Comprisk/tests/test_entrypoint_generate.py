@@ -9,6 +9,9 @@ from Comprisk.entrypoints import EntrypointContext, FluxEntrypoint, GeneratorEnt
 from Comprisk.model.dummy import DummyModel
 
 
+DIRECTORY = "Comprisk/tests"
+
+
 def get_namespace(val_dir, f_in, f_out) -> Namespace:
     data = Namespace()
     setattr(data, "train", None)
@@ -34,7 +37,7 @@ class TestEntrypointFlux(unittest.TestCase):
         os.makedirs(self.prefix, exist_ok=True)
 
         self.val_dir = os.path.join(self.prefix, self.val_dir)
-        shutil.copytree("test-debug-dataset", self.val_dir)
+        shutil.copytree(os.path.join(DIRECTORY, "test-debug-dataset"), self.val_dir)
         self.config_file = os.path.join(self.val_dir, "metadata", "config.yaml")
 
         with open(self.config_file, "r") as f:

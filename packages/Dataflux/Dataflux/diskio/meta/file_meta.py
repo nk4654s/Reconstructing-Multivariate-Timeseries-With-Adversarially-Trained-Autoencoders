@@ -18,6 +18,7 @@ class FileState(Enum):
 @dataclass
 class FileMeta:
     path: str
+    base_path: str = ""
     state: FileState = FileState.SAME
     day: datetime = field(init=False)
     uuid: UUID = field(init=False)
@@ -25,7 +26,7 @@ class FileMeta:
     samples: int = field(init=False)
 
     def __post_init__(self) -> None:
-        df = pd.read_feather(self.path)
+        df = pd.read_feather(os.path.join(self.base_path, self.path))
         self.samples, self.features = df.shape
 
         file_name = self.path.rsplit(os.path.sep, maxsplit=1)[-1]
@@ -34,6 +35,10 @@ class FileMeta:
 
         self.day = datetime.fromisoformat(day_str)
         self.uuid = UUID(uuid)
+
+    @property
+    def full_path(self) -> str:
+        return os.path.join(self.base_path, self.path)
 
     def as_dict(self) -> Dict:
         return {
@@ -44,8 +49,8 @@ class FileMeta:
         }
 
     @staticmethod
-    def from_dict(d: Dict) -> "FileMeta":
-        return FileMeta(path=d["path"])
+    def from_dict(d: Dict, base_path: str = "") -> "FileMeta":
+        return FileMeta(path=d["path"], base_path=base_path)
 
 
 if __name__ == "__main__":

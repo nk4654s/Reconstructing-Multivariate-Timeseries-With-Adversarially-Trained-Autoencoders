@@ -3,7 +3,7 @@ to the sampling index."""
 import sys
 from typing import Dict, List, Tuple
 
-from Dataflux.helper import Meta, Metadata
+from Dataflux.diskio.meta import Metadata, FileMeta
 from Dataflux import logger
 
 sys.setrecursionlimit(1500)
@@ -21,23 +21,23 @@ class Node:
         smaller (Node): The left child node, which represents a day with fewer samples.
         bigger (Node): The right child node, which represents a day with more samples.
     """
-    def __init__(self, day: str, index: int, size: int, parent: "Node | None" = None) -> None:
+    def __init__(self, fm: FileMeta, index: int, size: int, parent: "Node | None" = None) -> None:
         self.smaller: Node | None = None
         self.bigger: Node | None = None
         self.parent = parent
-        self._day = day
+        self._fm = fm
 
         self._index = index
         self._size = size
 
     @property
-    def day(self) -> str:
-        """The day string of this node.
+    def file_meta(self) -> FileMeta:
+        """The file meta of this node.
 
         Returns:
-            str: The day as string (YYYY-MM-DD)
+            FileMeta: The file's metadata
         """
-        return self._day
+        return self._fm
 
     @property
     def index(self) -> int:
@@ -87,13 +87,13 @@ class IndexTree:
         logger.debug("Skip rows: %s", skip)
 
         self._size = 0
-        self._build_tree(metadata[Meta.FILES])
+        self._build_tree(metadata.files)
         logger.debug("Finished indexing")
 
     def __len__(self) -> int:
         return self._size
 
-    def _build_tree(self, node_list: List[Dict]) -> None:
+    def _build_tree(self, node_list: Dict[str, FileMeta]) -> None:
         # define middle node as root, sorted by 'recordings'
         node_weighted_list = self._get_cumulative_size(node_list)
         self._root = node_weighted_list.pop(len(node_weighted_list) // 2)
@@ -105,10 +105,11 @@ class IndexTree:
             self._sorted_insert(self._root, node)
             i = 0 if i == len(node_weighted_list) - 1 else len(node_weighted_list) - 1
 
-    def _get_cumulative_size(self, node_list: List[Dict]) -> List[Node]:
+    def _get_cumulative_size(self, node_list: Dict[str, FileMeta]) -> List[Node]:
         # sort the node_list first, as this should help building
         # a balanced binary search tree
-        node_list = sorted(node_list, key=lambda _: _[Meta.DAY.name])
+        node_list = [fm for fm in node_list.values()]
+        node_list = sorted(node_list, key=lambda fm: fm.samples)
         cum_weights = 0
         weights = []
 
@@ -118,8 +119,8 @@ class IndexTree:
 
         for node in node_list:
             # create a new node
-            node_size = node["recordings"] // self._skip
-            node = Node(node[Meta.DAY.name], cum_weights, node_size)
+            node_size = node.samples // self._skip
+            node = Node(node, cum_weights, node_size)
 
             # skip dataframes which are smaller than the window size
             if node_size < self._win:
@@ -155,9 +156,9 @@ class IndexTree:
             else:
                 self._sorted_insert(root.bigger, node)
 
-    def _recursive_search(self, index: int, root: Node | None) -> Tuple[str, int]:
+    def _recursive_search(self, index: int, root: Node | None) -> Tuple[FileMeta | None, int]:
         if root is None:
-            return "ERROR", index
+            return None, index
 
         # Node too large
         if index < root.index:
@@ -168,9 +169,9 @@ class IndexTree:
             return self._recursive_search(index, root.bigger)
 
         # Node contains index
-        return root.day, index - root.index
+        return root.file_meta, index - root.index
 
-    def search(self, index: int) -> Tuple[str, int]:
+    def search(self, index: int) -> Tuple[FileMeta | None, int]:
         """Searches the index in the tree and returns the day (required to load
         the correct DataFrame) and index for that file.
 
@@ -178,6 +179,6 @@ class IndexTree:
             index (int): The index to search the day for.
         
         Returns:
-            Tuple[str, int]: The day to load with the index in that file.
+            Tuple[FileMeta | None, int]: The file to load with the index in that file.
         """
         return self._recursive_search(index, root=self._root)

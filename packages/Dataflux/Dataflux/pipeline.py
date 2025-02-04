@@ -11,7 +11,7 @@ from Dataflux.cli import CLIArgumentParser
 from Dataflux.cli.cli import FluxConfigManager
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
 from Dataflux.helper import daterange
-from Dataflux.diskio.meta.metadata import Meta, Metadata
+from Dataflux.diskio.meta import Metadata
 from Dataflux.data import ContinuousDataDownloader, DataType
 
 from Dataflux import logger
@@ -132,9 +132,8 @@ def pipeline(flux: FluxConfigManager) -> Union[str | None]:
         download(flux)
 
     # adjust the metadata, e.g. overwrite the dataset base dir
-    metadata = Metadata()
-    metadata.load(flux.args.folder)
-    metadata.put(flux.args.folder, Meta.PATH)
+    metadata = Metadata.load(flux.args.folder)
+    metadata.path = flux.args.folder
     metadata.save(flux.args.folder)
 
     # 2. run post-processing step, which requires the pre-processed data

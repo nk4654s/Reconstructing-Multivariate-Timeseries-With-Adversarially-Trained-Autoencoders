@@ -44,19 +44,19 @@ class Metadata:
             yaml.safe_dump(self.as_dict(), f)
 
     @staticmethod
-    def load(base_dir: str) -> "Metadata":
+    def load(base_path: str) -> "Metadata":
         """Loads the metadata from a yaml-file. Needs to be in a subfolder
         `/metadata/info.yaml`.
 
         Args:
-            base_dir (str): Path of the root_folder to load metadata from.
+            base_path (str): Path of the root_folder to load metadata from.
         """
-        file_path = os.path.join(base_dir, "metadata", "info.yaml")
+        file_path = os.path.join(base_path, "metadata", "info.yaml")
         with open(file_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
             return Metadata(
                 path=data["path"],
                 uuid=data["uuid"],
-                files={k: FileMeta.from_dict(v) for k, v in data["files"].items()},
+                files={k: FileMeta.from_dict(v, base_path=base_path) for k, v in data["files"].items()},
                 total_recordings=data["total_recordings"],
             )
