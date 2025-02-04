@@ -8,6 +8,9 @@ from Comprisk.entrypoints import EntrypointContext, FluxEntrypoint
 from Dataflux.pytorch import Dataset
 
 
+DIRECTORY = "Comprisk/tests"
+
+
 def get_namespace(train_dir) -> Namespace:
     data = Namespace()
     setattr(data, "train", train_dir)
@@ -34,7 +37,7 @@ class TestEntrypointFlux(unittest.TestCase):
         self.prefix = "temp/dev"
         os.makedirs(self.prefix, exist_ok=True)
 
-        shutil.copytree(self.train_dir, os.path.join(self.prefix, self.train_dir))
+        shutil.copytree(os.path.join(DIRECTORY, self.train_dir), os.path.join(self.prefix, self.train_dir))
         self.config_file = os.path.join(self.prefix, self.train_dir, "metadata", "config.yaml")
 
     def test_get_paths__no_prefix_exists(self):
