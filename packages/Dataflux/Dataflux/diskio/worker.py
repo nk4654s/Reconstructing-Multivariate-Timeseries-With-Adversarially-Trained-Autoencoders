@@ -3,7 +3,7 @@ import os
 import threading
 from typing import List
 
-from .callable import FileWorkerCallable
+from .callable import FileWorkerCallable, CALLABLE_RETURN_TYPE
 from .context import FileWorkerContext
 from Dataflux import logger
 from Dataflux.diskio.meta.file_meta import FileMeta, FileState
@@ -31,33 +31,22 @@ class FileWorkerThread(threading.Thread):
     @property
     def files(self) -> List[FileMeta]:
         return self._files
-    
-    def add_file(self, path: str) -> None:
-        """Adds a new file to be processed by this thread.
-        
-        Args:
-            path (str): Path to file.
-        """
-        if not os.path.exists(path):
-            logger.debug("Can not add an invalid path to a thread (%s).", path)
-            return
-    
-        self._files.append(path)
 
     def run(self) -> None:
         logger.debug("Thread %s processes %s files", self.name, len(self._files))
         # process the files using the current module
         add_files = []
         for f in self._files:
-            if not os.path.exists(f):
+            if not os.path.exists(f.full_path):
                 continue
 
             # make sure this thread does not crash, no matter what the module does
             # if the module contains faulty code, catch the exception and remove the
             # file from the pipeline
             try:
-                add = self._module.run(f, self._context)
-                add_files += add if add else []
+                add: CALLABLE_RETURN_TYPE = self._module.run(f, self._context)
+                add = add if isinstance(add, list) else [add]
+                add = [fm for fm in add if fm.state == FileState.ADDED]
             except BaseException as e:
                 logger.error("An error occurred working on file %s with module %s.", f, self.name)
                 logger.error("%s", e)

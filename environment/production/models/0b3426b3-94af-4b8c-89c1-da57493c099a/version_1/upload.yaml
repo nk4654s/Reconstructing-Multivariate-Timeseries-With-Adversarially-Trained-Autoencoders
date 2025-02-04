@@ -49,8 +49,6 @@ modules:
   - class_path: Dataflux.modules.normalize.NormalizeFit
     init_args:
       method: minmax
-      exclude_keys:
-        - ts
   - class_path: Dataflux.modules.normalize.NormalizeTransform
     init_args:
       custom:
