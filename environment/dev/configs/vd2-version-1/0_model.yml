@@ -1,7 +1,7 @@
 # CAS specific
 environment: dev
 tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
-#upload_config: configs/vd2-version-1/3_upload.yml
+upload_config: configs/vd2-version-1/3_upload.yml
 score_transformer:
   mode: linear
 

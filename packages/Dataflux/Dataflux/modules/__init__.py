@@ -7,11 +7,9 @@ modules inherit from a threaded super class (for more see `Dataflux.diskio`).
 """
 from Dataflux.modules.rename import Rename
 from Dataflux.modules.filter import Filter
-from Dataflux.modules.consistency import Consistency
 from Dataflux.modules.state import State
 from Dataflux.modules.slice import Slice
 
-from Dataflux.modules.position_bypass import PositionBypassValve
 
 from Dataflux.modules.features import Features
 from Dataflux.modules.normalize import NormalizeFit, NormalizeTransform
@@ -19,10 +17,8 @@ from Dataflux.modules.normalize import NormalizeFit, NormalizeTransform
 __all__ = [
     "Rename",
     "Filter",
-    "Consistency",
     "State",
     "Slice",
-    "PositionBypassValve",
     "Features",
     "NormalizeFit",
     "NormalizeTransform"

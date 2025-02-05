@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import List
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -40,10 +39,9 @@ class FluxScaler:
 
     Args:
         method (ScalerMethod): The scaling method to use. Defaults to `NormalizerMethod.NORMALIZE`.
-        exclude_keys (List[str], optional): A list of keys to exclude from scaling. Defaults to `None`.
     """
-    def __init__(self, method = ScalerMethod.NORMALIZE, exclude_keys: List[str] = []) -> None:
-        self._exclude = set() if exclude_keys is None else set(exclude_keys)
+    def __init__(self, method = ScalerMethod.NORMALIZE) -> None:
+        self._exclude = {"ts"}
         self._internal_scaler = MinMaxScaler(feature_range=(-1, 1))
         self._method = method
 

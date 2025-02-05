@@ -1,17 +1,17 @@
 """This module handles arguments and generation of those for pre-processing modules."""
 
 from argparse import ArgumentParser, Namespace
-from typing import List
+from typing import List, Dict
 
 from Dataflux.cli.config_helper import build_config, expand_module_list
 from Dataflux.cli.defaults import DEFAULT_ARGUMENTS
 
 
 class FluxConfigManager:
-    def __init__(self, config_path: str, default_modules: List = None) -> None:
+    def __init__(self, config_path: str, custom_config: Dict = None, default_modules: List = None) -> None:
         # initialize the namespace and add the config to it
         self.args = Namespace()
-        setattr(self.args, "config", build_config(config_path))
+        setattr(self.args, "config", build_config(config_path, custom_config))
         setattr(self.args, "config_path", config_path)
 
         # build the namespace based on the config's content

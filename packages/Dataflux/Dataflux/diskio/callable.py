@@ -1,11 +1,11 @@
 """Contains the base class for a post-processing module."""
 from enum import Enum, unique, auto
-from typing import Dict, List, Tuple, Union
-from Dataflux.helper import Metadata
+from typing import Dict, Union, List
+
 from .context import FileWorkerContext
+from Dataflux.diskio.meta import FileMeta, Metadata
 
-
-CALLABLE_RETURN_TYPE = Tuple[Union[str, List[str], None], Union[str, List[str], None]]
+CALLABLE_RETURN_TYPE = Union[FileMeta, List[FileMeta]]
 
 
 @unique
@@ -47,11 +47,11 @@ class FileWorkerCallable:
         """
         raise NotImplementedError
 
-    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
+    def run(self, fm: FileMeta, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
         """This method will be executed by the FileWorkerThread.
 
         Args:
-            file_path (str): The file path as string.
+            fm (FileMeta): The file information.
             context (FileWorkerContext): A context object, which contains
             information passed between modules.
 

@@ -1,4 +1,5 @@
 """This module implements tools supporting the TSV file upload process."""
+
 from typing import List, Tuple
 
 import pandas as pd
@@ -92,12 +93,16 @@ def get_downloaders(uuid: str) -> List[Tuple[DataDownloader, int]]:
             DataDownloader classes. Each class downloads 'virtual' TSV-files with the appendix
             '', '-average', '-average-10m'.
     """
-    appendix = [("", 1), ("average", 120), ("average-10m", 600), ("ai", 1), ("ai-average", 120), ("ai-average-10m", 600)]
+    appendix = [
+        ("", 1),
+        ("average", 120),
+        ("average-10m", 600)
+    ]
 
     # generate downloaders for file *-virtual.tsv(-average, -average-10m)
     output = []
     for key, seconds in appendix:
-        downloader = DataDownloader(uuid, file_postfix="virtual", appendix=key)
+        downloader = DataDownloader(uuid, file_postfix="ai", appendix=key)
         downloader.set_data_type(DataType.MEASUREMENTS)
 
         output.append((downloader, seconds))

@@ -2,9 +2,8 @@
 
 from typing import Dict, List
 
-import pandas as pd
 from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
-from Dataflux.helper import Metadata
+from Dataflux.diskio.meta import FileMeta, Metadata, FileState
 
 from Dataflux import logger
 from Dataflux.modules.rename import Rename
@@ -15,31 +14,32 @@ class Filter(FileWorkerCallable):
 
     `{"name": (string), "lower": (float), "upper": (float)}`
 
-    with lower beeing smaller than higher.
+    with lower being smaller than higher.
     """
 
     def __init__(self, filters: List[Dict]):
         super().__init__()
 
         self._filters = filters
-        self._to_remove = []
         logger.debug("Applying filters: %s", str(filters))
 
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {Rename.__name__: CallableDependency.BEFORE}
 
-    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
-        df = pd.read_feather(file_path)
+    def run(self, fm: FileMeta, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
+        df = fm.read()
         
         for filter_dict in self._filters:
             key = filter_dict["name"]
             lower = filter_dict["lower"]
             upper = filter_dict["upper"]
 
+            # mark the file to be deleted if the filter's boundaries do not fit
             if df[key].min() < lower or df[key].max() > upper:
-                self._to_remove.append(file_path)
-                return None, [file_path]
-        return None, None
+                fm.state = FileState.DELETED
+                return fm
+
+        return fm
             
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
-        pass
+        logger.debug("Filter finished: %s", [n["name"] for n in self._filters])

@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 from Dataflux.pytorch.args import DatasetArgs, DatasetTypes, dataset_type_from_string
-from Dataflux.helper import Meta, Metadata as FileMetadata
+from Dataflux.diskio.meta import Metadata as FileMetadata
 from Dataflux.pytorch.index_tree import IndexTree
 from Dataflux.pytorch.cache import DataFrameCache
 
@@ -44,20 +44,19 @@ class Dataset(torch.utils.data.Dataset):  # type: ignore
         cache_size: int = -1,
         behavior: str = DatasetTypes.AUTOENCODER.value,
     ) -> None:
-        self._metadata = FileMetadata()
-        self._metadata.load(path)
+        self._metadata = FileMetadata.load(path)
         self._skip = skip
         self._stride = stride
         self._behavior = dataset_type_from_string(behavior)
 
         self._num_input = sequence_in
         self._num_output = sequence_out
-        if len(self._metadata[Meta.FILES]) == 0:
+        if len(self._metadata.files) == 0:
             raise EmptyDatasetError()
 
         self._features_in = feature_names_in
         self._features_out = feature_names_out
-        self._num_features = self._metadata[Meta.FILES][0]["features"]
+        self._num_features = [fm for fm in self._metadata.files.values()][0].features
 
         if behavior == DatasetTypes.AUTOENCODER:
             self._num_output = 0
@@ -66,7 +65,7 @@ class Dataset(torch.utils.data.Dataset):  # type: ignore
                 + "Overwriting parameter to have the value '0'"
             )
 
-        self._id = self._metadata[Meta.MACHINE_UUID]
+        self._id = str(self._metadata.uuid)
         self._base_dir = path
 
         # create the custom iterators to navigate through the many dataset files
@@ -138,25 +137,6 @@ class Dataset(torch.utils.data.Dataset):  # type: ignore
         self._args.behavior = behavior
         self._behavior = behavior
 
-    def get_day(self, index: int) -> Tuple[str, float]:
-        """Returns the day and hours the machine is on for the provided index
-        value.
-
-        Args:
-            index (int): The index of the dataset.
-
-        Returns:
-            Tuple: Day as string and hours the machine is on as float.
-        """
-        if index == -1:
-            index = len(self) - 1
-
-        day, index = self._tree.search(index * self._stride)
-        seconds = index * self._skip * self._stride
-        minutes = seconds / 60
-        hour = minutes / 60
-        return day, hour
-
     def get_timestamp(self, index: int) -> int:
         """Returns the timestamp of the provided index value.
 
@@ -173,9 +153,8 @@ class Dataset(torch.utils.data.Dataset):  # type: ignore
 
         # find the day and the correct index for that file
         # start of the sequence will be: index + self._num_input ...
-        day, index = self._tree.search(index)
-        file_path = f"{self._base_dir}/{self._id}_{day}.feather"
-        ts = self._cache.get(file_path)["ts"].to_numpy()
+        fm, index = self._tree.search(index)
+        ts = self._cache.get(fm.full_path)["ts"].to_numpy()
         return int(ts[index])
 
     def _get(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
@@ -183,14 +162,13 @@ class Dataset(torch.utils.data.Dataset):  # type: ignore
 
         # find the day and the correct index for that file
         # start of the sequence will be: index + self._num_input ...
-        day, index = self._tree.search(index)
-        file_path = f"{self._base_dir}/{self._id}_{day}.feather"
+        fm, index = self._tree.search(index)
         start_idx = index + self._num_input
         end_idx = index + self._num_input + self._num_output
 
         # get sensor data, the cache returns values sorted by the dataframe's
         # column names for consistency
-        sensors = self._cache.get(file_path)
+        sensors = self._cache.get(fm.full_path)
 
         # create containers for the sensor data
         features_in = self._features_in if self._features_in else self._cache.columns

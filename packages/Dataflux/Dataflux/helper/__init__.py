@@ -8,6 +8,7 @@ from Dataflux.helper.utils import (
     line_str_to_array,
     class_for_name,
     fullname,
+    deterministic_split_algorithm
 )
 from Dataflux.helper.sensor_register import (
     get_sensors,
@@ -15,8 +16,8 @@ from Dataflux.helper.sensor_register import (
     SensorRegisterFormat
 )
 from Dataflux.helper.compression import compress, decompress
-from Dataflux.helper.metadata import Meta, Metadata
 from Dataflux.helper.scaler import FluxScaler, ScalerMethod
+from Dataflux.helper import dataframe_ops
 
 __all__ = [
     "parse_datestring",
@@ -33,8 +34,8 @@ __all__ = [
     "SensorRegisterFormat",
     "compress",
     "decompress",
-    "Meta",
-    "Metadata",
+    "dataframe_ops",
     "FluxScaler",
     "ScalerMethod",
+    "deterministic_split_algorithm"
 ]

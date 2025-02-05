@@ -55,8 +55,6 @@ modules:
     init_args:
       method: minmax
       remove_outliers: false
-      exclude_keys:
-        - ts
   - class_path: Dataflux.modules.normalize.NormalizeTransform
     init_args:
       from_other: environment/dev/datasets/thyssen-vd2-trainset-phase-3

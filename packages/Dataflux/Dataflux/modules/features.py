@@ -1,12 +1,10 @@
 from typing import Dict, List
-from threading import Lock
 import numpy as np
-import pandas as pd
-from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
-from Dataflux.helper import Metadata, Meta
-from Dataflux.modules.normalize import NormalizeFit
 
-mutex = Lock()
+from Dataflux import logger
+from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
+from Dataflux.diskio.meta import Metadata, FileMeta, FileState
+from Dataflux.modules.normalize import NormalizeFit
 
 
 class Features(FileWorkerCallable):
@@ -16,7 +14,8 @@ class Features(FileWorkerCallable):
         include (str): The list of column names to keep, provided as string
             where each list entry is separated by a ','.
     """
-    def __init__(self, include: List[str] = []) -> None:
+    def __init__(self, include: List[str] = None) -> None:
+        include = include if include else []
         self._include = include + ["ts"] if "ts" not in include else include
         self._drop = []
 
@@ -27,16 +26,21 @@ class Features(FileWorkerCallable):
         found = sum([1 for name in self._include if name in column_names])
         return found == len(self._include)
 
-    def run(self, file_path: str, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
-        df = pd.read_feather(file_path)
-        if not self._check_integrity(df.columns.values):
-            return None, [file_path]
-        
-        df = df[self._include]
-        df.to_feather(file_path)
+    def run(self, fm: FileMeta, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:  # noqa: F821
+        df = fm.read()
 
-        return None, None
+        # mark file to be deleted if the number of features does not align with the rest of the files
+        if not self._check_integrity(df.columns.values):
+            fm.state = FileState.DELETED
+            return fm
+
+        # adjust the content by only including certain features
+        df = df[self._include]
+        fm.features = df.shape[1]
+
+        # update the file
+        fm.save(df)
+        return fm
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
-        for file_dict in metadata[Meta.FILES]:
-            file_dict["features"] = len(self._include)
+        logger.debug("Finished including defined (n=%s) features only", len(self._include))

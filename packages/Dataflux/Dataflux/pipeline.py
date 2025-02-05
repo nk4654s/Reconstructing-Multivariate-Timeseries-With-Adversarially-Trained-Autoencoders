@@ -5,13 +5,13 @@ when processing a dataset using a defined yaml-config.
 import os
 import shutil
 from datetime import datetime, timezone, timedelta
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from Dataflux.cli import CLIArgumentParser
 from Dataflux.cli.cli import FluxConfigManager
 from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
 from Dataflux.helper import daterange
-from Dataflux.helper.metadata import Meta, Metadata
+from Dataflux.diskio.meta import Metadata
 from Dataflux.data import ContinuousDataDownloader, DataType
 
 from Dataflux import logger
@@ -46,19 +46,18 @@ def download(flux: FluxConfigManager) -> None:
 
     # get the current date and subtract 1 hour to get the model's input
     if flux.args.latest:
-        start = datetime.now(tz=timezone.utc)
-        if start.hour < 2:
-            start = start - timedelta(days=1)
-        start = start.replace(hour=0, minute=0, second=0, microsecond=0)
-        end = start.replace(hour=23, minute=59, second=59, microsecond=999999)
+        end = datetime.now(tz=timezone.utc)
+        start = end - timedelta(hours=2)
 
         modules.append(Slice(start.timestamp(), end.timestamp()))
+        start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = end.replace(hour=23, minute=59, second=59, microsecond=999999)
+
         interval_list: List[Tuple[datetime.date, datetime.date]] = [dt for dt in daterange(start, end)]
-        end.strftime("%Y-%m-%d %H:%M:%S")
 
     # exit on wrong inputs
     if not interval_list:
-        method = "Latest" if flux.args.latest else "Config Intervals"
+        method = "latest" if flux.args.latest else "intervals"
         logger.error(
             "Interval list should not be empty. Used method '%s' to get dates.", method
         )
@@ -100,7 +99,7 @@ def process(flux: FluxConfigManager) -> None:
     metadata.save(flux.args.folder)
 
 
-def pipeline(flux: FluxConfigManager) -> Tuple[str | None]:
+def pipeline(flux: FluxConfigManager) -> Union[str | None]:
     """This function executes the flux pipeline given the FluxConfigManager which holds the required information.
 
     Args:
@@ -110,7 +109,7 @@ def pipeline(flux: FluxConfigManager) -> Tuple[str | None]:
     Returns: The output folder.
 
     """
-    if flux.args.config == {}:
+    if flux.args.config == {} or flux.args.folder is None:
         return None
 
     global modules
@@ -133,9 +132,8 @@ def pipeline(flux: FluxConfigManager) -> Tuple[str | None]:
         download(flux)
 
     # adjust the metadata, e.g. overwrite the dataset base dir
-    metadata = Metadata()
-    metadata.load(flux.args.folder)
-    metadata.put(flux.args.folder, Meta.PATH)
+    metadata = Metadata.load(flux.args.folder)
+    metadata.path = flux.args.folder
     metadata.save(flux.args.folder)
 
     # 2. run post-processing step, which requires the pre-processed data

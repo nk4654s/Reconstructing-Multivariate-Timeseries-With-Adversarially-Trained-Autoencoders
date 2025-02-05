@@ -1,10 +1,17 @@
 import os
+from typing import Dict, Union
+
+import yaml
 
 from Comprisk.data import DataModule
 from Dataflux.cli import FluxConfigManager
 from Dataflux.pipeline import pipeline as flux_pipeline
 
 from Comprisk.entrypoints.base import EntrypointContext, EntrypointBase
+from Dataflux.pytorch import EmptyDatasetError
+from Dataflux import get_logger, logging_mode
+
+logger = get_logger(__name__, "logfile", logging_mode)
 
 
 class FluxEntrypoint(EntrypointBase):
@@ -25,12 +32,44 @@ class FluxEntrypoint(EntrypointBase):
     def __init__(self) -> None:
         super().__init__()
 
-    def _get_path(self, context: EntrypointContext, path: str) -> str:
-        base_path = os.path.join(context.base_folder, context.environment.value)
-        if path.startswith(base_path):
-            return path
+    def _get_path(self, context: EntrypointContext, path: str, check_exists: bool = True) -> Union[str, None]:
+        _original_path = path
+        if not path:
+            return None
 
-        return os.path.join(base_path, path)
+        # make sure the path contains the environment path e.g. environment/dev/{path}
+        base_path = os.path.join(context.base_folder, context.environment.value)
+        if not path.startswith(base_path):
+            path = os.path.join(base_path, path)
+
+        # if requested, check if the path exists. If the path does not exist, then return 'None'.
+        if check_exists:
+            path = path if os.path.exists(path) else None
+
+        logger.debug("Got path-name: %s to %s", _original_path, path)
+        return path
+
+    def _adjust_config_paths(self, context: EntrypointContext, path: str) -> Dict:
+        if path is None or os.path.isdir(path):
+            return {}
+
+        with open(path, mode="r") as f:
+            config = yaml.safe_load(f)
+
+            # add the base path prefix depending on the configured environment
+            # Do not check if the folder exists, as this method adjusts the flux-pipeline configuration file.
+            # The config["folder"] variable points to the dataset, which might not be downloaded yet.
+            config["folder"] = self._get_path(context, config["folder"], check_exists=False)
+
+            for i, module in enumerate(config.get("modules", [])):
+                if module["class_path"] == "Dataflux.modules.normalize.NormalizeTransform":
+                    args = module.get("init_args", {})
+                    norm_path = args.get("from_other", None)
+                    if norm_path:
+                        config["modules"][i]["init_args"]["from_other"] = self._get_path(context, norm_path)
+                    break
+
+        return config
 
     def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
         dataset_paths = {
@@ -41,22 +80,32 @@ class FluxEntrypoint(EntrypointBase):
         if "__path__" in context.config.data:
             del context.config.data.__path__
 
-        datamodule_args_modified = context.config.data
+        datamodule_args_modified = vars(context.config.data)
         for key, path in dataset_paths.items():
             datamodule_args_modified[key] = path
-            if os.path.isdir(path):
+            if path is None or os.path.isdir(path):
+                logger.debug("Flux not required: flux-pipeline(%s)", path)
                 continue
 
             # use dataflux to download the dataset
-            flux = FluxConfigManager(path)
+            config = self._adjust_config_paths(context, path)
+            flux = FluxConfigManager(path, custom_config=config)
+
+            logger.debug("Executing flux-pipeline(%s)", path)
+            logger.debug("Using custom flux-config: %s", "yes" if config else "no")
             folder_path = flux_pipeline(flux)
 
             # update the comprisk context to let it know where to find the dataset
             datamodule_args_modified[key] = folder_path
 
         # finalize the context
-        context.config.data.train = datamodule_args_modified["train"]
-        context.config.data.validate = datamodule_args_modified["validate"]
-        context.datamodule = DataModule(**datamodule_args_modified)
+        try:
+            context.config.data.train = datamodule_args_modified["train"]
+            context.config.data.validate = datamodule_args_modified["validate"]
+            context.datamodule = DataModule(**datamodule_args_modified)
+        except EmptyDatasetError:
+            logger.error("Unable to load dataset: EmptyDatasetError")
 
+        logger.debug("Loaded (train) from %s", context.config.data.train)
+        logger.debug("Loaded (val) from %s", context.config.data.validate)
         return context

@@ -7,11 +7,12 @@ import yaml
 from Dataflux.helper.utils import class_for_name
 
 
-def build_config(path: str) -> Dict:
+def build_config(path: str, config: Dict = {}) -> Dict:
     """This function finds the classes defined in the config.
     
     Args:
         path (str): Path to the config file.
+        config (Dict): Config to use instead of the file, defaults to empty dict.
     
     Returns:
         Dict[str, Any]: The config as dictionary with the class types instead of
@@ -21,8 +22,9 @@ def build_config(path: str) -> Dict:
         # FIXME: logging
         return {}
 
-    with open(path, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+    if not config:
+        with open(path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
 
     for key, modules in config.items():
         if key not in ["modules"]:
