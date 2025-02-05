@@ -1,5 +1,5 @@
 import os
-from typing import Dict
+from typing import Dict, Union
 
 import yaml
 
@@ -32,15 +32,18 @@ class FluxEntrypoint(EntrypointBase):
     def __init__(self) -> None:
         super().__init__()
 
-    def _get_path(self, context: EntrypointContext, path: str, check_exists: bool = True) -> str:
+    def _get_path(self, context: EntrypointContext, path: str, check_exists: bool = True) -> Union[str, None]:
         _original_path = path
+        if not path:
+            return None
+
         # make sure the path contains the environment path e.g. environment/dev/{path}
         base_path = os.path.join(context.base_folder, context.environment.value)
-        if path and not path.startswith(base_path):
+        if not path.startswith(base_path):
             path = os.path.join(base_path, path)
 
         # if requested, check if the path exists. If the path does not exist, then return 'None'.
-        if path and check_exists:
+        if check_exists:
             path = path if os.path.exists(path) else None
 
         logger.debug("Got path-name: %s to %s", _original_path, path)
