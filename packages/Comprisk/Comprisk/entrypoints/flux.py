@@ -34,10 +34,12 @@ class FluxEntrypoint(EntrypointBase):
 
     def _get_path(self, context: EntrypointContext, path: str, check_exists: bool = True) -> str:
         _original_path = path
+        # make sure the path contains the environment path e.g. environment/dev/{path}
         base_path = os.path.join(context.base_folder, context.environment.value)
         if path and not path.startswith(base_path):
             path = os.path.join(base_path, path)
 
+        # if requested, check if the path exists. If the path does not exist, then return 'None'.
         if path and check_exists:
             path = path if os.path.exists(path) else None
 
@@ -52,6 +54,8 @@ class FluxEntrypoint(EntrypointBase):
             config = yaml.safe_load(f)
 
             # add the base path prefix depending on the configured environment
+            # Do not check if the folder exists, as this method adjusts the flux-pipeline configuration file.
+            # The config["folder"] variable points to the dataset, which might not be downloaded yet.
             config["folder"] = self._get_path(context, config["folder"], check_exists=False)
 
             for i, module in enumerate(config.get("modules", [])):

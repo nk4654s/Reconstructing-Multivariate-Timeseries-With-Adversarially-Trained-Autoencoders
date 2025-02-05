@@ -92,6 +92,7 @@ class GeneratorEntrypoint(EntrypointBase):
             updater.update(start, end, data.get_args().skip)
         except EmptyScoreRegister as e:
             logger.error("Could not update files: %s", e)
+            return context
 
         # remove the temporary downloaded dataset again
         # shutil.rmtree(get_dataset_path(args.dataset), ignore_errors = True)
