@@ -1,6 +1,5 @@
 """This module removes rows from the dataframe if the machine is off."""
 
-import os
 from threading import Lock
 from typing import Dict, Union
 import pandas as pd
