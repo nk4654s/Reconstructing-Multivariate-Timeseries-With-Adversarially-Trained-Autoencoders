@@ -72,6 +72,11 @@ class FileMeta:
     def read(self) -> pd.DataFrame:
         return pd.read_feather(self.full_path)
 
+    @staticmethod
+    def build_and_save(path: str, df: pd.DataFrame, base_path: str = "") -> "FileMeta":
+        df.to_feather(os.path.join(base_path, path))
+        return FileMeta(path=path, base_path=base_path, state=FileState.ADDED)
+
     def save(self, df: pd.DataFrame) -> None:
         self.state = FileState.MODIFIED
         return df.to_feather(self.full_path)

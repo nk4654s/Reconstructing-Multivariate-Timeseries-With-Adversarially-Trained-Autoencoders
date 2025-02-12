@@ -155,11 +155,13 @@ class TrainerEntrypoint(EntrypointBase):
 
         # use a different seed then set if the model was loaded from disk
         # this ensures different probabilities (e.g. for the Dropout layer) in the model
+        upload_path = None
         if loader.from_disk:
             context.config.seed_everything += 1
             L.seed_everything(context.config.seed_everything)
+            upload_path = loader.path
 
-        self._save_upload_config(context, loader.path)
+        self._save_upload_config(context, upload_path)
 
         # start the training
         logger.debug("Starting training (seed=%s)", context.config.seed_everything)
