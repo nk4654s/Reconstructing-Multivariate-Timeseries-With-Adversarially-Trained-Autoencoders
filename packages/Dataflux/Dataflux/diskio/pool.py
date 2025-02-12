@@ -14,14 +14,14 @@ class FileWorkerPool:
     """
     def __init__(self, context: Context, metadata: Metadata) -> None:
         self._modules = []
-        self._workers: List[Dict] = []
+        self._workers_args: List[Dict] = []
         self._metadata = metadata
         self._context = context
 
     def register_worker(self, worker_args: Dict):
         """The method registers a new worker to the pool of workers
         """
-        self._workers.append(worker_args)
+        self._workers_args.append(worker_args)
 
     def ensure_module_dependency(self, modules: List[FileWorkerCallable]) -> None:
         """The method ensures the dependencies of the modules.
@@ -63,6 +63,41 @@ class FileWorkerPool:
         
         self._modules = modules
 
+    def _update_worker_args(self, worker: FileWorkerThread) -> None:
+        # Check each file the worker ran operations on and delete those which are marked
+        # as `deleted`. Then, keep other files for further processing.
+        files: List[FileMeta] = []
+        for f in worker.files:
+            # update metadata, remove deleted files
+            if f.state == FileState.DELETED:
+                fm = self._metadata.files.pop(f.path, None)
+                if fm and os.path.exists(fm.path):
+                    os.remove(fm.path)
+
+            else:
+                self._metadata.files[f.path] = f
+                files.append(f)
+
+        # update the files as some might be added or deleted by the worker
+        thread_id = int(worker.name.split("_")[-1])
+        self._workers_args[thread_id]["files"] = files
+
+    def _start_worker_threads(self, module: FileWorkerCallable) -> List[FileWorkerThread]:
+        # create a FileWorkerThread for each worker configuration, then start the worker and add
+        # it to the list of active workers. Later on, these are required to receive the worker's result.
+        active: List[FileWorkerThread] = []
+        for i, kwargs in enumerate(self._workers_args):
+            # modify the worker's arguments to define the correct module to use
+            kwargs["name"] = f"{module.__class__.__name__}_{i}"
+            kwargs["module"] = module
+
+            worker = FileWorkerThread(**kwargs)
+            worker.start()
+
+            active.append(worker)
+
+        return active
+
     def start_processing(self) -> Metadata:
         """The method starts processing all files of the dataset using the
         registered workers. All workers wait until all files are processed,
@@ -79,40 +114,18 @@ class FileWorkerPool:
                 padding = (100 - len(module_name)) // 2
                 logger.debug("=" * padding + f"{module_name}" + "=" * padding)
 
-                active: List[FileWorkerThread] = []
-                for i, kwargs in enumerate(self._workers):
-                    # modify the thread's arguments to define the correct module to use
-                    kwargs["name"] = f"{module.__class__.__name__}_{i}"
-                    kwargs["module"] = module
-                    
-                    thread = FileWorkerThread(**kwargs)
-                    thread.start()
+                # start all threads for the module
+                active = self._start_worker_threads(module)
 
-                    active.append(thread)
+                # wait for each thread to finished and update their configuration
+                # to operate on the latest set of files
+                for worker in active:
+                    worker.join()
+                    self._update_worker_args(worker)
 
-                # get the result of all threads
-                for thread in active:
-                    thread.join()
-
-                    files: List[FileMeta] = []
-                    for f in thread.files:
-                        # update metadata, remove deleted files
-                        if f.state == FileState.DELETED:
-                            fm = self._metadata.files.pop(f.path, None)
-                            if fm and os.path.exists(fm.path):
-                                os.remove(fm.path)
-
-                        else:
-                            self._metadata.files[f.path] = f
-                            files.append(f)
-
-                    # update the files as some might be added or deleted by the thread
-                    thread_id = int(thread.name.split("_")[-1])
-                    self._workers[thread_id]["files"] = files
-
-                # run finish the main thread again
+                # run finish the main worker again
                 module.finish(self._context, self._metadata)
-                logger.info("Module %s finished processing on all %s threads.", module_name, len(self._workers))
+                logger.info("Module %s finished processing on all %s threads.", module_name, len(self._workers_args))
                 pbar.update(1)
 
             pbar.set_description("Processing Done")
