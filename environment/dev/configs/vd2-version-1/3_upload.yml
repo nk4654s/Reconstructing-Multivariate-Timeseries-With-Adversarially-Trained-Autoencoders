@@ -6,17 +6,17 @@ overwrite: true
 modules:
   - class_path: Dataflux.modules.Rename
     init_args:
-      enable: True
+      enable: False
   - class_path: Dataflux.modules.State
     init_args:
-      key: "Laeuft"
+      key: eedce5b6-b341-4c58-bf3a-c6c1f265ba02 # Laeuft
       lower: 0.9
       upper: 1.1
       alpha_threshold: 10800
       beta_threshold: 0
   - class_path: Dataflux.modules.state.State
     init_args:
-      key: "PositionBypassregelventilPCV74381 (%)"
+      key: 0f4deafe-56ce-41bc-a522-99c88c8f26e2 # PositionBypassregelventilPCV74381 (%)
       lower: -0.99
       upper: 0.01
       alpha_threshold: 600
@@ -24,53 +24,53 @@ modules:
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:
-        - SaugtemperaturZweiteStufeTETIT74341 (°C)
-        - SaugdruckZweiteStufePIT74340 (bar)
-        - SchwingungsmessungTriebwerkVT74280 (mm/s)
-        - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)
-        - KühlwassertemperaturnachKühlerTETIT74422 (°C)
-        - EnddruckZweiteStufePIT74397 (bar)
-        - KühlwasserdurchflussmengeFIT74423 (m^3/min)
-        - KühlwasserdrucknachPumpePIT74425 (bar)
-        - PackungsleckageFIT74389 (Nm3h)
-        - SaugtemperaturErsteStufeTETIT74328 (°C)
-        - EnddruckErsteStufePIT74339 (bar)
-        - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
-        - Wicklungstemperatur (°C)
-        - Motorlager (°C)
-        - SaugdruckErsteStufePIT74319 (bar)
-        - VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)
-        - EndtemperaturZweiteStufenachKühlerTETIT74378 (°C)
-        - KompressordrehzahlSE74201 (rpm)
-        - EndtemperaturZweiteStufeTETIT74371 (°C)
-        - EndtemperaturErsteStufeTETIT74334 (°C)
-        - DifferenzdruckTriebwerksölPDIT74553 (bar)
-        - Biomethandurchfluss (m^3/min)
+        - e737c6bc-7d00-4d41-82ad-7a542400751d # Biomethandurchfluss (m^3/min)
+        - 57dfeadf-ac8d-4ad4-9d86-0a7c9cb38232 # DifferenzdruckTriebwerksölPDIT74553 (bar)
+        - 91ae9642-0a9f-4784-9682-a6e75352c196 # EnddruckErsteStufePIT74339 (bar)
+        - 61aeafba-2dcc-4dc1-b13b-9ee2ed21aa88 # EnddruckZweiteStufePIT74397 (bar)
+        - fe0083b5-a0af-45b6-bbcf-2f472d621ce3 # EndtemperaturErsteStufeTETIT74334 (°C)
+        - f9365c4a-05f8-4730-a606-2b0b6b68eb0f # EndtemperaturZweiteStufeTETIT74371 (°C)
+        - d4cab717-fa9c-42da-91e4-807b6d14d192 # EndtemperaturZweiteStufenachKühlerTETIT74378 (°C)
+        - db2da2b3-e1a0-4bae-af79-fe500d4db4b4 # KompressordrehzahlSE74201 (rpm)
+        - 6cbee536-a361-4cf3-aef9-c23c6547510c # KühlwasserdrucknachPumpePIT74425 (bar)
+        - 65115e53-a019-47f5-8076-eb5b81fef93a # KühlwasserdurchflussmengeFIT74423 (m^3/min)
+        - 60430d53-4d68-44b7-969a-d2988fb427b1 # KühlwassertemperaturnachKühlerTETIT74422 (°C)
+        - c1a03f95-a25c-49da-9a9a-7b68fe767deb # Motorlager (°C)
+        - 6e84bee8-9f91-4b01-ab98-962d9e692893 # PackungsleckageFIT74389 (Nm3h)
+        - c751ece1-b8f7-46ea-8cb1-8bf00aec1592 # SaugdruckErsteStufePIT74319 (bar)
+        - 11f3c840-7472-45e8-bdff-38d483348f27 # SaugdruckZweiteStufePIT74340 (bar)
+        - 80ca41cf-1b35-4073-aa63-9836058b9dd2 # SaugtemperaturErsteStufeTETIT74328 (°C)
+        - 04c06635-d298-4e6d-b0fb-7389fcc0a7c7 # SaugtemperaturZweiteStufeTETIT74341 (°C)
+        - 297aea91-b144-41a4-afb3-cbbbe9d22f7f # SchwingungsmessungTriebwerkVT74280 (mm/s)
+        - cca2f3ad-83a3-498b-b1a5-270631ce6ff4 # VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)
+        - 2f0245ec-4292-4e92-acff-0a9851b6ee89 # VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)
+        - bef9c574-0b27-4039-9b77-16e1430a50a2 # Wicklungstemperatur (°C)
+        - b0887b0e-5cea-410b-b2be-0683a9919f96 # ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
   - class_path: Dataflux.modules.normalize.NormalizeFit
     init_args:
       method: minmax
   - class_path: Dataflux.modules.normalize.NormalizeTransform
     init_args:
       custom:
-        - DifferenzdruckTriebwerksölPDIT74553 (bar), 2, 5 # OK, best guess for high
-        - EnddruckErsteStufePIT74339 (bar), 14, 27 # OK, best guesses
-        - EnddruckZweiteStufePIT74397 (bar), 18, 72 # OK, best guess for low
-        - EndtemperaturErsteStufeTETIT74334 (°C), 100, 155 # OK, best guess for low
-        - EndtemperaturZweiteStufeTETIT74371 (°C), 100, 180 # OK, best guess for low
-        - EndtemperaturZweiteStufenachKühlerTETIT74378 (°C), 0, 42 # OK, best guess for low
-        - KompressordrehzahlSE74201 (rpm), 485, 1000 # OK
-        - KühlwasserdrucknachPumpePIT74425 (bar), 3, 9 # OK, best guess for high
-        - KühlwasserdurchflussmengeFIT74423 (m^3/min), 2.0, 6.0 # OK, best guess for high
-        - KühlwassertemperaturnachKühlerTETIT74422 (°C), 10, 50 # OK
-        - Motorlager (°C), 0, 105 # OK, best guess for low
-        - PackungsleckageFIT74389 (Nm3h), 0, 50.0 # OK, best guess
-        - SaugdruckErsteStufePIT74319 (bar), 4.0, 7.5 # OK
-        - SaugdruckZweiteStufePIT74340 (bar), 14, 27 # OK, best guesses
-        - SaugtemperaturErsteStufeTETIT74328 (°C), -5, 40.0 # OK
-        - SaugtemperaturZweiteStufeTETIT74341 (°C), 5, 55 # OK, best guess for low
-        - SchwingungsmessungTriebwerkVT74280 (mm/s), 0, 10.0 # OK, best guess for low
-        - VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C), 100, 180 # OK, best guess for low
-        - VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C), 100, 180 # OK, best guess for low
-        - Wicklungstemperatur (°C), 0, 140 # OK, best guess for low
-        - ÖltemperaturVorlaufTriebwerkTETIT74538 (°C), 15, 50 # OK
-        - Biomethandurchfluss (m^3/min), 0, 1300
+        - e737c6bc-7d00-4d41-82ad-7a542400751d, 0, 1300
+        - 57dfeadf-ac8d-4ad4-9d86-0a7c9cb38232, 2, 5 # OK, best guess for high
+        - 91ae9642-0a9f-4784-9682-a6e75352c196, 14, 27 # OK, best guesses
+        - 61aeafba-2dcc-4dc1-b13b-9ee2ed21aa88, 18, 72 # OK, best guess for low
+        - fe0083b5-a0af-45b6-bbcf-2f472d621ce3, 100, 155 # OK, best guess for low
+        - f9365c4a-05f8-4730-a606-2b0b6b68eb0f, 100, 180 # OK, best guess for low
+        - d4cab717-fa9c-42da-91e4-807b6d14d192, 0, 42 # OK, best guess for low
+        - db2da2b3-e1a0-4bae-af79-fe500d4db4b4, 485, 1000 # OK
+        - 6cbee536-a361-4cf3-aef9-c23c6547510c, 3, 9 # OK, best guess for high
+        - 65115e53-a019-47f5-8076-eb5b81fef93a, 2.0, 6.0 # OK, best guess for high
+        - 60430d53-4d68-44b7-969a-d2988fb427b1, 10, 50 # OK
+        - c1a03f95-a25c-49da-9a9a-7b68fe767deb, 0, 105 # OK, best guess for low
+        - 6e84bee8-9f91-4b01-ab98-962d9e692893, 0, 50.0 # OK, best guess
+        - c751ece1-b8f7-46ea-8cb1-8bf00aec1592, 4.0, 7.5 # OK
+        - 11f3c840-7472-45e8-bdff-38d483348f27, 14, 27 # OK, best guesses
+        - 80ca41cf-1b35-4073-aa63-9836058b9dd2, -5, 40.0 # OK
+        - 04c06635-d298-4e6d-b0fb-7389fcc0a7c7, 5, 55 # OK, best guess for low
+        - 297aea91-b144-41a4-afb3-cbbbe9d22f7f, 0, 10.0 # OK, best guess for low
+        - cca2f3ad-83a3-498b-b1a5-270631ce6ff4, 100, 180 # OK, best guess for low
+        - 2f0245ec-4292-4e92-acff-0a9851b6ee89, 100, 180 # OK, best guess for low
+        - bef9c574-0b27-4039-9b77-16e1430a50a2, 0, 140 # OK, best guess for low
+        - b0887b0e-5cea-410b-b2be-0683a9919f96, 15, 50 # OK

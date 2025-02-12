@@ -1,6 +1,5 @@
 """This module removes rows from the dataframe if the machine is off."""
 
-import os
 from threading import Lock
 from typing import Dict, Union
 import pandas as pd
@@ -89,15 +88,16 @@ class State(FileWorkerCallable):
             df_splits = remove_threshold(df_splits, self._alpha, self._beta)
 
         files = []
-        base_path = os.path.dirname(fm.path)
+        base_path = fm.base_path
         for i, df in enumerate(df_splits):
-            postfix = "" if i == 0 else f"_{i}"
+            postfix = "" if i == 0 else f"{i}"
             file_name = fm.build_file_name(postfix)
 
             if i > 0:
-                fm = FileMeta(path=file_name, base_path=base_path, state=FileState.ADDED)
+                fm = FileMeta.build_and_save(file_name, df, base_path)
+            else:
+                fm.save(df)
 
-            fm.save(df)
             files.append(fm)
 
         return files

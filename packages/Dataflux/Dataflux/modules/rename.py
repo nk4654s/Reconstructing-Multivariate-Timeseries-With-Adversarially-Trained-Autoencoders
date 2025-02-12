@@ -50,7 +50,8 @@ class Rename(FileWorkerCallable):
 
         if self._enable:
             df.rename(columns=self._sensor_names, inplace=True)
-        
+
+        df = df.reindex(sorted(df.columns), axis=1)
         fm.save(df)
         if len(self._names) == 0:
             self._names = set(df.columns.values)

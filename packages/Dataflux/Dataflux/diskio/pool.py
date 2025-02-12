@@ -91,27 +91,24 @@ class FileWorkerPool:
                     active.append(thread)
 
                 # get the result of all threads
-                result_files: List[FileMeta] = []
                 for thread in active:
                     thread.join()
-                    result_files += thread.files
 
-                # update metadata, remove deleted files
-                for f in result_files:
-                    if f.state == FileState.DELETED:
-                        fm = self._metadata.files.pop(f.path, None)
-                        if fm and os.path.exists(fm.path):
-                            os.remove(fm.path)
+                    files: List[FileMeta] = []
+                    for f in thread.files:
+                        # update metadata, remove deleted files
+                        if f.state == FileState.DELETED:
+                            fm = self._metadata.files.pop(f.path, None)
+                            if fm and os.path.exists(fm.path):
+                                os.remove(fm.path)
 
-                    else:
-                        path = os.path.dirname(f.path)
-                        self._metadata.files[path] = f
+                        else:
+                            self._metadata.files[f.path] = f
+                            files.append(f)
 
-                # update all threads
-                for thread in active:
                     # update the files as some might be added or deleted by the thread
                     thread_id = int(thread.name.split("_")[-1])
-                    self._workers[thread_id]["files"] = thread.files
+                    self._workers[thread_id]["files"] = files
 
                 # run finish the main thread again
                 module.finish(self._context, self._metadata)
