@@ -19,14 +19,15 @@ class ExportEntrypoint(EntrypointBase):
     def __init__(self) -> None:
         super().__init__()
 
-        self.folder_name = "export"
-        self.model_name = "model.onnx"
+        self._folder_name = "export"
+        self._model_name = "model.onnx"
+        self._normalizer_name = "normalizer.yaml"
         self._transformer_name = "transformer.yaml"
         self._mapping_name = "mapping.yaml"
         self._features_name = "features.yaml"
 
     def create_export_folder(self, context: EntrypointContext) -> str:
-        path = os.path.join(context.config_folder, self.folder_name)
+        path = os.path.join(context.config_folder, self._folder_name)
         if os.path.exists(path):
             shutil.rmtree(path)
 
@@ -51,7 +52,7 @@ class ExportEntrypoint(EntrypointBase):
         input_sample = torch.rand((1, *input_sample.shape))
 
         # then save the model into the ONNX format
-        onnx_path = os.path.join(folder, self.model_name)
+        onnx_path = os.path.join(folder, self._model_name)
         model.to_onnx(
             file_path=onnx_path,
             input_sample=input_sample,
@@ -88,6 +89,11 @@ class ExportEntrypoint(EntrypointBase):
                 {"input_features": input_features, "output_features": output_features},
                 f,
             )
+
+        # copy the normalizer yaml
+        data_dir = context.datamodule.valset.directory
+        normalizer_file = os.path.join(data_dir, "metadata", "normalizer.yaml")
+        shutil.copyfile(normalizer_file, os.path.join(folder, self._normalizer_name))
 
         logger.info("Exported model to %s", onnx_path)
         return context
