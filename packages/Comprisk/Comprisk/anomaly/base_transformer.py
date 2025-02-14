@@ -1,5 +1,7 @@
 """This module contains the BaseTransformer class which describes each ScoreTransformer to be used by a model. The
 transformer uses the difference of the predicted and expected model output to calculate a score between 0 and 1."""
+from typing import Dict
+
 import pandas as pd
 
 
@@ -37,3 +39,11 @@ class BaseTransformer:
             pd.DataFrame: The scores given the input format.
         """
         return predicted
+
+    def export(self) -> Dict:
+        """This method exports the transformer values as dictionary.
+
+        Returns:
+            Dict: The export dictionary.
+        """
+        raise NotImplementedError

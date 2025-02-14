@@ -1,4 +1,6 @@
 """This module contains the ScoreTransformer by Anacision GmbH and operates similar to the LinearTransformer."""
+from typing import Dict, List
+
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -33,7 +35,11 @@ class AnaTransformer(BaseTransformer):
         self._threshold = threshold
         self._threshold_deviation = threshold_deviation
 
+        self._names: List[str] = []
+
     def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -> None:
+        self._names = list(predicted.columns)
+
         # get the loss and train the standard scaler, a normal distribution is
         # required for the following math
         loss = loss_fn(predicted, target)
@@ -54,3 +60,17 @@ class AnaTransformer(BaseTransformer):
         health_scores = pd.DataFrame(health_scores, columns=predicted.columns, index=predicted.index)
 
         return health_scores
+
+    def export(self) -> Dict:
+        export = {}
+        for i, name in enumerate(self._names):
+            entry = {
+                "noise_deviation": self._noise_deviation[i],
+                "threshold_deviation": self._threshold_deviation[i],
+                "threshold": self._threshold[i],
+                "mean": self._scaler.mean_[i],
+                "scale": self._scaler.scale_[i]
+            }
+
+            export[name] = entry
+        return export

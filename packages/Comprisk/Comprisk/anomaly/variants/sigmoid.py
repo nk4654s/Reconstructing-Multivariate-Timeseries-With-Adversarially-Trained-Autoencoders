@@ -2,6 +2,8 @@
 expected/predicted output difference into the range 0  to 1. First, the loss values are standardized using the sklearn
 StandardScaler. Then, the median of the standardized loss values is computed and used to transform the sigmoid on the
 x-axis."""
+from typing import Dict, List
+
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -32,7 +34,11 @@ class SigmoidTransformer(BaseTransformer):
         self._noise_floor: np.ndarray | None = None
         self._quantile_delta: np.ndarray | None = None
 
+        self._names: List[str] = []
+
     def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -> None:
+        self._names = list(predicted.columns)
+
         loss = loss_fn(predicted, target)
         loss = abs(self._scaler.fit_transform(loss))
 
@@ -49,3 +55,16 @@ class SigmoidTransformer(BaseTransformer):
 
         loss = sigmoid(loss, self._quantile_delta, 1 / self._quantile_delta ** 2)
         return pd.DataFrame(loss, columns=predicted.columns).clip(0, 1)
+
+    def export(self) -> Dict:
+        export = {}
+        for i, name in enumerate(self._names):
+            entry = {
+                "noise_floor": self._noise_floor[i],
+                "quantile_delta": self._quantile_delta[i],
+                "mean": self._scaler.mean_[i],
+                "scale": self._scaler.scale_[i]
+            }
+
+            export[name] = entry
+        return export

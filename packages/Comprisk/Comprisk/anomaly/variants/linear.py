@@ -1,4 +1,6 @@
 """This module contains the LinearTransformer which should keep a machine's wear curve consistent."""
+from typing import Dict, List
+
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -30,7 +32,11 @@ class LinearTransformer(BaseTransformer):
         self._noise_floor: np.ndarray | None = None
         self._outer_std: np.ndarray | None = None
 
+        self._names: List[str] = []
+
     def fit(self, predicted: pd.DataFrame, target: pd.DataFrame) -> None:
+        self._names = list(predicted.columns)
+
         # get the loss and train the standard scaler, a normal distribution is
         # required for the following math
         loss = loss_fn(predicted, target)
@@ -58,3 +64,17 @@ class LinearTransformer(BaseTransformer):
         loss = factors * loss - self._noise_floor  # type: ignore
         loss = self._scaler.inverse_transform(loss)
         return pd.DataFrame(loss, columns=predicted.columns, index=predicted.index).clip(0, 1)
+
+    def export(self) -> Dict:
+        export = {}
+        for i, name in enumerate(self._names):
+            entry = {
+                "noise_floor": self._noise_floor[i],
+                "outer_border": self._outer_std[i],
+                "mean": self._scaler.mean_[i],
+                "scale": self._scaler.scale_[i]
+            }
+
+            export[name] = entry
+
+        return export
