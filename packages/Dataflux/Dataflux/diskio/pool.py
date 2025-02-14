@@ -71,8 +71,8 @@ class FileWorkerPool:
             # update metadata, remove deleted files
             if f.state == FileState.DELETED:
                 fm = self._metadata.files.pop(f.path, None)
-                if fm and os.path.exists(fm.path):
-                    os.remove(fm.path)
+                if fm and os.path.exists(fm.full_path):
+                    os.remove(fm.full_path)
 
             else:
                 self._metadata.files[f.path] = f

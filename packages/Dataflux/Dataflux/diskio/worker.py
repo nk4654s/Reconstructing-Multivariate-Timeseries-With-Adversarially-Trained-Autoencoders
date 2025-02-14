@@ -50,5 +50,6 @@ class FileWorkerThread(threading.Thread):
                 logger.error("An error occurred working on file %s with module %s.", f, self.name)
                 logger.error("%s", e)
                 f.state = FileState.DELETED
+                files.append(f)
 
         self._files = files
