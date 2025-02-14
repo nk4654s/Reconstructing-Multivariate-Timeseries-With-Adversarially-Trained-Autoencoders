@@ -61,13 +61,13 @@ class ExportEntrypoint(EntrypointBase):
         # save the ScoreTransformer parameters
         transformer = loader.get_score_transformer()
         transformer_export = transformer.export()
-        with open(os.path.join(folder, self._transformer_name)) as f:
-            yaml.safe_dump(transformer_export)
+        with open(os.path.join(folder, self._transformer_name), "w") as f:
+            yaml.safe_dump(transformer_export, f)
 
         # export the sensor uuid to AI uuid mapping
-        output_features = context.datamodule.valset.get_args().features_out
+        output_features = context.datamodule.valset.get_args().names_out
         mapping, drop = score_uuid_mapping(
-            score_uuids=output_features,
+            score_uuids=tuple(output_features),
             machine_id=context.datamodule.valset.UUID,
             ai_tag="Healthscore",
         )
@@ -78,16 +78,16 @@ class ExportEntrypoint(EntrypointBase):
             mapping[s_uuid] = ai_uuid
             logger.info("Add %s to mapping (result=%s)", s_uuid, ai_uuid)
 
-        with open(os.path.join(folder, self._mapping_name)) as f:
-            yaml.safe_dump(f)
+        with open(os.path.join(folder, self._mapping_name), "w") as f:
+            yaml.safe_dump(mapping, f)
 
         # save the input features expected
-        input_features = context.datamodule.valset.get_args().features_in
-        with open(os.path.join(folder, self._features_name)) as f:
-            yaml.safe_dump({
-                "input_features": input_features,
-                "output_features": output_features
-            })
+        input_features = context.datamodule.valset.get_args().names_in
+        with open(os.path.join(folder, self._features_name), "w") as f:
+            yaml.safe_dump(
+                {"input_features": input_features, "output_features": output_features},
+                f,
+            )
 
         logger.info("Exported model to %s", onnx_path)
         return context

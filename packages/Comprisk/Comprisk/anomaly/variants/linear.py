@@ -69,10 +69,10 @@ class LinearTransformer(BaseTransformer):
         export = {}
         for i, name in enumerate(self._names):
             entry = {
-                "noise_floor": self._noise_floor[i],
-                "outer_border": self._outer_std[i],
-                "mean": self._scaler.mean_[i],
-                "scale": self._scaler.scale_[i]
+                "noise_floor": float(self._noise_floor[i]),
+                "outer_border": float(self._outer_std[i]),
+                "mean": float(self._scaler.mean_[i]),
+                "scale": float(self._scaler.scale_[i])
             }
 
             export[name] = entry

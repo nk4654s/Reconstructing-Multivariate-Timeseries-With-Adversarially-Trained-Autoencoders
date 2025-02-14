@@ -104,6 +104,4 @@ class ScoreTransformer(BaseTransformer):
         return 1 - scores
 
     def export(self) -> Dict:
-        export = self._transformer.export()
-        export["algorithm"] = self.mode
-        return export
+        return {"algorithm": self.mode, "internal_values": self._transformer.export()}

@@ -60,10 +60,10 @@ class SigmoidTransformer(BaseTransformer):
         export = {}
         for i, name in enumerate(self._names):
             entry = {
-                "noise_floor": self._noise_floor[i],
-                "quantile_delta": self._quantile_delta[i],
-                "mean": self._scaler.mean_[i],
-                "scale": self._scaler.scale_[i]
+                "noise_floor": float(self._noise_floor[i]),
+                "quantile_delta": float(self._quantile_delta[i]),
+                "mean": float(self._scaler.mean_[i]),
+                "scale": float(self._scaler.scale_[i])
             }
 
             export[name] = entry

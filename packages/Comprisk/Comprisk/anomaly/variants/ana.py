@@ -65,11 +65,11 @@ class AnaTransformer(BaseTransformer):
         export = {}
         for i, name in enumerate(self._names):
             entry = {
-                "noise_deviation": self._noise_deviation[i],
-                "threshold_deviation": self._threshold_deviation[i],
-                "threshold": self._threshold[i],
-                "mean": self._scaler.mean_[i],
-                "scale": self._scaler.scale_[i]
+                "noise_deviation": float(self._noise_deviation[i]),
+                "threshold_deviation": float(self._threshold_deviation[i]),
+                "threshold": float(self._threshold[i]),
+                "mean": float(self._scaler.mean_[i]),
+                "scale": float(self._scaler.scale_[i])
             }
 
             export[name] = entry
