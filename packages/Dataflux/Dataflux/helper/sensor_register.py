@@ -1,9 +1,16 @@
+import uuid
 from enum import Enum, auto
-from typing import Dict, List, Callable
+from functools import cache
+from typing import Dict, List, Callable, Union, Tuple
 from uuid import UUID
 import requests
 
 from Toking import Toking
+
+from Dataflux import get_logger, logging_mode
+
+
+logger = get_logger(__name__, "logfile", logging_mode)
 
 
 class SensorRegisterFormat(Enum):
@@ -11,6 +18,37 @@ class SensorRegisterFormat(Enum):
 
     UUID_TO_NAME = auto()
     NAME_TO_UUID = auto()
+
+
+class NamespaceNull(uuid.UUID):
+    bytes = b""
+
+
+def gen_health_score_sensor_ids(
+    sensor_id: Union[str, uuid.UUID], values: List[int]
+) -> List[uuid.UUID]:
+    f"""
+    This function generates UUIDs given a sensor id (UUID) and a list of versions, which serve as generation
+    seed. The function builds a string ':neax/health-score/{sensor_id}/{values}'. The generated UUID's version
+    is V3.
+
+    Args:
+        sensor_id (Union[str, uuid.UUID]): The sensor's UUID which is required to create the seed string. 
+        values (List[int]): The list of seeds.
+
+    Returns:
+        List[uuid.UUID]: The list of generated UUIDs.
+    """
+    sensor_id = str(sensor_id)
+    gen_uuids = []
+
+    base = ":neax/health-score"
+    for seed in values:
+        suffix = f"/{seed}" if seed != 0 else ""
+        data_str = f"{base}/{sensor_id}{suffix}"
+        gen_uuids.append(uuid.uuid3(NamespaceNull, data_str))
+
+    return gen_uuids
 
 
 def filter_upload(
@@ -135,3 +173,64 @@ def get_sensors(
             sensor_dict[sensor["id"]] = sensor["name"] + unit
 
     return sensor_filter(sensor_dict)
+
+
+def get_sensors_ai(
+    machine_uuid: UUID | str,
+    ai_tag: str = "Healthscore",
+    sensor_format: SensorRegisterFormat = SensorRegisterFormat.UUID_TO_NAME,
+    debug: bool = False,
+) -> Dict:
+    sensor_filter = filter_upload(sensor_format=sensor_format, include=ai_tag)
+    register = get_sensors(
+        machine_uuid=machine_uuid, sensor_format=sensor_format, debug=debug
+    )
+    return sensor_filter(register)
+
+
+@cache
+def score_uuid_mapping(
+    score_uuids: Tuple[str], machine_id: uuid.UUID, ai_tag: str
+) -> Tuple[Dict[str, str], List[str]]:
+    """This function maps sensor UUIDs to their corresponding AI sensor UUID counterpart.
+
+    Args:
+        score_uuids: The UUIDs one is interested in. If some were not found in the mapping, then the UUIDs are
+            added to the "drop" list in return.
+        machine_id: The machine's UUID to get the sensor UUIDs from.
+        ai_tag: The substring which identifies a sensor to be an AI sensor.
+
+    Returns:
+        Tuple[Dict, List]: The UUID to UUID mapping and the list of sensor UUIDs which do not have a mapping.
+
+    """
+    # rename the sensors to upload to "sensor_name + AI_TAG"
+    format_ = SensorRegisterFormat.NAME_TO_UUID
+    sensor_register = get_sensors(machine_id)
+    ai_register = get_sensors_ai(machine_id, ai_tag=ai_tag, sensor_format=format_)
+
+    drop = []
+    mapping = {}
+    for s_uuid in score_uuids:
+        # check if the sensor is registered for the machine
+        s_name = sensor_register.get(s_uuid, None)
+        if not s_name:
+            drop.append(s_uuid)
+            continue
+
+        # check if there is an AI sensor registered for the machine
+        ai_names = sorted([s for s in ai_register if s_name.split()[0] in s.split()])
+        ai_uuid = ai_register.get(ai_names[0]) if ai_names else None
+        if not ai_uuid:
+            drop.append(s_uuid)
+            continue
+
+        # add the sensor uuid to AI sensor uuid mapping
+        g_uuid = str(gen_health_score_sensor_ids(s_uuid, [0])[0])
+        if g_uuid != ai_uuid:
+            logger.warning("Generated AI UUID does not match %s -> %s", s_uuid, g_uuid)
+            logger.warning("Expected %s instead", ai_uuid)
+
+        mapping[s_uuid] = ai_uuid
+
+    return mapping, drop

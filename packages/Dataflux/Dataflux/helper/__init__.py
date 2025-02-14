@@ -12,6 +12,9 @@ from Dataflux.helper.utils import (
 )
 from Dataflux.helper.sensor_register import (
     get_sensors,
+    score_uuid_mapping,
+    gen_health_score_sensor_ids,
+    get_sensors_ai,
     filter_upload,
     SensorRegisterFormat
 )
@@ -30,6 +33,9 @@ __all__ = [
     "class_for_name",
     "fullname",
     "get_sensors",
+    "score_uuid_mapping",
+    "gen_health_score_sensor_ids",
+    "get_sensors_ai",
     "filter_upload",
     "SensorRegisterFormat",
     "compress",
