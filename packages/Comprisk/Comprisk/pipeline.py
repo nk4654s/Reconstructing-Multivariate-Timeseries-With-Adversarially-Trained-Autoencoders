@@ -11,8 +11,10 @@ from Comprisk.entrypoints import (
     Pipeline,
     TrainerEntrypoint,
     TrainScoreTransformerEntrypoint,
-    AnalyzerEntrypoint, FluxEntrypoint,
-    GeneratorEntrypoint
+    AnalyzerEntrypoint,
+    FluxEntrypoint,
+    GeneratorEntrypoint,
+    ExportEntrypoint,
 )
 
 
@@ -23,6 +25,7 @@ score = TrainScoreTransformerEntrypoint()
 train = TrainerEntrypoint()
 analyze = AnalyzerEntrypoint()
 generate = GeneratorEntrypoint()
+export = ExportEntrypoint()
 
 
 def get_context(cli: CompriskCLI) -> EntrypointContext:
@@ -49,7 +52,8 @@ def cli_train() -> None:
     pipeline = Pipeline(entrypoints=[
         flux,
         train,
-        score
+        score,
+        export
     ])
     pipeline_runner(pipeline, cli)
 
@@ -75,7 +79,8 @@ def cli_train_score_transformer() -> None:
     cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
-        score
+        score,
+        export
     ])
     pipeline_runner(pipeline, cli)
 
