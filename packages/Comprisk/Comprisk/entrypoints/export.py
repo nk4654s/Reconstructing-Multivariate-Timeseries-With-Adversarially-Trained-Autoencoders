@@ -7,7 +7,10 @@ import yaml
 from Comprisk.entrypoints.base import EntrypointContext, EntrypointBase
 from Comprisk.helper import ModelLoader
 from Dataflux import get_logger, logging_mode
-
+from Dataflux.helper.sensor_register import (
+    score_uuid_mapping,
+    gen_health_score_sensor_ids,
+)
 
 logger = get_logger(__name__, "logfile", logging_mode)
 
@@ -19,6 +22,8 @@ class ExportEntrypoint(EntrypointBase):
         self.folder_name = "export"
         self.model_name = "model.onnx"
         self._transformer_name = "transformer.yaml"
+        self._mapping_name = "mapping.yaml"
+        self._features_name = "features.yaml"
 
     def create_export_folder(self, context: EntrypointContext) -> str:
         path = os.path.join(context.config_folder, self.folder_name)
@@ -28,7 +33,9 @@ class ExportEntrypoint(EntrypointBase):
         os.makedirs(path)
         return path
 
-    def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
+    def __call__(
+        self, context: EntrypointContext, *args, **kwargs
+    ) -> EntrypointContext:
         folder = self.create_export_folder(context)
 
         # load the (best) trained model back which is the one to export
@@ -57,8 +64,30 @@ class ExportEntrypoint(EntrypointBase):
         with open(os.path.join(folder, self._transformer_name)) as f:
             yaml.safe_dump(transformer_export)
 
-        # export the sensor uuid to ai uuid mapping
+        # export the sensor uuid to AI uuid mapping
+        output_features = context.datamodule.valset.get_args().features_out
+        mapping, drop = score_uuid_mapping(
+            score_uuids=output_features,
+            machine_id=context.datamodule.valset.UUID,
+            ai_tag="Healthscore",
+        )
 
+        # maybe there are not all UUIDs defined yet, but still include them
+        for s_uuid in drop:
+            ai_uuid = str(gen_health_score_sensor_ids(s_uuid, [0])[0])
+            mapping[s_uuid] = ai_uuid
+            logger.info("Add %s to mapping (result=%s)", s_uuid, ai_uuid)
+
+        with open(os.path.join(folder, self._mapping_name)) as f:
+            yaml.safe_dump(f)
+
+        # save the input features expected
+        input_features = context.datamodule.valset.get_args().features_in
+        with open(os.path.join(folder, self._features_name)) as f:
+            yaml.safe_dump({
+                "input_features": input_features,
+                "output_features": output_features
+            })
 
         logger.info("Exported model to %s", onnx_path)
         return context
