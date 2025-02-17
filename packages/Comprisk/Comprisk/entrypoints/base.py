@@ -8,6 +8,8 @@ from torch import nn
 from Comprisk.data import DataModule
 from lightning import LightningModule
 
+from Comprisk.model import BaseModel
+
 
 class Environment(Enum):
     PRODUCTION = "production"
@@ -28,7 +30,7 @@ def environment_from_string(string: str) -> Environment:
 class EntrypointContext:
     config: Namespace
     config_folder: str
-    model: LightningModule | nn.Module
+    model: BaseModel | nn.Module
     datamodule: DataModule
     trainer: Trainer
     base_folder: str = "environment"

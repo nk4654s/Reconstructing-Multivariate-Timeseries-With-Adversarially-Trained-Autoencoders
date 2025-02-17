@@ -1,12 +1,16 @@
 """This module contains the base model implementing widely-used functions. Layers
 of a neural network are not implemented."""
+import os.path
 from typing import List, Union
 import numpy as np
 import lightning as L
 import torch
+import yaml
 
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.optim.optimizer import Optimizer
+
+from Comprisk.model.normalize import NormalizeModule, NormalizeWrapper
 from Dataflux.pytorch import DatasetTypes, dataset_type_from_string, BATCH_TYPE
 from Comprisk.helper.structure import (
     r2_score,
@@ -23,7 +27,7 @@ from Dataflux.logger import get_logger
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
-class BaseModel(L.LightningModule):
+class BaseModel(L.LightningModule, NormalizeWrapper):
     """BaseModel class of any neural network. The base model implements a learning
     rate decay using an exponential learning rate scheduler. Also, when predicting
     using a trained model, the base class uses Monte-Carlo sampling to obtain a
@@ -84,7 +88,8 @@ class BaseModel(L.LightningModule):
         self._behavior = dataset_type_from_string(behavior) if isinstance(behavior, str) else behavior
         self._output_length = length
 
-    def _get_feature_loss(self, y_hat, y) -> np.ndarray:
+    @staticmethod
+    def _get_feature_loss(y_hat, y) -> np.ndarray:
         y_hat = y_hat.detach().cpu().numpy()
         y = y.detach().cpu().numpy()
 
@@ -97,6 +102,9 @@ class BaseModel(L.LightningModule):
         """
         raise NotImplementedError
 
+    def on_fit_start(self) -> None:
+        self.normalizer.to(self.device)
+
     def on_train_epoch_start(self) -> None:
         super().on_train_epoch_start()
         assert self._lr_scheduler, "Learning rate scheduler not initialized."
@@ -104,7 +112,8 @@ class BaseModel(L.LightningModule):
         logger.debug("Starting epoch %s with lr=%s", self.current_epoch, self._lr_scheduler.get_last_lr()[-1])
 
     def training_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:
-        x, y = batch
+        x, y = self.normalizer.apply(x=batch)
+
         y_hat = self(x)
         loss = self._loss(y_hat, y)
         self.log(f"train/{self._loss_name}", loss)
@@ -116,14 +125,16 @@ class BaseModel(L.LightningModule):
         return loss
 
     def test_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:
-        x, y = batch
+        x, y = self.normalizer.apply(x=batch)
+
         y_hat = self(x)
         loss = self._loss(y_hat, y)
         self.log(f"test/{self._loss_name}", loss)
         return loss
 
     def validation_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:
-        x, y = batch
+        x, y = self.normalizer.apply(x=batch)
+
         y_hat = self(x)
         loss = self._loss(y_hat, y)
         self.log(f"validate/{self._loss_name}", loss)
@@ -154,9 +165,10 @@ class BaseModel(L.LightningModule):
         Returns:
             torch.Tensor: The predicted output for the given batch.
         """
-        return self(batch[0])
+        x, _ = self.normalizer.apply(x=batch)
+        return self(x)
 
-    def predict(self,  x: torch.Tensor, as_array: bool = False) -> Union[np.ndarray, torch.Tensor]:
+    def predict(self, x: torch.Tensor, as_array: bool = False) -> Union[np.ndarray, torch.Tensor]:
         """This method only predicts future steps based on the given curve described by
         the datapoints `x`.
 

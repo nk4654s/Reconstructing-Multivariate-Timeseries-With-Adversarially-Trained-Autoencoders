@@ -6,6 +6,7 @@ configured within the `comprisk-pipeline` configuration file. Alternatively, you
 on specific models by using the `comprisk-train-score` command. Use the `--help` option to learn more about its usage.
 """
 from Comprisk.anomaly.score_transformer import ScoreTransformer, BaseTransformer
+from Comprisk.anomaly.score_wrapper import ScoreWrapper
 import Comprisk.anomaly.variants as variants
 
-__all__ = ["BaseTransformer", "ScoreTransformer", "variants"]
+__all__ = ["ScoreWrapper", "BaseTransformer", "ScoreTransformer", "variants"]

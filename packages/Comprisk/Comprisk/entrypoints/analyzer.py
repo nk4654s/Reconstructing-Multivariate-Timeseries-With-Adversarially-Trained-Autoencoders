@@ -80,7 +80,7 @@ class AnalyzerEntrypoint(EntrypointBase):
 
         logger.info(
             "Finished analyzing model %s on machine %s.",
-            loader.model.__class__.__name__,
+            loader._model.__class__.__name__,
             dataset.UUID,
         )
 

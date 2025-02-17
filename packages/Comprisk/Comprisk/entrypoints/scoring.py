@@ -3,7 +3,7 @@ from Dataflux.pytorch import DatasetTypes
 from Dataflux.logger import get_logger
 
 from Comprisk.entrypoints.base import EntrypointBase, EntrypointContext
-from Comprisk.anomaly import ScoreWrapper
+from Comprisk.wrapper import ScoreWrapper
 from Comprisk.helper import ModelLoader
 
 # switch logging mode depending on DEBUG_MODE
@@ -40,7 +40,7 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
             logger.warning("Attempted to fit ScoreTransformer on an untrained model.")
             return context
 
-        wrapper = ScoreWrapper(loader.model)
+        wrapper = ScoreWrapper(loader.get_model())
         wrapper.train_wrapper(context.datamodule.val_dataloader(), verbose=DEBUG_MODE)
         logger.info("Fitted ScoreTransformer successfully.")
 

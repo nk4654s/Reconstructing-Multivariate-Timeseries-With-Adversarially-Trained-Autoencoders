@@ -5,10 +5,12 @@ import pickle
 from typing import Dict, Tuple, List
 import numpy as np
 import pandas as pd
+import yaml
 
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from Comprisk.wrapper import NormalizeModule
 from Dataflux import DEBUG_MODE
 from Dataflux.pytorch import collate_fn, DatasetTypes
 from Dataflux.pytorch import Dataset
@@ -23,6 +25,11 @@ from Dataflux.logger import get_logger
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
+
+CHECKPOINT_FORMAT = ".ckpt"
+CHECKPOINT = "checkpoints"
+METADATA = "metadata"
+EXPORT = "export"
 
 
 def store_model_output(
@@ -58,23 +65,26 @@ class ModelLoader:
 
         self._path = path
         self._from_disk = self._check_load_from_disk()
-        if self._from_disk:
-            self.model: BaseModel = load_model(path, eval_mode=False)
-        else:
-            self.model = model
 
-        if not self.model:
+        if self._from_disk:
+            self._model: BaseModel = load_model(path, eval_mode=False)
+            self._model.normalization_import(path=self._path)
+        else:
+            self._model = model
+            self._model.normalization_import(path=self._path)
+
+        if not self._model:
             raise ValueError("Unable to load model")
         logger.info("ModelLoader loaded from disk '%s'.", "yes" if self._from_disk else "no")
 
     def _check_load_from_disk(self) -> bool:
         folders = [_ for _ in os.listdir(self._path)]
-        if "checkpoints" not in folders:
+        if CHECKPOINT not in folders:
             return False
 
-        checkpoint_path = os.path.join(self._path, "checkpoints")
+        checkpoint_path = os.path.join(self._path, CHECKPOINT)
         for checkpoint in os.listdir(checkpoint_path):
-            if ".ckpt" in checkpoint:
+            if CHECKPOINT_FORMAT in checkpoint:
                 return True
 
         return False
@@ -120,10 +130,11 @@ class ModelLoader:
         Returns
             Tuple[pd.DataFrame, pd.DataFrame]: Pandas dataframes containing the (1) input and (2) prediction.
         """
-        self.model.eval()
-        device = self.model.device
+        model_wrapper = self.get_model()
+        model_wrapper.sub_model.eval()
+        device = model_wrapper.sub_model.device
         args = dataset.get_args()
-        self.model.set_output_behavior(args.behavior, args.sequence_out)
+        model_wrapper.sub_model.set_output_behavior(args.behavior, args.sequence_out)
         skip = args.skip
         stride = args.stride
         features = args.features_out
@@ -160,7 +171,7 @@ class ModelLoader:
             inputs = inputs.to(device)
 
             # run the prediction, the input equals the target for auto encoders
-            outputs = self.model.predict(inputs, as_array=True)
+            outputs = model_wrapper.predict(inputs).cpu().numpy()
 
             batch_size_, _, _ = outputs.shape
             for j in range(0, batch_size_):
@@ -211,6 +222,6 @@ class ModelLoader:
         """A simple getter for the loaded model during object initialization.
 
         Returns:
-            Any: The loaded model.
+            NormalizeModule: The loaded model wrapped by a NormalizeWrapper.
         """
-        return self.model
+        return self._model

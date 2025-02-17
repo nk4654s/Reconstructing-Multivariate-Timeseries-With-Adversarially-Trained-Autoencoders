@@ -6,9 +6,12 @@ from torch import nn, Tensor
 from torch.nn.parameter import Parameter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from lightning import LightningModule
 
+from Comprisk.model import BaseModel
+from Dataflux import get_logger, logging_mode
+from Dataflux.pytorch import BATCH_TYPE
 
+logger = get_logger(__name__, "logfile", logging_mode)
 PREDICT_TYPE = Union[np.ndarray, torch.Tensor]
 
 
@@ -16,14 +19,14 @@ class ModelNotTrainedError(BaseException):
     pass
 
 
-class ScoreWrapper(LightningModule):
+class ScoreWrapper:
     """
     This score transformer was developed by the company Anacision and uses the statistics of the model's performance
     to learn the loss distribution. Using a linear transformation defined by the learned distribution, future loss
     values are clipped into the range 0 to 1.
 
     Args:
-        model (nn.Module): The module to wrap and from which the loss is used to calculate a score.
+        model (BaseModel): The module to wrap and from which the loss is used to calculate a score.
         noise_floor (float): How far a loss can deviate from the learned distribution before it becomes
             significant. Defaults to `1.0`.
         threshold_deviation (float): How far a loss can deviate to be defined as upper limit. Defaults to `5.0`
@@ -31,14 +34,14 @@ class ScoreWrapper(LightningModule):
     """
     def __init__(
         self,
-        model: nn.Module,
+        model: BaseModel,
         threshold: float = 0.8,
         threshold_deviation: float = 5.0,
         noise_floor: float = 1.0,
     ) -> None:
-        super(ScoreWrapper, self).__init__()
+        super(ScoreWrapper, self).__init__(model)
 
-        self._model: nn.Module = model.to(self.device)
+        self._model = model
 
         self._threshold = Parameter(Tensor([threshold]))
         self._threshold_deviation = Parameter(Tensor([threshold_deviation]))
@@ -83,14 +86,20 @@ class ScoreWrapper(LightningModule):
         self._scale = Parameter(Tensor(var))
         self._trained = True
 
-    def forward(self, x: Tensor, y: Tensor) -> Tensor:
+        logger.debug("Trained %s successfully", self.__name__)
+        logger.debug("Mean values %s", mean / len(data))
+        logger.debug("Scale values %s", var)
+
+    def predict_step(self, x: BATCH_TYPE) -> Tensor:
         # the wrapper must be trained to transfer the prediction error to a score
         if not self._trained:
             raise ModelNotTrainedError()
 
         with torch.enable_grad():
+            x, y = x
+
             # get the prediction of 'x' using the model
-            x = x.to(self.device)
+            x = x.to(self._model.device)
             prediction: PREDICT_TYPE = self._model.forward(x)
 
             # transform the difference between 'x' and 'prediction' to a score

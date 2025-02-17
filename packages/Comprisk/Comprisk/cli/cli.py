@@ -47,6 +47,7 @@ class CompriskCLI(LightningCLI):
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--tag", type=str, default=None)
         parser.add_argument("--environment", type=str, default="dev")
+        parser.add_argument("--normalizer", type=str, default=None)
         parser.add_argument("--prefix", type=str, default="analysis")
         parser.add_argument("--tuner-config", nargs="?")
         parser.add_argument("--tuner-trials", type=int, default=1)

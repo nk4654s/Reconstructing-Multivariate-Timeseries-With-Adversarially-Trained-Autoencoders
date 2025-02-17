@@ -11,8 +11,9 @@ from Comprisk.entrypoints.base import (
     EntrypointBase,
     EntrypointContext,
 )
+from Comprisk.wrapper import NormalizeModule
 
-from Dataflux import logging_mode
+from Dataflux import logging_mode, DEBUG_MODE
 from Dataflux.logger import get_logger
 
 from Comprisk.helper import ModelLoader
@@ -61,6 +62,7 @@ class TrainerEntrypoint(EntrypointBase):
     entrypoint generates the upload configuration next to it. This file contains information about the latest
     sensor input and pre-processing. When generating the scores in production, this file will be utilized.
     """
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -101,17 +103,29 @@ class TrainerEntrypoint(EntrypointBase):
         self._metadata_path = os.path.join(self._logging_path, "metadata")
         os.makedirs(self._metadata_path)
 
-        # copy the normalizer of the training data to the model
-        norm_file = os.path.join(dataset_path, "metadata", "normalizer.pkl")
-        shutil.copyfile(norm_file, os.path.join(self._metadata_path, "normalizer.pkl"))
+        # get the features of the dataset
+        args = context.datamodule.trainset.get_args()
+        meta = {"features": {"input": args.names_in, "output": args.names_out}}
+
+        # load the normalization
+        norm_file = os.path.join(
+            context.base_folder, context.environment.value, context.config.normalizer
+        )
+        with open(norm_file, "r") as f:
+            meta |= yaml.safe_load(f)
+
+        context.model.normalization_import(export=meta)
+        context.model.normalization_save(self._logging_path)
 
         # copy the dataset config of the training data to the model
         config_file = os.path.join(dataset_path, "metadata", "config.yaml")
         shutil.copyfile(
-            config_file, os.path.join(self._metadata_path, "dataset_config.yaml")
+            config_file, os.path.join(self._logging_path, "dataset.yaml")
         )
 
-    def _save_upload_config(self, context: EntrypointContext, source: str = None) -> None:
+    def _save_upload_config(
+        self, context: EntrypointContext, source: str = None
+    ) -> None:
         if source:
             # a source path is given, the previous model should contain an upload.yaml file
             config_path = os.path.join(source, "upload.yaml")
@@ -122,7 +136,9 @@ class TrainerEntrypoint(EntrypointBase):
 
         else:
             # the train path is a folder and not a dataflux config file
-            config_path = os.path.join(context.config.data.train, "metadata", "config.yaml")
+            config_path = os.path.join(
+                context.config.data.train, "metadata", "config.yaml"
+            )
 
         upload_path = os.path.join(self._logging_path, "upload.yaml")
         shutil.copyfile(config_path, upload_path)
@@ -150,8 +166,7 @@ class TrainerEntrypoint(EntrypointBase):
 
         # check if a model should be fine-tuned
         loader = ModelLoader(path=context.config_folder, model=context.model)
-        context.model = loader.get_model()
-        context.model.train()
+        model = loader.get_model()
 
         # use a different seed then set if the model was loaded from disk
         # this ensures different probabilities (e.g. for the Dropout layer) in the model
@@ -165,14 +180,15 @@ class TrainerEntrypoint(EntrypointBase):
 
         # start the training
         logger.debug("Starting training (seed=%s)", context.config.seed_everything)
-        context.trainer.fit(context.model, context.datamodule)
+        context.trainer.fit(model, context.datamodule)
 
         logger.info(
             "Finished training model %s on machine %s.",
-            context.model.__class__.__name__,
+            model.__class__.__name__,
             context.datamodule.trainset.UUID,
         )
 
+        context.model = model
         context.config_folder = self._logging_path
         context.config.data.shuffle = False
         return context
