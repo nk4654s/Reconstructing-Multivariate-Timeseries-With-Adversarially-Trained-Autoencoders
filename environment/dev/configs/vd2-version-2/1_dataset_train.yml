@@ -1,8 +1,7 @@
 folder: datasets/thyssen-vd2-trainset-phase-2
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-  - 2024-09-16 2024-09-26 # service was on Sep 1st, use the first days to update the validation set
-  - 2024-10-04 2024-10-12
+  - 2024-09-10 2024-09-24 # service was on Sep 1st, use the first days to update the validation set
 num_workers: 8
 overwrite: false
 
