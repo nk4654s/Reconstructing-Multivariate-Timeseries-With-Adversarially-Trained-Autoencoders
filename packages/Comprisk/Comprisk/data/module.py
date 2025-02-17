@@ -160,11 +160,13 @@ class DataModule(L.LightningDataModule):
 
         # create new random samplers
         if stage == "fit":
-            kwargs["data_length"] = len(self._train)
-            self._train_sampler = RBS(**kwargs)
+            if self._train is not None:
+                kwargs["data_length"] = len(self._train)
+                self._train_sampler = RBS(**kwargs)
 
-            kwargs["data_length"] = len(self._val)
-            self._val_sampler = RBS(**kwargs)
+            if self._val is not None:
+                kwargs["data_length"] = len(self._val)
+                self._val_sampler = RBS(**kwargs)
 
         if stage == "test":
             raise NotImplementedError

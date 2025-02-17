@@ -3,9 +3,10 @@ from dataclasses import dataclass, field, InitVar
 from enum import Enum
 from typing import List, Tuple
 from lightning import Trainer
+from torch import nn
 
 from Comprisk.data import DataModule
-from Comprisk.model import BaseModel
+from lightning import LightningModule
 
 
 class Environment(Enum):
@@ -27,7 +28,7 @@ def environment_from_string(string: str) -> Environment:
 class EntrypointContext:
     config: Namespace
     config_folder: str
-    model: BaseModel
+    model: LightningModule | nn.Module
     datamodule: DataModule
     trainer: Trainer
     base_folder: str = "environment"

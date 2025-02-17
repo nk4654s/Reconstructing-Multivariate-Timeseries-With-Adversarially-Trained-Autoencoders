@@ -48,8 +48,6 @@ class CompriskCLI(LightningCLI):
         parser.add_argument("--tag", type=str, default=None)
         parser.add_argument("--environment", type=str, default="dev")
         parser.add_argument("--prefix", type=str, default="analysis")
-        parser.add_argument("--upload-config", type=str, default=None)
-        parser.add_argument("--force-upload", action="store_true", default=False)
         parser.add_argument("--tuner-config", nargs="?")
         parser.add_argument("--tuner-trials", type=int, default=1)
 

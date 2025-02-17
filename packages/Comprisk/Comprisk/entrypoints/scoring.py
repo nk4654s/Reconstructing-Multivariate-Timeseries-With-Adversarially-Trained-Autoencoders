@@ -1,12 +1,9 @@
-import os
-import pickle
-
-from Dataflux import logging_mode
+from Dataflux import logging_mode, DEBUG_MODE
 from Dataflux.pytorch import DatasetTypes
 from Dataflux.logger import get_logger
 
 from Comprisk.entrypoints.base import EntrypointBase, EntrypointContext
-from Comprisk.anomaly import ScoreTransformer
+from Comprisk.anomaly import ScoreWrapper
 from Comprisk.helper import ModelLoader
 
 # switch logging mode depending on DEBUG_MODE
@@ -35,6 +32,7 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
             len(context.datamodule.valset),
         )
         context.datamodule.valset.set_stride(stride)
+        context.datamodule.setup(stage="fit")
 
         # load the (best) trained model back
         loader = ModelLoader(path=context.config_folder, model=context.model)
@@ -42,15 +40,9 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
             logger.warning("Attempted to fit ScoreTransformer on an untrained model.")
             return context
 
-        predicted, target = loader.predict_loop(context.datamodule.valset)
+        wrapper = ScoreWrapper(loader.model)
+        wrapper.train_wrapper(context.datamodule.val_dataloader(), verbose=DEBUG_MODE)
+        logger.info("Fitted ScoreTransformer successfully.")
 
-        # fit and save the score transformer
-        score = ScoreTransformer(**vars(context.config.score_transformer))
-        score.fit(predicted, target)
-        logger.info("Fitted ScoreTransformer (mode=%s) successfully.", score.mode)
-
-        score_path = os.path.join(loader.path, "metadata", "score_transformer.pkl")
-        with open(score_path, mode="wb") as f:
-            pickle.dump(score, f)
-
+        context.model = wrapper
         return context

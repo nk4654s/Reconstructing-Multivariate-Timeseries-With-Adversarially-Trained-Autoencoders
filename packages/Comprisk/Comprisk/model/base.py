@@ -167,7 +167,6 @@ class BaseModel(L.LightningModule):
         Returns:
             np.ndarray, torch.Tensor: The prediction.
         """
-        out = np.array([])
         with torch.no_grad():
             out = self.predict_step((x, x))
             if as_array:
