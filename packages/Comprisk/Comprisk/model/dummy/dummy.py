@@ -6,6 +6,7 @@ from typing import List
 import torch
 
 from Comprisk.model import BaseModel
+from Dataflux.pytorch import BATCH_TYPE
 
 
 class DummyModel(BaseModel):
@@ -24,5 +25,6 @@ class DummyModel(BaseModel):
         super().__init__(features_in=features_in, features_out=features_out)
         self._factor = factor
 
-    def forward(self, batch: torch.Tensor) -> torch.Tensor:
-        return batch * self._factor
+    def forward(self, batch: BATCH_TYPE) -> torch.Tensor:
+        x, _ = BATCH_TYPE
+        return x * self._factor

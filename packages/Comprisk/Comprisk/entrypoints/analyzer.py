@@ -9,7 +9,7 @@ from Dataflux.helper import get_sensors
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
-from Comprisk.helper import ModelLoader
+from Comprisk.helper import ModelIterator
 
 
 # switch logging mode depending on DEBUG_MODE

@@ -65,9 +65,6 @@ class Dataset(torch.utils.data.Dataset):  # type: ignore
                 + "Overwriting parameter to have the value '0'"
             )
 
-        self._id = str(self._metadata.uuid)
-        self._base_dir = path
-
         # create the custom iterators to navigate through the many dataset files
         # the cache is responsible for loading and storing dataframes in memory,
         # the tree is used to find the correct file based on a given index.
@@ -95,12 +92,16 @@ class Dataset(torch.utils.data.Dataset):  # type: ignore
     @property
     def UUID(self) -> str:
         """Returns the unique ID of this."""
-        return self._id
+        return str(self._metadata.uuid)
 
     @property
     def directory(self) -> str:
         """Returns the base directory of this dataset."""
-        return self._base_dir
+        return self._metadata.path
+
+    @property
+    def config_file(self) -> str:
+        return self._metadata.config_file
 
     @property
     def shape(self) -> Tuple[int, int, int]:

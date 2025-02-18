@@ -3,15 +3,14 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
+from Comprisk.anomaly import ScoreWrapper
 from Comprisk.entrypoints import EntrypointBase, EntrypointContext
 from Dataflux.data import DataUpdater, UpdateCallable, DataType, EmptyScoreRegister
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
 from Comprisk.data import DataModule
-from Comprisk.helper import ModelLoader
-
-
+from Comprisk.helper import ModelCheckpoint, ModelIterator
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
@@ -50,14 +49,15 @@ class GeneratorEntrypoint(EntrypointBase):
         super().__init__()
 
         self._updater_cls = DataUpdater
-        self._loader_cls = ModelLoader
+        self._check_point_cls = ModelCheckpoint
 
     def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
         # get the upload dataset which must be set as validation set, disable training parameters such as shuffle
         datamodule_args_modified = vars(context.config.data)
 
         # catch the case, where the machine is offline and the dataset is empty
-        data = DataModule(**datamodule_args_modified).valset
+        datamodule_args_modified["validate"] = None
+        data = DataModule(**datamodule_args_modified).trainset
         logger.debug("Loaded (val) from %s", data.directory)
         if data is None:
             logger.warning("The dataset is empty, nothing to generate. Exiting gracefully.")
@@ -69,15 +69,18 @@ class GeneratorEntrypoint(EntrypointBase):
 
         # load the trained model from disk and create the dataset object for the
         # previously downloaded dataset
-        loader = self._loader_cls(path=context.config_folder, model=context.model)
-        if not loader.from_disk:
-            logger.warning("ModelLoader did not load a model from disk.")
+        checkpoint = self._check_point_cls(path=context.config_folder, model=context.model)
+        if not checkpoint.from_disk:
+            logger.warning("Checkpoint could not be loaded from disk.")
             return context
 
-        # TODO: load parameter `factor` and hand over to transform
-        score = loader.get_score_transformer()
-        score_data = loader.predict_loop(data)
-        score_data = score.transform(*score_data, factors=0.1)
+        # load the score data and wrap the model
+        score_wrapper = ScoreWrapper(checkpoint.get_model())
+        score_wrapper.import_from(context.config_folder)
+
+        # initialize the model iterator and get the scores given a dataset
+        model_iterator = ModelIterator(score_wrapper, data)
+        score_data = model_iterator.run()
 
         # update the remote TSV files
         try:
@@ -86,7 +89,6 @@ class GeneratorEntrypoint(EntrypointBase):
                 data.UUID,
                 CompriskUpdateCallable(score_data),
                 debug=debug,
-                force_upload=context.config.force_upload,
             )
             updater.set_data_type(DataType.MEASUREMENTS)
             updater.update(start, end, data.get_args().skip)

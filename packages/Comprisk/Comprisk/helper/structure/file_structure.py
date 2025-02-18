@@ -1,15 +1,13 @@
 """This module contains helper methods to navigate the folder structure."""
 import importlib
 import os
-from typing import List, Union, Tuple, Type, Dict
+from typing import List, Tuple, Type, Dict
 
 import yaml
 from torch import nn
 
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
-
-from Comprisk.model import BaseModel
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
@@ -111,7 +109,7 @@ def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
         return model_class, sub_modules
 
 
-def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
+def load_model(path: str, eval_mode: bool = True):
     """This method loads the best checkpoint of a model. Requires checkpoints of model to have
     the filename structure `...val=<validation_loss>.ckpt`.
 
@@ -143,7 +141,10 @@ def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
         os.path.join(path, "checkpoints", checkpoints[0]),# **sub_modules
     )
 
+    model.normalization_import(path=path)
+    logger.info("Loaded normalization module.")
     logger.info("Loaded model %s from %s", checkpoints[0], path)
     if eval_mode:
         model.eval()
+
     return model

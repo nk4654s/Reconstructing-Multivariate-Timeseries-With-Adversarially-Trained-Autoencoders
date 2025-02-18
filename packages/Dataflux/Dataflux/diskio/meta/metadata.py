@@ -33,6 +33,10 @@ class Metadata:
     def normalizer_path(self):
         return os.path.join(self.path, "metadata", "normalizer.pkl")
 
+    @property
+    def config_file(self):
+        return os.path.join(self.path, "metadata", "config.yaml")
+
     def save(self, base_dir: str) -> None:
         """Saves the metadata to a yaml-file in `/metadata/info.yaml`
 

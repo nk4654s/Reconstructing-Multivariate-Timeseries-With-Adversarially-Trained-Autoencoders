@@ -1,5 +1,5 @@
 import os.path
-from typing import Union, Dict, Tuple, List
+from typing import Union, Dict, Tuple, List, Any
 
 import numpy as np
 import torch
@@ -8,6 +8,7 @@ from torch import Tensor
 from torch.nn.parameter import Parameter
 from torch.utils.data import DataLoader
 from torch import nn
+from lightning import LightningModule
 from tqdm import tqdm
 
 from Dataflux.pytorch import Dataset, BATCH_TYPE
@@ -26,6 +27,7 @@ class NormalizeModule(nn.Module):
     def __init__(
         self,
         trange: Tuple = (-1.0, 1.0),
+        normalize_data: Dict = None,
         features_in: List[str] = None,
         features_out: List[str] = None,
     ) -> None:
@@ -43,53 +45,62 @@ class NormalizeModule(nn.Module):
         self._min: nn.ParameterDict | None = None
         self._scale: nn.ParameterDict | None = None
 
-    @staticmethod
-    def import_normalization(export: Dict) -> "NormalizeModule":
-        normalizer = NormalizeModule(
-            trange=(
-                export["normalizer"]["trange"]["min"],
-                export["normalizer"]["trange"]["max"],
-            ),
-            features_in=export["features"]["input"],
-            features_out=export["features"]["output"],
-        )
+        self._init_params(normalize_data)
+
+    def _init_params(self, data: Dict) -> None:
+        if not data:
+            return None
 
         min_dict = {}
         scale_dict = {}
 
-        for key, feature_list in export["features"].items():
-            min_ = np.array(
-                [export["normalizer"][k]["min"] for k in sorted(feature_list)]
-            )
-            max_ = np.array(
-                [export["normalizer"][k]["max"] for k in sorted(feature_list)]
-            )
+        min_ = np.array([data[k]["min"] for k in self._features_in])
+        max_ = np.array([data[k]["max"] for k in self._features_in])
+        min_dict["input"] = Parameter(Tensor(min_))
+        scale_dict["input"] = Parameter(Tensor(1 / (max_ - min_)))
 
-            min_dict[key] = Parameter(Tensor(min_))
-            scale_dict[key] = Parameter(Tensor(1 / (max_ - min_)))
+        min_ = np.array([data[k]["min"] for k in self._features_out])
+        max_ = np.array([data[k]["max"] for k in self._features_out])
+        min_dict["output"] = Parameter(Tensor(min_))
+        scale_dict["output"] = Parameter(Tensor(1 / (max_ - min_)))
 
-        normalizer._min = nn.ParameterDict(min_dict)
-        normalizer._scale = nn.ParameterDict(scale_dict)
-        normalizer._trained = True
+        self._min = nn.ParameterDict(min_dict)
+        self._scale = nn.ParameterDict(scale_dict)
+        self._trained = True
+
+    @staticmethod
+    def import_normalization(export: Dict) -> "NormalizeModule":
+        normalizer = NormalizeModule(
+            trange=(
+                export["trange"]["min"],
+                export["trange"]["max"],
+            ),
+            features_in=export["features"]["input"],
+            features_out=export["features"]["output"],
+            normalize_data=export["data"],
+        )
 
         return normalizer
 
     def export_normalization(self) -> Dict:
-        result = {
-            "trange": {
-                "min": float(self._trange_min.cpu().detach()),
-                "max": float(self._trange_min.cpu().detach()),
-            }
+        trange = {
+            "min": float(self._trange_min.cpu().detach()),
+            "max": float(self._trange_min.cpu().detach()),
         }
 
+        data = {}
         for i, feature in enumerate(self._features_in):
-            result[feature] = {
-                "min": float(self._min["input"][i].cpu().detach()),
-                "scale": float(self._scale["input"][i].cpu().detach()),
+            min_ = float(self._min["input"][i].cpu().detach())
+            scale_ = float(self._scale["input"][i].cpu().detach())
+            max_ = (1 / scale_) + min_
+            data[feature] = {
+                "min": min_,
+                "max": max_,
             }
 
         return {
-            "normalizer": result,
+            "trange": trange,
+            "data": data,
             "features": {"input": self._features_in, "output": self._features_out},
         }
 
@@ -143,9 +154,17 @@ class NormalizeModule(nn.Module):
         return x, y
 
 
-class NormalizeWrapper:
-    def __init__(self) -> None:
+class NormalizeWrapper(LightningModule):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
         self._normalizer: NormalizeModule | None = None
+
+    def on_save_checkpoint(self, checkpoint: dict[str, Any]) -> None:
+        # delete the normalizer from the state dict again as it is not part of a checkpoint
+        # when loading a checkpoint back, the normalizer config file will be used to
+        # set the NormalizeModule's data
+        for state in [k for k in checkpoint["state_dict"].keys() if "_normalizer" in k]:
+            checkpoint["state_dict"].pop(state, None)
 
     @property
     def normalizer(self) -> NormalizeModule:
@@ -164,15 +183,7 @@ class NormalizeWrapper:
             self._normalizer = NormalizeModule.import_normalization(export)
 
     def normalization_save(self, path: str | None = None) -> None:
-        meta = {}
         path = os.path.join(path, "model.yaml")
-        if os.path.exists(path):
-            with open(path, "r") as f:
-                meta = yaml.safe_load(f)
-
-        export = self._normalizer.export_normalization()
-        meta["normalizer"] = export["normalizer"]
-        meta["features"] = export["features"]
 
         with open(path, "w") as f:
-            yaml.safe_dump(meta, f)
+            yaml.safe_dump(self._normalizer.export_normalization(), f)

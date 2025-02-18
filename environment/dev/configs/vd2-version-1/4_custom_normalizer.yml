@@ -1,7 +1,7 @@
-normalizer:
-  trange:
-    min: -1.0
-    max: 1.0
+trange:
+  min: -1.0
+  max: 1.0
+data:
   e737c6bc-7d00-4d41-82ad-7a542400751d:
     min: 0
     max: 1300

@@ -4,19 +4,17 @@ import lightning as L
 import yaml
 
 from lightning.pytorch.callbacks.callback import Callback
-from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 
 from Comprisk.entrypoints.base import (
     EntrypointBase,
     EntrypointContext,
 )
-from Comprisk.wrapper import NormalizeModule
 
-from Dataflux import logging_mode, DEBUG_MODE
+from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
-from Comprisk.helper import ModelLoader
+from Comprisk.helper import ModelCheckpoint
 
 
 # switch logging mode depending on DEBUG_MODE
@@ -71,16 +69,18 @@ class TrainerEntrypoint(EntrypointBase):
         self._metadata_path = None
 
     def _set_logging_path(self, context: EntrypointContext) -> None:
-        # set up the logger depending on the environment
+        path = os.path.join(context.base_folder, context.environment.value, "models")
+
+        # set up the logger depending on the environment and create a sub folder if a tag was given
         sub_path = context.model.__class__.__name__
         if context.config.tag:
             sub_path = f"{sub_path}/{context.config.tag}"
 
-        logger.debug("Defining TensorBoard logger for %s", sub_path)
-        path = os.path.join(context.base_folder, context.environment.value, "models")
+        # create the tensorboard logger and add it to the trainer
         tb_logger = TensorBoardLogger(path, sub_path)
         self._logging_path = tb_logger.log_dir
         context.trainer.logger = tb_logger
+
         os.makedirs(tb_logger.log_dir)
         logger.debug("Using log folder %s", tb_logger.log_dir)
 
@@ -97,12 +97,7 @@ class TrainerEntrypoint(EntrypointBase):
         else:
             logger.warning("ModelCheckpoint callback not defined in yaml-config.")
 
-    def _set_metadata_path(self, context: EntrypointContext) -> None:
-        # save model metadata to log folder, which should not exist yet
-        dataset_path = context.datamodule.trainset.directory
-        self._metadata_path = os.path.join(self._logging_path, "metadata")
-        os.makedirs(self._metadata_path)
-
+    def _import_normalization(self, context) -> None:
         # get the features of the dataset
         args = context.datamodule.trainset.get_args()
         meta = {"features": {"input": args.names_in, "output": args.names_out}}
@@ -117,41 +112,24 @@ class TrainerEntrypoint(EntrypointBase):
         context.model.normalization_import(export=meta)
         context.model.normalization_save(self._logging_path)
 
+    def _import_dataset_config(self, context: EntrypointContext) -> None:
         # copy the dataset config of the training data to the model
-        config_file = os.path.join(dataset_path, "metadata", "config.yaml")
-        shutil.copyfile(
-            config_file, os.path.join(self._logging_path, "dataset.yaml")
-        )
+        source = context.datamodule.trainset.config_file
+        dest = os.path.join(self._logging_path, "dataset.yaml")
+        shutil.copyfile(source, dest)
 
-    def _save_upload_config(
-        self, context: EntrypointContext, source: str = None
-    ) -> None:
-        if source:
-            # a source path is given, the previous model should contain an upload.yaml file
-            config_path = os.path.join(source, "upload.yaml")
-
-        elif os.path.isfile(context.config.data.train):
-            # copy the training configuration to the output folder
-            config_path = os.path.join(context.config.data.train)
-
-        else:
-            # the train path is a folder and not a dataflux config file
-            config_path = os.path.join(
-                context.config.data.train, "metadata", "config.yaml"
-            )
-
-        upload_path = os.path.join(self._logging_path, "upload.yaml")
-        shutil.copyfile(config_path, upload_path)
-        logger.debug("Copied %s to %s", config_path, upload_path)
+        # copy the dataset's config file to the model output
+        dest = os.path.join(self._logging_path, "upload.yaml")
+        shutil.copyfile(source, dest)
 
         # make sure to have the key values set
-        with open(upload_path, encoding="utf-8") as f:
+        with open(dest, encoding="utf-8") as f:
             config = yaml.safe_load(f)
             config["folder"] = "upload"
             config["latest"] = True
             config.pop("intervals", None)
 
-        with open(upload_path, mode="w", encoding="utf-8") as f:
+        with open(dest, mode="w", encoding="utf-8") as f:
             yaml.safe_dump(config, f)
 
     def __call__(
@@ -161,22 +139,19 @@ class TrainerEntrypoint(EntrypointBase):
         self._set_logging_path(context)
         self._set_checkpoint_path(context)
 
-        # save model metadata to log folder
-        self._set_metadata_path(context)
+        # save model metadata to log folder and import the normalization
+        self._import_dataset_config(context)
+        self._import_normalization(context)
 
         # check if a model should be fine-tuned
-        loader = ModelLoader(path=context.config_folder, model=context.model)
-        model = loader.get_model()
+        checkpoint = ModelCheckpoint(context.config_folder, context.model)
+        model = checkpoint.get_model()
 
         # use a different seed then set if the model was loaded from disk
         # this ensures different probabilities (e.g. for the Dropout layer) in the model
-        upload_path = None
-        if loader.from_disk:
+        if checkpoint.from_disk:
             context.config.seed_everything += 1
             L.seed_everything(context.config.seed_everything)
-            upload_path = loader.path
-
-        self._save_upload_config(context, upload_path)
 
         # start the training
         logger.debug("Starting training (seed=%s)", context.config.seed_everything)

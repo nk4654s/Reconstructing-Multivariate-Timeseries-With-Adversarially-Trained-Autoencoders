@@ -39,7 +39,7 @@ trainer:
         dirpath: checkpoints
 
   precision: 32
-  max_epochs: 5
+  max_epochs: 1
   gradient_clip_val: 1.0
   log_every_n_steps: 1
 
@@ -87,8 +87,8 @@ data:
   - 2f0245ec-4292-4e92-acff-0a9851b6ee89 # VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)
   - bef9c574-0b27-4039-9b77-16e1430a50a2 # Wicklungstemperatur (°C)
   - b0887b0e-5cea-410b-b2be-0683a9919f96 # ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
-  skip: 1
-  stride: 1
+  skip: 4
+  stride: 60
   batch_size: 128
   shuffle: true
   num_workers: 8

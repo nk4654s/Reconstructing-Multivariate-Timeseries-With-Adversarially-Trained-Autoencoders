@@ -1,10 +1,13 @@
+import os.path
 from typing import Union
 
 import numpy as np
 import torch
+import yaml
 from torch import nn, Tensor
 from torch.nn.parameter import Parameter
 from torch.utils.data import DataLoader
+from lightning import LightningModule
 from tqdm import tqdm
 
 from Comprisk.model import BaseModel
@@ -19,7 +22,7 @@ class ModelNotTrainedError(BaseException):
     pass
 
 
-class ScoreWrapper:
+class ScoreWrapper(LightningModule):
     """
     This score transformer was developed by the company Anacision and uses the statistics of the model's performance
     to learn the loss distribution. Using a linear transformation defined by the learned distribution, future loss
@@ -39,7 +42,7 @@ class ScoreWrapper:
         threshold_deviation: float = 5.0,
         noise_floor: float = 1.0,
     ) -> None:
-        super(ScoreWrapper, self).__init__(model)
+        super(ScoreWrapper, self).__init__()
 
         self._model = model
 
@@ -50,6 +53,10 @@ class ScoreWrapper:
         self._trained: bool = False
         self._mean: Parameter | None = None
         self._scale: Parameter | None = None
+
+    @property
+    def device(self):
+        return self._model.device
 
     @property
     def sub_model(self) -> nn.Module:
@@ -86,32 +93,51 @@ class ScoreWrapper:
         self._scale = Parameter(Tensor(var))
         self._trained = True
 
-        logger.debug("Trained %s successfully", self.__name__)
+        logger.debug("Trained %s successfully", self.__class__.__name__)
         logger.debug("Mean values %s", mean / len(data))
         logger.debug("Scale values %s", var)
 
-    def predict_step(self, x: BATCH_TYPE) -> Tensor:
+    @torch.enable_grad()
+    def forward(self, x: Tensor, y: Tensor) -> Tensor:
+        # get the prediction of 'x' using the model
+        x = x.to(self._model.device)
+        prediction: PREDICT_TYPE = self._model.forward(x)
+
+        # transform the difference between 'x' and 'prediction' to a score
+        # use a simple loss function, the absolute difference
+        score = (y - prediction) - self._mean
+        score = torch.abs(score / self._scale)
+
+        # solve the following linear equation to find the linear function's parameters
+        # f(x) = m * x + b
+        m = (self._threshold  - 1) / (self._threshold_deviation - self._noise_floor)
+        b = 1 - m * self._noise_floor
+
+        return torch.clip(m * score + b, 0, 1)
+
+    def predict_step(self, x: Tensor, y: Tensor) -> Tensor:
         # the wrapper must be trained to transfer the prediction error to a score
         if not self._trained:
             raise ModelNotTrainedError()
 
-        with torch.enable_grad():
-            x, y = x
+        return self.forward(x, y)
 
-            # get the prediction of 'x' using the model
-            x = x.to(self._model.device)
-            prediction: PREDICT_TYPE = self._model.forward(x)
+    def export_to(self, path: str) -> None:
+        mean = self._mean.cpu().detach().tolist()
+        scale = self._scale.cpu().detach().tolist()
 
-            # transform the difference between 'x' and 'prediction' to a score
-            # use a simple loss function, the absolute difference
-            score = (y - prediction) - self._mean
-            score = torch.abs(score / self._scale)
+        with open(os.path.join(path, "score.yaml"), "w") as f:
+            yaml.safe_dump({
+                "mean": mean,
+                "scale": scale
+            }, f)
 
-            # solve the following linear equation to find the linear function's parameters
-            # f(x) = m * x + b
-            m = (self._threshold  - 1) / (self._threshold_deviation - self._noise_floor)
-            b = 1 - m * self._noise_floor
+    def import_from(self, path: str) -> None:
+        with open(os.path.join(path, "score.yaml"), "r") as f:
+            data = yaml.safe_load(f)
 
-            score = torch.clip(m * score + b, 0, 1)
+        self._mean = Parameter(Tensor(data["mean"]))
+        self._scale = Parameter(Tensor(data["scale"]))
+        self._trained = True
 
-        return score
+

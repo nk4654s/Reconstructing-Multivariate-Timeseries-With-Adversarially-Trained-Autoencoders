@@ -1,16 +1,13 @@
 """This module contains the base model implementing widely-used functions. Layers
 of a neural network are not implemented."""
-import os.path
 from typing import List, Union
 import numpy as np
 import lightning as L
 import torch
-import yaml
 
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.optim.optimizer import Optimizer
 
-from Comprisk.model.normalize import NormalizeModule, NormalizeWrapper
 from Dataflux.pytorch import DatasetTypes, dataset_type_from_string, BATCH_TYPE
 from Comprisk.helper.structure import (
     r2_score,
@@ -18,6 +15,7 @@ from Comprisk.helper.structure import (
     get_optimizer_by_name,
     get_activation_from_string,
 )
+from Comprisk.model import NormalizeWrapper
 
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
@@ -27,7 +25,7 @@ from Dataflux.logger import get_logger
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
-class BaseModel(L.LightningModule, NormalizeWrapper):
+class BaseModel(NormalizeWrapper):
     """BaseModel class of any neural network. The base model implements a learning
     rate decay using an exponential learning rate scheduler. Also, when predicting
     using a trained model, the base class uses Monte-Carlo sampling to obtain a
@@ -155,7 +153,7 @@ class BaseModel(L.LightningModule, NormalizeWrapper):
 
         return [self._optim], [{"scheduler": self._lr_scheduler, "interval": "epoch"}] # type: ignore
 
-    def predict_step(self, batch: BATCH_TYPE) -> torch.Tensor:
+    def predict_step(self, batch: BATCH_TYPE, *args, **kwargs) -> torch.Tensor:
         """
         This method is used to make predictions on a batch of data during inference.
 
@@ -168,21 +166,18 @@ class BaseModel(L.LightningModule, NormalizeWrapper):
         x, _ = self.normalizer.apply(x=batch)
         return self(x)
 
-    def predict(self, x: torch.Tensor, as_array: bool = False) -> Union[np.ndarray, torch.Tensor]:
+    def predict(self, x: torch.Tensor) -> Union[np.ndarray, torch.Tensor]:
         """This method only predicts future steps based on the given curve described by
         the datapoints `x`.
 
         Args:
             x (torch.Tensor): The datapoints.
-            as_array (bool, optional): Returns the prediction as np.array. Defaults to False.
 
         Returns:
             np.ndarray, torch.Tensor: The prediction.
         """
         with torch.no_grad():
             out = self.predict_step((x, x))
-            if as_array:
-                out = out.cpu().numpy()
 
         if self._behavior == DatasetTypes.PREDICTIVE:
             out = out[:, out.shape[1] - self._output_length:, :]
