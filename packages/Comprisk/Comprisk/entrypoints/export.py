@@ -20,14 +20,13 @@ class ExportEntrypoint(EntrypointBase):
         self, context: EntrypointContext, *args, **kwargs
     ) -> EntrypointContext:
         model: ScoreWrapper = context.model
+        model.sub_model.eval()
         model.eval()
 
         # get a sample input first which is used to trace the model's grap
         input_sample, output_sample = context.datamodule.trainset[0]
-        input_sample = torch.rand((1, *input_sample.shape), device=context.model.device)
-        output_sample = torch.rand(
-            (1, *output_sample.shape), device=context.model.device
-        )
+        input_sample = torch.Tensor([input_sample])
+        output_sample = torch.Tensor([output_sample])
 
         # then save the model into the ONNX format
         onnx_path = os.path.join(context.config_folder, self._model_name)

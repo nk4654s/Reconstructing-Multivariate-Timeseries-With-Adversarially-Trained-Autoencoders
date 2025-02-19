@@ -9,7 +9,7 @@ data:
     min: 2
     max: 5
   91ae9642-0a9f-4784-9682-a6e75352c196:
-    min: 14
+    min: 4.0
     max: 27
   61aeafba-2dcc-4dc1-b13b-9ee2ed21aa88:
     min: 18
@@ -42,10 +42,10 @@ data:
     min: 0
     max: 50.0
   c751ece1-b8f7-46ea-8cb1-8bf00aec1592:
-    min: 4.0
+    min: 1.5
     max: 7.5
   11f3c840-7472-45e8-bdff-38d483348f27:
-    min: 14
+    min: 3
     max: 27
   80ca41cf-1b35-4073-aa63-9836058b9dd2:
     min: -5
@@ -54,8 +54,8 @@ data:
     min: 5
     max: 55
   297aea91-b144-41a4-afb3-cbbbe9d22f7f:
-    min: 0
-    max: 10.0
+    min: -1
+    max: 8.0
   cca2f3ad-83a3-498b-b1a5-270631ce6ff4:
     min: 100
     max: 180
@@ -66,5 +66,5 @@ data:
     min: 0
     max: 140
   b0887b0e-5cea-410b-b2be-0683a9919f96:
-    min: 15
-    max: 50
+    min: 20
+    max: 80

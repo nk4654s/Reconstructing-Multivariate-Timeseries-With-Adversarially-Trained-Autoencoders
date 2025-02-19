@@ -12,7 +12,6 @@ from tqdm import tqdm
 
 from Comprisk.model import BaseModel
 from Dataflux import get_logger, logging_mode
-from Dataflux.pytorch import BATCH_TYPE
 
 logger = get_logger(__name__, "logfile", logging_mode)
 PREDICT_TYPE = Union[np.ndarray, torch.Tensor]
@@ -38,7 +37,7 @@ class ScoreWrapper(LightningModule):
     def __init__(
         self,
         model: BaseModel,
-        threshold: float = 0.8,
+        threshold: float = 0.9,
         threshold_deviation: float = 5.0,
         noise_floor: float = 1.0,
     ) -> None:
@@ -66,47 +65,48 @@ class ScoreWrapper(LightningModule):
     def train_wrapper(self, data: DataLoader, verbose: bool = False) -> None:
         # initialize the parameters
         loss = []
-        mean: np.ndarray | None = None
+        self._model.eval()
 
         # find the mean and scale of the data to run a transformation
         for x, y in tqdm(data, desc="Prediction with Model", disable=not verbose):
-            y_ = self._model.forward(x.to(self._model.device))
-            if mean is None:
-                _, _, features = y.shape
-                mean = np.zeros(shape=(1, features))
+            x = x.to(self._model.device)
+            y = y.to(self._model.device)
+            y_hat, y = self._model.predict_step(x, y)
 
-            loss_ = torch.abs(y_.cpu() - y)
-            loss_ = loss_.numpy().reshape(-1, y_.shape[-1])
-            mean += loss_.sum(axis=0)
+            loss_ = torch.abs(y_hat - y).cpu().detach()
+            loss_ = loss_.numpy().reshape(-1, y_hat.shape[-1])
             loss += list(loss_)
 
         # finalize the mean and calculate the variance
         loss = np.array(loss)
-        mean = mean / len(loss)
-        var = ((loss - mean)**2).sum(axis=0) / (len(loss) - 1)
+        var = ((loss - loss.mean(0))**2).sum(axis=0) / (len(loss) - 1)
         var[var == 0] = 1.0
         var = np.sqrt(var)
 
         # the mean and scale must be a parameter of this model such that it will be
         # visible in the model graph. This is required by ONNX
-        self._mean = Parameter(Tensor(mean / len(data)))
+        self._mean = Parameter(Tensor(loss.mean(0)))
         self._scale = Parameter(Tensor(var))
         self._trained = True
 
+        self.to(self.device)
+
         logger.debug("Trained %s successfully", self.__class__.__name__)
-        logger.debug("Mean values %s", mean / len(data))
         logger.debug("Scale values %s", var)
 
-    @torch.enable_grad()
+    @torch.no_grad()
     def forward(self, x: Tensor, y: Tensor) -> Tensor:
         # get the prediction of 'x' using the model
         x = x.to(self._model.device)
-        prediction: PREDICT_TYPE = self._model.forward(x)
+        y = y.to(self._model.device)
+
+        # do not normalize before the model, this will be handled by the model itself
+        y_hat, y = self._model.predict_step(x, y)
 
         # transform the difference between 'x' and 'prediction' to a score
         # use a simple loss function, the absolute difference
-        score = (y - prediction) - self._mean
-        score = torch.abs(score / self._scale)
+        score = torch.abs(y - y_hat) - self._mean
+        score = score / self._scale
 
         # solve the following linear equation to find the linear function's parameters
         # f(x) = m * x + b
@@ -139,5 +139,7 @@ class ScoreWrapper(LightningModule):
         self._mean = Parameter(Tensor(data["mean"]))
         self._scale = Parameter(Tensor(data["scale"]))
         self._trained = True
+
+        self.to(self.device)
 
 

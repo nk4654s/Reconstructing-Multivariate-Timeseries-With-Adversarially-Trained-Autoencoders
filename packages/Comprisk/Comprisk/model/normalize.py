@@ -34,7 +34,14 @@ class NormalizeModule(nn.Module):
         super(NormalizeModule, self).__init__()
 
         self._features_in = sorted(features_in)
+        self._input_idx = [i for i, n in enumerate(self._features_in)]
+
         self._features_out = sorted(features_out)
+        self._output_idx = [
+            i
+            for i, n in enumerate(self._features_in)
+            if n in self._features_out
+        ]
 
         self._trange_min = Parameter(Tensor([trange[0]]))
         self._trange_max = Parameter(Tensor([trange[1]]))
@@ -51,21 +58,12 @@ class NormalizeModule(nn.Module):
         if not data:
             return None
 
-        min_dict = {}
-        scale_dict = {}
+        min_ = np.array([data[k]["min"] for k in self._features_in]).round(6)
+        max_ = np.array([data[k]["max"] for k in self._features_in]).round(6)
+        scale_ = (1 / (max_ - min_)).round(6)
 
-        min_ = np.array([data[k]["min"] for k in self._features_in])
-        max_ = np.array([data[k]["max"] for k in self._features_in])
-        min_dict["input"] = Parameter(Tensor(min_))
-        scale_dict["input"] = Parameter(Tensor(1 / (max_ - min_)))
-
-        min_ = np.array([data[k]["min"] for k in self._features_out])
-        max_ = np.array([data[k]["max"] for k in self._features_out])
-        min_dict["output"] = Parameter(Tensor(min_))
-        scale_dict["output"] = Parameter(Tensor(1 / (max_ - min_)))
-
-        self._min = nn.ParameterDict(min_dict)
-        self._scale = nn.ParameterDict(scale_dict)
+        self._min = Parameter(Tensor(min_))
+        self._scale = Parameter(Tensor(scale_))
         self._trained = True
 
     @staticmethod
@@ -85,14 +83,14 @@ class NormalizeModule(nn.Module):
     def export_normalization(self) -> Dict:
         trange = {
             "min": float(self._trange_min.cpu().detach()),
-            "max": float(self._trange_min.cpu().detach()),
+            "max": float(self._trange_max.cpu().detach()),
         }
 
         data = {}
         for i, feature in enumerate(self._features_in):
-            min_ = float(self._min["input"][i].cpu().detach())
-            scale_ = float(self._scale["input"][i].cpu().detach())
-            max_ = (1 / scale_) + min_
+            min_ = round(float(self._min[self._input_idx][i].cpu().detach()), 6)
+            scale_ = float(self._scale[self._input_idx][i].cpu().detach())
+            max_ = round((1 / scale_) + min_, 6)
             data[feature] = {
                 "min": min_,
                 "max": max_,
@@ -129,18 +127,21 @@ class NormalizeModule(nn.Module):
         logger.debug("Minimum values %s", mins)
         logger.debug("Maximum values %s", maxs)
 
+    @torch.no_grad()
     def apply(self, x: BATCH_TYPE) -> BATCH_TYPE:
         x, y = x
 
         # normalize to 0 to 1
-        x = (x - self._min["input"]) * self._scale["input"]
-        y = (y - self._min["output"]) * self._scale["output"]
+        x = (x - self._min[self._input_idx]) * self._scale[self._input_idx]
+        y = (y - self._min[self._output_idx]) * self._scale[self._output_idx]
 
         # change range to -1 to 1
         x = (x + self._trange_min / self._trange) * self._trange
         y = (y + self._trange_min / self._trange) * self._trange
+
         return x, y
 
+    @torch.no_grad()
     def reverse(self, x: BATCH_TYPE) -> BATCH_TYPE:
         x, y = x
 
@@ -149,13 +150,13 @@ class NormalizeModule(nn.Module):
         y = (y / self._trange) - self._trange_min * self._trange
 
         # normalize to 0 to 1
-        x = (x / self._scale["input"]) + self._min["output"]
-        y = (y / self._scale["input"]) + self._min["output"]
+        x = (x / self._scale[self._input_idx]) + self._min[self._input_idx]
+        y = (y / self._scale[self._output_idx]) + self._min[self._output_idx]
         return x, y
 
 
 class NormalizeWrapper(LightningModule):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, fine_tune_normalizer = False, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._normalizer: NormalizeModule | None = None
 
@@ -181,6 +182,7 @@ class NormalizeWrapper(LightningModule):
 
         if export:
             self._normalizer = NormalizeModule.import_normalization(export)
+            self._normalizer.to(self.device)
 
     def normalization_save(self, path: str | None = None) -> None:
         path = os.path.join(path, "model.yaml")

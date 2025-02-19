@@ -55,7 +55,7 @@ class GeneratorEntrypoint(EntrypointBase):
         # get the upload dataset which must be set as validation set, disable training parameters such as shuffle
         datamodule_args_modified = vars(context.config.data)
 
-        # catch the case, where the machine is offline and the dataset is empty
+        # catch the case, where the machine is offline and the dataset is empty # FIXME: use valset
         datamodule_args_modified["validate"] = None
         data = DataModule(**datamodule_args_modified).trainset
         logger.debug("Loaded (val) from %s", data.directory)

@@ -5,7 +5,7 @@ from Dataflux import get_logger, logging_mode
 from Comprisk.cli import CompriskCLI
 from Comprisk.data import DataModule
 from Comprisk.helper.structure import get_config_folder
-from Comprisk.model import BaseModel
+from Comprisk.model import NormalizeWrapper
 from Comprisk.entrypoints import (
     EntrypointContext,
     Pipeline,
@@ -48,7 +48,7 @@ def cli_train() -> None:
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
         train,
@@ -63,7 +63,7 @@ def cli_analyze() -> None:
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
         analyze
@@ -76,7 +76,7 @@ def cli_train_score_transformer() -> None:
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
         score,
@@ -90,7 +90,7 @@ def cli_generate() -> None:
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
 
     # check if the upload.yaml is in the config folder, otherwise an upload is not possible
     cli.config.data.validate = os.path.join(get_config_folder(cli), "upload.yaml")
@@ -107,6 +107,6 @@ def cli_generate() -> None:
 
 if __name__ == "__main__":
     #cli_train()
-    #cli_train_score_transformer()
+    cli_train_score_transformer()
     #cli_analyze()
-    cli_generate()
+    #cli_generate()

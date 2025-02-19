@@ -2,7 +2,6 @@
 of a neural network are not implemented."""
 from typing import List, Union
 import numpy as np
-import lightning as L
 import torch
 
 from torch.optim.lr_scheduler import ExponentialLR
@@ -50,8 +49,10 @@ class BaseModel(NormalizeWrapper):
         features_out: List[str] = None,
         behavior: str = DatasetTypes.AUTOENCODER.value,
         output_length: int = 1,
+        *args,
+        **kwargs
     ) -> None:
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
         # define training hyperparameters
         self._loss_name = loss
@@ -110,10 +111,10 @@ class BaseModel(NormalizeWrapper):
         logger.debug("Starting epoch %s with lr=%s", self.current_epoch, self._lr_scheduler.get_last_lr()[-1])
 
     def training_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:
-        x, y = self.normalizer.apply(x=batch)
-
-        y_hat = self(x)
+        x, y = batch
+        y_hat, y = self.predict_step(x, y)
         loss = self._loss(y_hat, y)
+
         self.log(f"train/{self._loss_name}", loss)
 
         # the feature loss is required by the LossMeasurement callback to calculate
@@ -123,18 +124,18 @@ class BaseModel(NormalizeWrapper):
         return loss
 
     def test_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:
-        x, y = self.normalizer.apply(x=batch)
-
-        y_hat = self(x)
+        x, y = batch
+        y_hat, y = self.predict_step(x, y)
         loss = self._loss(y_hat, y)
+
         self.log(f"test/{self._loss_name}", loss)
         return loss
 
     def validation_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:
-        x, y = self.normalizer.apply(x=batch)
-
-        y_hat = self(x)
+        x, y = batch
+        y_hat, y = self.predict_step(x, y)
         loss = self._loss(y_hat, y)
+
         self.log(f"validate/{self._loss_name}", loss)
 
         batch_size, sequence, features = y.shape
@@ -148,40 +149,21 @@ class BaseModel(NormalizeWrapper):
         if isinstance(self._optim, str):
             logger.debug("Initialize optimizer: %s", self._optim)
             optim_cls = get_optimizer_by_name(self._optim)
-            self._optim = optim_cls(self.parameters(), lr=self.lr)
+            self._optim = optim_cls(filter(lambda p: p.requires_grad, self.parameters()), lr=self.lr)
             self._lr_scheduler = ExponentialLR(self._optim, gamma=self._lr_decay)
 
         return [self._optim], [{"scheduler": self._lr_scheduler, "interval": "epoch"}] # type: ignore
 
-    def predict_step(self, batch: BATCH_TYPE, *args, **kwargs) -> torch.Tensor:
+    def predict_step(self, x: torch.Tensor, y: torch.Tensor) -> BATCH_TYPE:
         """
         This method is used to make predictions on a batch of data during inference.
 
         Args:
-            batch (Dataflux.pytorch.BATCH_TYPE): A tensor containing the input data.
+            x (torch.Tensor): The model input (will be normalized by the BaseModel).
+            y (torch.Tensor): The expected output (will be normalized by the BaseModel).
 
         Returns:
             torch.Tensor: The predicted output for the given batch.
         """
-        x, _ = self.normalizer.apply(x=batch)
-        return self(x)
-
-    def predict(self, x: torch.Tensor) -> Union[np.ndarray, torch.Tensor]:
-        """This method only predicts future steps based on the given curve described by
-        the datapoints `x`.
-
-        Args:
-            x (torch.Tensor): The datapoints.
-
-        Returns:
-            np.ndarray, torch.Tensor: The prediction.
-        """
-        with torch.no_grad():
-            out = self.predict_step((x, x))
-
-        if self._behavior == DatasetTypes.PREDICTIVE:
-            out = out[:, out.shape[1] - self._output_length:, :]
-
-        return out
-
-
+        x, y = self.normalizer.apply(x=(x, y))
+        return self(x), y

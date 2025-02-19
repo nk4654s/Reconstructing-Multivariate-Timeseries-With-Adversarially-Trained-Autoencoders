@@ -66,6 +66,7 @@ class ModelCheckpoint:
                 # checkpoint folder and checkpoints found, load the best one
                 self._model = load_model(path, eval_mode=False)
                 self._from_disk = True
+                return None
 
         # checkpoint folder is empty
         self._model = backup_model

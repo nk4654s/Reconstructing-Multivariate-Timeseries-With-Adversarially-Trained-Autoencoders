@@ -6,7 +6,6 @@ from lightning import Trainer
 from torch import nn
 
 from Comprisk.data import DataModule
-from lightning import LightningModule
 
 from Comprisk.model import BaseModel
 

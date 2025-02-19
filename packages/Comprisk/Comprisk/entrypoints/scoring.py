@@ -1,10 +1,12 @@
+import os.path
+
 from Dataflux import logging_mode, DEBUG_MODE
 from Dataflux.pytorch import DatasetTypes
 from Dataflux.logger import get_logger
 
 from Comprisk.entrypoints.base import EntrypointBase, EntrypointContext
 from Comprisk.anomaly import ScoreWrapper
-from Comprisk.helper import ModelCheckpoint
+from Comprisk.helper import ModelCheckpoint, ModelIterator
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
@@ -46,6 +48,28 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
         wrapper = ScoreWrapper(checkpoint.get_model())
         wrapper.train_wrapper(context.datamodule.val_dataloader(), verbose=DEBUG_MODE)
         wrapper.export_to(context.config_folder)
+
+        # plot a bit
+        iterator = ModelIterator(wrapper, context.datamodule.valset)
+        score, inputs = iterator.run()
+
+        import matplotlib.pyplot as plt
+        plt.plot(score.min(axis=1), label="min", linestyle="dashed", color="black")
+        plt.plot(score.max(axis=1), label="max", color="black")
+        plt.plot(score.mean(axis=1), label="mean", linestyle="dashdot", color="black")
+        plt.title("Healthscores: Validation")
+        plt.legend()
+        plt.savefig(os.path.join(context.config_folder, "valset.png"))
+
+        iterator = ModelIterator(wrapper, context.datamodule.trainset)
+        score, inputs = iterator.run()
+
+        plt.plot(score.min(axis=1), label="min", linestyle="dashed", color="black")
+        plt.plot(score.max(axis=1), label="max", color="black")
+        plt.plot(score.mean(axis=1), label="mean", linestyle="dashdot", color="black")
+        plt.title("Healthscores: Training")
+        plt.legend()
+        plt.savefig(os.path.join(context.config_folder, "trainset.png"))
 
         logger.info("Fitted ScoreTransformer successfully.")
 
