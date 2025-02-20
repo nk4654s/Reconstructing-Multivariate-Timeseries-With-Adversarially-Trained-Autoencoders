@@ -2,7 +2,9 @@ import os
 import shutil
 from uuid import UUID
 
+from Comprisk.anomaly import ScoreWrapper
 from Comprisk.entrypoints import EntrypointBase, EntrypointContext
+from Comprisk.helper import ModelCheckpoint, ModelIterator
 from Dataflux.pytorch import Dataset
 from Dataflux.visualization import show_dataframe
 from Dataflux.helper import get_sensors
@@ -52,34 +54,38 @@ class AnalyzerEntrypoint(EntrypointBase):
         dataset = self._get_dataset(context)
 
         # load the model with the helper class, then apply the model on the dataset
-        loader = ModelLoader(context.config_folder, context.model)
-        score = loader.get_score_transformer()
-        logger.info("Loaded score transformer (mode=%s)", score.mode)
+        checkpoint = ModelCheckpoint(context.config_folder)
+        if not checkpoint.from_disk:
+            logger.error("No model loaded from disk")
+            return context
+
+        wrapper = ScoreWrapper(checkpoint.get_model())
+        wrapper.import_from(context.config_folder)
+
         logger.info("Run prediction loop on dataset (samples=%s).", len(dataset))
-        target, predicted = loader.predict_loop(dataset)
+        iterator = ModelIterator(wrapper.sub_model, dataset)
+        targets, inputs = iterator.run(batch_size=128)
 
         # visualize the loaded dataset
         self._create_analysis_folder(context)
 
-        # transforms the loss between prediction and target to a score between 0 and 1.
-        score.transform(predicted, target, visualize=self._scores_path, factors=0.1)
         logger.info("Downloading uuid to sensor table for sensor renaming in visualizations.")
         sensors_name_dict = get_sensors(UUID(dataset.UUID))
-        predicted = predicted.rename(columns=sensors_name_dict, errors="ignore")
-        target = target.rename(columns=sensors_name_dict, errors="ignore")
+        inputs = inputs.rename(columns=sensors_name_dict, errors="ignore")
+        targets = targets.rename(columns=sensors_name_dict, errors="ignore")
 
         # save the whole prediction of the dataset
         logger.debug("Visualizing whole dataset (samples=%s)", len(dataset))
         show_dataframe(
-            [predicted, target],
-            ["Prediction", "Target"],
+            [inputs, targets],
+            ["Inputs", "Targets"],
             grid_size=5,
             save=self._full_frame_path,
         )
 
         logger.info(
             "Finished analyzing model %s on machine %s.",
-            loader._model.__class__.__name__,
+            checkpoint.get_model().__class__.__name__,
             dataset.UUID,
         )
 

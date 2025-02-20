@@ -1,6 +1,7 @@
 import os
 
 import torch
+import yaml
 
 from Comprisk.anomaly import ScoreWrapper
 from Comprisk.entrypoints.base import EntrypointContext, EntrypointBase
@@ -36,6 +37,14 @@ class ExportEntrypoint(EntrypointBase):
             input_names=["x", "y"],
             export_params=True,
         )
+
+        # expand the model.yaml
+        with open(os.path.join(context.config_folder, "model.yaml"), "r") as f:
+            meta = yaml.safe_load(f)
+            meta["cache_size"] = context.datamodule.trainset.get_args().sequence_in
+
+        with open(os.path.join(context.config_folder, "model.yaml"), "w") as f:
+            yaml.safe_dump(meta, f)
 
         logger.info("Exported model to %s", onnx_path)
         return context

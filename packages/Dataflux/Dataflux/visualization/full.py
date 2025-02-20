@@ -33,7 +33,11 @@ def show_dataframe(
     df = [df] if isinstance(df, pd.DataFrame) else df
     df = [d.reset_index() for d in df]
     names = [f"DF{_}" for _ in range(len(df))] if len(names) == 0 else names
-    sensors = [c for c in df[0].columns.values]
+
+    sensors = set(c for c in df[0].columns.values)
+    for df_ in df[1:]:
+        sensors.intersection_update([c for c in df_.columns.values])
+    sensors = list(sensors)
 
     num = len(sensors)
     num_rows = math.ceil(num / grid_size)

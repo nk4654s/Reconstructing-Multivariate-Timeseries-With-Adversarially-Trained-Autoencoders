@@ -110,6 +110,7 @@ class TrainerEntrypoint(EntrypointBase):
             meta |= yaml.safe_load(f)
 
         context.model.normalization_import(export=meta)
+        context.model.normalization_save(self._logging_path)
 
     def _import_dataset_config(self, context: EntrypointContext) -> None:
         # copy the dataset config of the training data to the model

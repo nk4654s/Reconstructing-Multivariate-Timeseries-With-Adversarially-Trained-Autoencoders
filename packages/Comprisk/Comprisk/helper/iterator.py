@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from Comprisk.anomaly import ScoreWrapper
+from Comprisk.model import NormalizeWrapper
 from Dataflux import DEBUG_MODE
 from Dataflux.pytorch import collate_fn, DatasetTypes
 from Dataflux.pytorch import Dataset
@@ -63,11 +64,18 @@ class ModelIterator:
     def _call_model(self, batch) -> np.ndarray:
         x, y = batch
         x: torch.Tensor = x.to(self._device)
-        if isinstance(self._model, ScoreWrapper):
-            return self._model.predict_step(x, y).cpu().detach().numpy()
-
         y: torch.Tensor = y.to(self._device)
-        return self._model.predict_step((x, y)).cpu().detach().numpy()
+
+        if isinstance(self._model, ScoreWrapper):
+            y_pred = self._model.predict_step(x, y)
+
+        elif isinstance(self._model, NormalizeWrapper):
+            y_pred, y = self._model.predict_step(x, y)
+            _, y_pred = self._model.normalizer.reverse(x=None, y=y_pred)
+
+        y_pred = y_pred.cpu().detach().numpy()
+        y = y.cpu().detach().numpy()
+        return y_pred, y
 
     def run(self, batch_size: int = 64, num_workers: int =4):
         inputs, targets, counter, ts_index = self._init_container()
@@ -83,7 +91,7 @@ class ModelIterator:
         p_bar = tqdm(loader, desc="Prediction with Model", disable=not DEBUG_MODE)
         for i, batch in enumerate(p_bar):
             # run the prediction, the input equals the target for auto encoders
-            outputs = self._call_model(batch)
+            outputs, y = self._call_model(batch)
 
             x: torch.Tensor = batch[0]
             x = x.cpu().detach().numpy()
@@ -95,8 +103,8 @@ class ModelIterator:
 
                 window_, _ = outputs[j].shape
                 window_ = min(window_, len(targets[idx : idx + window_]))
-                inputs[idx : idx + window_] += x[j][window_ - self._window:]
-                targets[idx : idx + window_] += outputs[j][window_ - self._window:]
+                inputs[idx : idx + window_] += x[j][self._window - window_:]
+                targets[idx : idx + window_] += outputs[j][self._window - window_:]
                 counter[idx : idx + window_] += np.ones(shape=(window_,))
 
                 ts = self._data.get_timestamp(i * batch_size + j) + self._ts_offset

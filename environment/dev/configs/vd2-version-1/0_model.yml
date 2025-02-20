@@ -14,8 +14,8 @@ model:
     optimizer: Adam
     lr: 0.0001
     lr_decay: 0.9
-    num_hidden_dim: 64
-    num_hidden_layers: 4
+    num_hidden_dim: 32
+    num_hidden_layers: 3
     dropout_prob: 0.3
 
 # trainer and dataset config
@@ -39,7 +39,7 @@ trainer:
         dirpath: checkpoints
 
   precision: 32
-  max_epochs: 1
+  max_epochs: 7
   gradient_clip_val: 1.0
   log_every_n_steps: 1
 

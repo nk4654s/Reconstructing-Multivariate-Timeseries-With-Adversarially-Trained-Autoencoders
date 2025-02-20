@@ -53,7 +53,8 @@ def cli_train() -> None:
         flux,
         train,
         score,
-        export
+        export,
+        analyze
     ])
     pipeline_runner(pipeline, cli)
 
@@ -106,7 +107,12 @@ def cli_generate() -> None:
 
 
 if __name__ == "__main__":
-    #cli_train()
-    cli_train_score_transformer()
-    #cli_analyze()
-    #cli_generate()
+    pycharm_entry = os.environ.get("PYCHARM_ENTRY", "train")
+    if pycharm_entry == "train":
+        cli_train()
+    elif pycharm_entry == "score":
+        cli_train_score_transformer()
+    elif pycharm_entry == "analyze":
+        cli_analyze()
+    elif pycharm_entry == "generate":
+        cli_generate()

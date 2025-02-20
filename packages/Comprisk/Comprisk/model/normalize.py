@@ -142,16 +142,15 @@ class NormalizeModule(nn.Module):
         return x, y
 
     @torch.no_grad()
-    def reverse(self, x: BATCH_TYPE) -> BATCH_TYPE:
-        x, y = x
+    def reverse(self, x: Tensor | None, y: Tensor | None) -> BATCH_TYPE:
+        if x is not None:
+            x = (x / self._trange) - self._trange_min / self._trange
+            x = (x / self._scale[self._input_idx]) + self._min[self._input_idx]
 
-        # change range to -1 to 1
-        x = (x / self._trange) - self._trange_min * self._trange
-        y = (y / self._trange) - self._trange_min * self._trange
+        if y is not None:
+            y = (y / self._trange) - self._trange_min / self._trange
+            y = (y / self._scale[self._output_idx]) + self._min[self._output_idx]
 
-        # normalize to 0 to 1
-        x = (x / self._scale[self._input_idx]) + self._min[self._input_idx]
-        y = (y / self._scale[self._output_idx]) + self._min[self._output_idx]
         return x, y
 
 

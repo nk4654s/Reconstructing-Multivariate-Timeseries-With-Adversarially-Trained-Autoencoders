@@ -51,22 +51,24 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
 
         # plot a bit
         iterator = ModelIterator(wrapper, context.datamodule.valset)
-        score, inputs = iterator.run()
-
+        score, inputs = iterator.run(batch_size=256)
+        from matplotlib.pyplot import figure
         import matplotlib.pyplot as plt
-        plt.plot(score.min(axis=1), label="min", linestyle="dashed", color="black")
-        plt.plot(score.max(axis=1), label="max", color="black")
-        plt.plot(score.mean(axis=1), label="mean", linestyle="dashdot", color="black")
+        figure(figsize=(22, 10), dpi=60)
+
+        plt.plot(score.min(axis=1), label="min", linestyle="dashed", color="orange", alpha=0.6)
+        plt.plot(score.mean(axis=1), label="mean", color="teal", alpha=0.7)
+        plt.plot(score.max(axis=1), label="max", linestyle="dashdot", color="red", alpha=0.6)
         plt.title("Healthscores: Validation")
         plt.legend()
         plt.savefig(os.path.join(context.config_folder, "valset.png"))
 
         iterator = ModelIterator(wrapper, context.datamodule.trainset)
-        score, inputs = iterator.run()
+        score, inputs = iterator.run(batch_size=256)
 
-        plt.plot(score.min(axis=1), label="min", linestyle="dashed", color="black")
-        plt.plot(score.max(axis=1), label="max", color="black")
-        plt.plot(score.mean(axis=1), label="mean", linestyle="dashdot", color="black")
+        plt.plot(score.min(axis=1), label="min", linestyle="dashed", color="orange", alpha=0.6)
+        plt.plot(score.mean(axis=1), label="mean", color="teal", alpha=0.7)
+        plt.plot(score.max(axis=1), label="max", linestyle="dashdot", color="red", alpha=0.6)
         plt.title("Healthscores: Training")
         plt.legend()
         plt.savefig(os.path.join(context.config_folder, "trainset.png"))
