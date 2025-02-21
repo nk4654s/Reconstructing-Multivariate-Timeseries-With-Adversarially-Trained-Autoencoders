@@ -31,6 +31,7 @@ class AnalyzerEntrypoint(EntrypointBase):
         super().__init__()
 
         self._scores_path = None
+        self._scores_summary_path = None
         self._full_frame_path = None
 
     def _get_dataset(self, context: EntrypointContext) -> Dataset:
@@ -47,6 +48,7 @@ class AnalyzerEntrypoint(EntrypointBase):
             shutil.rmtree(base_path)
         os.makedirs(base_path)
 
+        self._scores_summary_path = os.path.join(base_path, "scores-summary.png")
         self._scores_path = os.path.join(base_path, "scores.png")
         self._full_frame_path = os.path.join(base_path, "full.png")
 
@@ -70,25 +72,17 @@ class AnalyzerEntrypoint(EntrypointBase):
         logger.info("Downloading uuid to sensor table for sensor renaming in visualizations.")
         sensors_name_dict = get_sensors(UUID(dataset.UUID))
 
-        logger.info("Run prediction loop on dataset (samples=%s).", len(dataset))
-        iterator = ModelIterator(wrapper.sub_model, dataset)
-        targets, inputs = iterator.run(batch_size=128)
-
-        inputs = inputs.rename(columns=sensors_name_dict, errors="ignore")
-        targets = targets.rename(columns=sensors_name_dict, errors="ignore")
-
-        # save the whole prediction of the dataset
-        logger.debug("Visualizing whole dataset (samples=%s)", len(dataset))
-        show_dataframe(
-            [inputs, targets],
-            ["Inputs", "Targets"],
-            grid_size=5,
-            save=self._full_frame_path,
-        )
-
+        # analyzing health score performance
         iterator = ModelIterator(wrapper, dataset)
         targets, inputs = iterator.run(batch_size=128)
         targets = targets.rename(columns=sensors_name_dict, errors="ignore")
+        show_dataframe(
+            [targets],
+            ["Healthscore"],
+            y_limit=(0, 1),
+            grid_size=5,
+            save=self._scores_path,
+        )
 
         plt.close("all")
         plt.plot(targets.min(axis=1), label="min", linestyle="dashed", color="orange", alpha=0.6)
@@ -96,7 +90,23 @@ class AnalyzerEntrypoint(EntrypointBase):
         plt.plot(targets.max(axis=1), label="max", linestyle="dashdot", color="red", alpha=0.6)
         plt.title("Healthscores")
         plt.legend()
-        plt.savefig(self._scores_path)
+        plt.savefig(self._scores_summary_path)
+
+        # save the whole prediction of the dataset
+        logger.info("Run prediction loop on dataset (samples=%s).", len(dataset))
+        iterator = ModelIterator(wrapper.sub_model, dataset)
+        targets, inputs = iterator.run(batch_size=128)
+
+        inputs = inputs.rename(columns=sensors_name_dict, errors="ignore")
+        targets = targets.rename(columns=sensors_name_dict, errors="ignore")
+
+        logger.debug("Visualizing whole dataset (samples=%s)", len(dataset))
+        show_dataframe(
+            [inputs, targets],
+            ["Inputs", "Targets"],
+            grid_size=5,
+            save=self._full_frame_path,
+        )
 
         logger.info(
             "Finished analyzing model %s on machine %s.",

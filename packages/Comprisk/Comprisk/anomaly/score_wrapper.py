@@ -38,7 +38,7 @@ class ScoreWrapper(LightningModule):
     def __init__(
         self,
         model: BaseModel,
-        threshold: float = 0.9,
+        threshold: float = 0.8,
         threshold_deviation: float = 5,
         noise_floor: float = 1,
     ) -> None:
@@ -86,7 +86,7 @@ class ScoreWrapper(LightningModule):
         # find the quantiles of the loss distribution to calculate a suitable
         # function to transform future losses to scores
         noise_floor = loss.mean(0) + self._param_noise_floor * loss.std(0)
-        sigma_loss = loss.mean(0) * self._param_threshold_deviation * loss.std(0)
+        sigma_loss = loss.mean(0) + self._param_threshold_deviation * loss.std(0)
 
         # solve the following linear equation to find the linear function's parameters
         # f(x) = m * x + b
