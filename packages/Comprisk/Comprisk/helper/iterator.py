@@ -79,6 +79,7 @@ class ModelIterator:
 
     def run(self, batch_size: int = 64, num_workers: int =4):
         inputs, targets, counter, ts_index = self._init_container()
+        self._model.eval()
 
         loader = DataLoader(
             self._data,

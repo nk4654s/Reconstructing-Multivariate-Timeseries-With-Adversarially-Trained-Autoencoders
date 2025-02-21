@@ -1,6 +1,6 @@
 """This module contains the base model implementing widely-used functions. Layers
 of a neural network are not implemented."""
-from typing import List, Union
+from typing import List
 import numpy as np
 import torch
 

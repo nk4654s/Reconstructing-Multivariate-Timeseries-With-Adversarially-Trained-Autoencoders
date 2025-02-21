@@ -2,6 +2,8 @@ import os
 import shutil
 from uuid import UUID
 
+import matplotlib.pyplot as plt
+
 from Comprisk.anomaly import ScoreWrapper
 from Comprisk.entrypoints import EntrypointBase, EntrypointContext
 from Comprisk.helper import ModelCheckpoint, ModelIterator
@@ -62,15 +64,16 @@ class AnalyzerEntrypoint(EntrypointBase):
         wrapper = ScoreWrapper(checkpoint.get_model())
         wrapper.import_from(context.config_folder)
 
-        logger.info("Run prediction loop on dataset (samples=%s).", len(dataset))
-        iterator = ModelIterator(wrapper.sub_model, dataset)
-        targets, inputs = iterator.run(batch_size=128)
-
         # visualize the loaded dataset
         self._create_analysis_folder(context)
 
         logger.info("Downloading uuid to sensor table for sensor renaming in visualizations.")
         sensors_name_dict = get_sensors(UUID(dataset.UUID))
+
+        logger.info("Run prediction loop on dataset (samples=%s).", len(dataset))
+        iterator = ModelIterator(wrapper.sub_model, dataset)
+        targets, inputs = iterator.run(batch_size=128)
+
         inputs = inputs.rename(columns=sensors_name_dict, errors="ignore")
         targets = targets.rename(columns=sensors_name_dict, errors="ignore")
 
@@ -82,6 +85,18 @@ class AnalyzerEntrypoint(EntrypointBase):
             grid_size=5,
             save=self._full_frame_path,
         )
+
+        iterator = ModelIterator(wrapper, dataset)
+        targets, inputs = iterator.run(batch_size=128)
+        targets = targets.rename(columns=sensors_name_dict, errors="ignore")
+
+        plt.close("all")
+        plt.plot(targets.min(axis=1), label="min", linestyle="dashed", color="orange", alpha=0.6)
+        plt.plot(targets.mean(axis=1), label="mean", color="teal", alpha=0.7)
+        plt.plot(targets.max(axis=1), label="max", linestyle="dashdot", color="red", alpha=0.6)
+        plt.title("Healthscores")
+        plt.legend()
+        plt.savefig(self._scores_path)
 
         logger.info(
             "Finished analyzing model %s on machine %s.",

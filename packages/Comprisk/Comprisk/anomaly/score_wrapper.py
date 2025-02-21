@@ -45,6 +45,7 @@ class ScoreWrapper(LightningModule):
         super(ScoreWrapper, self).__init__()
 
         self._model = model
+        self._model.eval()
 
         self._param_noise_floor = noise_floor
         self._param_threshold_deviation = threshold_deviation
@@ -68,7 +69,6 @@ class ScoreWrapper(LightningModule):
     def train_wrapper(self, data: DataLoader, verbose: bool = False) -> None:
         # initialize the parameters
         loss = []
-        self._model.eval()
 
         # find the mean and scale of the data to run a transformation
         for x, y in tqdm(data, desc="Prediction with Model", disable=not verbose):

@@ -1,6 +1,5 @@
 """This module implements a basic AutoEncoder class and the base classes for an
 encoder and decoder."""
-from typing import List
 
 import torch
 import torch.nn as nn
