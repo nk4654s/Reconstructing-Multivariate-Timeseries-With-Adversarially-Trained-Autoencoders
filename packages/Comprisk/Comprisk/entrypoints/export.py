@@ -1,7 +1,8 @@
 import os
 
+import onnx
 import torch
-import yaml
+import json
 
 from Comprisk.anomaly import ScoreWrapper
 from Comprisk.entrypoints.base import EntrypointContext, EntrypointBase
@@ -16,6 +17,28 @@ class ExportEntrypoint(EntrypointBase):
 
         self._model_name = "model.onnx"
         self._graph_image = "model_graph"
+
+    def modify_model_metadata(self, context: EntrypointContext):
+        dataset = context.datamodule.valset
+        args = dataset.get_args()
+
+        onnx_path = os.path.join(context.config_folder, self._model_name)
+        model = onnx.load(onnx_path)
+
+        enc = json.encoder.JSONEncoder()
+
+        model.domain = str(dataset.UUID)
+        model.model_version = context.config.seed_everything
+        model.producer_name = "NEA-X"
+        meta = model.metadata_props.add()
+        meta.key = "input_names"
+        meta.value = enc.encode(args.names_in)
+
+        meta = model.metadata_props.add()
+        meta.key = "output_names"
+        meta.value = enc.encode(args.names_out)
+
+        onnx.save(model, onnx_path)
 
     def __call__(
         self, context: EntrypointContext, *args, **kwargs
@@ -42,16 +65,10 @@ class ExportEntrypoint(EntrypointBase):
                 "y": [0],
                 "score": [0],
                 "y_hat": [0],
-            }
+            },
         )
 
-        # expand the model.yaml
-        with open(os.path.join(context.config_folder, "model.yaml"), "r") as f:
-            meta = yaml.safe_load(f)
-            meta["cache_size"] = context.datamodule.trainset.get_args().sequence_in
-
-        with open(os.path.join(context.config_folder, "model.yaml"), "w") as f:
-            yaml.safe_dump(meta, f)
+        self.modify_model_metadata(context)
 
         logger.info("Exported model to %s", onnx_path)
         return context
