@@ -30,9 +30,10 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
         if dataset_args.behavior != DatasetTypes.AUTOENCODER:
             stride = dataset_args.sequence_out
 
-        n = len(context.datamodule.valset)
+        n = len(context.datamodule.valset) + len(context.datamodule.trainset)
         logger.info("Fitting score transformer on n=%s samples.", n)
         context.datamodule.valset.set_stride(stride)
+        context.datamodule.trainset.set_stride(stride)
         context.datamodule.setup(stage="fit")
 
         # load the best checkpoint, modifying an exported ONNX file does not work as the
