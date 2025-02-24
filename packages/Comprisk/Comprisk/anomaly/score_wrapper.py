@@ -1,5 +1,5 @@
 import os.path
-from typing import Union
+from typing import Union, Tuple
 
 import numpy as np
 import torch
@@ -102,7 +102,7 @@ class ScoreWrapper(LightningModule):
         logger.debug("Trained %s successfully", self.__class__.__name__)
 
     @torch.no_grad()
-    def forward(self, x: Tensor, y: Tensor) -> Tensor:
+    def forward(self, x: Tensor, y: Tensor) -> Tuple[Tensor, ...]:
         # get the prediction of 'x' using the model
         x = x.to(self._model.device)
         y = y.to(self._model.device)
@@ -113,7 +113,9 @@ class ScoreWrapper(LightningModule):
 
         # f(x) = m * x + b
         f = self._slope * score + self._intercept
-        return torch.clip(f, 0, 1)
+
+        _, y_hat = self._model.normalizer.reverse(x=x, y=y_hat)
+        return torch.clip(f, 0, 1), y_hat
 
     def predict_step(self, x: Tensor, y: Tensor) -> Tensor:
         # the wrapper must be trained to transfer the prediction error to a score
