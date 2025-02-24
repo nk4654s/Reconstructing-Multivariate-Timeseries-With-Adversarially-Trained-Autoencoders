@@ -1,4 +1,3 @@
-
 from Dataflux import logging_mode, DEBUG_MODE
 from Dataflux.pytorch import DatasetTypes
 from Dataflux.logger import get_logger
@@ -17,6 +16,7 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
      loss between prediction and expected values, the Comprisk.anomaly.ScoreTransformer is fitted. Finally, the
      entrypoint stores the trained ScoreTransformer in the models output directory under `metadata`.
     """
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -45,7 +45,11 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
         # wrap the model with a score transformer such that the fitted values are
         # included in the model graph. This is required for ONNX
         wrapper = ScoreWrapper(checkpoint.get_model())
-        wrapper.train_wrapper(context.datamodule.val_dataloader(), verbose=DEBUG_MODE)
+        wrapper.train_wrapper(
+            context.datamodule.train_dataloader(),
+            context.datamodule.val_dataloader(),
+            verbose=DEBUG_MODE,
+        )
         wrapper.export_to(context.config_folder)
 
         logger.info("Fitted ScoreTransformer successfully.")

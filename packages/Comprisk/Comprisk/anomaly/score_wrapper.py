@@ -35,6 +35,7 @@ class ScoreWrapper(LightningModule):
             (=`99.9`%).
         threshold (float): The value, which should be reached when hitting the upper limit. Defaults to `0.8`.
     """
+
     def __init__(
         self,
         model: BaseModel,
@@ -66,19 +67,20 @@ class ScoreWrapper(LightningModule):
         return self._model
 
     @torch.no_grad()
-    def train_wrapper(self, data: DataLoader, verbose: bool = False) -> None:
+    def train_wrapper(self, *data: DataLoader, verbose: bool = False) -> None:
         # initialize the parameters
         loss = []
 
         # find the mean and scale of the data to run a transformation
-        for x, y in tqdm(data, desc="Prediction with Model", disable=not verbose):
-            x = x.to(self._model.device)
-            y = y.to(self._model.device)
-            y_hat, y = self._model.predict_step(x, y)
+        for d in data:
+            for x, y in tqdm(d, desc="Prediction with Model", disable=not verbose):
+                x = x.to(self._model.device)
+                y = y.to(self._model.device)
+                y_hat, y = self._model.predict_step(x, y)
 
-            loss_ = torch.abs(y_hat - y).cpu().detach()
-            loss_ = loss_.numpy().reshape(-1, y_hat.shape[-1])
-            loss += list(loss_)
+                loss_ = torch.abs(y_hat - y).cpu().detach()
+                loss_ = loss_.numpy().reshape(-1, y_hat.shape[-1])
+                loss += list(loss_)
 
         # finalize loss to search for percentiles
         loss = np.array(loss)
@@ -129,10 +131,7 @@ class ScoreWrapper(LightningModule):
         b = self._intercept.cpu().detach().tolist()
 
         with open(os.path.join(path, "score.yaml"), "w") as f:
-            yaml.safe_dump({
-                "slope": a,
-                "intercept": b
-            }, f)
+            yaml.safe_dump({"slope": a, "intercept": b}, f)
 
     def import_from(self, path: str) -> None:
         with open(os.path.join(path, "score.yaml"), "r") as f:
@@ -143,5 +142,3 @@ class ScoreWrapper(LightningModule):
         self._trained = True
 
         self.to(self.device)
-
-
