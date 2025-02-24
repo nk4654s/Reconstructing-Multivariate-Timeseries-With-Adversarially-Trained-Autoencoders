@@ -1,9 +1,10 @@
 import unittest
+from unittest.mock import patch
 
 from Dataflux.pytorch.dummy_dataset import DummyDataset, DummyMode
 
 from Comprisk.helper.structure import class_for_name
-from Comprisk.helper import  ModelLoader
+from Comprisk.helper import ModelIterator
 
 class TestModelLoader(unittest.TestCase):
     def setUp(self):
@@ -13,9 +14,11 @@ class TestModelLoader(unittest.TestCase):
         model_class = class_for_name("Comprisk.model.dummy", "DummyModel")
         self.model = model_class(self.factor, self.features_in, self.features_in)
 
-        self.loader = ModelLoader(model=self.model)
+    @patch("Comprisk.model.normalize.NormalizeModule")
+    def test_forward_forecast_equal_stride(self, normalize_mock):
+        normalize_mock.apply.return_value = lambda x, y: (x, y)
+        normalize_mock.reverse.return_value = lambda x, y: (x, y)
 
-    def test_forward_forecast_equal_stride(self):
         dataset = DummyDataset(
             DummyMode.RANDOM,
             n_samples=100,
@@ -27,12 +30,17 @@ class TestModelLoader(unittest.TestCase):
 
         model_class = class_for_name("Comprisk.model.dummy", "DummyModel")
         model = model_class(self.factor, self.features_in, self.features_in)
-        loader = ModelLoader(model=model)
-        inputs, prediction = loader.predict_loop(dataset, batch_size=4, num_workers=1)
+        iterator = ModelIterator(model, dataset)
+        prediction, inputs = iterator.run()
+
         self.assertTrue((abs(prediction - inputs * self.factor) < 1e-5).all().all())
 
-    def test_forward_pass_stride_equal_window(self):
+    @patch("Comprisk.model.normalize.NormalizeModule")
+    def test_forward_pass_stride_equal_window(self, normalize_mock):
         """Test ModelLoader.predict_loop"""
+        normalize_mock.apply.return_value = lambda x, y: (x, y)
+        normalize_mock.reverse.return_value = lambda x, y: (x, y)
+
         dataset = DummyDataset(
             DummyMode.RANDOM,
             n_samples=100,
@@ -41,11 +49,19 @@ class TestModelLoader(unittest.TestCase):
             stride=20
         )
 
-        inputs, prediction = self.loader.predict_loop(dataset, batch_size=4, num_workers=1)
+        model_class = class_for_name("Comprisk.model.dummy", "DummyModel")
+        model = model_class(self.factor, self.features_in, self.features_in)
+        iterator = ModelIterator(model, dataset)
+        prediction, inputs = iterator.run()
+
         self.assertTrue((abs(prediction - inputs * self.factor) < 1e-5).all().all())
 
-    def test_forward_pass_stride_smaller_window(self):
+    @patch("Comprisk.model.normalize.NormalizeModule")
+    def test_forward_pass_stride_smaller_window(self, normalize_mock):
         """Test ModelLoader.predict_loop"""
+        normalize_mock.apply.return_value = lambda x, y: (x, y)
+        normalize_mock.reverse.return_value = lambda x, y: (x, y)
+
         dataset = DummyDataset(
             DummyMode.RANDOM,
             n_samples=100,
@@ -54,11 +70,19 @@ class TestModelLoader(unittest.TestCase):
             stride=5
         )
 
-        inputs, prediction = self.loader.predict_loop(dataset, batch_size=4, num_workers=1)
+        model_class = class_for_name("Comprisk.model.dummy", "DummyModel")
+        model = model_class(self.factor, self.features_in, self.features_in)
+        iterator = ModelIterator(model, dataset)
+        prediction, inputs = iterator.run()
+
         self.assertTrue((abs(prediction - inputs * self.factor) < 1e-5).all().all())
 
-    def test_forward_pass_inhomogeneous(self):
+    @patch("Comprisk.model.normalize.NormalizeModule")
+    def test_forward_pass_inhomogeneous(self, normalize_mock):
         """Test ModelLoader.predict_loop"""
+        normalize_mock.apply.return_value = lambda x, y: (x, y)
+        normalize_mock.reverse.return_value = lambda x, y: (x, y)
+
         dataset = DummyDataset(
             DummyMode.RANDOM,
             n_samples=100,
@@ -67,5 +91,9 @@ class TestModelLoader(unittest.TestCase):
             stride=3
         )
 
-        inputs, prediction = self.loader.predict_loop(dataset, batch_size=4, num_workers=1)
+        model_class = class_for_name("Comprisk.model.dummy", "DummyModel")
+        model = model_class(self.factor, self.features_in, self.features_in)
+        iterator = ModelIterator(model, dataset)
+        prediction, inputs = iterator.run()
+
         self.assertTrue((abs(prediction - inputs * self.factor) < 1e-5).all().all())

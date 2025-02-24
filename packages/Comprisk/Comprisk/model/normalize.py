@@ -31,7 +31,7 @@ class NormalizeModule(nn.Module):
         features_in: List[str] = None,
         features_out: List[str] = None,
     ) -> None:
-        super(NormalizeModule, self).__init__()
+        super().__init__()
 
         self._features_in = sorted(features_in)
         self._input_idx = [i for i, n in enumerate(self._features_in)]
@@ -138,6 +138,7 @@ class NormalizeModule(nn.Module):
         # change range to -1 to 1
         x = (x + self._trange_min / self._trange) * self._trange
         y = (y + self._trange_min / self._trange) * self._trange
+
 
         return x, y
 

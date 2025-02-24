@@ -165,5 +165,5 @@ class BaseModel(NormalizeWrapper):
         Returns:
             torch.Tensor: The predicted output for the given batch.
         """
-        x, y = self.normalizer.apply(x=(x, y))
+        x, y = self.normalizer.apply((x, y))
         return self(x), y

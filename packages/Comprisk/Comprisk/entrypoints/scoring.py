@@ -1,4 +1,3 @@
-import os.path
 
 from Dataflux import logging_mode, DEBUG_MODE
 from Dataflux.pytorch import DatasetTypes
@@ -6,7 +5,7 @@ from Dataflux.logger import get_logger
 
 from Comprisk.entrypoints.base import EntrypointBase, EntrypointContext
 from Comprisk.anomaly import ScoreWrapper
-from Comprisk.helper import ModelCheckpoint, ModelIterator
+from Comprisk.helper import ModelCheckpoint
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)

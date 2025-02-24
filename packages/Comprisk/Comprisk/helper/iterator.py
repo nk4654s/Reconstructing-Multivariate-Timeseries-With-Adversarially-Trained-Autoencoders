@@ -71,13 +71,24 @@ class ModelIterator:
 
         elif isinstance(self._model, NormalizeWrapper):
             y_pred, y = self._model.predict_step(x, y)
-            _, y_pred = self._model.normalizer.reverse(x=None, y=y_pred)
+            _, y_pred = self._model.normalizer.reverse(None, y_pred)
 
         y_pred = y_pred.cpu().detach().numpy()
         y = y.cpu().detach().numpy()
         return y_pred, y
 
     def run(self, batch_size: int = 64, num_workers: int =4):
+        """This function executes a ModelCheckpoint on a given dataset. Then the model's output and input will
+        be returned.
+
+        Args:
+            batch_size (int): The number of samples in a single pass. Defaults to 64.
+            num_workers (int): Number of threads iterating the dataset. Defaults to 4.
+
+        Returns:
+            pd.DataFrame: The model's output and input (this order).
+
+        """
         inputs, targets, counter, ts_index = self._init_container()
         self._model.eval()
 
