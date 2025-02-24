@@ -1,18 +1,23 @@
 import os
 import shutil
+
+import numpy as np
+import onnxruntime
+from tqdm import tqdm
 from uuid import UUID
 
 import matplotlib.pyplot as plt
 
-from Comprisk.anomaly import ScoreWrapper
-from Comprisk.entrypoints import EntrypointBase, EntrypointContext
-from Comprisk.helper import ModelCheckpoint, ModelIterator
 from Dataflux.pytorch import Dataset
 from Dataflux.visualization import show_dataframe
 from Dataflux.helper import get_sensors
+from torch.utils.data import DataLoader
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
+from Comprisk.anomaly import ScoreWrapper
+from Comprisk.entrypoints import EntrypointBase, EntrypointContext
+from Comprisk.helper import ModelCheckpoint, ModelIterator, Report
 
 
 # switch logging mode depending on DEBUG_MODE
@@ -34,84 +39,47 @@ class AnalyzerEntrypoint(EntrypointBase):
         self._scores_summary_path = None
         self._full_frame_path = None
 
-    def _get_dataset(self, context: EntrypointContext) -> Dataset:
-        # load the dataset using the datamodule
-        context.datamodule.set_path(None, context.config.data.validate)
-        return context.datamodule.valset
-
-    def _create_analysis_folder(self, context: EntrypointContext):
-        # create prefix sub-folders
-        prefix = "analysis" if not context.config.prefix else context.config.prefix
-        base_path = os.path.join(context.config_folder, prefix)
-
-        if os.path.exists(base_path):
-            shutil.rmtree(base_path)
-        os.makedirs(base_path)
-
-        self._scores_summary_path = os.path.join(base_path, "scores-summary.png")
-        self._scores_path = os.path.join(base_path, "scores.png")
-        self._full_frame_path = os.path.join(base_path, "full.png")
-
     def __call__(
         self, context: EntrypointContext, *args, **kwargs
     ) -> EntrypointContext:
-        dataset = self._get_dataset(context)
+        # load the dataset using the datamodule
+        context.datamodule.set_path(None, context.config.data.validate)
+        dataset = context.datamodule.valset
 
-        # load the model with the helper class, then apply the model on the dataset
-        checkpoint = ModelCheckpoint(context.config_folder)
-        if not checkpoint.from_disk:
-            logger.error("No model loaded from disk")
-            return context
+        # create the ONNX session and find the input/output names
+        onnx_path = os.path.join(context.config_folder, "model.onnx")
+        score_session = onnxruntime.InferenceSession(onnx_path)
+        onnx_input_names = [i.name for i in score_session.get_inputs()]
+        onnx_output_names = [i.name for i in score_session.get_outputs()]
+        score_index = onnx_output_names.index("score")
+        y_hat_index = onnx_output_names.index("y_hat")
 
-        wrapper = ScoreWrapper(checkpoint.get_model())
-        wrapper.import_from(context.config_folder)
+        # run inference
+        ts = []
+        scores = []
+        sensor_input = []
+        sensor_output = []
 
-        # visualize the loaded dataset
-        self._create_analysis_folder(context)
+        batch_size = 256
+        dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=4)
+        for i, (x, y) in enumerate(tqdm(dataloader)):
+            inputs = [np.array(x), np.array(y)]
 
-        logger.info("Downloading uuid to sensor table for sensor renaming in visualizations.")
-        sensors_name_dict = get_sensors(UUID(dataset.UUID))
+            inputs = {n: inputs[i] for i, n in enumerate(onnx_input_names)}
+            sensor_input += list(y[:, -1, :])
 
-        # analyzing health score performance
-        iterator = ModelIterator(wrapper, dataset)
-        targets, inputs = iterator.run(batch_size=128)
-        targets = targets.rename(columns=sensors_name_dict, errors="ignore")
-        show_dataframe(
-            [targets],
-            ["Healthscore"],
-            y_limit=(0, 1),
-            grid_size=5,
-            save=self._scores_path,
-        )
+            onnx_output = list(score_session.run(None, inputs))
+            scores += list(onnx_output[score_index][:, -1, :])
+            sensor_output += list(onnx_output[y_hat_index][:, -1, :])
 
-        plt.close("all")
-        plt.plot(targets.min(axis=1), label="min", linestyle="dashed", color="orange", alpha=0.6)
-        plt.plot(targets.mean(axis=1), label="mean", color="teal", alpha=0.7)
-        plt.plot(targets.max(axis=1), label="max", linestyle="dashdot", color="red", alpha=0.6)
-        plt.title("Healthscores")
-        plt.legend()
-        plt.savefig(self._scores_summary_path)
+            ts += [dataset.get_timestamp(i * batch_size) + t for t in range(batch_size)]
+        ts = ts[:len(sensor_output)]
 
-        # save the whole prediction of the dataset
-        logger.info("Run prediction loop on dataset (samples=%s).", len(dataset))
-        iterator = ModelIterator(wrapper.sub_model, dataset)
-        targets, inputs = iterator.run(batch_size=128)
+        # create a report and generate the graphs
+        name = "analysis" if not context.config.prefix else context.config.prefix
+        report = Report(context.config_folder, name)
+        report.generate_report_graphs(scores, sensor_input, sensor_output, ts)
 
-        inputs = inputs.rename(columns=sensors_name_dict, errors="ignore")
-        targets = targets.rename(columns=sensors_name_dict, errors="ignore")
-
-        logger.debug("Visualizing whole dataset (samples=%s)", len(dataset))
-        show_dataframe(
-            [inputs, targets],
-            ["Inputs", "Targets"],
-            grid_size=5,
-            save=self._full_frame_path,
-        )
-
-        logger.info(
-            "Finished analyzing model %s on machine %s.",
-            checkpoint.get_model().__class__.__name__,
-            dataset.UUID,
-        )
+        logger.info("Finished analyzing model on machine %s.", dataset.UUID)
 
         return context

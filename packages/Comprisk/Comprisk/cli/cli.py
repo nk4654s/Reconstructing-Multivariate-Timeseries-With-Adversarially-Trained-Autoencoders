@@ -11,8 +11,6 @@ from lightning.pytorch.cli import (
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
-from Comprisk.anomaly import ScoreTransformer
-
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
@@ -56,9 +54,6 @@ class CompriskCLI(LightningCLI):
         parser.link_arguments("data.features_in", "model.init_args.features_in", apply_on="instantiate")
         parser.link_arguments("data.features_out", "model.init_args.features_out", apply_on="instantiate")
         parser.link_arguments("data.behavior", "model.init_args.behavior", apply_on="instantiate")
-
-        # generate arguments for the custom classes
-        generate_class_arguments(ScoreTransformer, "score_transformer", parser)
 
     def before_fit(self):
         """Method executes before fit automatically."""
