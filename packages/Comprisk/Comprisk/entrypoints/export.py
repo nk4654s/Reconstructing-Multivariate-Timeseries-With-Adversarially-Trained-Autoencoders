@@ -35,7 +35,14 @@ class ExportEntrypoint(EntrypointBase):
             file_path=onnx_path,
             input_sample=(input_sample, output_sample),
             input_names=["x", "y"],
+            output_names=["score", "y_hat"],
             export_params=True,
+            dynamic_axes={
+                "x": [0],
+                "y": [0],
+                "score": [0],
+                "y_hat": [0],
+            }
         )
 
         # expand the model.yaml
