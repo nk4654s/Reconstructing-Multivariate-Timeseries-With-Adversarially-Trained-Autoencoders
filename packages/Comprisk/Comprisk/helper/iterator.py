@@ -1,17 +1,14 @@
 """This module contains helper methods related to the models."""
-
-from typing import  Tuple
+from dataclasses import dataclass
+from typing import  Tuple, List
 import numpy as np
+import onnxruntime
 import pandas as pd
-import torch
 
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from Comprisk.anomaly import ScoreWrapper
-from Comprisk.model import NormalizeWrapper
-from Dataflux import DEBUG_MODE
-from Dataflux.pytorch import collate_fn, DatasetTypes
+from Dataflux.pytorch import collate_fn
 from Dataflux.pytorch import Dataset
 
 from Dataflux import logging_mode
@@ -22,62 +19,57 @@ from Dataflux.logger import get_logger
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
+@dataclass
+class IteratorResult:
+    ts: np.ndarray
+    scores: np.ndarray
+    expected: np.ndarray
+    prediction: np.ndarray
+    names: List[str]
+
+    def to_dataframe(self):
+        result = []
+        for data in [self.scores, self.expected, self.prediction]:
+            data_ = {n: data[:, i] for i, n in enumerate(self.names)}
+            data_["ts"] = self.ts
+            data_ = pd.DataFrame(data_)
+            data_ = data_.sort_values(by=["ts"])
+            data_ = data_.set_index(keys=["ts"])
+            result.append(data_)
+
+        return result
+
+
 class ModelIterator:
     """This class handles iterating over a dataset while applying a model.
 
     Args:
-        model (ScoreWrapper): The model to use.
+        onnx_path (str): The model to load (ONNX format).
         data (Dataset): The dataset to use
     """
 
-    def __init__(self, model: ScoreWrapper, data: Dataset) -> None:
-        self._model = model
-        self._device = model.device
-
+    def __init__(self, onnx_path: str, data: Dataset) -> None:
         self._data = data
         self._args = data.get_args()
-        self._stride = self._args.stride
-        self._skip = self._args.skip
+        self._len = len(data)
 
-        self._ts_offset = 0
-        self._window = self._args.sequence_in
-        if self._args.behavior == DatasetTypes.PREDICTIVE:
-            self._window = self._args.sequence_out
-            self._ts_offset = self._args.sequence_in * self._skip
-
-        self._total_length = len(data) * self._stride
-        self._features = self._args.features_in
-        self._targets = self._args.features_out
+        # create the ONNX session and find the input/output names
+        self._session = onnxruntime.InferenceSession(onnx_path)
+        self._i_onnx = [i.name for i in self._session.get_inputs()]
+        self._o_onnx = [i.name for i in self._session.get_outputs()]
+        self._s_idx = self._o_onnx.index("score")
+        self._y_idx = self._o_onnx.index("y_hat")
 
     def _init_container(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        sensor_shape = (self._total_length, self._features)
-        target_shape = (self._total_length, self._targets)
-        value_shape = (self._total_length,)
+        f_out = self._args.features_out
+        ts = np.zeros(shape=(self._len,), dtype=np.int64)
+        scores = np.zeros(shape=(self._len, f_out), dtype=np.float32)
+        sensor_input = np.zeros(shape=(self._len, f_out), dtype=np.float32)
+        sensor_output = np.zeros(shape=(self._len, f_out), dtype=np.float32)
 
-        inputs = np.zeros(shape=sensor_shape, dtype=np.float32)
-        targets = np.zeros(shape=target_shape, dtype=np.float32)
-        counter = np.zeros(shape=value_shape, dtype=np.float32)
-        ts_index = np.zeros(shape=value_shape, dtype=np.float64)
+        return ts, scores, sensor_input, sensor_output
 
-        return inputs, targets, counter, ts_index
-
-    def _call_model(self, batch) -> np.ndarray:
-        x, y = batch
-        x: torch.Tensor = x.to(self._device)
-        y: torch.Tensor = y.to(self._device)
-
-        if isinstance(self._model, ScoreWrapper):
-            y_pred = self._model.predict_step(x, y)
-
-        elif isinstance(self._model, NormalizeWrapper):
-            y_pred, y = self._model.predict_step(x, y)
-            _, y_pred = self._model.normalizer.reverse(None, y_pred)
-
-        y_pred = y_pred.cpu().detach().numpy()
-        y = y.cpu().detach().numpy()
-        return y_pred, y
-
-    def run(self, batch_size: int = 64, num_workers: int =4):
+    def run(self, batch_size: int = 64, num_workers: int = 4) -> IteratorResult:
         """This function executes a ModelCheckpoint on a given dataset. Then the model's output and input will
         be returned.
 
@@ -86,61 +78,41 @@ class ModelIterator:
             num_workers (int): Number of threads iterating the dataset. Defaults to 4.
 
         Returns:
-            pd.DataFrame: The model's output and input (this order).
+            IteratorResult: The model's result on the given dataset.
 
         """
-        inputs, targets, counter, ts_index = self._init_container()
-        self._model.eval()
+        ts, scores, sensor_input, sensor_output = self._init_container()
 
-        loader = DataLoader(
-            self._data,
-            batch_size,
-            collate_fn=collate_fn,
-            num_workers=num_workers,
-            drop_last=False,
+        limit = 0
+        dataloader = DataLoader(self._data, collate_fn=collate_fn, batch_size=batch_size, num_workers=num_workers)
+        for i, (x, y) in enumerate(tqdm(dataloader)):
+            # run onnx inference
+            inputs = [np.array(x), np.array(y)]
+            inputs = {n: inputs[i] for i, n in enumerate(self._i_onnx)}
+            onnx_output = list(self._session.run(None, inputs))
+
+            # extract the model output/input into the containers
+            batch_size = onnx_output[self._s_idx].shape[0]
+            scores[limit:limit + batch_size] = onnx_output[self._s_idx][:, -1, :]
+            sensor_input[limit:limit + batch_size] = y[:, -1, :]
+            sensor_output[limit:limit + batch_size] = onnx_output[self._y_idx][:, -1, :]
+
+            ts_sub = np.array([self._data.get_timestamp(limit) + t for t in range(batch_size)], dtype=np.int64)
+            ts[limit:limit + batch_size] = ts_sub
+            limit += batch_size
+
+        # ensure correct length
+        ts = ts[:limit]
+        scores = scores[:limit]
+        sensor_input = sensor_input[:limit]
+        sensor_output = sensor_output[:limit]
+
+        result = IteratorResult(
+            ts=ts,
+            scores=scores,
+            expected=sensor_input,
+            prediction=sensor_output,
+            names=self._args.names_out
         )
 
-        p_bar = tqdm(loader, desc="Prediction with Model", disable=not DEBUG_MODE)
-        for i, batch in enumerate(p_bar):
-            # run the prediction, the input equals the target for auto encoders
-            outputs, y = self._call_model(batch)
-
-            x: torch.Tensor = batch[0]
-            x = x.cpu().detach().numpy()
-
-            batch_size_, _, _ = outputs.shape
-            for j in range(0, batch_size_):
-                idx = 0 if i == 0 else i * batch_size * self._stride
-                idx = idx + j * self._stride
-
-                window_, _ = outputs[j].shape
-                window_ = min(window_, len(targets[idx : idx + window_]))
-                inputs[idx : idx + window_] += x[j][self._window - window_:]
-                targets[idx : idx + window_] += outputs[j][self._window - window_:]
-                counter[idx : idx + window_] += np.ones(shape=(window_,))
-
-                ts = self._data.get_timestamp(i * batch_size + j) + self._ts_offset
-                ts_index[idx : idx + window_] = [ts + k * self._skip for k in range(window_)]
-
-        limit = counter.argmin()
-        limit = limit if counter[limit] == 0 else -1
-        ts_index = pd.Index(ts_index[:limit], name="ts")
-
-        counter = counter[:limit]
-        targets = targets[:limit]
-        inputs = inputs[:limit]
-
-        # create the output DataFrames
-        names = self._args.names_in
-        inputs = pd.DataFrame(
-            {n: inputs[:, i] / counter for i, n in enumerate(names)}, index=ts_index
-        )
-        inputs.sort_values(by="ts", inplace=True)
-
-        names = self._args.names_out
-        targets = pd.DataFrame(
-            {n: targets[:, i] / counter for i, n in enumerate(names)}, index=ts_index
-        )
-        targets.sort_values(by="ts", inplace=True)
-
-        return targets, inputs
+        return result

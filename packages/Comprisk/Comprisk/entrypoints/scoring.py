@@ -47,7 +47,6 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
         # included in the model graph. This is required for ONNX
         wrapper = ScoreWrapper(checkpoint.get_model())
         wrapper.train_wrapper(
-            context.datamodule.train_dataloader(),
             context.datamodule.val_dataloader(),
             verbose=DEBUG_MODE,
         )

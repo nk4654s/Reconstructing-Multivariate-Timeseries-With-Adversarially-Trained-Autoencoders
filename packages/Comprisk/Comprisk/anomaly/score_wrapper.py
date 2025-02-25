@@ -39,7 +39,7 @@ class ScoreWrapper(LightningModule):
     def __init__(
         self,
         model: BaseModel,
-        threshold: float = 0.8,
+        threshold: float = 0.9,
         threshold_deviation: float = 5,
         noise_floor: float = 1,
     ) -> None:
@@ -67,20 +67,19 @@ class ScoreWrapper(LightningModule):
         return self._model
 
     @torch.no_grad()
-    def train_wrapper(self, *data: DataLoader, verbose: bool = False) -> None:
+    def train_wrapper(self, data: DataLoader, verbose: bool = False) -> None:
         # initialize the parameters
         loss = []
 
         # find the mean and scale of the data to run a transformation
-        for d in data:
-            for x, y in tqdm(d, desc="Prediction with Model", disable=not verbose):
-                x = x.to(self._model.device)
-                y = y.to(self._model.device)
-                y_hat, y = self._model.predict_step(x, y)
+        for x, y in tqdm(data, desc="Prediction with Model", disable=not verbose):
+            x = x.to(self._model.device)
+            y = y.to(self._model.device)
+            y_hat, y = self._model.predict_step(x, y)
 
-                loss_ = torch.abs(y_hat - y).cpu().detach()
-                loss_ = loss_.numpy().reshape(-1, y_hat.shape[-1])
-                loss += list(loss_)
+            loss_ = torch.abs(y_hat - y).cpu().detach()
+            loss_ = loss_.numpy().reshape(-1, y_hat.shape[-1])
+            loss += list(loss_)
 
         # finalize loss to search for percentiles
         loss = np.array(loss)

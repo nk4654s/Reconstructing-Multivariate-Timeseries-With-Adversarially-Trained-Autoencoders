@@ -3,14 +3,13 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from Comprisk.anomaly import ScoreWrapper
 from Comprisk.entrypoints import EntrypointBase, EntrypointContext
 from Dataflux.data import DataUpdater, UpdateCallable, DataType, EmptyScoreRegister
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
 from Comprisk.data import DataModule
-from Comprisk.helper import ModelCheckpoint, ModelIterator
+from Comprisk.helper import ModelCheckpoint, ModelIterator, IteratorResult
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
@@ -25,8 +24,8 @@ class CompriskUpdateCallable(UpdateCallable):
             the model.
     """
 
-    def __init__(self, malfunction: pd.DataFrame) -> None:
-        self._malfunction = malfunction
+    def __init__(self, malfunction: IteratorResult) -> None:
+        self._malfunction = malfunction.to_dataframe()[0]
 
     def get_update(self, start: int, end: int, total_key: str) -> pd.DataFrame:
         df = self._malfunction[self._malfunction.index >= start]
@@ -55,9 +54,9 @@ class GeneratorEntrypoint(EntrypointBase):
         # get the upload dataset which must be set as validation set, disable training parameters such as shuffle
         datamodule_args_modified = vars(context.config.data)
 
-        # catch the case, where the machine is offline and the dataset is empty # FIXME: use valset
-        datamodule_args_modified["validate"] = None
-        data = DataModule(**datamodule_args_modified).trainset
+        # catch the case, where the machine is offline and the dataset is empty
+        datamodule_args_modified["trainset"] = None
+        data = DataModule(**datamodule_args_modified).valset
         logger.debug("Loaded (val) from %s", data.directory)
         if data is None:
             logger.warning("The dataset is empty, nothing to generate. Exiting gracefully.")
@@ -67,27 +66,17 @@ class GeneratorEntrypoint(EntrypointBase):
         start = datetime.fromtimestamp(data.get_timestamp(0), tz=timezone.utc)
         end = datetime.fromtimestamp(data.get_timestamp(-1), tz=timezone.utc)
 
-        # load the trained model from disk and create the dataset object for the
-        # previously downloaded dataset
-        checkpoint = self._check_point_cls(path=context.config_folder, model=context.model)
-        if not checkpoint.from_disk:
-            logger.warning("Checkpoint could not be loaded from disk.")
-            return context
-
-        # load the score data and wrap the model
-        score_wrapper = ScoreWrapper(checkpoint.get_model())
-        score_wrapper.import_from(context.config_folder)
-
-        # initialize the model iterator and get the scores given a dataset
-        model_iterator = ModelIterator(score_wrapper, data)
-        score_data = model_iterator.run()
+        # run inference on the validation set
+        onnx_path = os.path.join(context.config_folder, "model.onnx")
+        iterator = ModelIterator(onnx_path, data)
+        result = iterator.run(batch_size=128, num_workers=2)
 
         # update the remote TSV files
         try:
             debug = os.environ.get("CAS_DEBUG_MODE", "0") == data.UUID
             updater = self._updater_cls(
                 data.UUID,
-                CompriskUpdateCallable(score_data),
+                CompriskUpdateCallable(result),
                 debug=debug,
             )
             updater.set_data_type(DataType.MEASUREMENTS)
