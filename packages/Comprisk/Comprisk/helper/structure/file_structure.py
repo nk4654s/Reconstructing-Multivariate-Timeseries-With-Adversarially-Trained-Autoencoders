@@ -76,6 +76,30 @@ def get_checkpoints(path: str) -> List[str]:
     return checkpoints
 
 
+def search_models(path: str, search_depth: int = 50) -> List[str]:
+    """Searches ONNX models in a given folder recursively.
+
+    Args:
+        path (str): Where to search, subfolders will be scanned as well if `search_depth` > 1:
+        search_depth (int): How deep to search recursively. Defaults to 50.
+
+    Returns:
+        List[str]: The list of found paths to ONNX models
+    """
+    result = []
+    for sub_path in os.listdir(path):
+        sub_path = os.path.join(path, sub_path)
+
+        if os.path.isdir(sub_path):
+            result += search_models(sub_path, search_depth=search_depth - 1)
+            continue
+
+        if sub_path.split(".")[-1] == "onnx":
+            result.append(sub_path)
+
+    return result
+
+
 def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
     """This method loads the hyperparameters of an already trained model
     and initializes the model's sub_modules if existing.

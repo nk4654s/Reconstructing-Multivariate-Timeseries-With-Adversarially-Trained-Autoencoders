@@ -110,6 +110,9 @@ class ScoreWrapper(LightningModule):
 
         # normalize will be handled by the model itself
         y_hat, y = self._model.predict_step(x, y)
+        if not self._trained:
+            return y_hat, y
+
         score = torch.abs(y_hat - y)
 
         # f(x) = m * x + b
@@ -118,10 +121,11 @@ class ScoreWrapper(LightningModule):
         _, y_hat = self._model.normalizer.reverse(x=x, y=y_hat)
         return torch.clip(f, 0, 1), y_hat
 
-    def predict_step(self, x: Tensor, y: Tensor) -> Tensor:
+    def predict_step(self, x: Tensor, y: Tensor) -> Tuple[Tensor, ...]:
         # the wrapper must be trained to transfer the prediction error to a score
         if not self._trained:
-            raise ModelNotTrainedError()
+            y_hat, y = self._model.predict_step(x, y)
+            return y_hat, y
 
         return self.forward(x, y)
 

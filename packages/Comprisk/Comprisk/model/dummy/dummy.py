@@ -3,8 +3,9 @@ is meant to test the Comprisk package."""
 
 from typing import List
 
+import numpy as np
 import torch
-from torch import Tensor
+from torch import Tensor, nn
 
 from Comprisk.model import BaseModel, NormalizeModule
 
@@ -24,7 +25,6 @@ class DummyModel(BaseModel):
         enable_normalizer: bool = False
     ):
         super().__init__(features_in=features_in, features_out=features_out)
-        self._factor = factor
         data = {
             n: {
                 "min": 0,
@@ -36,5 +36,7 @@ class DummyModel(BaseModel):
             self._normalizer.apply = lambda _: _
             self._normalizer.reverse = lambda x, y: (x, y)
 
+        self._factors = nn.Parameter(Tensor(np.array([factor])))
+
     def forward(self, x: Tensor) -> torch.Tensor:
-        return x * self._factor
+        return x * self._factors
