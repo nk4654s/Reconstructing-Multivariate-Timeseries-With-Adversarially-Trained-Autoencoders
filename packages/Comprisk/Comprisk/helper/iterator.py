@@ -87,14 +87,14 @@ class ModelIterator:
         dataloader = DataLoader(self._data, collate_fn=collate_fn, batch_size=batch_size, num_workers=num_workers)
         for i, (x, y) in enumerate(tqdm(dataloader)):
             # run onnx inference
-            inputs = [np.array(x), np.array(y)]
+            inputs = [x.numpy().astype(np.float32), y.numpy().astype(np.float32)]
             inputs = {n: inputs[i] for i, n in enumerate(self._i_onnx)}
             onnx_output = list(self._session.run(None, inputs))
 
             # extract the model output/input into the containers
             batch_size = onnx_output[self._s_idx].shape[0]
             scores[limit:limit + batch_size] = onnx_output[self._s_idx][:, -1, :]
-            sensor_input[limit:limit + batch_size] = y[:, -1, :]
+            sensor_input[limit:limit + batch_size] = y[:, -1, :].numpy()
             sensor_output[limit:limit + batch_size] = onnx_output[self._y_idx][:, -1, :]
 
             ts_sub = np.array([self._data.get_timestamp(limit) + t for t in range(batch_size)], dtype=np.int64)

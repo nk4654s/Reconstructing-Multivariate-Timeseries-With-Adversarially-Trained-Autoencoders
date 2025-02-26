@@ -1,6 +1,5 @@
 import os.path
 import shutil
-from typing import List, Tuple
 from uuid import UUID
 
 import matplotlib.pyplot as plt
