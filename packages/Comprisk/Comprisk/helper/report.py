@@ -1,8 +1,10 @@
+import json
 import os.path
 import shutil
 from uuid import UUID
 
 import matplotlib.pyplot as plt
+import onnxruntime
 from matplotlib.pyplot import figure
 
 import numpy as np
@@ -27,15 +29,13 @@ class Report:
         os.makedirs(self._path)
 
         # get the features used by the model
-        self._features = []
-        f_path = os.path.join(self._folder, "model.yaml")
-        with open(f_path, "r") as f:
-            self._features = yaml.safe_load(f)["features"]
+        onnx_path = os.path.join(self._folder, "model.onnx")
+        onnx = onnxruntime.InferenceSession(onnx_path)
 
-        # get the sensor UUID to name mapping
-        d_path = os.path.join(self._folder, "dataset.yaml")
-        with open(d_path, "r") as f:
-            self._sensor_dict = get_sensors(UUID(yaml.safe_load(f)["machine_uuid"]))
+        meta = onnx.get_modelmeta()
+        decoder = json.decoder.JSONDecoder()
+        self._features = decoder.decode(meta.custom_metadata_map["output_names"])
+        self._sensor_dict = get_sensors(UUID(meta.domain))
 
     def _revert_score_calculation(self, scores: pd.DataFrame):
         path = os.path.join(self._folder, "score.yaml")

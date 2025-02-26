@@ -26,12 +26,14 @@ def deploy_model():
     i = safe_cast(input(f"0-{len(models)-1}> "), int)
     src = models[i]
     dst = src.replace("environment/dev/models", "environment/production/models")
-    dst = os.path.join(dst.rsplit(os.path.sep, maxsplit=2)[0], "model.onnx")
+    path, version = dst.rsplit(os.path.sep, maxsplit=2)[0:2]
 
     model = onnx.load(src)
     print("Loaded selected model")
     print("\tVersion:", model.model_version)
     print("\tMachine:", model.domain)
+
+    dst = os.path.join(path, f"{model.domain}_{model.model_version}_{version.split('_')[-1]}.onnx")
     print("\tCopy to:", dst)
     print("\tExists:", os.path.exists(dst))
 

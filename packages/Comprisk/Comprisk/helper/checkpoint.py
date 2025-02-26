@@ -75,7 +75,7 @@ class ModelCheckpoint:
         """This method checks if a given set of configurations are available in the model output
         folder. The configuration paths are accessible using `get_configuration_path`.
         """
-        yaml_files = ["hparams", "config", "dataset", "model", "upload"]
+        yaml_files = ["config", "dataset", "model"]
         for yaml_file in yaml_files:
             path = os.path.join(self._path, yaml_file + ".yaml")
             if not os.path.exists(path):

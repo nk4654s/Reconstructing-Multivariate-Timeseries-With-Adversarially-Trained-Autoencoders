@@ -1,10 +1,9 @@
 """This module contains helper methods to navigate the folder structure."""
 import importlib
 import os
-from typing import List, Tuple, Type, Dict
+from typing import List
 
-import yaml
-from torch import nn
+import torch
 
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
@@ -100,39 +99,6 @@ def search_models(path: str, search_depth: int = 50) -> List[str]:
     return result
 
 
-def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
-    """This method loads the hyperparameters of an already trained model
-    and initializes the model's sub_modules if existing.
-
-    Args:
-        path (str): The folder path where the model is saved.
-
-    Returns:
-        Tuple: The class of the model to load and a dictionary of
-            initialized submodules modules.
-    """
-    hparam_path = os.path.join(path, "hparams.yaml")
-    with open(hparam_path, mode="r", encoding="UTF-8") as f:
-        hparams = yaml.safe_load(f)
-        sub_modules = {}
-
-        # get the model class, then remove the key/value pair from hparams
-        model_class = class_for_name(*hparams["class_path"].rsplit(".", maxsplit=1))
-        del hparams["class_path"]
-
-        for drop in [key for key in hparams.keys() if key.startswith("_")]:
-            del hparams[drop]
-
-        for key, value in hparams.items():
-            if isinstance(value, dict):
-                libpath = value["class_path"]
-                module = class_for_name(*libpath.rsplit(".", maxsplit=1))
-                sub_modules[key] = module(**value["init_args"])
-            else:
-                sub_modules[key] = value
-        return model_class, sub_modules
-
-
 def load_model(path: str, eval_mode: bool = True):
     """This method loads the best checkpoint of a model. Requires checkpoints of model to have
     the filename structure `...val=<validation_loss>.ckpt`.
@@ -148,25 +114,17 @@ def load_model(path: str, eval_mode: bool = True):
         logger.warning("Could not find a checkpoint to load a model from. (%s)", path)
         return None
 
-    # get the model configuration to find the model class
-    with open(os.path.join(path, "config.yaml")) as f:
-        config = yaml.safe_load(f)
-        cls = config["model"].get("class_path", None)
-        if not cls:
-            logger.error("The model 'class_path' must be defined in the 'config.yaml' nested in 'model'.")
-            return None
+    ckpt_path = os.path.join(path, "checkpoints", checkpoints[0])
 
-        cls = class_for_name(*cls.rsplit(".", maxsplit=1))
+    # get the model configuration to find the model class
+    hparams = torch.load(ckpt_path)["hyper_parameters"]
+    cls = hparams["_class_path"]
+    cls = class_for_name(*cls.rsplit(".", maxsplit=1))
 
     # initialize the mode
-    #model_class, sub_modules = init_modules(path)
     logger.debug("Attempt to load model class %s", cls.__name__)
-    model = cls.load_from_checkpoint(
-        os.path.join(path, "checkpoints", checkpoints[0]),# **sub_modules
-    )
+    model = cls.load_from_checkpoint(ckpt_path)
 
-    model.normalization_import(path=path)
-    logger.info("Loaded normalization module.")
     logger.info("Loaded model %s from %s", checkpoints[0], path)
     if eval_mode:
         model.eval()

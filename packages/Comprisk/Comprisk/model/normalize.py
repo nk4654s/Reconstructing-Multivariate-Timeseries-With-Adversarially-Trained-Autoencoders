@@ -1,9 +1,7 @@
-import os.path
 from typing import Union, Dict, Tuple, List, Any
 
 import numpy as np
 import torch
-import yaml
 from torch import Tensor
 from torch.nn.parameter import Parameter
 from torch.utils.data import DataLoader
@@ -26,33 +24,29 @@ class ModelNotTrainedError(BaseException):
 class NormalizeModule(nn.Module):
     def __init__(
         self,
+        features_in: List[str],
+        features_out: List[str],
         trange: Tuple = (-1.0, 1.0),
         normalize_data: Dict = None,
-        features_in: List[str] = None,
-        features_out: List[str] = None,
     ) -> None:
         super().__init__()
 
         self._features_in = sorted(features_in)
-        self._input_idx = [i for i, n in enumerate(self._features_in)]
-
         self._features_out = sorted(features_out)
-        self._output_idx = [
-            i
-            for i, n in enumerate(self._features_in)
-            if n in self._features_out
-        ]
+
+        self._input_idx = [i for i, n in enumerate(self._features_in)]
+        self._output_idx = [self._features_in.index(n) for n in self._features_out]
+
+        self._trained = False
+
+        self._min: nn.Parameter = Parameter(Tensor(np.zeros((len(self._features_in),))))
+        self._scale: nn.Parameter = Parameter(Tensor(np.zeros((len(self._features_in),))))
+
+        self._init_params(normalize_data)
 
         self._trange_min = Parameter(Tensor([trange[0]]))
         self._trange_max = Parameter(Tensor([trange[1]]))
         self._trange = Parameter(Tensor([trange[1] - trange[0]]))
-
-        self._trained = False
-
-        self._min: nn.ParameterDict | None = None
-        self._scale: nn.ParameterDict | None = None
-
-        self._init_params(normalize_data)
 
     def _init_params(self, data: Dict) -> None:
         if not data:
@@ -139,7 +133,6 @@ class NormalizeModule(nn.Module):
         x = (x + self._trange_min / self._trange) * self._trange
         y = (y + self._trange_min / self._trange) * self._trange
 
-
         return x, y
 
     @torch.no_grad()
@@ -156,36 +149,20 @@ class NormalizeModule(nn.Module):
 
 
 class NormalizeWrapper(LightningModule):
-    def __init__(self, fine_tune_normalizer = False, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        features_in: List[str] = None,
+        features_out: List[str] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
-        self._normalizer: NormalizeModule | None = None
-
-    def on_save_checkpoint(self, checkpoint: dict[str, Any]) -> None:
-        # delete the normalizer from the state dict again as it is not part of a checkpoint
-        # when loading a checkpoint back, the normalizer config file will be used to
-        # set the NormalizeModule's data
-        for state in [k for k in checkpoint["state_dict"].keys() if "_normalizer" in k]:
-            checkpoint["state_dict"].pop(state, None)
+        self._normalizer = NormalizeModule(features_in=features_in, features_out=features_out)
 
     @property
     def normalizer(self) -> NormalizeModule:
         return self._normalizer
 
-    def normalization_import(
-        self, export: Dict | None = None, path: str | None = None
-    ) -> None:
-        if path:
-            path = os.path.join(path, "model.yaml")
-            if os.path.exists(path):
-                with open(path, "r") as f:
-                    export = yaml.safe_load(f)
-
-        if export:
-            self._normalizer = NormalizeModule.import_normalization(export)
-            self._normalizer.to(self.device)
-
-    def normalization_save(self, path: str | None = None) -> None:
-        path = os.path.join(path, "model.yaml")
-
-        with open(path, "w") as f:
-            yaml.safe_dump(self._normalizer.export_normalization(), f)
+    def normalization_import(self, export: Dict) -> None:
+        self._normalizer = NormalizeModule.import_normalization(export)
+        self._normalizer.to(self.device)

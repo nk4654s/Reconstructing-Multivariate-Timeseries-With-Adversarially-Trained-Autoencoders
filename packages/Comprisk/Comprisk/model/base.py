@@ -52,7 +52,7 @@ class BaseModel(NormalizeWrapper):
         *args,
         **kwargs
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(features_in, features_out, *args, **kwargs)
 
         # define training hyperparameters
         self._loss_name = loss
