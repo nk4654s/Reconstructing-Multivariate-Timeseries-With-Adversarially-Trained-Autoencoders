@@ -77,18 +77,3 @@ To apply a model for testing, use the `comprisk-analyze` command and provide a d
 ```commandline
 comprisk-analyze -c path_to_config_of_trained_model --data.validate path_to_dataflux_config
 ```
-
-## Docker
-This repository uses docker to deploy all trained models located in the production environment. The model folder must
-include the `config.yaml` which equals to the training configuration, a `upload.yaml` which defines the dataset to
-download for inference, and model checkpoints in the `checkpoint/*.ckpt` folder. As the model's output is send to an
-AWS server, no persistent volumes are required.
-
-Usually, the docker will be build when updating the master branch while changing the `environment/production/models` 
-folder. This will trigger GitHub actions and start the specified workflow immediately.
-
-> Note: Press [here](https://github.com/neaxplore/xplore-ai-cas/tree/master/environment/production/models/README.md) 
-> to learn more about the production folder structure.
-
-If you would like to run the docker locally, some configuration is required. To learn more about how this works, click 
-[here](https://github.com/neaxplore/xplore-ai-cas/tree/master/dockerfiles/README.md).
