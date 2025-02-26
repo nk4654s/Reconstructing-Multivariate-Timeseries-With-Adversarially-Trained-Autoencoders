@@ -1,9 +1,8 @@
 folder: environment/dev/datasets/thyssen-vd2-valset-phase-3
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-  - 2023-08-01 2023-08-05 # use the validation set of phase 1
-  - 2024-09-01 2024-09-05 # update the validation set using phase 2
-  - 2024-12-18 2024-12-19 # the 1.5 days after part change
+  - 2024-12-18 2024-12-20 # the 2 days after part change
+  - 2025-01-03 2025-01-05
 num_workers: 8
 overwrite: false
 
@@ -16,15 +15,15 @@ modules:
       key: eedce5b6-b341-4c58-bf3a-c6c1f265ba02 # Laeuft
       lower: 0.9
       upper: 1.1
-      alpha_threshold: 3600
-      beta_threshold: 600
+      alpha_threshold: 900
+      beta_threshold: 0
   - class_path: Dataflux.modules.state.State
     init_args:
       key: 0f4deafe-56ce-41bc-a522-99c88c8f26e2 # PositionBypassregelventilPCV74381 (%)
       lower: -0.99
       upper: 0.01
       alpha_threshold: 900
-      beta_threshold: 900
+      beta_threshold: 0
 
   - class_path: Dataflux.modules.features.Features
     init_args:
@@ -51,10 +50,3 @@ modules:
         - 2f0245ec-4292-4e92-acff-0a9851b6ee89 # VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)
         - bef9c574-0b27-4039-9b77-16e1430a50a2 # Wicklungstemperatur (°C)
         - b0887b0e-5cea-410b-b2be-0683a9919f96 # ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
-  - class_path: Dataflux.modules.normalize.NormalizeFit
-    init_args:
-      method: minmax
-      remove_outliers: false
-  - class_path: Dataflux.modules.normalize.NormalizeTransform
-    init_args:
-      from_other: environment/dev/datasets/thyssen-vd2-trainset-phase-3

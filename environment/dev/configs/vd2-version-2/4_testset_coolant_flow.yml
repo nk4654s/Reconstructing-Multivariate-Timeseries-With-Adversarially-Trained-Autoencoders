@@ -1,7 +1,7 @@
 folder: datasets/thyssen-vd2-test-coolant
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-  - 2024-08-29T12:30:00 2024-08-29T14:30:00
+  - 2024-08-29T08:30:00 2024-08-29T18:30:00
 overwrite: false
 
 modules:
@@ -39,9 +39,3 @@ modules:
         - 2f0245ec-4292-4e92-acff-0a9851b6ee89 # VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)
         - bef9c574-0b27-4039-9b77-16e1430a50a2 # Wicklungstemperatur (°C)
         - b0887b0e-5cea-410b-b2be-0683a9919f96 # ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
-  - class_path: Dataflux.modules.normalize.NormalizeFit
-    init_args:
-      method: minmax
-  - class_path: Dataflux.modules.normalize.NormalizeTransform
-    init_args:
-      from_other: datasets/thyssen-vd2-trainset-phase-2

@@ -6,6 +6,7 @@ from Comprisk.helper.structure.file_structure import (
     get_checkpoints,
     get_config_folder,
     get_config_path,
+    search_models,
     load_model
 )
 
@@ -18,5 +19,6 @@ __all__ = [
     "get_loss_by_name",
     "get_optimizer_by_name",
     "get_activation_from_string",
-    "load_model"
+    "load_model",
+    "search_models"
 ]
