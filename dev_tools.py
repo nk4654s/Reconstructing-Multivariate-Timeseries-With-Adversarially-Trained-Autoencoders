@@ -1,10 +1,12 @@
 import argparse
 import os.path
 import shutil
+from uuid import UUID
 
 import onnx
 
 from Comprisk.helper.structure import  search_models
+from Dataflux.helper import get_sensors
 
 
 def safe_cast(val, to_type, default=None):
@@ -73,10 +75,21 @@ def delete_model():
     print("Done.")
 
 
+def show_sensors(uuid_str):
+    rename = get_sensors(UUID(uuid_str))
+    result = []
+    for i, (uuid, name) in enumerate(rename.items()):
+        result.append((uuid, name))
+
+    for uuid, name in sorted(result, key=lambda x: x[1]):
+        print(f"- {uuid}\t# {name}")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Useful tools for development and deployment.")
     parser.add_argument("--deploy", "-d", action="store_true", default=False)
     parser.add_argument("--edit", "-e", action="store_true", default=False)
+    parser.add_argument("--get-sensors", "-s", type=str, default=None)
     args = parser.parse_args()
 
     if args.deploy:
@@ -84,3 +97,6 @@ if __name__ == "__main__":
 
     if args.edit:
         delete_model()
+
+    if args.sensors:
+        show_sensors(args.sensors)

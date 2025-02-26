@@ -49,11 +49,8 @@ class TrainerEntrypoint(EntrypointBase):
     ├── checkpoints/
     │   ├── model-0.pkl
     │   └── ...
-    ├── metadata/
-    │   ├── dataset_config.yaml
-    │   └── normalizer.pkl
-    ├── config.yaml
-    └── upload.yaml
+    ├── model.onnx
+    └── config.yaml
     ```
 
     Lightning stores the used configuration file automatically in the model's output folder. Additionally, the
@@ -117,20 +114,6 @@ class TrainerEntrypoint(EntrypointBase):
         source = context.datamodule.trainset.config_file
         dest = os.path.join(self._logging_path, "dataset.yaml")
         shutil.copyfile(source, dest)
-
-        # copy the dataset's config file to the model output
-        dest = os.path.join(self._logging_path, "upload.yaml")
-        shutil.copyfile(source, dest)
-
-        # make sure to have the key values set
-        with open(dest, encoding="utf-8") as f:
-            config = yaml.safe_load(f)
-            config["folder"] = "upload"
-            config["latest"] = True
-            config.pop("intervals", None)
-
-        with open(dest, mode="w", encoding="utf-8") as f:
-            yaml.safe_dump(config, f)
 
     def __call__(
         self, context: EntrypointContext, *args, **kwargs

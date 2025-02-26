@@ -38,10 +38,10 @@ class CompriskUpdateCallable(UpdateCallable):
 
 class GeneratorEntrypoint(EntrypointBase):
     """
-    This entrypoint loads a model and runs inference on the dataset acquired using the `upload.yaml` dataset. For
+    This entrypoint loads a model and runs inference on the validation dataset. For
     convenience, the `Comprisk.entrypoints.FluxEntrypoint` should be called before this entrypoint in the pipeline.
-    Then, by calling `comprisk-generate -c path_to_trained_model_config.yaml --data.validate path_to_upload.yaml` the
-    scores will be generated and uploaded to the same machine as stated in the `upload.yaml`. Note: by setting the
+    Then, by calling `comprisk-generate -c path_to_trained_model_config.yaml --data.validate path_to_config.yaml` the
+    scores will be generated and uploaded to the same machine as stated in the config file. Note: by setting the
     `CAS_DEBUG_MODE` environment variable to the same UUID, the scores will be uploaded to a test device.
     """
     def __init__(self) -> None:

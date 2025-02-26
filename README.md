@@ -77,3 +77,12 @@ To apply a model for testing, use the `comprisk-analyze` command and provide a d
 ```commandline
 comprisk-analyze -c path_to_config_of_trained_model --data.validate path_to_dataflux_config
 ```
+
+## Dev-Tools
+This repository comes with a set of handy scripts which can be accessed by calling 
+
+```commandline
+python dev_tools.py -h
+```
+
+The tool helps organizing folders and copying a model from development (`-d`) to production environment.
