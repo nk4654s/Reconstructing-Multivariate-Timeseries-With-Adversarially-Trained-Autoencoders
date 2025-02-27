@@ -45,6 +45,7 @@ class BaseModel(NormalizeWrapper):
         optimizer: str = "Adam",
         lr: float = 1e-3,
         lr_decay: float = 0.99,
+        sequence_out: int = 0,
         features_in: List[str] = None,
         features_out: List[str] = None,
         behavior: str = DatasetTypes.AUTOENCODER.value,
@@ -63,6 +64,7 @@ class BaseModel(NormalizeWrapper):
         self._lr_decay = lr_decay
         self.lr = lr
 
+        self._sequence_out = sequence_out
         self._features_in = sorted(features_in)
         self._features_out = sorted(features_out)
 
@@ -80,6 +82,7 @@ class BaseModel(NormalizeWrapper):
         self.hparams["features_in"] = self._features_in
         self.hparams["features_out"] = self._features_out
         self.hparams["behavior"] = self._behavior.value
+        self.hparams["sequence_out"] = self._sequence_out
 
         self.save_hyperparameters(self.hparams)
 

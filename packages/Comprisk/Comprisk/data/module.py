@@ -64,6 +64,7 @@ class DataModule(L.LightningDataModule):
         self.features_in = sorted(features_in)
         self.features_out = sorted(features_out)
         self.behavior = behavior
+        self.sequence_out = sequence_out
 
         self._loader_kwargs = {
             "num_workers": num_workers,

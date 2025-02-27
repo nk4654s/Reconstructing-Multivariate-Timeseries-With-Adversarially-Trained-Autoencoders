@@ -64,7 +64,9 @@ class MultimodalRecurrentAutoEncoder(AutoEncoder):
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         hidden_cell = self._encoder(batch)
 
-        batch_size, sequence, _ = batch.shape
+        batch_size = batch.size(0)
+        sequence = self._sequence_out if self._sequence_out else batch.size(1)
+
         output = torch.zeros(
             (batch_size, sequence, self._output_dim), device=self.device
         )
@@ -74,7 +76,7 @@ class MultimodalRecurrentAutoEncoder(AutoEncoder):
         input_decoder = torch.cat((input_only, output_only), dim=1)
         input_decoder = torch.unsqueeze(input_decoder, 1)
 
-        for i in range(batch.shape[1] - 1, -1, -1):
+        for i in range(sequence - 1, -1, -1):
             output_decoder, hidden_cell = self._decoder(input_decoder, hidden_cell)
 
             if i != 0:

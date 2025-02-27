@@ -7,6 +7,7 @@ import json
 from Comprisk.anomaly import ScoreWrapper
 from Comprisk.entrypoints.base import EntrypointContext, EntrypointBase
 from Dataflux import get_logger, logging_mode
+from Dataflux.pytorch import DatasetTypes
 
 logger = get_logger(__name__, "logfile", logging_mode)
 
@@ -37,6 +38,10 @@ class ExportEntrypoint(EntrypointBase):
         meta = model.metadata_props.add()
         meta.key = "output_names"
         meta.value = enc.encode(args.names_out)
+
+        meta = model.metadata_props.add()
+        meta.key = "type"
+        meta.value = args.behavior.value
 
         onnx.save(model, onnx_path)
 
