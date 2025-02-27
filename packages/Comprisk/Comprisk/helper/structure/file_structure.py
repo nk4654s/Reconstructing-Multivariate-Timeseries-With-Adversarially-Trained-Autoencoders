@@ -117,15 +117,11 @@ def load_model(path: str, eval_mode: bool = True):
     ckpt_path = os.path.join(path, "checkpoints", checkpoints[0])
 
     # get the model configuration to find the model class
-    hparams = torch.load(ckpt_path)["hyper_parameters"]
-    cls = hparams["_class_path"]
-    cls = class_for_name(*cls.rsplit(".", maxsplit=1))
+    model = torch.load(ckpt_path)
 
     # initialize the mode
-    logger.debug("Attempt to load model class %s", cls.__name__)
-    model = cls.load_from_checkpoint(ckpt_path)
-
-    logger.info("Loaded model %s from %s", checkpoints[0], path)
+    logger.debug("Loaded model class %s", model.__class__.__name__)
+    logger.info("Loaded from from %s", checkpoints[0])
     if eval_mode:
         model.eval()
 

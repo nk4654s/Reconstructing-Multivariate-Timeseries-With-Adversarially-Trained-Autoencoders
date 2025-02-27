@@ -75,17 +75,6 @@ class BaseModel(NormalizeWrapper):
         self._behavior = dataset_type_from_string(behavior)
         self._output_length = output_length
 
-        self.save_hyperparameters()
-
-        # somehow, linked arguments are not set when saving hparams
-        # the fix is to overwrite hparams after its creation and save it explicitly after
-        self.hparams["features_in"] = self._features_in
-        self.hparams["features_out"] = self._features_out
-        self.hparams["behavior"] = self._behavior.value
-        self.hparams["sequence_out"] = self._sequence_out
-
-        self.save_hyperparameters(self.hparams)
-
     def set_output_behavior(self, behavior: DatasetTypes | str, length: int) -> None:
         self._behavior = dataset_type_from_string(behavior) if isinstance(behavior, str) else behavior
         self._output_length = length

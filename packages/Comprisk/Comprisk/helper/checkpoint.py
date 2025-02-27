@@ -1,6 +1,9 @@
 """This module contains helper methods related to the models."""
 
 import os
+import torch
+from lightning.pytorch import Trainer
+from lightning.pytorch.callbacks import ModelCheckpoint
 
 from Comprisk.helper.structure import load_model
 from Comprisk.model import BaseModel
@@ -14,6 +17,32 @@ logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 CHECKPOINT_FORMAT = ".ckpt"
 CHECKPOINT = "checkpoints"
+
+
+class BasicCheckpointCallback(ModelCheckpoint):
+    def __init__(self):
+        super().__init__(
+            dirpath=CHECKPOINT,
+            filename="epoch={epoch}-val={validate/MSELoss:.6f}",
+            monitor="validate/MSELoss",
+            verbose=False,
+            save_top_k=3,
+            save_weights_only=False,
+            mode="min",
+            auto_insert_metric_name=False,
+            every_n_train_steps=None,
+            train_time_interval=None,
+            every_n_epochs=1,
+            enable_version_counter=True
+        )
+    def _save_checkpoint(self, trainer: Trainer, filepath: str) -> None:
+        torch.save(trainer.model, filepath)
+
+        self._last_global_step_saved = trainer.global_step
+        self._last_checkpoint_saved = filepath
+
+        # notify loggers
+        logger.debug("Saved Checkpoint %s", filepath)
 
 
 class ModelCheckpoint:

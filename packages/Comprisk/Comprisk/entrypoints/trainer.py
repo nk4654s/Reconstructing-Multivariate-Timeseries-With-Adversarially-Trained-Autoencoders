@@ -14,8 +14,7 @@ from Comprisk.entrypoints.base import (
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
-from Comprisk.helper import ModelCheckpoint
-
+from Comprisk.helper import ModelCheckpoint, BasicCheckpointCallback
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
@@ -85,7 +84,7 @@ class TrainerEntrypoint(EntrypointBase):
         # set up the model saving as configuring the checkpoint path in the yaml config does not
         # work. The config file does not know the model's output folder name with the increasing
         # suffix number
-        checkpoint = get_trainer_callback(context.trainer, ModelCheckpoint.__name__)
+        checkpoint = get_trainer_callback(context.trainer, BasicCheckpointCallback.__name__)
         if checkpoint:
             self._checkpoint_path = os.path.join(self._logging_path, "checkpoints")
             os.makedirs(self._checkpoint_path)
