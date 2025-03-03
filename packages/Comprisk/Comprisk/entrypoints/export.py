@@ -7,7 +7,6 @@ import json
 from Comprisk.anomaly import ScoreWrapper
 from Comprisk.entrypoints.base import EntrypointContext, EntrypointBase
 from Dataflux import get_logger, logging_mode
-from Dataflux.pytorch import DatasetTypes
 
 logger = get_logger(__name__, "logfile", logging_mode)
 
