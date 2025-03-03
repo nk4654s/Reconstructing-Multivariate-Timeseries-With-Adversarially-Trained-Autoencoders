@@ -17,3 +17,12 @@ jobs:
 
   toking-test:
     uses: ./.github/workflows/toking-tests.yml
+
+  build-jar:
+    runs-on: ubuntu-latest
+    steps:
+      # Run unit tests
+      - name: Build Jar
+        working-directory: .
+        run: |
+          python dev_tools.py -b
