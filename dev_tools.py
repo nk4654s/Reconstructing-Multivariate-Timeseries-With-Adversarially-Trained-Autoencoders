@@ -2,6 +2,8 @@ import argparse
 import os.path
 import shutil
 from uuid import UUID
+import elementpath
+import xml
 
 import onnx
 
@@ -51,6 +53,40 @@ def deploy_model():
         os.makedirs(os.path.dirname(dst))
 
     shutil.copyfile(src, dst)
+    print("Done. Modifying 'pom.xml'")
+
+
+def update_pom():
+    # get the total model version (simply by calculating the model version sum)
+    models = [f for f in os.listdir("environment/production/models") if "onnx" in f]
+    models = [os.path.join("environment/production/models", f) for f in models]
+    model_versions = sum([onnx.load(f).model_version for f in models])
+
+    # get the number of model domains
+    model_count = len(set([onnx.load(f).domain for f in models]))
+
+    # get the code version
+    with open(os.path.join("packages", "Comprisk", "Comprisk", "version.txt"), "r") as f:
+        code = float(f.read())
+
+    with open(os.path.join("packages", "Dataflux", "Dataflux", "version.txt"), "r") as f:
+        code += float(f.read())
+
+    with open(os.path.join("packages", "Toking", "Toking", "version.txt"), "r") as f:
+        code += float(f.read())
+    code = round(code)
+
+    # modify the pom.xml version tag
+    tag = "{http://maven.apache.org/POM/4.0.0}"
+    xml.etree.ElementTree.register_namespace("", "http://maven.apache.org/POM/4.0.0")
+    et = xml.etree.ElementTree.parse("pom.xml")
+    root = et.getroot()
+
+    version_child = root.find(tag + "version")
+    version_child.text = f"{code}.{model_count}.{model_versions}"
+
+    # Write back to file
+    et.write("pom.xml")
     print("Done.")
 
 
@@ -71,7 +107,7 @@ def delete_model():
     answer = input("Continue [yes|no]> ")
     if answer != "yes":
         print("Abort.")
-        exit(0)
+        return None
 
     os.remove(path)
     print("Done.")
@@ -87,46 +123,20 @@ def show_sensors(uuid_str):
         print(f"- {uuid}\t# {name}")
 
 
-def build_jar():
-    # temp copy files
-    src = "environment/production/models"
-    dst = "models"
-    shutil.copytree(src, dst)
-
-    # move models to subfolder
-    sub = "neax/ai/resources/"
-    os.makedirs(os.path.join(dst, sub))
-    for m in os.listdir(dst):
-        if not ".onnx" in m:
-            continue
-
-        shutil.move(os.path.join(dst, m), os.path.join(dst, sub, m))
-
-    # zip and rename the jar
-    shutil.make_archive(dst, "zip", dst)
-    os.rename(f"{dst}.zip", f"{dst}.jar")
-
-    # remove the dir again
-    shutil.rmtree(dst)
-    print("Jar built. Done.")
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Useful tools for development and deployment.")
     parser.add_argument("--deploy", "-d", action="store_true", default=False)
-    parser.add_argument("--build", "-b", action="store_true", default=False)
     parser.add_argument("--edit", "-e", action="store_true", default=False)
     parser.add_argument("--get-sensors", "-s", type=str, default=None)
     args = parser.parse_args()
 
     if args.edit:
         delete_model()
+        update_pom()
 
     if args.deploy:
         deploy_model()
-
-    if args.build:
-        build_jar()
+        update_pom()
         exit(0)
 
     if args.sensors:

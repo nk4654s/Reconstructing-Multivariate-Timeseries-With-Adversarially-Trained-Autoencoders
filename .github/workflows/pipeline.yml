@@ -21,22 +21,17 @@ jobs:
   build-jar:
     runs-on: ubuntu-latest
     steps:
-      # Run unit tests
       - name: Build Jar
         working-directory: .
         run: |
           python dev_tools.py -b
 
-      - name: Upload JAR to GitHub Packages
-        run: |
-          curl -X PUT \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/octet-stream" \
-            --data-binary @model.jar \
-            "https://maven.pkg.github.com/neaxplore/xplore-ai-cas/model-package.jar"
-
-      - name: Upload JAR to GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v4
         with:
-          files: model.jar
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Deploy to GitHub Packages
+        run: mvn deploy
 
