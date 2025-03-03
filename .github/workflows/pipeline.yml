@@ -26,3 +26,17 @@ jobs:
         working-directory: .
         run: |
           python dev_tools.py -b
+
+      - name: Upload JAR to GitHub Packages
+        run: |
+          curl -X PUT \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @model.jar \
+            "https://maven.pkg.github.com/neaxplore/xplore-ai-cas/model-package.jar"
+
+      - name: Upload JAR to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: model.jar
+
