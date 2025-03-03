@@ -127,17 +127,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Useful tools for development and deployment.")
     parser.add_argument("--deploy", "-d", action="store_true", default=False)
     parser.add_argument("--edit", "-e", action="store_true", default=False)
-    parser.add_argument("--get-sensors", "-s", type=str, default=None)
+    parser.add_argument("--sensors", "-s", type=str, default="")
     args = parser.parse_args()
 
     if args.edit:
         delete_model()
-        update_pom()
 
     if args.deploy:
         deploy_model()
-        update_pom()
-        exit(0)
 
     if args.sensors:
         show_sensors(args.sensors)
+
+    update_pom()
