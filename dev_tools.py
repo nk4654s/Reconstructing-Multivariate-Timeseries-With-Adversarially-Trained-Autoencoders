@@ -26,7 +26,7 @@ def deploy_model():
     i = safe_cast(input(f"0-{len(models)-1}> "), int)
     src = models[i]
     dst = src.replace("environment/dev/models", "environment/production/models")
-    path, version = dst.rsplit(os.path.sep, maxsplit=2)[0:2]
+    path, _, _, version, _ = dst.rsplit(os.path.sep, maxsplit=4)
 
     model = onnx.load(src)
     print("Loaded selected model")
@@ -87,18 +87,47 @@ def show_sensors(uuid_str):
         print(f"- {uuid}\t# {name}")
 
 
+def build_jar():
+    # temp copy files
+    src = "environment/production/models"
+    dst = "models"
+    shutil.copytree(src, dst)
+
+    # move models to subfolder
+    sub = "neax/ai/resources/"
+    os.makedirs(os.path.join(dst, sub))
+    for m in os.listdir(dst):
+        if not ".onnx" in m:
+            continue
+
+        shutil.move(os.path.join(dst, m), os.path.join(dst, sub, m))
+
+    # zip and rename the jar
+    shutil.make_archive(dst, "zip", dst)
+    os.rename(f"{dst}.zip", f"{dst}.jar")
+
+    # remove the dir again
+    shutil.rmtree(dst)
+    print("Jar built. Done.")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Useful tools for development and deployment.")
     parser.add_argument("--deploy", "-d", action="store_true", default=False)
+    parser.add_argument("--build", "-b", action="store_true", default=False)
     parser.add_argument("--edit", "-e", action="store_true", default=False)
     parser.add_argument("--get-sensors", "-s", type=str, default=None)
     args = parser.parse_args()
 
+    if args.edit:
+        delete_model()
+
     if args.deploy:
         deploy_model()
 
-    if args.edit:
-        delete_model()
+    if args.build:
+        build_jar()
+        exit(0)
 
     if args.sensors:
         show_sensors(args.sensors)
