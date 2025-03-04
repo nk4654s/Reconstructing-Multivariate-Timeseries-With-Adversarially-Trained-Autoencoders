@@ -53,7 +53,19 @@ def deploy_model():
         os.makedirs(os.path.dirname(dst))
 
     shutil.copyfile(src, dst)
-    print("Done. Modifying 'pom.xml'")
+
+    # copy the configs
+    dst = os.path.join("environment", "production", "configs", model.domain)
+    if not os.path.exists(dst):
+        os.makedirs(dst)
+
+    src = os.path.dirname(src)
+    config = os.path.join(src, "config.yaml")
+    shutil.copyfile(config, os.path.join(dst, f"config_{model.model_version}.yaml"))
+
+    dataset = os.path.join(src, "dataset.yaml")
+    shutil.copyfile(dataset, os.path.join(dst, f"dataset_{model.model_version}.yaml"))
+    print("Done.")
 
 
 def update_pom():

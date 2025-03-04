@@ -1,18 +1,18 @@
 folder: environment/dev/datasets/gasunie-trainset-phase-1
 machine_uuid: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
 intervals:
-  - 2024-02-02 2024-03-15
+  - 2024-12-06 2024-12-24
 num_workers: 6
 overwrite: false
 
 modules:
   - class_path: Dataflux.modules.State
     init_args:
-      key: d4779e38-d29b-419c-a9c6-b4976108d911 # -4-_M0-331_Compressor_is_running_under_load (-)
-      lower: 0.9
-      upper: 1.1
-      alpha_threshold: 900
-      beta_threshold: 900
+      key: b494f0c0-4446-4626-9eed-b8a8bba4f65d # rpm
+      lower: 470
+      upper: 1100
+      alpha_threshold: 0
+      beta_threshold: 0
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:

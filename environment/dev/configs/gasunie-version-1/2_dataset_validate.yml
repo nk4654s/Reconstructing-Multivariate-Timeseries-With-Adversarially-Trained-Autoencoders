@@ -1,19 +1,18 @@
 folder: environment/dev/datasets/gasunie-valset-phase-1
 machine_uuid: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
 intervals:
-  - 2024-01-24 2024-02-01
+  - 2024-12-25 2025-01-05
 num_workers: 6
 overwrite: false
 
 modules:
-  # split wherever the motor is below 400 RPM
   - class_path: Dataflux.modules.State
     init_args:
-      key: b494f0c0-4446-4626-9eed-b8a8bba4f65d
-      lower: 400
-      upper: 900
-      alpha_threshold: 900
-      beta_threshold: 900
+      key: b494f0c0-4446-4626-9eed-b8a8bba4f65d # rpm
+      lower: 470
+      upper: 1100
+      alpha_threshold: 0
+      beta_threshold: 0
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:

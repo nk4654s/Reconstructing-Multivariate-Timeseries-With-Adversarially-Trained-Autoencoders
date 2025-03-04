@@ -12,12 +12,12 @@ model:
     optimizer: Adam
     lr: 0.0001
     lr_decay: 0.9
-    num_hidden_dim: 32
+    num_hidden_dim: 64
     num_hidden_layers: 3
     dropout_prob: 0.3
 
 # trainer and dataset config
-seed_everything: true
+seed_everything: 1
 trainer:
   accelerator: mps
   callbacks:
@@ -26,15 +26,7 @@ trainer:
         monitor: validate/MSELoss
         min_delta: 1.0e-04
         patience: 3
-    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
-      init_args:
-        every_n_epochs: 1
-        monitor: validate/MSELoss
-        filename: "epoch={epoch}-val={validate/MSELoss:.6f}"
-        auto_insert_metric_name: false
-        save_top_k: 3
-        mode: min
-        dirpath: checkpoints
+    - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
 
   precision: 32
   max_epochs: 7
@@ -44,8 +36,8 @@ trainer:
 data:
   train: configs/vd2-version-3/1_dataset_train.yml
   validate: configs/vd2-version-3/2_dataset_validate.yml
-  sequence_in: 60
-  sequence_out: 0
+  sequence_in: 120
+  sequence_out: 1
   features_in:
     - e737c6bc-7d00-4d41-82ad-7a542400751d # Biomethandurchfluss (m^3/min)
     - 57dfeadf-ac8d-4ad4-9d86-0a7c9cb38232 # DifferenzdruckTriebwerksölPDIT74553 (bar)
@@ -87,6 +79,7 @@ data:
   - b0887b0e-5cea-410b-b2be-0683a9919f96 # ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
   skip: 1
   stride: 1
-  batch_size: 128
+  batch_size: 256
   shuffle: true
   num_workers: 8
+  behavior: future

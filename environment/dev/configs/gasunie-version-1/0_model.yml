@@ -12,7 +12,7 @@ model:
     optimizer: Adam
     lr: 0.0001
     lr_decay: 0.9
-    num_hidden_dim: 32
+    num_hidden_dim: 64
     num_hidden_layers: 3
     dropout_prob: 0.3
 
@@ -24,15 +24,7 @@ trainer:
         monitor: validate/MSELoss
         min_delta: 1.0e-04
         patience: 3
-    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
-      init_args:
-        every_n_epochs: 1
-        monitor: validate/MSELoss
-        filename: "epoch={epoch}-val={validate/MSELoss:.6f}"
-        auto_insert_metric_name: false
-        save_top_k: 3
-        mode: min
-        dirpath: checkpoints
+    - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
 
   precision: 32
   max_epochs: 25
@@ -42,8 +34,8 @@ trainer:
 data:
   train: configs/gasunie-version-1/1_dataset_train.yml
   validate: configs/gasunie-version-1/2_dataset_validate.yml
-  sequence_in: 60
-  sequence_out: 0
+  sequence_in: 120
+  sequence_out: 1
   features_in:
   - d67bd4d9-7568-4452-a81c-84029a2f10b9 # Pressure_Discharge_Side_1._Stage_PIT0-339 (bar)
   - 7a84feb3-e6a0-4c3f-ac37-5269f6ca5390 # Temperature_Discharge_Side_1._Stage_TIT0-334 (°C)
@@ -74,7 +66,6 @@ data:
   - 5ff57d3f-24e9-4897-9335-a1c8ef2e0d8b # Differential_Pressure_Suction_Strainer_2._Stage_PDIT0-362 (bar)
   - 5be01343-45c0-40af-a93f-9368aff5e73d # Temperature_Suction_Side_2._Stage_TIT0-341 (°C)
   - 75247d9f-29e8-4140-8a3a-aa04d55483e5 # Temperature_Discharge_Side_2._Stage_TIT0-371 (°C)
-  - a7df6efc-91f1-423c-9896-69e7ef27692f # Pressure_Discharge_Side_2._Stage_PIT0-397 (bar)
   - 90e96137-2b1c-4d1b-a4eb-68471b0cf829 # Temperature_Discharge_Side_2._Stage_After_Cooler_TIT0-378 (°C)
   - 13b3719a-2358-4a69-8895-41ee030100d3 # Pressure_Instrument_air_System_PIT0-142 (bar)
   - 35aaaa87-5803-44fe-abc0-e17bdca072c4 # Temperature_Discharge_Valve_Head_End_1._Stage_TT0-385 (°C)
@@ -91,3 +82,4 @@ data:
   batch_size: 128
   shuffle: true
   num_workers: 6
+  behavior: future
