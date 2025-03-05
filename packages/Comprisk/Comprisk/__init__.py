@@ -45,13 +45,13 @@ data:
 """
 
 import Comprisk.data as data
-import Comprisk.cli as cli
 import Comprisk.helper as helper
 import Comprisk.model as model
+import Comprisk.cli as cli
 import Comprisk.tune as tune
 import Comprisk.anomaly as anomaly
 import Comprisk.entrypoints as entrypoints
 
 from Dataflux import DEBUG_MODE
 
-__all__ = ["DEBUG_MODE", "anomaly", "cli", "data", "entrypoints", "helper", "model", "tune"]
+__all__ = ["DEBUG_MODE", "anomaly", "cli", "data", "entrypoints", "model", "helper", "tune"]

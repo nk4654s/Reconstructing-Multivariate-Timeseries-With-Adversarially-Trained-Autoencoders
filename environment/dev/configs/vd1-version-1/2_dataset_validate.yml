@@ -6,23 +6,20 @@ num_workers: 8
 overwrite: false
 
 modules:
-  - class_path: Dataflux.modules.Rename
-    init_args:
-      enable: False
   - class_path: Dataflux.modules.State
     init_args:
-      key: "7d70de93-28f7-4133-9bf6-da04d8bb8bdf" # Laeuft (-)
+      key: 7d70de93-28f7-4133-9bf6-da04d8bb8bdf # Laeuft (-)
       lower: 0.9
       upper: 1.1
-      alpha_threshold: 3600
-      beta_threshold: 600
+      alpha_threshold: 1800
+      beta_threshold: 0
   - class_path: Dataflux.modules.state.State
     init_args:
-      key: "f525f9a2-4a84-40fb-a4c2-7f7d6a6a5efb" # PositionBypassregelventilPCV73381 (%)
+      key: f525f9a2-4a84-40fb-a4c2-7f7d6a6a5efb # PositionBypassregelventilPCV73381 (%)
       lower: -0.99
       upper: 0.01
       alpha_threshold: 900
-      beta_threshold: 900
+      beta_threshold: 0
 
   - class_path: Dataflux.modules.features.Features
     init_args:
@@ -49,12 +46,3 @@ modules:
         - ccdaffdd-0632-4dd4-ac41-773d128c3623 # VentilnesttemperaturZweiteStufeKurbelseiteTETT73386 (°C)
         - 893f38b8-9199-429c-96d0-67756a464df1 # Wicklungstemperatur (°C)
         - d1c046b2-caaf-4c0b-bb08-53a0e32346b8 # ÖltemperaturVorlaufTriebwerkTETIT73538 (°C)
-  - class_path: Dataflux.modules.normalize.NormalizeFit
-    init_args:
-      method: minmax
-      remove_outliers: false
-      exclude_keys:
-        - ts
-  - class_path: Dataflux.modules.normalize.NormalizeTransform
-    init_args:
-      from_other: environment/dev/datasets/thyssen-vd1-trainset-phase-1

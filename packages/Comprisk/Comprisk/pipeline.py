@@ -5,14 +5,16 @@ from Dataflux import get_logger, logging_mode
 from Comprisk.cli import CompriskCLI
 from Comprisk.data import DataModule
 from Comprisk.helper.structure import get_config_folder
-from Comprisk.model import BaseModel
+from Comprisk.model import NormalizeWrapper
 from Comprisk.entrypoints import (
     EntrypointContext,
     Pipeline,
     TrainerEntrypoint,
     TrainScoreTransformerEntrypoint,
-    AnalyzerEntrypoint, FluxEntrypoint,
-    GeneratorEntrypoint
+    AnalyzerEntrypoint,
+    FluxEntrypoint,
+    GeneratorEntrypoint,
+    ExportEntrypoint,
 )
 
 
@@ -23,6 +25,7 @@ score = TrainScoreTransformerEntrypoint()
 train = TrainerEntrypoint()
 analyze = AnalyzerEntrypoint()
 generate = GeneratorEntrypoint()
+export = ExportEntrypoint()
 
 
 def get_context(cli: CompriskCLI) -> EntrypointContext:
@@ -45,11 +48,13 @@ def cli_train() -> None:
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
         train,
-        score
+        score,
+        export,
+        analyze
     ])
     pipeline_runner(pipeline, cli)
 
@@ -59,7 +64,7 @@ def cli_analyze() -> None:
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
         analyze
@@ -72,10 +77,11 @@ def cli_train_score_transformer() -> None:
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
-        score
+        score,
+        export
     ])
     pipeline_runner(pipeline, cli)
 
@@ -85,14 +91,7 @@ def cli_generate() -> None:
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False)
-
-    # check if the upload.yaml is in the config folder, otherwise an upload is not possible
-    cli.config.data.validate = os.path.join(get_config_folder(cli), "upload.yaml")
-    if not os.path.exists(cli.config.data.validate):
-        logger.error("Unable to find upload configuration: %s", cli.config.data.validate)
-        return
-
+    cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
         generate
@@ -101,7 +100,12 @@ def cli_generate() -> None:
 
 
 if __name__ == "__main__":
-    cli_train()
-    #cli_train_score_transformer()
-    #cli_analyze()
-    #cli_generate()
+    pycharm_entry = os.environ.get("PYCHARM_ENTRY", "train")
+    if pycharm_entry == "train":
+        cli_train()
+    elif pycharm_entry == "score":
+        cli_train_score_transformer()
+    elif pycharm_entry == "analyze":
+        cli_analyze()
+    elif pycharm_entry == "generate":
+        cli_generate()

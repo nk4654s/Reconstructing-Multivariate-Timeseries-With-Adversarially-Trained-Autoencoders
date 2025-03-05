@@ -1,14 +1,11 @@
 import os
 import shutil
 import unittest
-from unittest.mock import Mock
 from argparse import Namespace
 
 import yaml
 
-from Comprisk.anomaly import BaseTransformer
-from Comprisk.entrypoints import EntrypointContext, FluxEntrypoint, GeneratorEntrypoint
-from Comprisk.helper import ModelLoader
+from Comprisk.entrypoints import EntrypointContext, FluxEntrypoint
 from Comprisk.model.dummy import DummyModel
 
 
@@ -60,30 +57,6 @@ class TestEntrypointFlux(unittest.TestCase):
             base_folder="temp",
             environment_="dev",
         )
-
-    def test_generate_full(self):
-        flux = FluxEntrypoint()
-        flux(self.context)
-
-        self.context.model = mock_model(
-            f_in=self.context.datamodule.valset._features_in,
-            f_out=self.context.datamodule.valset._features_out,
-        )
-
-        generate = GeneratorEntrypoint()
-
-        # mock the updater class
-        generate._updater_cls = Mock()
-        generate._updater_cls.set_data_type = lambda _: _
-        generate._updater_cls.update = lambda _: _
-
-        # mock the ModelLoader so it thinks the model was loaded from the disk
-        # and provide the BaseTransformer to pass through I/O
-        # the ModelLoader is tested in Comprisk.tests.test_model_loader.py
-        generate._loader_cls = ModelLoader
-        generate._loader_cls.from_disk = lambda _: True # ignore
-        generate._loader_cls.get_score_transformer = BaseTransformer
-        generate(self.context)
 
     def tearDown(self):
         super().tearDown()

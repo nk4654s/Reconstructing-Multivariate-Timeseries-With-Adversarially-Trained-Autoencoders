@@ -48,7 +48,6 @@ class Tuner:
         datamodule.setup(stage="fit")
 
         # train the test model and validate it, the resulting loss is used to
-        # set a new hparams suggestion
         trainer = deepcopy(self._trainer)
         trainer.fit(
             test_model, datamodule.train_dataloader(), val_dataloaders=None

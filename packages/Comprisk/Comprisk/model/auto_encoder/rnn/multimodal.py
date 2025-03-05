@@ -2,7 +2,6 @@
 Multi-sensor Anomaly Detection](https://arxiv.org/pdf/1607.00148.pdf). The AutoEncoder is called EncDecAD."""
 
 # https://arxiv.org/pdf/1607.00148.pdf
-from typing import List
 import torch
 import torch.nn as nn
 
@@ -21,13 +20,8 @@ class MultimodalRecurrentAutoEncoder(AutoEncoder):
         num_hidden_layers: int,
         num_hidden_dim: int,
         dropout_prob: float = 0.0,
-        features_in: List[str] = None,
-        features_out: List[str] = None,
-        loss: str = "MSELoss",
-        activation: str = "tanh",
-        optimizer: str = "Adam",
-        lr: float = 0.001,
-        lr_decay: float = 0.999,
+        *args,
+        **kwargs
     ) -> None:
         self._num_hidden_layers = num_hidden_layers
         self._num_hidden_dim = num_hidden_dim
@@ -41,15 +35,7 @@ class MultimodalRecurrentAutoEncoder(AutoEncoder):
             "dropout_prob": self._dropout,
         }
 
-        super(MultimodalRecurrentAutoEncoder, self).__init__(
-            features_in=features_in,
-            features_out=features_out,
-            loss=loss,
-            activation=activation,
-            optimizer=optimizer,
-            lr=lr,
-            lr_decay=lr_decay,
-        )
+        super(MultimodalRecurrentAutoEncoder, self).__init__(*args, **kwargs)
 
         self._input_only = [
             i
@@ -78,7 +64,9 @@ class MultimodalRecurrentAutoEncoder(AutoEncoder):
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         hidden_cell = self._encoder(batch)
 
-        batch_size, sequence, _ = batch.shape
+        batch_size = batch.size(0)
+        sequence = self._sequence_out if self._sequence_out else batch.size(1)
+
         output = torch.zeros(
             (batch_size, sequence, self._output_dim), device=self.device
         )
@@ -88,7 +76,7 @@ class MultimodalRecurrentAutoEncoder(AutoEncoder):
         input_decoder = torch.cat((input_only, output_only), dim=1)
         input_decoder = torch.unsqueeze(input_decoder, 1)
 
-        for i in range(batch.shape[1] - 1, -1, -1):
+        for i in range(sequence - 1, -1, -1):
             output_decoder, hidden_cell = self._decoder(input_decoder, hidden_cell)
 
             if i != 0:

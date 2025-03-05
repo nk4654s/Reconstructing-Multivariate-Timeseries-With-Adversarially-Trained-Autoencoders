@@ -1,0 +1,128 @@
+# lightning.pytorch==2.5.0.post0
+seed_everything: 1
+trainer:
+  accelerator: mps
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 32
+  logger: null
+  callbacks:
+  - class_path: lightning.pytorch.callbacks.EarlyStopping
+    init_args:
+      monitor: validate/MSELoss
+      min_delta: 0.0001
+      patience: 3
+      verbose: false
+      mode: min
+      strict: true
+      check_finite: true
+      stopping_threshold: null
+      divergence_threshold: null
+      check_on_train_epoch_end: null
+      log_rank_zero_only: false
+  - class_path: Comprisk.helper.BasicCheckpointCallback
+  fast_dev_run: false
+  max_epochs: 7
+  min_epochs: null
+  max_steps: -1
+  min_steps: null
+  max_time: null
+  limit_train_batches: null
+  limit_val_batches: null
+  limit_test_batches: null
+  limit_predict_batches: null
+  overfit_batches: 0.0
+  val_check_interval: null
+  check_val_every_n_epoch: 1
+  num_sanity_val_steps: null
+  log_every_n_steps: 1
+  enable_checkpointing: null
+  enable_progress_bar: null
+  enable_model_summary: null
+  accumulate_grad_batches: 1
+  gradient_clip_val: 1.0
+  gradient_clip_algorithm: null
+  deterministic: null
+  benchmark: null
+  inference_mode: true
+  use_distributed_sampler: true
+  profiler: null
+  detect_anomaly: false
+  barebones: false
+  plugins: null
+  sync_batchnorm: false
+  reload_dataloaders_every_n_epochs: 0
+  default_root_dir: null
+model:
+  class_path: Comprisk.model.auto_encoder.rnn.MultimodalRecurrentAutoEncoder
+  init_args:
+    num_hidden_layers: 3
+    num_hidden_dim: 64
+    dropout_prob: 0.3
+    loss: MSELoss
+    activation: tanh
+    optimizer: Adam
+    lr: 0.0001
+    lr_decay: 0.9
+    output_length: 1
+data:
+  train: environment/dev/datasets/thyssen-vd2-trainset-phase-3
+  validate: environment/dev/datasets/thyssen-vd2-valset-phase-3
+  sequence_in: 120
+  sequence_out: 1
+  features_in:
+  - e737c6bc-7d00-4d41-82ad-7a542400751d
+  - 57dfeadf-ac8d-4ad4-9d86-0a7c9cb38232
+  - 91ae9642-0a9f-4784-9682-a6e75352c196
+  - 61aeafba-2dcc-4dc1-b13b-9ee2ed21aa88
+  - fe0083b5-a0af-45b6-bbcf-2f472d621ce3
+  - f9365c4a-05f8-4730-a606-2b0b6b68eb0f
+  - d4cab717-fa9c-42da-91e4-807b6d14d192
+  - db2da2b3-e1a0-4bae-af79-fe500d4db4b4
+  - 6cbee536-a361-4cf3-aef9-c23c6547510c
+  - 65115e53-a019-47f5-8076-eb5b81fef93a
+  - 60430d53-4d68-44b7-969a-d2988fb427b1
+  - c1a03f95-a25c-49da-9a9a-7b68fe767deb
+  - 6e84bee8-9f91-4b01-ab98-962d9e692893
+  - c751ece1-b8f7-46ea-8cb1-8bf00aec1592
+  - 11f3c840-7472-45e8-bdff-38d483348f27
+  - 80ca41cf-1b35-4073-aa63-9836058b9dd2
+  - 04c06635-d298-4e6d-b0fb-7389fcc0a7c7
+  - 297aea91-b144-41a4-afb3-cbbbe9d22f7f
+  - cca2f3ad-83a3-498b-b1a5-270631ce6ff4
+  - 2f0245ec-4292-4e92-acff-0a9851b6ee89
+  - bef9c574-0b27-4039-9b77-16e1430a50a2
+  - b0887b0e-5cea-410b-b2be-0683a9919f96
+  features_out:
+  - e737c6bc-7d00-4d41-82ad-7a542400751d
+  - 57dfeadf-ac8d-4ad4-9d86-0a7c9cb38232
+  - 91ae9642-0a9f-4784-9682-a6e75352c196
+  - fe0083b5-a0af-45b6-bbcf-2f472d621ce3
+  - f9365c4a-05f8-4730-a606-2b0b6b68eb0f
+  - d4cab717-fa9c-42da-91e4-807b6d14d192
+  - 6cbee536-a361-4cf3-aef9-c23c6547510c
+  - 65115e53-a019-47f5-8076-eb5b81fef93a
+  - 60430d53-4d68-44b7-969a-d2988fb427b1
+  - 6e84bee8-9f91-4b01-ab98-962d9e692893
+  - 11f3c840-7472-45e8-bdff-38d483348f27
+  - cca2f3ad-83a3-498b-b1a5-270631ce6ff4
+  - 2f0245ec-4292-4e92-acff-0a9851b6ee89
+  - bef9c574-0b27-4039-9b77-16e1430a50a2
+  - b0887b0e-5cea-410b-b2be-0683a9919f96
+  skip: 1
+  stride: 1
+  behavior: future
+  batch_size: 256
+  shuffle: true
+  num_workers: 8
+  persistent_workers: true
+  pin_memory: true
+tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
+environment: dev
+normalizer: configs/vd2-version-1/4_custom_normalizer.yml
+prefix: analysis
+tuner_config: null
+tuner_trials: 1
+optimizer: null
+lr_scheduler: null

@@ -1,0 +1,86 @@
+# CAS specific
+environment: dev
+tag: a6252582-01dd-49cb-8dbe-0742b28bc007
+normalizer: configs/vd1-version-1/3_custom_normalizer.yml
+
+# model configuration
+model:
+  class_path: Comprisk.model.auto_encoder.rnn.MultimodalRecurrentAutoEncoder
+  init_args:
+    activation: tanh
+    loss: MSELoss
+    optimizer: Adam
+    lr: 0.0001
+    lr_decay: 0.9
+    num_hidden_dim: 64
+    num_hidden_layers: 3
+    dropout_prob: 0.3
+
+# trainer and dataset config
+seed_everything: 0
+trainer:
+  accelerator: mps
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        monitor: validate/MSELoss
+        min_delta: 1.0e-04
+        patience: 3
+    - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
+
+  precision: 32
+  max_epochs: 7
+  gradient_clip_val: 1.0
+  log_every_n_steps: 1
+
+data:
+  train: configs/vd1-version-1/1_dataset_train.yml
+  validate: configs/vd1-version-1/2_dataset_validate.yml
+  sequence_in: 120
+  sequence_out: 1
+  features_in:
+    - 369afc93-5604-45a1-92ff-ae9915ba9cf4 # Biomethandurchfluss (m^3/min)
+    - 6cd3f4a0-05de-4a5f-9384-34d2edd5054d # DifferenzdruckTriebwerksölPDIT73553 (bar)
+    - 6d6f8beb-4e55-4b00-913c-5e87a1a8078d # EnddruckErsteStufePIT73339 (bar)
+    - 0fde253b-8465-40f8-84ac-4f385096d467 # EnddruckZweiteStufePIT73397 (bar)
+    - 9cf511a4-7a9a-488f-b642-4a946f27c808 # EndtemperaturErsteStufeTETIT73334 (°C)
+    - 5630cba4-cc34-4b94-b6a7-0b55f250ffca # EndtemperaturZweiteStufeTETIT73371 (°C)
+    - a56ad64c-174e-4da8-aa62-66dfc9bd62ad # EndtemperaturZweiteStufenachKühlerTETIT73378 (°C)
+    - c3f86569-e2fc-494a-9700-d03ce4bc11d2 # KompressordrehzahlSE73201 (rpm)
+    - f206e180-1a19-4b73-a2a5-cf610fa3b19d # KühlwasserdrucknachPumpePIT73425 (bar)
+    - 1ce899b2-116e-4a6f-b1b0-23efe1d8add1 # KühlwasserdurchflussmengeFIT73423 (m^3/min)
+    - d40dc717-9f74-4f5c-98f7-0aadb3b6ae69 # KühlwassertemperaturnachKühlerTETIT73422 (°C)
+    - 5fcfe669-fc3a-4aaf-a734-6a54dc9c86c1 # Motorlager (°C)
+    - 3817b57e-2901-44a8-ba97-00ca5a2446a3 # PackungsleckageFIT73389 (Nm3h)
+    - 40266713-aba1-42f3-a8ce-ed76e9072034 # SaugdruckErsteStufePIT73319 (bar)
+    - 0269fbad-b2db-4677-9fc0-2814a0bf193b # SaugdruckZweiteStufePIT73340 (bar)
+    - 023a0e7a-849e-4acd-ad7f-c011be125745 # SaugtemperaturErsteStufeTETIT73328 (°C)
+    - c5991d25-d729-4a9f-93f0-cebe60de6672 # SaugtemperaturZweiteStufeTETIT73341 (°C)
+    - e1e5679e-816a-4d41-b35d-144595cdacbd # SchwingungsmessungTriebwerkVT74280 (mm/s)
+    - 52994e88-8cc2-49bb-aa2c-2362949da765 # VentilnesttemperaturZweiteStufeDeckelseiteTETT73367 (°C)
+    - ccdaffdd-0632-4dd4-ac41-773d128c3623 # VentilnesttemperaturZweiteStufeKurbelseiteTETT73386 (°C)
+    - 893f38b8-9199-429c-96d0-67756a464df1 # Wicklungstemperatur (°C)
+    - d1c046b2-caaf-4c0b-bb08-53a0e32346b8 # ÖltemperaturVorlaufTriebwerkTETIT73538 (°C)
+  features_out:
+    - 369afc93-5604-45a1-92ff-ae9915ba9cf4 # Biomethandurchfluss (m^3/min)
+    - 6cd3f4a0-05de-4a5f-9384-34d2edd5054d # DifferenzdruckTriebwerksölPDIT73553 (bar)
+    - 6d6f8beb-4e55-4b00-913c-5e87a1a8078d # EnddruckErsteStufePIT73339 (bar)
+    - 9cf511a4-7a9a-488f-b642-4a946f27c808 # EndtemperaturErsteStufeTETIT73334 (°C)
+    - 5630cba4-cc34-4b94-b6a7-0b55f250ffca # EndtemperaturZweiteStufeTETIT73371 (°C)
+    - a56ad64c-174e-4da8-aa62-66dfc9bd62ad # EndtemperaturZweiteStufenachKühlerTETIT73378 (°C)
+    - f206e180-1a19-4b73-a2a5-cf610fa3b19d # KühlwasserdrucknachPumpePIT73425 (bar)
+    - 1ce899b2-116e-4a6f-b1b0-23efe1d8add1 # KühlwasserdurchflussmengeFIT73423 (m^3/min)
+    - d40dc717-9f74-4f5c-98f7-0aadb3b6ae69 # KühlwassertemperaturnachKühlerTETIT73422 (°C)
+    - 3817b57e-2901-44a8-ba97-00ca5a2446a3 # PackungsleckageFIT73389 (Nm3h)
+    - 0269fbad-b2db-4677-9fc0-2814a0bf193b # SaugdruckZweiteStufePIT73340 (bar)
+    - c5991d25-d729-4a9f-93f0-cebe60de6672 # SaugtemperaturZweiteStufeTETIT73341 (°C)
+    - 52994e88-8cc2-49bb-aa2c-2362949da765 # VentilnesttemperaturZweiteStufeDeckelseiteTETT73367 (°C)
+    - ccdaffdd-0632-4dd4-ac41-773d128c3623 # VentilnesttemperaturZweiteStufeKurbelseiteTETT73386 (°C)
+    - 893f38b8-9199-429c-96d0-67756a464df1 # Wicklungstemperatur (°C)
+    - d1c046b2-caaf-4c0b-bb08-53a0e32346b8 # ÖltemperaturVorlaufTriebwerkTETIT73538 (°C)
+  skip: 1
+  stride: 1
+  batch_size: 256
+  shuffle: true
+  num_workers: 8
+  behavior: future

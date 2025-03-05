@@ -61,14 +61,6 @@ class FluxEntrypoint(EntrypointBase):
             # The config["folder"] variable points to the dataset, which might not be downloaded yet.
             config["folder"] = self._get_path(context, config["folder"], check_exists=False)
 
-            for i, module in enumerate(config.get("modules", [])):
-                if module["class_path"] == "Dataflux.modules.normalize.NormalizeTransform":
-                    args = module.get("init_args", {})
-                    norm_path = args.get("from_other", None)
-                    if norm_path:
-                        config["modules"][i]["init_args"]["from_other"] = self._get_path(context, norm_path)
-                    break
-
         return config
 
     def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
@@ -94,6 +86,7 @@ class FluxEntrypoint(EntrypointBase):
             logger.debug("Executing flux-pipeline(%s)", path)
             logger.debug("Using custom flux-config: %s", "yes" if config else "no")
             folder_path = flux_pipeline(flux)
+            logger.debug("Flux loaded path (%s): %s", key, folder_path)
 
             # update the comprisk context to let it know where to find the dataset
             datamodule_args_modified[key] = folder_path

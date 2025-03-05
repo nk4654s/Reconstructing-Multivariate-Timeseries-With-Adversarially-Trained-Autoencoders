@@ -1,6 +1,5 @@
 """This module implements a basic AutoEncoder class and the base classes for an
 encoder and decoder."""
-from typing import List
 
 import torch
 import torch.nn as nn
@@ -45,25 +44,8 @@ class AutoEncoder(BaseModel):
     
     > More information about the other arguments can be found in the super class.
     """
-    def __init__(
-        self,
-        features_in: List[str] = None,
-        features_out: List[str] = None,
-        loss: str = "MSELoss",
-        activation: str = "tanh",
-        optimizer: str = "Adam",
-        lr: float = 0.001,
-        lr_decay: float = 0.999,
-    ) -> None:
-        super().__init__(
-            features_in=features_in,
-            features_out=features_out,
-            loss=loss,
-            activation=activation,
-            optimizer=optimizer,
-            lr=lr,
-            lr_decay=lr_decay,
-        )
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
         # build encoder/decoder
         self._encoder = self.encoder_init()

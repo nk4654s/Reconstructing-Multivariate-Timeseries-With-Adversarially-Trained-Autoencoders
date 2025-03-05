@@ -17,12 +17,14 @@ from Comprisk.entrypoints.scoring import TrainScoreTransformerEntrypoint
 from Comprisk.entrypoints.analyzer import AnalyzerEntrypoint
 from Comprisk.entrypoints.flux import FluxEntrypoint
 from Comprisk.entrypoints.generate import GeneratorEntrypoint
+from Comprisk.entrypoints.export import ExportEntrypoint
 
 __all__ = [
     "EntrypointContext",
     "EntrypointBase",
     "Pipeline",
     "AnalyzerEntrypoint",
+    "ExportEntrypoint",
     "GeneratorEntrypoint",
     "FluxEntrypoint",
     "TrainerEntrypoint",

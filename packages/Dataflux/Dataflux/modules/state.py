@@ -77,14 +77,14 @@ class State(FileWorkerCallable):
         # smaller or greater than the boundaries
         df_splits = multi_split(df.copy(), self._key, self._lower, self._upper)
 
-        # save all dataframes
-        if df_splits[0].shape != df.shape:
-            df_splits = remove_threshold(df_splits, self._alpha, self._beta)
-
         # if the resulting amount of splits is 0, then remove the file
         if len(df_splits) == 0:
             fm.state = FileState.DELETED
             return fm
+
+        # save all dataframes
+        if df_splits[0].shape != df.shape:
+            df_splits = remove_threshold(df_splits, self._alpha, self._beta)
 
         files = []
         base_path = fm.base_path

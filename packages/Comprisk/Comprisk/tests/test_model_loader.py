@@ -1,71 +1,31 @@
+import os
 import unittest
+from unittest.mock import patch
 
 from Dataflux.pytorch.dummy_dataset import DummyDataset, DummyMode
 
-from Comprisk.helper.structure import class_for_name
-from Comprisk.helper import  ModelLoader
+from Comprisk.helper import ModelIterator
 
 class TestModelLoader(unittest.TestCase):
     def setUp(self):
         self.features_in = ["A", "B", "C"]
         self.factor = 1.5
 
-        model_class = class_for_name("Comprisk.model.dummy", "DummyModel")
-        self.model = model_class(self.factor, self.features_in, self.features_in)
+        test_folder = os.path.dirname(__file__)
+        self.model_path = os.path.join(test_folder, "dummy.onnx")
 
-        self.loader = ModelLoader(model=self.model)
-
-    def test_forward_forecast_equal_stride(self):
+    @patch("Comprisk.model.normalize.NormalizeModule")
+    def test_forward_forecast_equal_stride(self, normalize_mock):
         dataset = DummyDataset(
             DummyMode.RANDOM,
-            n_samples=100,
-            n_features=3,
-            n_sequence=40,
-            n_future=20,
-            stride=20
+            n_samples=200,
+            n_features=22,
+            n_sequence=60,
+            n_future=0,
+            stride=1
         )
 
-        model_class = class_for_name("Comprisk.model.dummy", "DummyModel")
-        model = model_class(self.factor, self.features_in, self.features_in)
-        loader = ModelLoader(model=model)
-        inputs, prediction = loader.predict_loop(dataset, batch_size=4, num_workers=1)
-        self.assertTrue((abs(prediction - inputs * self.factor) < 1e-5).all().all())
+        iterator = ModelIterator(self.model_path, dataset)
+        result = iterator.run(batch_size=1)
 
-    def test_forward_pass_stride_equal_window(self):
-        """Test ModelLoader.predict_loop"""
-        dataset = DummyDataset(
-            DummyMode.RANDOM,
-            n_samples=100,
-            n_features=3,
-            n_sequence=20,
-            stride=20
-        )
-
-        inputs, prediction = self.loader.predict_loop(dataset, batch_size=4, num_workers=1)
-        self.assertTrue((abs(prediction - inputs * self.factor) < 1e-5).all().all())
-
-    def test_forward_pass_stride_smaller_window(self):
-        """Test ModelLoader.predict_loop"""
-        dataset = DummyDataset(
-            DummyMode.RANDOM,
-            n_samples=100,
-            n_features=3,
-            n_sequence=20,
-            stride=5
-        )
-
-        inputs, prediction = self.loader.predict_loop(dataset, batch_size=4, num_workers=1)
-        self.assertTrue((abs(prediction - inputs * self.factor) < 1e-5).all().all())
-
-    def test_forward_pass_inhomogeneous(self):
-        """Test ModelLoader.predict_loop"""
-        dataset = DummyDataset(
-            DummyMode.RANDOM,
-            n_samples=100,
-            n_features=3,
-            n_sequence=20,
-            stride=3
-        )
-
-        inputs, prediction = self.loader.predict_loop(dataset, batch_size=4, num_workers=1)
-        self.assertTrue((abs(prediction - inputs * self.factor) < 1e-5).all().all())
+        self.assertTrue((abs(result.scores - result.expected * 1.5) < 1e-5).all().all())

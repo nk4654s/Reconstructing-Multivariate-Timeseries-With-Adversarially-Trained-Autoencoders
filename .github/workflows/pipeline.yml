@@ -18,13 +18,20 @@ jobs:
   toking-test:
     uses: ./.github/workflows/toking-tests.yml
 
-  docker-build:
-    uses: ./.github/workflows/docker-build.yml
-    needs:
-      - dataflux-test
-      - comprisk-test
-      - toking-test
-    secrets: inherit
-    with:
-      ECR_REPOSITORY: 'xplore-ai-cas'
-      CONTAINER_LOCAL_PATH: './dockerfiles'
+  build-jar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Jar
+        working-directory: .
+        run: |
+          python dev_tools.py
+
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Deploy to GitHub Packages
+        run: mvn deploy
+

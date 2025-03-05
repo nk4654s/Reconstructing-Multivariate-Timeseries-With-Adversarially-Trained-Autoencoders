@@ -1,9 +1,15 @@
 """Module loads utilities, e.g. functions to navigate the folder structure."""
 
 import Comprisk.helper.structure as structure
-from Comprisk.helper.model import ModelLoader
+from Comprisk.helper.iterator import ModelIterator, IteratorResult
+from Comprisk.helper.checkpoint import ModelCheckpoint, BasicCheckpointCallback
+from Comprisk.helper.report import Report
 
 __all__ = [
     "structure",
-    "ModelLoader",
+    "ModelIterator",
+    "IteratorResult",
+    "ModelCheckpoint",
+    "BasicCheckpointCallback",
+    "Report"
 ]

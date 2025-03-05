@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 
-BATCH_TYPE = Tuple[torch.Tensor, torch.Tensor]
+BATCH_TYPE = Tuple[torch.Tensor, ...]
 
 
 class MinMaxScaler:

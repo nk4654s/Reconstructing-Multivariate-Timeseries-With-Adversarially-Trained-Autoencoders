@@ -1,15 +1,12 @@
 """This module contains helper methods to navigate the folder structure."""
 import importlib
 import os
-from typing import List, Union, Tuple, Type, Dict
+from typing import List
 
-import yaml
-from torch import nn
+import torch
 
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
-
-from Comprisk.model import BaseModel
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
@@ -78,40 +75,31 @@ def get_checkpoints(path: str) -> List[str]:
     return checkpoints
 
 
-def init_modules(path: str) -> Tuple[Type, Dict[str, nn.Module]]:
-    """This method loads the hyperparameters of an already trained model
-    and initializes the model's sub_modules if existing.
+def search_models(path: str, search_depth: int = 50) -> List[str]:
+    """Searches ONNX models in a given folder recursively.
 
     Args:
-        path (str): The folder path where the model is saved.
+        path (str): Where to search, subfolders will be scanned as well if `search_depth` > 1:
+        search_depth (int): How deep to search recursively. Defaults to 50.
 
     Returns:
-        Tuple: The class of the model to load and a dictionary of
-            initialized submodules modules.
+        List[str]: The list of found paths to ONNX models
     """
-    hparam_path = os.path.join(path, "hparams.yaml")
-    with open(hparam_path, mode="r", encoding="UTF-8") as f:
-        hparams = yaml.safe_load(f)
-        sub_modules = {}
+    result = []
+    for sub_path in os.listdir(path):
+        sub_path = os.path.join(path, sub_path)
 
-        # get the model class, then remove the key/value pair from hparams
-        model_class = class_for_name(*hparams["class_path"].rsplit(".", maxsplit=1))
-        del hparams["class_path"]
+        if os.path.isdir(sub_path):
+            result += search_models(sub_path, search_depth=search_depth - 1)
+            continue
 
-        for drop in [key for key in hparams.keys() if key.startswith("_")]:
-            del hparams[drop]
+        if sub_path.split(".")[-1] == "onnx":
+            result.append(sub_path)
 
-        for key, value in hparams.items():
-            if isinstance(value, dict):
-                libpath = value["class_path"]
-                module = class_for_name(*libpath.rsplit(".", maxsplit=1))
-                sub_modules[key] = module(**value["init_args"])
-            else:
-                sub_modules[key] = value
-        return model_class, sub_modules
+    return result
 
 
-def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
+def load_model(path: str, eval_mode: bool = True):
     """This method loads the best checkpoint of a model. Requires checkpoints of model to have
     the filename structure `...val=<validation_loss>.ckpt`.
 
@@ -126,24 +114,15 @@ def load_model(path: str, eval_mode: bool = True) -> Union[BaseModel, None]:
         logger.warning("Could not find a checkpoint to load a model from. (%s)", path)
         return None
 
-    # get the model configuration to find the model class
-    with open(os.path.join(path, "config.yaml")) as f:
-        config = yaml.safe_load(f)
-        cls = config["model"].get("class_path", None)
-        if not cls:
-            logger.error("The model 'class_path' must be defined in the 'config.yaml' nested in 'model'.")
-            return None
+    ckpt_path = os.path.join(path, "checkpoints", checkpoints[0])
 
-        cls = class_for_name(*cls.rsplit(".", maxsplit=1))
+    # get the model configuration to find the model class
+    model = torch.load(ckpt_path)
 
     # initialize the mode
-    #model_class, sub_modules = init_modules(path)
-    logger.debug("Attempt to load model class %s", cls.__name__)
-    model = cls.load_from_checkpoint(
-        os.path.join(path, "checkpoints", checkpoints[0]),# **sub_modules
-    )
-
-    logger.info("Loaded model %s from %s", checkpoints[0], path)
+    logger.debug("Loaded model class %s", model.__class__.__name__)
+    logger.info("Loaded from from %s", checkpoints[0])
     if eval_mode:
         model.eval()
+
     return model

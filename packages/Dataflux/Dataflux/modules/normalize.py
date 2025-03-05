@@ -4,6 +4,8 @@ from typing import Dict, List
 import numpy as np
 import pickle
 
+import yaml
+
 from Dataflux import logger
 from Dataflux.diskio.meta import FileMeta, Metadata, FileState
 from Dataflux.helper import FluxScaler, ScalerMethod
@@ -172,8 +174,13 @@ class NormalizeTransform(FileWorkerCallable):
         context.clear(ContextParam.SCALER)
 
         # save the normalizer
-        path = os.path.join(metadata.path, "metadata", "normalizer.pkl")
-        with open(path, "wb") as f:
+        norm_path = os.path.join(metadata.path, "metadata", "normalizer.pkl")
+        with open(norm_path, "wb") as f:
             pickle.dump(scaler, f)
+
+        # save the normalizer internal data
+        path = os.path.join(metadata.path, "metadata", "normalizer.yaml")
+        with open(path, "w") as f:
+            yaml.safe_dump(scaler.export(), f)
 
         logger.debug("Finished normalizing the dataset.")

@@ -1,12 +1,12 @@
 """This module contains the base model implementing widely-used functions. Layers
 of a neural network are not implemented."""
-from typing import List, Union
+from typing import List
 import numpy as np
-import lightning as L
 import torch
 
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.optim.optimizer import Optimizer
+
 from Dataflux.pytorch import DatasetTypes, dataset_type_from_string, BATCH_TYPE
 from Comprisk.helper.structure import (
     r2_score,
@@ -14,6 +14,7 @@ from Comprisk.helper.structure import (
     get_optimizer_by_name,
     get_activation_from_string,
 )
+from Comprisk.model import NormalizeWrapper
 
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
@@ -23,7 +24,7 @@ from Dataflux.logger import get_logger
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
-class BaseModel(L.LightningModule):
+class BaseModel(NormalizeWrapper):
     """BaseModel class of any neural network. The base model implements a learning
     rate decay using an exponential learning rate scheduler. Also, when predicting
     using a trained model, the base class uses Monte-Carlo sampling to obtain a
@@ -44,12 +45,15 @@ class BaseModel(L.LightningModule):
         optimizer: str = "Adam",
         lr: float = 1e-3,
         lr_decay: float = 0.99,
+        sequence_out: int = 0,
         features_in: List[str] = None,
         features_out: List[str] = None,
         behavior: str = DatasetTypes.AUTOENCODER.value,
         output_length: int = 1,
+        *args,
+        **kwargs
     ) -> None:
-        super().__init__()
+        super().__init__(features_in, features_out, *args, **kwargs)
 
         # define training hyperparameters
         self._loss_name = loss
@@ -60,6 +64,7 @@ class BaseModel(L.LightningModule):
         self._lr_decay = lr_decay
         self.lr = lr
 
+        self._sequence_out = sequence_out
         self._features_in = sorted(features_in)
         self._features_out = sorted(features_out)
 
@@ -70,21 +75,12 @@ class BaseModel(L.LightningModule):
         self._behavior = dataset_type_from_string(behavior)
         self._output_length = output_length
 
-        self.save_hyperparameters()
-
-        # somehow, linked arguments are not set when saving hparams
-        # the fix is to overwrite hparams after its creation and save it explicitly after
-        self.hparams["features_in"] = self._features_in
-        self.hparams["features_out"] = self._features_out
-        self.hparams["behavior"] = self._behavior.value
-
-        self.save_hyperparameters(self.hparams)
-
     def set_output_behavior(self, behavior: DatasetTypes | str, length: int) -> None:
         self._behavior = dataset_type_from_string(behavior) if isinstance(behavior, str) else behavior
         self._output_length = length
 
-    def _get_feature_loss(self, y_hat, y) -> np.ndarray:
+    @staticmethod
+    def _get_feature_loss(y_hat, y) -> np.ndarray:
         y_hat = y_hat.detach().cpu().numpy()
         y = y.detach().cpu().numpy()
 
@@ -97,6 +93,9 @@ class BaseModel(L.LightningModule):
         """
         raise NotImplementedError
 
+    def on_fit_start(self) -> None:
+        self.normalizer.to(self.device)
+
     def on_train_epoch_start(self) -> None:
         super().on_train_epoch_start()
         assert self._lr_scheduler, "Learning rate scheduler not initialized."
@@ -105,8 +104,9 @@ class BaseModel(L.LightningModule):
 
     def training_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:
         x, y = batch
-        y_hat = self(x)
+        y_hat, y = self.predict_step(x, y)
         loss = self._loss(y_hat, y)
+
         self.log(f"train/{self._loss_name}", loss)
 
         # the feature loss is required by the LossMeasurement callback to calculate
@@ -117,15 +117,17 @@ class BaseModel(L.LightningModule):
 
     def test_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:
         x, y = batch
-        y_hat = self(x)
+        y_hat, y = self.predict_step(x, y)
         loss = self._loss(y_hat, y)
+
         self.log(f"test/{self._loss_name}", loss)
         return loss
 
     def validation_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:
         x, y = batch
-        y_hat = self(x)
+        y_hat, y = self.predict_step(x, y)
         loss = self._loss(y_hat, y)
+
         self.log(f"validate/{self._loss_name}", loss)
 
         batch_size, sequence, features = y.shape
@@ -139,43 +141,21 @@ class BaseModel(L.LightningModule):
         if isinstance(self._optim, str):
             logger.debug("Initialize optimizer: %s", self._optim)
             optim_cls = get_optimizer_by_name(self._optim)
-            self._optim = optim_cls(self.parameters(), lr=self.lr)
+            self._optim = optim_cls(filter(lambda p: p.requires_grad, self.parameters()), lr=self.lr)
             self._lr_scheduler = ExponentialLR(self._optim, gamma=self._lr_decay)
 
         return [self._optim], [{"scheduler": self._lr_scheduler, "interval": "epoch"}] # type: ignore
 
-    def predict_step(self, batch: BATCH_TYPE) -> torch.Tensor:
+    def predict_step(self, x: torch.Tensor, y: torch.Tensor) -> BATCH_TYPE:
         """
         This method is used to make predictions on a batch of data during inference.
 
         Args:
-            batch (Dataflux.pytorch.BATCH_TYPE): A tensor containing the input data.
+            x (torch.Tensor): The model input (will be normalized by the BaseModel).
+            y (torch.Tensor): The expected output (will be normalized by the BaseModel).
 
         Returns:
             torch.Tensor: The predicted output for the given batch.
         """
-        return self(batch[0])
-
-    def predict(self,  x: torch.Tensor, as_array: bool = False) -> Union[np.ndarray, torch.Tensor]:
-        """This method only predicts future steps based on the given curve described by
-        the datapoints `x`.
-
-        Args:
-            x (torch.Tensor): The datapoints.
-            as_array (bool, optional): Returns the prediction as np.array. Defaults to False.
-
-        Returns:
-            np.ndarray, torch.Tensor: The prediction.
-        """
-        out = np.array([])
-        with torch.no_grad():
-            out = self.predict_step((x, x))
-            if as_array:
-                out = out.cpu().numpy()
-
-        if self._behavior == DatasetTypes.PREDICTIVE:
-            out = out[:, out.shape[1] - self._output_length:, :]
-
-        return out
-
-
+        x, y = self.normalizer.apply((x, y))
+        return self(x), y

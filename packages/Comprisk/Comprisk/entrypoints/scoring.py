@@ -1,13 +1,10 @@
-import os
-import pickle
-
-from Dataflux import logging_mode
+from Dataflux import logging_mode, DEBUG_MODE
 from Dataflux.pytorch import DatasetTypes
 from Dataflux.logger import get_logger
 
 from Comprisk.entrypoints.base import EntrypointBase, EntrypointContext
-from Comprisk.anomaly import ScoreTransformer
-from Comprisk.helper import ModelLoader
+from Comprisk.anomaly import ScoreWrapper
+from Comprisk.helper import ModelCheckpoint
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
@@ -19,38 +16,43 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
      loss between prediction and expected values, the Comprisk.anomaly.ScoreTransformer is fitted. Finally, the
      entrypoint stores the trained ScoreTransformer in the models output directory under `metadata`.
     """
+
     def __init__(self) -> None:
         super().__init__()
 
     def __call__(
         self, context: EntrypointContext, *args, **kwargs
     ) -> EntrypointContext:
+        # adjust the dataset's stride to be as long as an output window for
+        # a faster transformer fit
         dataset_args = context.datamodule.valset.get_args()
         stride = dataset_args.sequence_in
         if dataset_args.behavior != DatasetTypes.AUTOENCODER:
             stride = dataset_args.sequence_out
 
-        logger.info(
-            "Run prediction loop on valset (samples=%s) which can take some time.",
-            len(context.datamodule.valset),
-        )
+        n = len(context.datamodule.valset) + len(context.datamodule.trainset)
+        logger.info("Fitting score transformer on n=%s samples.", n)
         context.datamodule.valset.set_stride(stride)
+        context.datamodule.trainset.set_stride(stride)
+        context.datamodule.setup(stage="fit")
 
-        # load the (best) trained model back
-        loader = ModelLoader(path=context.config_folder, model=context.model)
-        if not loader.from_disk:
+        # load the best checkpoint, modifying an exported ONNX file does not work as the
+        # score transformer is tightly integrated
+        checkpoint = ModelCheckpoint(path=context.config_folder, model=context.model)
+        if not checkpoint.from_disk:
             logger.warning("Attempted to fit ScoreTransformer on an untrained model.")
             return context
 
-        predicted, target = loader.predict_loop(context.datamodule.valset)
+        # wrap the model with a score transformer such that the fitted values are
+        # included in the model graph. This is required for ONNX
+        wrapper = ScoreWrapper(checkpoint.get_model())
+        wrapper.train_wrapper(
+            context.datamodule.val_dataloader(),
+            verbose=DEBUG_MODE,
+        )
+        wrapper.export_to(context.config_folder)
 
-        # fit and save the score transformer
-        score = ScoreTransformer(**vars(context.config.score_transformer))
-        score.fit(predicted, target)
-        logger.info("Fitted ScoreTransformer (mode=%s) successfully.", score.mode)
+        logger.info("Fitted ScoreTransformer successfully.")
 
-        score_path = os.path.join(loader.path, "metadata", "score_transformer.pkl")
-        with open(score_path, mode="wb") as f:
-            pickle.dump(score, f)
-
+        context.model = wrapper
         return context

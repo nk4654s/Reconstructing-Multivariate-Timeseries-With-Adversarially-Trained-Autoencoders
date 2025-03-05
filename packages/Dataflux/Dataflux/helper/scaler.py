@@ -1,4 +1,6 @@
 from enum import Enum
+from typing import Dict
+
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -106,3 +108,25 @@ class FluxScaler:
 
     def revert(self, array: np.ndarray) -> np.ndarray:
         return self._internal_scaler.inverse_transform(array)
+
+    def export(self) -> Dict:
+        """
+        This method extracts the values of the internal scaler and puts them into a dictionary.
+
+        Returns:
+            Dict: The internal scaler data.
+        """
+        data = {}
+        for i, name in enumerate(self._internal_scaler.feature_names_in_):
+            if self._method == ScalerMethod.NORMALIZE:
+                data[name] = {
+                    "min": float(self._internal_scaler.min_[i]),
+                    "scale": float(self._internal_scaler.scale_[i]),
+                }
+            else:
+                data[name] = {
+                    "mean": float(self._internal_scaler.mean_[i]),
+                    "scale": float(self._internal_scaler.scale_[i]),
+                }
+
+        return data
