@@ -15,15 +15,14 @@ from Comprisk.helper import IteratorResult
 from Dataflux.helper.sensor_register import get_sensors
 
 
-def chi2_distance(histA, histB, eps = 1e-10):
-	# compute the chi-squared distance
-	d = 0.5 * np.sum([((a - b) ** 2) / (a + b + eps)
-		for (a, b) in zip(histA, histB)])
-	# return the chi-squared distance
-	return d
-
-
 class Report:
+    """
+    Class to generate a comprehensive report based on the analysis of sensor data and AI model outputs.
+
+    Args:
+        output_folder (str): The folder where the report will be saved.
+        report_name (str): The name of the report file.
+    """
     def __init__(self, output_folder: str, report_name: str):
         self._folder = output_folder
         self._name = report_name
@@ -49,6 +48,15 @@ class Report:
         self._sensor_dict = get_sensors(UUID(meta.domain))
 
     def _revert_score_calculation(self, scores: pd.DataFrame):
+        """
+        Reverts the score calculation to determine lossy loss, noise floor, and sigma loss.
+
+        Args:
+            scores (pd.DataFrame): DataFrame containing the scores to be reverted.
+
+        Returns:
+            tuple: A tuple containing lossy_loss, noise_floor, and sigma_loss as DataFrames.
+        """
         path = os.path.join(self._folder, "score.yaml")
         with open(path, "r") as f:
             score = yaml.safe_load(f)
@@ -60,6 +68,15 @@ class Report:
         return lossy_loss, noise_floor, sigma_loss
 
     def generate_report_graphs(self, result: IteratorResult):
+        """
+        Generates various graphs for the report based on the provided analysis results.
+
+        Args:
+            result (IteratorResult): The analysis result containing scores, inputs, and outputs.
+
+        Returns:
+            list: A list of tuples containing sensor data and related statistics.
+        """
         scores, s_inputs, s_outputs = result.to_dataframe()
         scores = scores.rename(columns=self._sensor_dict, errors="ignore")
         s_inputs = s_inputs.rename(columns=self._sensor_dict, errors="ignore")
@@ -136,7 +153,7 @@ class Report:
             fig.savefig(os.path.join(self._sensors, f"ai_{name}.png"))
             plt.close()
 
-            # save histogram
+            # save histogram of data
             figure(figsize=self._size, dpi=self._dpi)
             values = s_inputs[sensor].to_numpy()
             bins, vals = np.histogram(values, bins=1000)
@@ -153,6 +170,12 @@ class Report:
         return graphs
 
     def generate_pdf(self, graphs):
+        """
+        Generates a PDF report based on the provided graphs.
+
+        Args:
+            graphs (list): A list of tuples containing sensor data and related statistics.
+        """
         # get the graphs created and initialize the PDF
         graphs = sorted(graphs, key=lambda x: x[-1], reverse=True)
         pdf = MarkdownPdf()
@@ -182,6 +205,7 @@ class Report:
 
         pdf.add_section(Section(markdown, toc=True))
 
+        # plot all diagrams from generate_graphs()
         for i, name, path, n, v in graphs:
             markdown = f"### {name}\n"
             name = name.split()[0]
