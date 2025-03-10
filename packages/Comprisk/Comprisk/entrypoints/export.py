@@ -18,6 +18,11 @@ class ExportEntrypoint(EntrypointBase):
         self._model_name = "model.onnx"
         self._graph_image = "model_graph"
 
+    def get_start_cutt_off(self, context: EntrypointContext):
+        dataset = context.datamodule.trainset or context.datamodule.valset
+        remove_alpha = dataset.metadata.state_alpha
+
+
     def modify_model_metadata(self, context: EntrypointContext):
         dataset = context.datamodule.valset
         args = dataset.get_args()
@@ -41,6 +46,16 @@ class ExportEntrypoint(EntrypointBase):
         meta = model.metadata_props.add()
         meta.key = "type"
         meta.value = args.behavior.value
+
+        meta = model.metadata_props.add()
+        meta.key = "delays"
+        dataset = context.datamodule.trainset or context.datamodule.valset
+        delays = {}
+        for key, value in dataset.metadata.state_alpha.items():
+            delays[key] = value
+            delays[key]["delay"] *= 1_000 # transform to milliseconds
+
+        meta.value = enc.encode(delays)
 
         onnx.save(model, onnx_path)
 
