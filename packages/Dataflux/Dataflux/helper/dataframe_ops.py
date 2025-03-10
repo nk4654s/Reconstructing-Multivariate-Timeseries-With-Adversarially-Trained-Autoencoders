@@ -22,10 +22,10 @@ def trim(df: DataFrame, key: str, value: int | float, lower: bool = True) -> Dat
 
     running = df[key].to_numpy()
     if lower:
-        start_idx = np.argmax(running > value)
+        start_idx = np.argmax(running >= value)
         return df.iloc[start_idx:]
 
-    start_idx = np.argmax(running < value)
+    start_idx = np.argmax(running <= value)
     return df.iloc[start_idx:]
 
 
@@ -50,23 +50,29 @@ def split(
         return df, df
 
     running = df[key].to_numpy()
-    lower_vals = running < value
-    upper_vals = running > value
+    lower_vals = running >= value
+    upper_vals = running <= value
 
     if lower:
-        end_idx = np.argmax(lower_vals)
-        end_idx = 0 if not end_idx and (lower_vals).all() else end_idx
-        end_idx = len(running) - 1 if not end_idx and (upper_vals).all() else end_idx
+        min_idx = np.argmin(lower_vals)
+        if lower_vals.all():
+            end_idx = running.shape[0] - 1
+
+        else:
+            end_idx = min_idx
     else:
-        end_idx = np.argmax(upper_vals)
-        end_idx = 0 if not end_idx and (upper_vals).all() else end_idx
-        end_idx = len(running) - 1 if not end_idx and (lower_vals).all() else end_idx
+        min_idx = np.argmin(upper_vals)
+        if upper_vals.all():
+            end_idx = running.shape[0] - 1
+
+        else:
+            end_idx = min_idx
 
     # if the end index is 0, return two empty dataset.
     if not end_idx:
         return DataFrame({key: []}), DataFrame({key: []})
 
-    # if the end_index equlas the full sequence length, then there is no split and the second DataFrame must be empty
+    # if the end_index equals the full sequence length, then there is no split and the second DataFrame must be empty
     if end_idx == len(running) - 1:
         return df, DataFrame({key: []})
 
@@ -83,7 +89,7 @@ def multi_split(
         df (DataFrame): The DataFrame to be splitted.
         key (str): The column name which defines the split.
         lower (int | float): The value below which the series is splitted.
-        lower (int | float): The value above which the series is splitted.
+        upper (int | float): The value above which the series is splitted.
     """
 
     def internal_split(temp_df, value, v_type):
