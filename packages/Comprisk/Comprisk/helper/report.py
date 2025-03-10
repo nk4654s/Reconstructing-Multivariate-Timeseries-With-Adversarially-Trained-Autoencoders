@@ -29,7 +29,7 @@ class Report:
         self._path = os.path.join(self._folder, self._name)
         self._sensors = os.path.join(self._path, "sensors")
 
-        self._dpi = 80
+        self._dpi = 120
         self._size = (16, 8)
 
         # create the output folder path
@@ -88,7 +88,7 @@ class Report:
         plt.plot(scores, label=scores.columns)
         plt.title("Healthscore")
         plt.legend()
-        plt.savefig(os.path.join(self._path, "total_healthscore.png"))
+        plt.savefig(os.path.join(self._path, "total_healthscore.jpg"))
         plt.close()
 
         # plot error deviation
@@ -100,7 +100,7 @@ class Report:
         plt.bar([d[0] for d in plt_data], [d[2] for d in plt_data], bottom=[d[1] for d in plt_data], color="teal", label="Noise Floor")
         plt.xticks(scores.columns, rotation=90)
         plt.legend()
-        plt.savefig(os.path.join(self._path, "loss_deviation.png"))
+        plt.savefig(os.path.join(self._path, "loss_deviation.jpg"))
         plt.close()
 
         # plot deeper analysis for each sensor
@@ -150,21 +150,24 @@ class Report:
             # save ai analysis
             fig.suptitle(f"{sensor} Analysis")
             name = sensor.split()[0]
-            fig.savefig(os.path.join(self._sensors, f"ai_{name}.png"))
+            fig.savefig(os.path.join(self._sensors, f"ai_{name}.jpg"))
             plt.close()
 
             # save histogram of data
             figure(figsize=self._size, dpi=self._dpi)
             values = s_inputs[sensor].to_numpy()
+            values = ((values - values.min()) / (values.max() - values.min()))
+
             bins, vals = np.histogram(values, bins=1000)
             plt.title(f"Histogram: {name}")
             plt.bar(vals[:-1], bins, color="teal", label="Real Data")
             plt.legend()
-            plt.savefig(os.path.join(self._sensors, f"ds_{name}.png"))
+            plt.savefig(os.path.join(self._sensors, f"ds_{name}.jpg"))
             plt.close()
 
             bins_rndm, vals_rndm = np.histogram(np.random.normal(values.mean(), values.std(), len(values)), bins=1000)
-            euclidean = np.sqrt(np.power(bins - bins_rndm, 2).sum()) / len(bins)
+            max_bin = np.max([bins, bins_rndm])
+            euclidean = np.sqrt(np.power((bins / max_bin) - (bins_rndm / max_bin), 2).sum()) / len(bins)
             graphs.append((i, scores.columns[i], self._sensors, euclidean, sigma_loss[i]))
 
         return graphs
@@ -176,6 +179,9 @@ class Report:
         Args:
             graphs (list): A list of tuples containing sensor data and related statistics.
         """
+        # also write to a raw md file
+        md = open(os.path.join(self._path, "report.md"), "w")
+
         # get the graphs created and initialize the PDF
         graphs = sorted(graphs, key=lambda x: x[-1], reverse=True)
         pdf = MarkdownPdf()
@@ -186,32 +192,31 @@ class Report:
         markdown = "# Report\n"
         markdown += f"- Acceptable loss deviation (<0.2 for each sensor)? **{acceptable}**\n"
 
-        mean_gauss = round(sum([graphs[i][-2] for i in range(len(graphs))]) / len(graphs), 2)
+        mean_gauss = round(sum([graphs[i][-2] for i in range(len(graphs))]) / len(graphs), 5)
         markdown += f"- Dataset quality (mean distance from the gaussian distribution): **{mean_gauss}**\n"
 
         # is there any sensor abnormal?
-        markdown += "## Score Quality: Worst to Best\n"
-        markdown += "|Sensor|Acceptable Deviation|\n|--|--|\n"
+        markdown += "## AI Quality Indicators\n"
+        markdown += "|Sensor|Acceptable Deviation|Data Quality|\n|-:|:-:|:-:|\n"
         for i, graph in enumerate(graphs):
+            score = round(graph[-1], 4)
+            data = round(graph[-1], 4)
             if graph[-1] < 0.2:
-                markdown += f"|{graph[1]}|{graph[-1]}|\n"
+                markdown += f"|{graph[1]}|{score}|{data}|\n"
             else:
-                markdown += f"|**{graph[1]}**|**{graph[-1]}**|\n"
+                markdown += f"|**{graph[1]}**|**{score}**|{data}|\n"
 
-        markdown += "## Data Quality: Worst to Best\n"
-        markdown += "|Sensor|Distance to Gaussian|\n|--|--|\n"
-        for i, graph in enumerate(sorted(graphs, key=lambda g: g[-2], reverse=True)):
-            markdown += f"|{graph[1]}|{graph[-2]}|\n"
-
+        md.write(markdown)
         pdf.add_section(Section(markdown, toc=True))
 
         # plot all diagrams from generate_graphs()
         for i, name, path, n, v in graphs:
             markdown = f"### {name}\n"
             name = name.split()[0]
-            markdown += f"![{name}]({path}/ai_{name}.png)\n"
-            markdown += f"![{name}]({path}/ds_{name}.png)\n"
+            markdown += f"![{name}]({path}/ai_{name}.jpg)\n"
+            markdown += f"![{name}]({path}/ds_{name}.jpg)\n"
+            md.write(markdown)
             pdf.add_section(Section(markdown, toc=True))
 
         pdf.save(os.path.join(self._path, "report.pdf"))
-
+        md.close()
