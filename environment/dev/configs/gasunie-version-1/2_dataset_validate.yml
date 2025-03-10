@@ -1,7 +1,8 @@
 folder: environment/dev/datasets/gasunie-valset-phase-1
 machine_uuid: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
 intervals:
-  - 2024-12-25 2025-01-05
+  - 2024-12-25 2024-12-26 # outlier 2am on Dec 27th
+  - 2024-12-28 2025-01-05
 num_workers: 6
 overwrite: false
 

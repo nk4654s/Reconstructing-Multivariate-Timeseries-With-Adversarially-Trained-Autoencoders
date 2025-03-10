@@ -87,7 +87,6 @@ data:
   - e44c6aca-cf06-434e-9257-4d15839c29ce
   - 4927d58d-b7ac-4bb5-9fd7-1257bb92b340
   - f9523a90-71ae-48d2-8e8b-f1288138eb28
-  - 5c4a7fab-23e7-4d0c-8420-5a826f0fa27f
   - 35e974db-1ed9-414d-b39f-fa584443f559
   - 29129d0a-7898-49f5-b139-e9154f173278
   - f72fe32a-7537-4651-91af-91116ef20475
@@ -107,7 +106,6 @@ data:
   - e44c6aca-cf06-434e-9257-4d15839c29ce
   - 4927d58d-b7ac-4bb5-9fd7-1257bb92b340
   - f9523a90-71ae-48d2-8e8b-f1288138eb28
-  - 5c4a7fab-23e7-4d0c-8420-5a826f0fa27f
   - 35e974db-1ed9-414d-b39f-fa584443f559
   - 29129d0a-7898-49f5-b139-e9154f173278
   - f72fe32a-7537-4651-91af-91116ef20475
@@ -122,7 +120,7 @@ data:
   pin_memory: true
 tag: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
 environment: dev
-normalizer: configs/gasunie-version-1/4_custom_normalizer.yml
+normalizer: configs/gasunie-version-1/4_custom_normalizer2.yml
 prefix: analysis
 tuner_config: null
 tuner_trials: 1
