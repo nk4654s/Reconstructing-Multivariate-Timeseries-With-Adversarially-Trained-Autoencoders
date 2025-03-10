@@ -90,6 +90,10 @@ class Dataset(torch.utils.data.Dataset):  # type: ignore
         )
 
     @property
+    def metadata(self):
+        return self._metadata
+
+    @property
     def UUID(self) -> str:
         """Returns the unique ID of this."""
         return str(self._metadata.uuid)
