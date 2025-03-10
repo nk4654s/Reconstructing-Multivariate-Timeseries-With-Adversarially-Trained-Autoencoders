@@ -39,7 +39,8 @@ class AnalyzerEntrypoint(EntrypointBase):
         # create a report and generate the graphs
         name = "analysis" if not context.config.prefix else context.config.prefix
         report = Report(context.config_folder, name)
-        report.generate_report_graphs(result)
+        graphs = report.generate_report_graphs(result)
+        report.generate_pdf(graphs)
 
         logger.info("Finished analyzing model on machine %s.", dataset.UUID)
 

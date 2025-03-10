@@ -180,6 +180,7 @@ dependencies = [
     { name = "ipykernel" },
     { name = "jsonargparse", extra = ["signatures"] },
     { name = "lightning" },
+    { name = "markdown-pdf" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "onnx" },
@@ -221,6 +222,7 @@ requires-dist = [
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "jsonargparse", extras = ["signatures"], specifier = ">=4.35.0" },
     { name = "lightning", specifier = ">=2.5.0.post0" },
+    { name = "markdown-pdf", specifier = ">=1.3.3" },
     { name = "matplotlib", specifier = ">=3.10.0" },
     { name = "numpy", specifier = ">=2.2.1" },
     { name = "onnx", specifier = ">=1.17.0" },
@@ -963,6 +965,31 @@ wheels = [
 ]
 
 [[package]]
+name = "markdown-it-py"
+version = "3.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mdurl" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/38/71/3b932df36c1a044d397a1f92d1cf91ee0a503d91e470cbd670aa66b07ed0/markdown-it-py-3.0.0.tar.gz", hash = "sha256:e3f60a94fa066dc52ec76661e37c851cb232d92f9886b15cb560aaada2df8feb", size = 74596 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/42/d7/1ec15b46af6af88f19b8e5ffea08fa375d433c998b8a7639e76935c14f1f/markdown_it_py-3.0.0-py3-none-any.whl", hash = "sha256:355216845c60bd96232cd8d8c40e8f9765cc86f46880e43a8fd22dc1a1a8cab1", size = 87528 },
+]
+
+[[package]]
+name = "markdown-pdf"
+version = "1.3.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "markdown-it-py" },
+    { name = "pymupdf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5f/5f/a478d72bc55a201ef065699276f1facd036844dd15c7bf375cb974e8746f/markdown_pdf-1.3.3.tar.gz", hash = "sha256:5cdb054afa20de0b590a5cbffc0569545bf3681f70263d6ffdc15adf99b515aa", size = 5501 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/62/8a/b62ce51cd283ef02de03bd264576167595fb1134801d9a784eccde0b19fd/markdown_pdf-1.3.3-py3-none-any.whl", hash = "sha256:0b9b425030fbe4871cbb5842a30ba8d23c6ca1f5ba40a2bb3bd4f286e17d28fc", size = 5379 },
+]
+
+[[package]]
 name = "markupsafe"
 version = "3.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1047,6 +1074,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/99/5b/a36a337438a14116b16480db471ad061c36c3694df7c2084a0da7ba538b7/matplotlib_inline-0.1.7.tar.gz", hash = "sha256:8423b23ec666be3d16e16b60bdd8ac4e86e840ebd1dd11a30b9f117f2fa0ab90", size = 8159 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8f/8e/9ad090d3553c280a8060fbf6e24dc1c0c29704ee7d1c372f0c174aa59285/matplotlib_inline-0.1.7-py3-none-any.whl", hash = "sha256:df192d39a4ff8f21b1895d72e6a13f5fcc5099f00fa84384e0ea28c2cc0653ca", size = 9899 },
+]
+
+[[package]]
+name = "mdurl"
+version = "0.1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba", size = 8729 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8", size = 9979 },
 ]
 
 [[package]]
@@ -1656,6 +1692,38 @@ wheels = [
 [package.optional-dependencies]
 crypto = [
     { name = "cryptography" },
+]
+
+[[package]]
+name = "pymupdf"
+version = "1.24.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pymupdfb" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e4/a7/189749e23567cd93883c9c96bd6b27d2e8c4f9bc410abde2178f35312265/PyMuPDF-1.24.6.tar.gz", hash = "sha256:029dd99df1cebcbcd4240940809c5e373353d12e6c8483934d42f59ceacfb037", size = 30436201 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/01/cc/d15fe008dab780fe0778bfbd6e56326316c233c207850ef779616c904af9/PyMuPDF-1.24.6-cp312-none-macosx_10_9_x86_64.whl", hash = "sha256:aee2999e8cd042ded9ff5ba4997dfbcbbb4e4f8a09c5e95c9a3c293a651a919d", size = 3221584 },
+    { url = "https://files.pythonhosted.org/packages/91/6c/587b586c942cd43d9651069350abb169d3e3a9532905672982b57a71ed62/PyMuPDF-1.24.6-cp312-none-macosx_11_0_arm64.whl", hash = "sha256:c85b8c4e389a71d57aba4c8e6115d7f20ec3b5025018023f3360cf176bbd294a", size = 2969293 },
+    { url = "https://files.pythonhosted.org/packages/56/69/16b6bbfb79c60147fd43380884435e1ecbd5370b876658afaeae1b5fcb86/PyMuPDF-1.24.6-cp312-none-manylinux2014_x86_64.whl", hash = "sha256:64cb67a3938c32614c2ba41cbd37168223aa9983bc882dc9a6c8c6bb207ade60", size = 3483354 },
+    { url = "https://files.pythonhosted.org/packages/4e/68/8da35a269cf4d4be700d04d2889e797fa25c83e537e6b57040af28289459/PyMuPDF-1.24.6-cp312-none-musllinux_1_2_x86_64.whl", hash = "sha256:7e099cc4a0deca70173692fe10b08eb486ca86222377d34bfcadb3bcb2da3ff8", size = 3602645 },
+    { url = "https://files.pythonhosted.org/packages/6e/ec/dc96ad7bf3eaaf31be1c4189a3c7b27125b9133bc81bed08771be0a1e080/PyMuPDF-1.24.6-cp312-none-win32.whl", hash = "sha256:24f11aa94e606f466e11163bc4fb5ab3328236549c75c26991c6269342d8dcba", size = 2690950 },
+    { url = "https://files.pythonhosted.org/packages/1a/de/88ac00bcf2188dd6be094d68e5600d704ded5baf409a0e567f5464509988/PyMuPDF-1.24.6-cp312-none-win_amd64.whl", hash = "sha256:10c373c9dce565779eced2a88730229e12c57d9c388cc1e184b1565e641979f7", size = 3221613 },
+]
+
+[[package]]
+name = "pymupdfb"
+version = "1.24.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bc/5d/ca7ef871a342710142805fab3992bb32befce94bed29e7f38d38d0748f25/PyMuPDFb-1.24.6.tar.gz", hash = "sha256:f5a40b1732d65a1e519916d698858b9ce7473e23edf9001ddd085c5293d59d30", size = 37823 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f2/43/65f6af70cb2b7bb3dc371b0a709f6312deccb8d60044227cd58824af4ae5/PyMuPDFb-1.24.6-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:21e3ed890f736def68b9a031122ae1fb854d5cb9a53aa144b6e2ca3092416a6b", size = 15296543 },
+    { url = "https://files.pythonhosted.org/packages/ca/1d/a6fde4c325da9dfc85a249f5ecb6bd52b2691f41cb7087264552b29439b7/PyMuPDFb-1.24.6-py3-none-macosx_11_0_arm64.whl", hash = "sha256:8704d2dfadc9448ce184597d8b0f9c30143e379ac948a517f9c4db7c0c71ed51", size = 14913346 },
+    { url = "https://files.pythonhosted.org/packages/4c/77/942d30c00796966f24e0bc7437820135c0a2168939d987079ef82f3fb362/PyMuPDFb-1.24.6-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:01662584d5cfa7a91f77585f13fc23a12291cfd76a57e0a28dd5a56bf521cb2c", size = 15472123 },
+    { url = "https://files.pythonhosted.org/packages/d6/25/1f5a29f9c257027b574e4bf5eed102e7ec9d19b92f058e42164bf042301a/PyMuPDFb-1.24.6-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:e1f7657353529ae3f88575c83ee49eac9adea311a034b9c97248a65cee7df0e5", size = 15687524 },
+    { url = "https://files.pythonhosted.org/packages/c9/8e/332accda1d752c700aaffec603509d712d90a9e079d9f079c22ecb774e17/PyMuPDFb-1.24.6-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:cebc2cedb870d1e1168e2f502eb06f05938f6df69103b0853a2b329611ec19a7", size = 16840952 },
+    { url = "https://files.pythonhosted.org/packages/b9/20/d24ab47ce64d8b7342080bb50f88c99864b372089920dfd1c6ae15b19758/PyMuPDFb-1.24.6-py3-none-win32.whl", hash = "sha256:ac4b865cd1e239db04674f85e02844a0e405f8255ee7a74dfee0d86aad0d3576", size = 11009255 },
+    { url = "https://files.pythonhosted.org/packages/69/b8/c716cf6b3100630569b83f8dfe18bbaa6433979e4292e9afc0438558727a/PyMuPDFb-1.24.6-py3-none-win_amd64.whl", hash = "sha256:9224e088a0d3c188dea03831807789e245b812fbd071c8d498da8f7cc33142b2", size = 12456540 },
 ]
 
 [[package]]
