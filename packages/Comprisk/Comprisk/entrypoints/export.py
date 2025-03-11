@@ -18,11 +18,6 @@ class ExportEntrypoint(EntrypointBase):
         self._model_name = "model.onnx"
         self._graph_image = "model_graph"
 
-    def get_start_cutt_off(self, context: EntrypointContext):
-        dataset = context.datamodule.trainset or context.datamodule.valset
-        remove_alpha = dataset.metadata.state_alpha
-
-
     def modify_model_metadata(self, context: EntrypointContext):
         dataset = context.datamodule.valset
         args = dataset.get_args()

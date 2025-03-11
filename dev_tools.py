@@ -2,7 +2,6 @@ import argparse
 import os.path
 import shutil
 from uuid import UUID
-import elementpath
 import xml
 
 import onnx
