@@ -24,7 +24,7 @@ trainer:
     - class_path: lightning.pytorch.callbacks.EarlyStopping
       init_args:
         monitor: validate/MSELoss
-        min_delta: 1.0e-04
+        min_delta: 1.0e-05
         patience: 3
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
