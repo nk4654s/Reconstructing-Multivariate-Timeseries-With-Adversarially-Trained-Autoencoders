@@ -22,9 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build Jar
-        working-directory: .
         run: |
-          python dev_tools.py
+          python ./dev_tools.py
 
       - name: Set up Java and Maven
         uses: actions/setup-java@v4
