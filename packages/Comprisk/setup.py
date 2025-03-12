@@ -42,6 +42,7 @@ setup(
             "comprisk-score=Comprisk.pipeline:cli_train_score_transformer",
             "comprisk-train=Comprisk.pipeline:cli_train",
             "comprisk-generate=Comprisk.pipeline:cli_generate",
+            "comprisk-flux=Comprisk.pipeline:cli_flux",
         ]
     },
     packages=find_packages(include=["Comprisk", "Comprisk.*"]),

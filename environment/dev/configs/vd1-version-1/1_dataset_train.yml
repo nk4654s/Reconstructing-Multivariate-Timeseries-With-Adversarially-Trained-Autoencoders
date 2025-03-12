@@ -9,16 +9,16 @@ modules:
   - class_path: Dataflux.modules.State
     init_args:
       key: 7d70de93-28f7-4133-9bf6-da04d8bb8bdf # Laeuft (-)
-      lower: 0.9
-      upper: 1.1
-      alpha_threshold: 900
+      lower: 1
+      upper: 1
+      alpha_threshold: 1800
       beta_threshold: 0
   - class_path: Dataflux.modules.state.State
     init_args:
       key: f525f9a2-4a84-40fb-a4c2-7f7d6a6a5efb # PositionBypassregelventilPCV73381 (%)
-      lower: -0.99
-      upper: 0.01
-      alpha_threshold: 900
+      lower: 0
+      upper: 0
+      alpha_threshold: 300
       beta_threshold: 0
   - class_path: Dataflux.modules.features.Features
     init_args:

@@ -72,8 +72,3 @@ class SplitDataset(FileWorkerCallable):
         # the metadata from the arguments will be saved automatically, but the
         # split_metadata not. Hence, save it from here
         split_metadata.save(self._name)
-        
-        # do not forget to move the normalizer
-        shutil.copyfile(metadata.normalizer_path, split_metadata.normalizer_path)
-
-

@@ -8,8 +8,8 @@ from Dataflux.helper.dataframe_ops import trim, split, multi_split
 class TestMachineSplit(unittest.TestCase):
     def setUp(self) -> None:
         self.key = "trim_key"
-        self.lower = 0.9
-        self.upper = 1.1
+        self.lower = 1
+        self.upper = 1
 
     def test_trim_empty(self) -> None:
         """Tests trim on empty dataset"""
@@ -113,11 +113,16 @@ class TestMachineSplit(unittest.TestCase):
     def test_multi_split(self) -> None:
         """This method test the split algorithm."""
         series = np.ones(500)
+        # 0 - 50
         series[50:60] = 2
+        # 60 - 100
         series[100:110] = 0
+        # 110 - 200
         series[200:205] = 2
         series[205:210] = 0
+        # 210 - 300
         series[300:310] = 2
+        # 310 - 450
         series[450:] = 2
         series[480:] = 0
         df = pd.DataFrame({self.key: series})
