@@ -1,7 +1,6 @@
 """This module contains various loss functions."""
-from torch import nn
 import torch
-
+from torch import nn
 
 _loss_register = {
     "MSELoss": nn.MSELoss(),

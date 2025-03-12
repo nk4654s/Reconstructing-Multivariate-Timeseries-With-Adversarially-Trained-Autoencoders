@@ -4,19 +4,18 @@ from Dataflux import get_logger, logging_mode
 
 from Comprisk.cli import CompriskCLI
 from Comprisk.data import DataModule
-from Comprisk.helper.structure import get_config_folder
-from Comprisk.model import NormalizeWrapper
 from Comprisk.entrypoints import (
+    AnalyzerEntrypoint,
     EntrypointContext,
+    ExportEntrypoint,
+    FluxEntrypoint,
+    GeneratorEntrypoint,
     Pipeline,
     TrainerEntrypoint,
     TrainScoreTransformerEntrypoint,
-    AnalyzerEntrypoint,
-    FluxEntrypoint,
-    GeneratorEntrypoint,
-    ExportEntrypoint,
 )
-
+from Comprisk.helper.structure import get_config_folder
+from Comprisk.model import NormalizeWrapper
 
 logger = get_logger(__name__, path="logfile", level=logging_mode)
 

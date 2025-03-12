@@ -1,28 +1,26 @@
-from datetime import datetime
 import gzip
+from datetime import datetime
 from typing import Dict
 
-from tqdm import tqdm
 import pandas as pd
+from tqdm import tqdm
 
-from Dataflux.helper import (
-    compress,
-    get_sensors,
-    SensorRegisterFormat,
-    filter_upload,
-)
-
+from Dataflux import DEBUG_MODE, logger
 from Dataflux.data.s3io import S3Bucket
 from Dataflux.data.update_tools import (
     UpdateCallable,
     get_downloaders,
     merge_dfs,
-    safe_download,
     safe_df_avg,
+    safe_download,
 )
-
-from Dataflux import logger, DEBUG_MODE
-from Dataflux.helper.utils import is_valid_uuid, daterange
+from Dataflux.helper import (
+    SensorRegisterFormat,
+    compress,
+    filter_upload,
+    get_sensors,
+)
+from Dataflux.helper.utils import daterange, is_valid_uuid
 
 
 class EmptyScoreRegister(RuntimeError):
@@ -196,7 +194,7 @@ class DataUpdater(S3Bucket):
             n: df[n].dropna().sum() for n in df.columns.values if n in previous_columns
         }
         for name, val in previous_columns.items():
-            if name not in columns.keys():
+            if name not in columns:
                 logger.warning("Attempted to remove %s when updating.", name)
                 return False
 

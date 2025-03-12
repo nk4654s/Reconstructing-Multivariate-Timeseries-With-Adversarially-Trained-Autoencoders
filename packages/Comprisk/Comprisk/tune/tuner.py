@@ -1,8 +1,9 @@
 """This module contains the tuner class based on the `optuna` package to find
 optimal hyperparameters for training."""
-from typing import Any, Dict
-from copy import deepcopy
 import os
+from copy import deepcopy
+from typing import Any, Dict
+
 import optuna
 from optuna.trial import Trial
 

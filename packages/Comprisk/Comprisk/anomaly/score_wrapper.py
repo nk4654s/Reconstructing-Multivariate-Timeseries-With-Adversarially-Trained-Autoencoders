@@ -1,17 +1,17 @@
 import os.path
-from typing import Union, Tuple
+from typing import Tuple, Union
 
 import numpy as np
 import torch
 import yaml
-from torch import nn, Tensor
+from Dataflux import get_logger, logging_mode
+from lightning import LightningModule
+from torch import Tensor, nn
 from torch.nn.parameter import Parameter
 from torch.utils.data import DataLoader
-from lightning import LightningModule
 from tqdm import tqdm
 
 from Comprisk.model import BaseModel
-from Dataflux import get_logger, logging_mode
 
 logger = get_logger(__name__, "logfile", logging_mode)
 PREDICT_TYPE = Union[np.ndarray, torch.Tensor]

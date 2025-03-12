@@ -8,15 +8,16 @@ from io import BytesIO
 from multiprocessing import Pool
 from typing import List, Tuple
 from uuid import UUID
-from tqdm import tqdm
+
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
+from Dataflux import DEBUG_MODE, logger
 from Dataflux.data.header import Header
 from Dataflux.data.s3io import S3Bucket
-from Dataflux.diskio.meta import Metadata, FileMeta
-from Dataflux.helper import get_file, get_day_list, line_str_to_array
-from Dataflux import logger, DEBUG_MODE
+from Dataflux.diskio.meta import FileMeta, Metadata
+from Dataflux.helper import get_day_list, get_file, line_str_to_array
 
 
 def homogeneous_decompress(df: pd.DataFrame, index_key: str = "ts") -> pd.DataFrame:
@@ -151,7 +152,7 @@ class DataDownloader(S3Bucket):
         # read all values from the incoming sensor data
         values = self._pool.map(line_str_to_array, lines)
         values = np.array(values, dtype=np.float64)
-        data = {key: val for (key, val) in zip(header.values, values.T)}
+        data = {key: val for (key, val) in zip(header.values, values.T, strict=False)}
         df = pd.DataFrame(data)
 
         # adjust types to save some storage space

@@ -1,11 +1,11 @@
 """This module merges downloaded and pre-processed datasets. The post-processing
 entrypoint is meant to run after merging datasets."""
 
+import argparse
 import os
 import shutil
-import argparse
 
-from Dataflux.helper import Metadata, Meta
+from Dataflux.helper import Meta, Metadata
 
 
 def main() -> None:

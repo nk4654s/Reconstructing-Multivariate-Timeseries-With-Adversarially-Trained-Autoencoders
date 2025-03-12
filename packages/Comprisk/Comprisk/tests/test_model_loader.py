@@ -2,9 +2,9 @@ import os
 import unittest
 from unittest.mock import patch
 
+from Comprisk.helper import ModelIterator
 from Dataflux.pytorch.dummy_dataset import DummyDataset, DummyMode
 
-from Comprisk.helper import ModelIterator
 
 class TestModelLoader(unittest.TestCase):
     def setUp(self):

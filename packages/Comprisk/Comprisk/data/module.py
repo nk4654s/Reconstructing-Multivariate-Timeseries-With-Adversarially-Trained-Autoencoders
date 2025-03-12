@@ -3,13 +3,11 @@ from copy import deepcopy
 from typing import List
 
 import lightning as L
-from torch.utils.data import DataLoader
-
-from Dataflux.pytorch import Dataset, collate_fn, DatasetTypes
-from Dataflux.pytorch import RandomBatchSampler as RBS
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
-
+from Dataflux.pytorch import Dataset, DatasetTypes, collate_fn
+from Dataflux.pytorch import RandomBatchSampler as RBS
+from torch.utils.data import DataLoader
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)

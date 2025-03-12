@@ -1,7 +1,8 @@
 import unittest
+
 import numpy as np
-from torch import tensor
 from Comprisk.helper.structure import class_for_name
+from torch import tensor
 
 
 class TestBaseModel(unittest.TestCase):

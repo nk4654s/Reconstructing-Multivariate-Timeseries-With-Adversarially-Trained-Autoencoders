@@ -4,19 +4,17 @@ when processing a dataset using a defined yaml-config.
 
 import os
 import shutil
-from datetime import datetime, timezone, timedelta
-from typing import List, Tuple, Union
-
-from Dataflux.cli import CLIArgumentParser
-from Dataflux.cli.cli import FluxConfigManager
-from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
-from Dataflux.helper import daterange
-from Dataflux.diskio.meta import Metadata
-from Dataflux.data import ContinuousDataDownloader, DataType
+from datetime import UTC, datetime, timedelta
+from typing import List, Tuple
 
 from Dataflux import logger
+from Dataflux.cli import CLIArgumentParser
+from Dataflux.cli.cli import FluxConfigManager
+from Dataflux.data import ContinuousDataDownloader, DataType
+from Dataflux.diskio import FileWorkerFactory, FileWorkerPool
+from Dataflux.diskio.meta import Metadata
+from Dataflux.helper import daterange
 from Dataflux.modules import Slice
-
 
 modules = []
 
@@ -46,7 +44,7 @@ def download(flux: FluxConfigManager) -> None:
 
     # get the current date and subtract 1 hour to get the model's input
     if flux.args.latest:
-        end = datetime.now(tz=timezone.utc)
+        end = datetime.now(tz=UTC)
         start = end - timedelta(hours=2)
 
         modules.append(Slice(start.timestamp(), end.timestamp()))
@@ -99,7 +97,7 @@ def process(flux: FluxConfigManager) -> None:
     metadata.save(flux.args.folder)
 
 
-def pipeline(flux: FluxConfigManager) -> Union[str | None]:
+def pipeline(flux: FluxConfigManager) -> str | None:
     """This function executes the flux pipeline given the FluxConfigManager which holds the required information.
 
     Args:

@@ -33,7 +33,6 @@ import os
 
 from Dataflux.logger import get_logger
 
-
 # to enable the debug mode, the content of CAS_DEBUG_MODE does not matter, only if it exists
 DEBUG_MODE = True if os.environ.get("CAS_DEBUG_MODE", "0") != "0" else False
 

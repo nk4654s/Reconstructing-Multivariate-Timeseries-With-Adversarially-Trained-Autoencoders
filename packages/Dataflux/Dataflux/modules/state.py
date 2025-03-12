@@ -1,15 +1,18 @@
 """This module removes rows from the dataframe if the machine is off."""
 
 from threading import Lock
-from typing import Dict, Union
+from typing import Dict
+
 import pandas as pd
-from Dataflux.diskio import FileWorkerCallable, CallableDependency, CALLABLE_RETURN_TYPE
+
+from Dataflux import logger
+from Dataflux.diskio import CALLABLE_RETURN_TYPE, CallableDependency, FileWorkerCallable
 from Dataflux.diskio import FileWorkerContext as Context
 from Dataflux.diskio.meta import FileMeta, FileState, Metadata
-from Dataflux import logger
 from Dataflux.helper.dataframe_ops import multi_split, remove_threshold
-from Dataflux.modules.normalize import NormalizeFit
 from Dataflux.modules.features import Features
+from Dataflux.modules.normalize import NormalizeFit
+
 mutex = Lock()
 
 
@@ -25,7 +28,7 @@ class State(FileWorkerCallable):
         beta_threshold (int): The amount of trailing steps to remove from the DataFrame.
     """
 
-    def __init__(self, key: str = "Laeuft", lower: Union[int, float] = 1, upper: Union[int, float] = 1,
+    def __init__(self, key: str = "Laeuft", lower: int | float = 1, upper: int | float = 1,
                  alpha_threshold: int = 10800, beta_threshold: int = 900):
         self._key_substring = key
         self._key = ""

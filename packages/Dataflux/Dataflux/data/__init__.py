@@ -4,12 +4,12 @@ pre-/postprocessing modules. Example code can be found in the entrypoints
 `Dataflux.preprocess` and `Dataflux.postprocess`."""
 
 from Dataflux.data.download import (
-    DataDownloader,
     ContinuousDataDownloader,
+    DataDownloader,
     EmptyStreamError,
 )
-from Dataflux.data.update import UpdateCallable, DataUpdater, EmptyScoreRegister
 from Dataflux.data.types import DataType
+from Dataflux.data.update import DataUpdater, EmptyScoreRegister, UpdateCallable
 
 __all__ = [
     "DataDownloader",

@@ -3,12 +3,14 @@
 import importlib
 import os
 import uuid
+from collections.abc import Callable, Iterator
 from copy import copy
-from typing import Callable, Tuple, List, Iterator
-from datetime import datetime, date, timedelta
-import pandas as pd
-import numpy as np
+from datetime import date, datetime, timedelta
+from typing import List, Tuple
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from matplotlib import rcParams
 
 from Dataflux import logger

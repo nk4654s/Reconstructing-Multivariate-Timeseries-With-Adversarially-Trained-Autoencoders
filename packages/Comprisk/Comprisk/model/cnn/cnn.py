@@ -1,8 +1,7 @@
 import torch
-from torch import nn
-
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
+from torch import nn
 
 from Comprisk.model import BaseModel
 

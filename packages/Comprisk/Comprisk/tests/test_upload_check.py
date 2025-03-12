@@ -1,10 +1,9 @@
 import unittest
 import uuid
+
 import numpy as np
 import pandas as pd
-
 from Dataflux.data import DataUpdater
-
 
 A = str(uuid.uuid4())
 B = str(uuid.uuid4())

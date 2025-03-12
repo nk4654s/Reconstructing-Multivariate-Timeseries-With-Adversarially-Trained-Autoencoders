@@ -2,11 +2,10 @@ import os
 import shutil
 from typing import Dict
 
-
-from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
+from Dataflux import logger
+from Dataflux.diskio import CALLABLE_RETURN_TYPE, CallableDependency, FileWorkerCallable, FileWorkerContext
 from Dataflux.diskio.meta import FileMeta, Metadata
 from Dataflux.helper import deterministic_split_algorithm
-from Dataflux import logger
 
 
 class SplitDataset(FileWorkerCallable):

@@ -1,8 +1,10 @@
 import os
 import shutil
+
 import lightning as L
 import yaml
-
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
 from lightning.pytorch.callbacks.callback import Callback
 from lightning.pytorch.loggers import TensorBoardLogger
 
@@ -10,11 +12,7 @@ from Comprisk.entrypoints.base import (
     EntrypointBase,
     EntrypointContext,
 )
-
-from Dataflux import logging_mode
-from Dataflux.logger import get_logger
-
-from Comprisk.helper import ModelCheckpoint, BasicCheckpointCallback
+from Comprisk.helper import BasicCheckpointCallback, ModelCheckpoint
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)

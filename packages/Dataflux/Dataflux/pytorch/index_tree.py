@@ -3,8 +3,8 @@ to the sampling index."""
 import sys
 from typing import Dict, List, Tuple
 
-from Dataflux.diskio.meta import Metadata, FileMeta
 from Dataflux import logger
+from Dataflux.diskio.meta import FileMeta, Metadata
 
 sys.setrecursionlimit(1500)
 

@@ -1,11 +1,13 @@
 """This module contains the FileWorkerFactory."""
 
-import os
 import math
-from Dataflux.diskio.meta import FileMeta, Metadata
-from .pool import FileWorkerPool
-from .context import FileWorkerContext as Context
+import os
+
 from Dataflux import logger
+from Dataflux.diskio.meta import FileMeta, Metadata
+
+from .context import FileWorkerContext as Context
+from .pool import FileWorkerPool
 
 
 class FileWorkerFactory:

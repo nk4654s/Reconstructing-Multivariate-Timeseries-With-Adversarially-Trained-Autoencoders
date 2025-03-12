@@ -1,8 +1,9 @@
 """This module downloads and pre-processes weather data."""
 
-import zipfile
 import io
+import zipfile
 from datetime import datetime
+
 import numpy as np
 import pandas as pd
 import requests

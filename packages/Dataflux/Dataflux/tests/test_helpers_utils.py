@@ -1,8 +1,10 @@
 """Dataflux/data/utils.py"""
 import os
 import unittest
+
 import numpy as np
 from Dataflux.helper import get_file, to_float
+
 
 class TestUtils(unittest.TestCase):
     def setUp(self):

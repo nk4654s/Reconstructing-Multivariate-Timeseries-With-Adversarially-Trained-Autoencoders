@@ -1,7 +1,8 @@
 """This module registers activation functions from the torch library to be 
 used with the config manager."""
 
-from typing import Callable
+from collections.abc import Callable
+
 import torch
 
 _str_to_activation = {"relu": torch.relu, "sigmoid": torch.sigmoid, "tanh": torch.tanh, "linear": lambda x: x}
@@ -18,7 +19,7 @@ def get_activation_from_string(activation_str: str) -> Callable:
         Callable: The activation function from the torch library.
     """
     activation_str = activation_str.strip().lower()
-    func = _str_to_activation.get(activation_str, None)
+    func = _str_to_activation.get(activation_str)
 
     if not func:
         print(

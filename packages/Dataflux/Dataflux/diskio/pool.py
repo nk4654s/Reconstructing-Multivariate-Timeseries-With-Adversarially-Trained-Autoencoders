@@ -1,12 +1,15 @@
 """This module contains the FileWorkerPool"""
 import os.path
-from typing import List, Dict
+from typing import Dict, List
+
 from tqdm import tqdm
-from .callable import FileWorkerCallable, CallableDependency
+
+from Dataflux import DEBUG_MODE, logger
 from Dataflux.diskio.meta import FileMeta, FileState, Metadata
-from .worker import FileWorkerThread
+
+from .callable import CallableDependency, FileWorkerCallable
 from .context import FileWorkerContext as Context
-from Dataflux import logger, DEBUG_MODE
+from .worker import FileWorkerThread
 
 
 class FileWorkerPool:
@@ -37,7 +40,7 @@ class FileWorkerPool:
             # check registered dependencies
             for module_name, mode in dependencies.items():
                 # check that dependencies is registered as a module
-                if module_name not in all_modules.keys():
+                if module_name not in all_modules:
                     continue
 
                 # assert module_name in all_modules.keys(), f"{module_name} should exist"

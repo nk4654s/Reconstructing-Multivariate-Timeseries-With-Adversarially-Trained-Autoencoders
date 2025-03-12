@@ -1,12 +1,12 @@
+import json
 import os
 
 import onnx
 import torch
-import json
+from Dataflux import get_logger, logging_mode
 
 from Comprisk.anomaly import ScoreWrapper
-from Comprisk.entrypoints.base import EntrypointContext, EntrypointBase
-from Dataflux import get_logger, logging_mode
+from Comprisk.entrypoints.base import EntrypointBase, EntrypointContext
 
 logger = get_logger(__name__, "logfile", logging_mode)
 

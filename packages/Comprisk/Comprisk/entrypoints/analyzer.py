@@ -4,7 +4,7 @@ from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
 from Comprisk.entrypoints import EntrypointBase, EntrypointContext
-from Comprisk.helper import Report, ModelIterator
+from Comprisk.helper import ModelIterator, Report
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)

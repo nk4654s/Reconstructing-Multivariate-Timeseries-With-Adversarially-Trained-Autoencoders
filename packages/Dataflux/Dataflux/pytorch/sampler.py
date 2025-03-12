@@ -1,6 +1,6 @@
 """This module contains a custom sampler, which returns indicies concerning the within a given range."""
-from torch.utils.data import Sampler
 import numpy as np
+from torch.utils.data import Sampler
 
 
 class RandomBatchSampler(Sampler):

@@ -1,16 +1,14 @@
 """This module creates a model and tunes its hyperparameters."""
 import os
-import yaml
 
+import yaml
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
-from Comprisk.tune import Tuner, ConfigManager
-from Comprisk.model import BaseModel
-from Comprisk.data import DataModule
 from Comprisk.cli import CompriskCLI
-
-
+from Comprisk.data import DataModule
+from Comprisk.model import BaseModel
+from Comprisk.tune import ConfigManager, Tuner
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)

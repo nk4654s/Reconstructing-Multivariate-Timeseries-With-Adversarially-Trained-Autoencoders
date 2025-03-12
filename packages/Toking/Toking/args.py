@@ -21,7 +21,7 @@ def parse_resource(d: Dict) -> Dict:
         if key == "type":
             d[key] = eval(val)
 
-            if "default" in d.keys():
+            if "default" in d:
                 default = d[key](d["default"])
                 d["default"] = default
 

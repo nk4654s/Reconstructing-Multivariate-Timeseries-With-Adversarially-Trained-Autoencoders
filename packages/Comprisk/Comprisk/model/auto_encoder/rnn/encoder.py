@@ -1,4 +1,5 @@
-from torch import nn, Tensor
+from torch import Tensor, nn
+
 from Comprisk.model.auto_encoder import EncoderBase
 
 

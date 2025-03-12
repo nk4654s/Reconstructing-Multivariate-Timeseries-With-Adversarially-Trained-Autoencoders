@@ -1,8 +1,8 @@
 """Dataflux/helper/scaler.py"""
 import unittest
-import pandas as pd
-import numpy as np
 
+import numpy as np
+import pandas as pd
 from Dataflux.helper import FluxScaler
 from Dataflux.helper.scaler import ScalerMethod
 

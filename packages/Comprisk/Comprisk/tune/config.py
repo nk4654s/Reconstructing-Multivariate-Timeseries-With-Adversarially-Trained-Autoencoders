@@ -1,16 +1,17 @@
 """This module contains the ConfigManager and dict tools to navigate
 a nested dict."""
 
-from typing import Any, Dict, Tuple
-from functools import reduce
-from copy import deepcopy
 import operator
+from copy import deepcopy
+from functools import reduce
+from typing import Any, Dict, Tuple
 
 import yaml
 from optuna import Trial
+
+from Comprisk.cli.cli import CompriskCLI
 from Comprisk.data import DataModule
 from Comprisk.helper.structure import class_for_name, get_config_path
-from Comprisk.cli.cli import CompriskCLI
 from Comprisk.tune.provider import SuggestionProvider, TunedProvider
 
 
@@ -163,8 +164,8 @@ class ConfigManager:
         Raises:
             AssertionError: If any key in 'b' is not found in 'a'.
         """
-        for key in b.keys():
-            assert key in a.keys(), f"Unknown key '{key}' in config file."
+        for key in b:
+            assert key in a, f"Unknown key '{key}' in config file."
             if isinstance(a[key], dict):
                 self.check_config(a[key]["init_args"], b[key])
 
@@ -177,8 +178,8 @@ class ConfigManager:
     ) -> None:
         suggestion = {}
         # build the hyperparameters
-        for key in train.keys():
-            if isinstance(train[key], dict) and key in tune.keys():
+        for key in train:
+            if isinstance(train[key], dict) and key in tune:
                 suggestion[key] = {"class_path": train[key]["class_path"]}
                 suggestion[key]["init_args"] = self._suggest(
                     provider, train[key]["init_args"], tune[key], key
@@ -186,7 +187,7 @@ class ConfigManager:
                 continue
 
             # use hyperparameters from the model config, if they will not be tuned
-            if key not in tune.keys():
+            if key not in tune:
                 suggestion[key] = train[key]
                 continue
 
@@ -227,7 +228,7 @@ class ConfigManager:
         Returns:
             Dict: A dictionary with the initialized submodules.
         """
-        for key in params.keys():
+        for key in params:
             if not isinstance(params[key], dict):
                 continue
 

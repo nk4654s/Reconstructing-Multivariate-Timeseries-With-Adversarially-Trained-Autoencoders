@@ -1,7 +1,7 @@
 from typing import List, Tuple
-from pandas import DataFrame
 
 import numpy as np
+from pandas import DataFrame
 from scipy import stats
 
 

@@ -1,11 +1,10 @@
 import datetime
-from typing import Tuple, Dict
 from getpass import getpass
-
-from pycognito.aws_srp import AWSSRP
+from typing import Dict, Tuple
 
 import boto3
 from botocore.exceptions import ClientError
+from pycognito.aws_srp import AWSSRP
 
 from Toking.args import TokingCLI
 from Toking.resource import get_arg_default

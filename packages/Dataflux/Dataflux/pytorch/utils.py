@@ -3,7 +3,6 @@ from typing import List, Tuple
 import numpy as np
 import torch
 
-
 BATCH_TYPE = Tuple[torch.Tensor, ...]
 
 

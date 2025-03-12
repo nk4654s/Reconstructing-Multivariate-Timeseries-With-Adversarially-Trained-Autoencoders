@@ -4,11 +4,11 @@ a factory to build a module and a pool to execute all build modules. Also, a
 context is provided to pass information from one module in the pipeline to a
 following one. This comes in handy for training and applying a normalization."""
 
-from Dataflux.diskio.worker import FileWorkerThread
-from Dataflux.diskio.callable import FileWorkerCallable, CallableDependency, CALLABLE_RETURN_TYPE
+from Dataflux.diskio.callable import CALLABLE_RETURN_TYPE, CallableDependency, FileWorkerCallable
+from Dataflux.diskio.context import FileWorkerContext
 from Dataflux.diskio.factory import FileWorkerFactory
 from Dataflux.diskio.pool import FileWorkerPool
-from Dataflux.diskio.context import FileWorkerContext
+from Dataflux.diskio.worker import FileWorkerThread
 
 __all__ = [
     "FileWorkerThread",

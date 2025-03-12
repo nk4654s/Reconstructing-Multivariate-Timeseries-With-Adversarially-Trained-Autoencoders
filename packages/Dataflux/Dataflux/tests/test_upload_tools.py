@@ -4,7 +4,6 @@ import unittest
 
 import numpy as np
 import pandas as pd
-
 from Dataflux.data.update_tools import merge_dfs
 
 

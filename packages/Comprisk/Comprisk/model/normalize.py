@@ -1,17 +1,14 @@
-from typing import Union, Dict, Tuple, List, Any
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import torch
-from torch import Tensor
+from Dataflux import get_logger, logging_mode
+from Dataflux.pytorch import BATCH_TYPE, Dataset
+from lightning import LightningModule
+from torch import Tensor, nn
 from torch.nn.parameter import Parameter
 from torch.utils.data import DataLoader
-from torch import nn
-from lightning import LightningModule
 from tqdm import tqdm
-
-from Dataflux.pytorch import Dataset, BATCH_TYPE
-from Dataflux import get_logger, logging_mode
-
 
 logger = get_logger(__name__, "logfile", logging_mode)
 PREDICT_TYPE = Union[np.ndarray, torch.Tensor]

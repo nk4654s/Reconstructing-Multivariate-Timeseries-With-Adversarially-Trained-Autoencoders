@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from Dataflux.helper import get_sensors_ai, SensorRegisterFormat
+from Dataflux.helper import SensorRegisterFormat, get_sensors_ai
 
 
 class TestSensorMappingWithAI(unittest.TestCase):

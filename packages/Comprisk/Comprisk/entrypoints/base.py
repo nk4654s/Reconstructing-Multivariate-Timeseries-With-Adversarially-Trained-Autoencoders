@@ -1,12 +1,12 @@
 from argparse import Namespace
-from dataclasses import dataclass, field, InitVar
+from dataclasses import InitVar, dataclass, field
 from enum import Enum
 from typing import List, Tuple
+
 from lightning import Trainer
 from torch import nn
 
 from Comprisk.data import DataModule
-
 from Comprisk.model import BaseModel
 
 
@@ -17,9 +17,7 @@ class Environment(Enum):
 
 def environment_from_string(string: str) -> Environment:
     for type_ in Environment:
-        if type_.value == string:
-            return type_
-        elif type_ == string:
+        if type_.value == string or type_ == string:
             return type_
 
     raise ValueError(f"Input '{string}' is not part of 'Environment'.")

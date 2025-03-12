@@ -1,14 +1,14 @@
 """This module replaces the sensor UUID with a human readable text."""
 from enum import Enum, auto
 from typing import Dict
+
 import pandas as pd
 
-from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
-from Dataflux.diskio.meta import FileMeta, Metadata, FileState
+from Dataflux import logger
+from Dataflux.diskio import CALLABLE_RETURN_TYPE, CallableDependency, FileWorkerCallable, FileWorkerContext
+from Dataflux.diskio.meta import FileMeta, FileState, Metadata
 from Dataflux.helper import get_sensors
 from Dataflux.modules.normalize import NormalizeFit
-
-from Dataflux import logger
 
 
 class ColumnContext(Enum):

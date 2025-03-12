@@ -1,6 +1,7 @@
 """This module handles showing and saving graphs of a dataframe."""
 import math
 from typing import List, Tuple
+
 import matplotlib.pyplot as plt
 import pandas as pd
 

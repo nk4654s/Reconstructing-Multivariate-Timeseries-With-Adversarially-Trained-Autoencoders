@@ -1,15 +1,15 @@
 """This module implements an advanced CLI for training or loading
 a model. Moreover, the module expands the CLI by **lightning.ai**."""
-import inspect
 import datetime
+import inspect
+
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
 from lightning import Trainer
 from lightning.pytorch.cli import (
     LightningArgumentParser,
     LightningCLI,
 )
-
-from Dataflux import logging_mode
-from Dataflux.logger import get_logger
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)

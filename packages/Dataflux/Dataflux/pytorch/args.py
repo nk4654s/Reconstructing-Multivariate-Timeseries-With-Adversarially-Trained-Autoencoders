@@ -11,9 +11,7 @@ class DatasetTypes(Enum):
 
 def dataset_type_from_string(string: str) -> DatasetTypes:
     for type_ in DatasetTypes:
-        if type_.value == string:
-            return type_
-        elif type_ == string:
+        if type_.value == string or type_ == string:
             return type_
     
     raise ValueError(f"Input '{string}' is not part of 'DatasetTypes'.")

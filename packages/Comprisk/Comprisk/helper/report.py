@@ -2,17 +2,17 @@ import json
 import os.path
 import shutil
 from uuid import UUID
-from markdown_pdf import MarkdownPdf, Section
-import matplotlib.pyplot as plt
-import onnxruntime
-from matplotlib.pyplot import figure
 
+import matplotlib.pyplot as plt
 import numpy as np
+import onnxruntime
 import pandas as pd
 import yaml
+from Dataflux.helper.sensor_register import get_sensors
+from markdown_pdf import MarkdownPdf, Section
+from matplotlib.pyplot import figure
 
 from Comprisk.helper import IteratorResult
-from Dataflux.helper.sensor_register import get_sensors
 
 
 class Report:

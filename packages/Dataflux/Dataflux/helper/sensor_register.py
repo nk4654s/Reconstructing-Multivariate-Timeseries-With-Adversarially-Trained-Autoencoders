@@ -1,14 +1,14 @@
 import uuid
+from collections.abc import Callable
 from enum import Enum, auto
 from functools import cache
-from typing import Dict, List, Callable, Union, Tuple
+from typing import Dict, List, Tuple
 from uuid import UUID
-import requests
 
+import requests
 from Toking import Toking
 
 from Dataflux import get_logger, logging_mode
-
 
 logger = get_logger(__name__, "logfile", logging_mode)
 
@@ -25,7 +25,7 @@ class NamespaceNull(uuid.UUID):
 
 
 def gen_health_score_sensor_ids(
-    sensor_id: Union[str, uuid.UUID], values: List[int]
+    sensor_id: str | uuid.UUID, values: List[int]
 ) -> List[uuid.UUID]:
     f"""
     This function generates UUIDs given a sensor id (UUID) and a list of versions, which serve as generation

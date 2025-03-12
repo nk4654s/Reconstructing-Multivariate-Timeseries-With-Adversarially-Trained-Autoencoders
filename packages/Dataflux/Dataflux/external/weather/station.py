@@ -1,8 +1,8 @@
 """This module contains the weather station's information."""
 
-import requests
 import numpy as np
 import pandas as pd
+import requests
 
 from .misc import Geo
 

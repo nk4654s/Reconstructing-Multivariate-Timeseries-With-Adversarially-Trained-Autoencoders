@@ -1,24 +1,22 @@
 """This module contains the base model implementing widely-used functions. Layers
 of a neural network are not implemented."""
 from typing import List
+
 import numpy as np
 import torch
-
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
+from Dataflux.pytorch import BATCH_TYPE, DatasetTypes, dataset_type_from_string
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.optim.optimizer import Optimizer
 
-from Dataflux.pytorch import DatasetTypes, dataset_type_from_string, BATCH_TYPE
 from Comprisk.helper.structure import (
-    r2_score,
+    get_activation_from_string,
     get_loss_by_name,
     get_optimizer_by_name,
-    get_activation_from_string,
+    r2_score,
 )
 from Comprisk.model import NormalizeWrapper
-
-from Dataflux import logging_mode
-from Dataflux.logger import get_logger
-
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
@@ -111,7 +109,7 @@ class BaseModel(NormalizeWrapper):
 
         # the feature loss is required by the LossMeasurement callback to calculate
         # the model's performance during training.
-        for name_, loss_ in zip(self._features_out, self._get_feature_loss(y_hat, y)):
+        for name_, loss_ in zip(self._features_out, self._get_feature_loss(y_hat, y), strict=False):
             self.log(f"train/{name_}", loss_)
         return loss
 

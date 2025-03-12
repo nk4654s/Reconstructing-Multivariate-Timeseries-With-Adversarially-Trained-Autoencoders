@@ -6,18 +6,18 @@ these module in a way to form an executable pipeline. A pipeline can be run usin
 To learn more about the generic entrypoint structure check out `Comprisk.entrypoints.base` for more information.
 """
 
+from Comprisk.entrypoints.analyzer import AnalyzerEntrypoint
 from Comprisk.entrypoints.base import (
+    EntrypointBase,
     EntrypointContext,
     Environment,
     Pipeline,
-    EntrypointBase,
 )
-from Comprisk.entrypoints.trainer import TrainerEntrypoint
-from Comprisk.entrypoints.scoring import TrainScoreTransformerEntrypoint
-from Comprisk.entrypoints.analyzer import AnalyzerEntrypoint
+from Comprisk.entrypoints.export import ExportEntrypoint
 from Comprisk.entrypoints.flux import FluxEntrypoint
 from Comprisk.entrypoints.generate import GeneratorEntrypoint
-from Comprisk.entrypoints.export import ExportEntrypoint
+from Comprisk.entrypoints.scoring import TrainScoreTransformerEntrypoint
+from Comprisk.entrypoints.trainer import TrainerEntrypoint
 
 __all__ = [
     "EntrypointContext",

@@ -1,14 +1,14 @@
-from typing import Dict
 from threading import Lock
+from typing import Dict
 
 from Dataflux import logger
 from Dataflux.diskio import (
+    CALLABLE_RETURN_TYPE,
+    CallableDependency,
     FileWorkerCallable,
     FileWorkerContext,
-    CallableDependency,
-    CALLABLE_RETURN_TYPE,
 )
-from Dataflux.diskio.meta import FileMeta, Metadata, FileState
+from Dataflux.diskio.meta import FileMeta, FileState, Metadata
 
 mutex = Lock()
 

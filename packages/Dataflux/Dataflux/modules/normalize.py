@@ -1,21 +1,21 @@
 import os
+import pickle
 from threading import Lock
 from typing import Dict, List
-import numpy as np
-import pickle
 
+import numpy as np
 import yaml
 
 from Dataflux import logger
-from Dataflux.diskio.meta import FileMeta, Metadata, FileState
-from Dataflux.helper import FluxScaler, ScalerMethod
-from Dataflux.helper.dataframe_ops import remove_outlier
 from Dataflux.diskio import (
+    CALLABLE_RETURN_TYPE,
+    CallableDependency,
     FileWorkerCallable,
     FileWorkerContext,
-    CallableDependency,
-    CALLABLE_RETURN_TYPE,
 )
+from Dataflux.diskio.meta import FileMeta, FileState, Metadata
+from Dataflux.helper import FluxScaler, ScalerMethod
+from Dataflux.helper.dataframe_ops import remove_outlier
 
 mutex = Lock()
 

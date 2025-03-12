@@ -1,7 +1,7 @@
 """This module handles arguments and generation of those for pre-processing modules."""
 
 from argparse import ArgumentParser, Namespace
-from typing import List, Dict
+from typing import Dict, List
 
 from Dataflux.cli.config_helper import build_config, expand_module_list
 from Dataflux.cli.defaults import DEFAULT_ARGUMENTS
@@ -11,8 +11,8 @@ class FluxConfigManager:
     def __init__(self, config_path: str, custom_config: Dict = None, default_modules: List = None) -> None:
         # initialize the namespace and add the config to it
         self.args = Namespace()
-        setattr(self.args, "config", build_config(config_path, custom_config))
-        setattr(self.args, "config_path", config_path)
+        self.args.config = build_config(config_path, custom_config)
+        self.args.config_path = config_path
 
         # build the namespace based on the config's content
         for key, value in DEFAULT_ARGUMENTS.items():
@@ -36,13 +36,13 @@ class FluxConfigManager:
         if value is None:
             return None
 
-        setattr(self.args, "latest", value)
+        self.args.latest = value
 
     def set_folder(self, value: str) -> None:
         if value is None:
             return None
 
-        setattr(self.args, "folder", value)
+        self.args.folder = value
 
 
     def _load_modules_from_args(self) -> None:
@@ -54,7 +54,7 @@ class FluxConfigManager:
             # add defaults to kwargs, without overwriting the user's input
             for arg_key, val in self.args.__dict__.items():
                 arg_split = arg_key.split(".")
-                if len(arg_split) == 3 and "modules" == arg_split[0] and name == arg_split[1]:
+                if len(arg_split) == 3 and arg_split[0] == "modules" and name == arg_split[1]:
                     if arg_split[2] not in kwargs.keys():
                         kwargs[arg_split[2]] = val
 

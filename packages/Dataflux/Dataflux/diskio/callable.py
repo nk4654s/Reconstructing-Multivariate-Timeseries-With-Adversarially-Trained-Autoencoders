@@ -1,9 +1,10 @@
 """Contains the base class for a post-processing module."""
-from enum import Enum, unique, auto
-from typing import Dict, Union, List
+from enum import Enum, auto, unique
+from typing import Dict, List, Union
+
+from Dataflux.diskio.meta import FileMeta, Metadata
 
 from .context import FileWorkerContext
-from Dataflux.diskio.meta import FileMeta, Metadata
 
 CALLABLE_RETURN_TYPE = Union[FileMeta, List[FileMeta]]
 

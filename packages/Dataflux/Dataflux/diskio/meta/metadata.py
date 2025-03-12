@@ -1,6 +1,6 @@
 """This module handles the metadata class and content."""
-from dataclasses import dataclass, field
 import os
+from dataclasses import dataclass, field
 from typing import Dict
 from uuid import UUID
 

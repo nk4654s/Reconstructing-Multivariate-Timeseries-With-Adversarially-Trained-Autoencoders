@@ -1,16 +1,15 @@
 """This module contains helper methods related to the models."""
 
 import os
+
 import torch
+from Dataflux import logging_mode
+from Dataflux.logger import get_logger
 from lightning.pytorch import Trainer
 from lightning.pytorch.callbacks import ModelCheckpoint
 
 from Comprisk.helper.structure import load_model
 from Comprisk.model import BaseModel
-
-from Dataflux import logging_mode
-from Dataflux.logger import get_logger
-
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)

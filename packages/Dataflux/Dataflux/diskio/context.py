@@ -1,7 +1,7 @@
 """This module contains the FileWorkerContext which may be used to transfer values
 and object from one post-processing module to the other."""
-from typing import Any
 from enum import auto
+from typing import Any
 
 
 class FileWorkerContext:

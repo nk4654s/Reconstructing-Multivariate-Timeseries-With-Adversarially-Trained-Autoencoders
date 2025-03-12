@@ -2,10 +2,9 @@
 
 from typing import Dict, List
 
-from Dataflux.diskio import FileWorkerCallable, FileWorkerContext, CallableDependency, CALLABLE_RETURN_TYPE
-from Dataflux.diskio.meta import FileMeta, Metadata, FileState
-
 from Dataflux import logger
+from Dataflux.diskio import CALLABLE_RETURN_TYPE, CallableDependency, FileWorkerCallable, FileWorkerContext
+from Dataflux.diskio.meta import FileMeta, FileState, Metadata
 from Dataflux.modules.rename import Rename
 
 

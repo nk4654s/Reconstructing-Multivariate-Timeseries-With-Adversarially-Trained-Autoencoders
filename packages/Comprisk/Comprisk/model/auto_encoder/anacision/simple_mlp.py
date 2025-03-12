@@ -1,9 +1,10 @@
 """The anacision autoencoder uses a simple multi layer perceptron."""
 from typing import Dict
+
 import torch
 from torch import nn
 
-from Comprisk.model.auto_encoder.base import EncoderBase, DecoderBase
+from Comprisk.model.auto_encoder.base import DecoderBase, EncoderBase
 
 
 class AnacisionEncoder(EncoderBase):

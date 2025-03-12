@@ -1,19 +1,15 @@
 """This module contains helper methods related to the models."""
 from dataclasses import dataclass
-from typing import  Tuple, List
+from typing import List, Tuple
+
 import numpy as np
 import onnxruntime
 import pandas as pd
-
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-
-from Dataflux.pytorch import collate_fn
-from Dataflux.pytorch import Dataset
-
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
-
+from Dataflux.pytorch import Dataset, collate_fn
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)

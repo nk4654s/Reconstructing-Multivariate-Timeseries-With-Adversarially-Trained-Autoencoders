@@ -1,7 +1,7 @@
 """This module handles string to optimizer conversion."""
 from typing import Type, Union
-import torch.optim as optim
 
+import torch.optim as optim
 
 _optimizer_register = {
     "Adam": optim.Adam,

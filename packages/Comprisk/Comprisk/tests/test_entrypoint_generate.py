@@ -4,23 +4,21 @@ import unittest
 from argparse import Namespace
 
 import yaml
-
 from Comprisk.entrypoints import EntrypointContext, FluxEntrypoint
 from Comprisk.model.dummy import DummyModel
-
 
 DIRECTORY = "Comprisk/tests"
 
 
 def get_namespace(val_dir, f_in, f_out) -> Namespace:
     data = Namespace()
-    setattr(data, "train", None)
-    setattr(data, "validate", val_dir)
-    setattr(data, "features_in", f_in)
-    setattr(data, "features_out", f_out)
+    data.train = None
+    data.validate = val_dir
+    data.features_in = f_in
+    data.features_out = f_out
     config = Namespace()
-    setattr(config, "data", data)
-    setattr(config, "force_upload", False)
+    config.data = data
+    config.force_upload = False
     return config
 
 

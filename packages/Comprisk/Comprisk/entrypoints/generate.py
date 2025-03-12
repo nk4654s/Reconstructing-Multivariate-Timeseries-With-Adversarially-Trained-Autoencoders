@@ -1,15 +1,14 @@
 import os.path
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
-
-from Comprisk.entrypoints import EntrypointBase, EntrypointContext
-from Dataflux.data import DataUpdater, UpdateCallable, DataType, EmptyScoreRegister
 from Dataflux import logging_mode
+from Dataflux.data import DataType, DataUpdater, EmptyScoreRegister, UpdateCallable
 from Dataflux.logger import get_logger
 
 from Comprisk.data import DataModule
-from Comprisk.helper import ModelCheckpoint, ModelIterator, IteratorResult
+from Comprisk.entrypoints import EntrypointBase, EntrypointContext
+from Comprisk.helper import IteratorResult, ModelCheckpoint, ModelIterator
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
@@ -63,8 +62,8 @@ class GeneratorEntrypoint(EntrypointBase):
             return context
 
         # get the dataset's start and end time
-        start = datetime.fromtimestamp(data.get_timestamp(0), tz=timezone.utc)
-        end = datetime.fromtimestamp(data.get_timestamp(-1), tz=timezone.utc)
+        start = datetime.fromtimestamp(data.get_timestamp(0), tz=UTC)
+        end = datetime.fromtimestamp(data.get_timestamp(-1), tz=UTC)
 
         # run inference on the validation set
         onnx_path = os.path.join(context.config_folder, "model.onnx")

@@ -7,16 +7,15 @@ from copy import deepcopy
 from Comprisk.entrypoints import EntrypointContext, FluxEntrypoint
 from Dataflux.pytorch import Dataset
 
-
 DIRECTORY = "Comprisk/tests"
 
 
 def get_namespace(train_dir) -> Namespace:
     data = Namespace()
-    setattr(data, "train", train_dir)
-    setattr(data, "validate", None)
+    data.train = train_dir
+    data.validate = None
     config = Namespace()
-    setattr(config, "data", data)
+    config.data = data
     return config
 
 

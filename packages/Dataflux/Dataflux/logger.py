@@ -1,7 +1,7 @@
 """This module modifies the python logger."""
-import os
 import logging
 import logging.config
+import os
 import sys
 
 

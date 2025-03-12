@@ -1,15 +1,15 @@
 """This module contains the Dataset class, required to train a NN."""
 
 from typing import List, Tuple
+
 import numpy as np
 import torch
 
-from Dataflux.pytorch.args import DatasetArgs, DatasetTypes, dataset_type_from_string
-from Dataflux.diskio.meta import Metadata as FileMetadata
-from Dataflux.pytorch.index_tree import IndexTree
-from Dataflux.pytorch.cache import DataFrameCache
-
 from Dataflux import logger
+from Dataflux.diskio.meta import Metadata as FileMetadata
+from Dataflux.pytorch.args import DatasetArgs, DatasetTypes, dataset_type_from_string
+from Dataflux.pytorch.cache import DataFrameCache
+from Dataflux.pytorch.index_tree import IndexTree
 
 
 class EmptyDatasetError(Exception):

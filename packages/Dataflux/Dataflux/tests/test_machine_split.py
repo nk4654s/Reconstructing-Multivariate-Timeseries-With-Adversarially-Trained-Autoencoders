@@ -1,9 +1,10 @@
 """Dataflux/data/utils.py"""
 import unittest
-import pandas as pd
-import numpy as np
 
-from Dataflux.helper.dataframe_ops import trim, split, multi_split
+import numpy as np
+import pandas as pd
+from Dataflux.helper.dataframe_ops import multi_split, split, trim
+
 
 class TestMachineSplit(unittest.TestCase):
     def setUp(self) -> None:

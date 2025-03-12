@@ -1,13 +1,11 @@
 import argparse
 import os.path
 import shutil
-from uuid import UUID
-import elementpath
 import xml
+from uuid import UUID
 
 import onnx
-
-from Comprisk.helper.structure import  search_models
+from Comprisk.helper.structure import search_models
 from Dataflux.helper import get_sensors
 
 

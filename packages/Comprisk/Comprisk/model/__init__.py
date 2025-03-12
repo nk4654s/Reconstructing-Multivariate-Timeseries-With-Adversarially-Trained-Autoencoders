@@ -1,8 +1,8 @@
-from Comprisk.model.normalize import NormalizeModule, NormalizeWrapper
-from Comprisk.model.base import BaseModel
 import Comprisk.model.auto_encoder as auto_encoder
-import Comprisk.model.dummy as dummy
 import Comprisk.model.cnn as cnn
+import Comprisk.model.dummy as dummy
+from Comprisk.model.base import BaseModel
+from Comprisk.model.normalize import NormalizeModule, NormalizeWrapper
 
 __all__ = [
     "NormalizeModule",

@@ -3,10 +3,11 @@ import os
 import threading
 from typing import List
 
-from .callable import FileWorkerCallable, CALLABLE_RETURN_TYPE
-from .context import FileWorkerContext
 from Dataflux import logger
 from Dataflux.diskio.meta.file_meta import FileMeta, FileState
+
+from .callable import CALLABLE_RETURN_TYPE, FileWorkerCallable
+from .context import FileWorkerContext
 
 mutex = threading.Lock()
 

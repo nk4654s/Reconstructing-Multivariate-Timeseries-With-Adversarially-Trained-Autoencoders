@@ -4,6 +4,7 @@ from typing import Tuple
 
 import torch
 from torch import nn
+
 from Comprisk.model.auto_encoder import DecoderBase
 
 
