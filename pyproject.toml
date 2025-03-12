@@ -46,7 +46,30 @@ toking = { path = "packages/Toking", editable = true }
 dev = [
     "comprisk",
     "dataflux",
-    "toking",
+    "toking"
 ]
+
+[tool.ruff]
+# Same as Black.
+line-length = 110
+indent-width = 4
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
+ignore = ["E501", "UP015", "UP006"]
 
 
