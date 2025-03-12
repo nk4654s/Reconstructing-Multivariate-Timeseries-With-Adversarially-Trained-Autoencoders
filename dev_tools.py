@@ -126,7 +126,7 @@ def delete_model():
 def show_sensors(uuid_str):
     rename = get_sensors(UUID(uuid_str))
     result = []
-    for i, (uuid, name) in enumerate(rename.items()):
+    for uuid, name in rename.items():
         result.append((uuid, name))
 
     for uuid, name in sorted(result, key=lambda x: x[1]):
