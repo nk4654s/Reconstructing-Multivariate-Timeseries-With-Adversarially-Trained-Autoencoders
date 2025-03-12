@@ -11,7 +11,7 @@ trainer:
   - class_path: lightning.pytorch.callbacks.EarlyStopping
     init_args:
       monitor: validate/MSELoss
-      min_delta: 0.0001
+      min_delta: 1.0e-05
       patience: 3
       verbose: false
       mode: min
@@ -120,7 +120,7 @@ data:
   pin_memory: true
 tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
 environment: dev
-normalizer: configs/vd2-version-1/4_custom_normalizer.yml
+normalizer: configs/vd2-version-1/3_custom_normalizer.yml
 prefix: analysis
 tuner_config: null
 tuner_trials: 1

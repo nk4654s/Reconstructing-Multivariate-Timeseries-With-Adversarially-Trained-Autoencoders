@@ -1,0 +1,64 @@
+"""This module replaces the sensor UUID with a human readable text."""
+from enum import Enum, auto
+from typing import Dict
+
+import pandas as pd
+
+from Dataflux import logger
+from Dataflux.diskio import CALLABLE_RETURN_TYPE, CallableDependency, FileWorkerCallable, FileWorkerContext
+from Dataflux.diskio.meta import FileMeta, FileState, Metadata
+from Dataflux.helper import get_sensors
+from Dataflux.modules.normalize import NormalizeFit
+
+
+class ColumnContext(Enum):
+    HEADER = auto()
+
+
+class Rename(FileWorkerCallable):
+    """
+    A pre-processing step for renaming columns in a dataset. This class provides
+    methods and attributes for renaming columns based on specific rules or
+    configurations.
+
+    Args:
+        enable (bool): Enable renaming, defaults to True.
+    """
+    def __init__(self, enable: bool = True) -> None:
+        self._sensor_names = None
+        self._names = set()
+
+        self._enable = enable
+
+    def get_dependencies(self) -> Dict[str, CallableDependency]:
+        return {
+            NormalizeFit.__name__: CallableDependency.NOT_BEFORE
+        }
+
+    def run(self, fm: FileMeta, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
+        df = fm.read()
+        if df.empty or isinstance(df, pd.Series):
+            fm.state = FileState.DELETED
+            return fm
+
+        if self._sensor_names is None:
+            logger.debug("Module enabled: %s", "yes" if self._enable else "no")
+
+            # initial call of this module, download uuid -> name dictionary
+            self._sensor_names = get_sensors(fm.uuid)
+            assert self._sensor_names, "No sensor name dictionary available."
+
+        if self._enable:
+            df.rename(columns=self._sensor_names, inplace=True)
+
+        df = df.reindex(sorted(df.columns), axis=1)
+        fm.save(df)
+        if len(self._names) == 0:
+            self._names = set(df.columns.values)
+        else:
+            self._names = self._names.intersection(set(df.columns.values))
+        return fm
+
+    def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
+        context.put(ColumnContext.HEADER, self._names)
+        logger.debug("Found header intersection %s", self._names)

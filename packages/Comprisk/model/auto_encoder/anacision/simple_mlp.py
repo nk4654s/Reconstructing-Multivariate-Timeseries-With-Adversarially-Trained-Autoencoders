@@ -1,0 +1,43 @@
+"""The anacision autoencoder uses a simple multi layer perceptron."""
+from typing import Dict
+
+import torch
+from torch import nn
+
+from Comprisk.model.auto_encoder.base import DecoderBase, EncoderBase
+
+
+class AnacisionEncoder(EncoderBase):
+    """The anacision encoder uses a single layer to reduce a single time step's dimension.
+
+    Args:
+        num_input (int): The number of sensors.
+        num_latent (int): The number of latent variables.
+    """
+    def __init__(self, num_input: int, num_latent: int):
+        super().__init__()
+        self._linear = nn.Linear(
+            num_input,
+            num_latent
+        )
+
+    def forward(self, batch):
+        return self._linear(batch)
+
+
+class AnacisionDecoder(DecoderBase):
+    """The anacision decoder uses a single layer to expand the latent space back into the original space.
+
+    Args:
+        num_latent (int): The number of latent variables.
+        num_output (int): The number of sensors.
+    """
+    def __init__(self, num_latent: int, num_output: int):
+        super().__init__()
+        self._linear = nn.Linear(
+            num_latent,
+            num_output
+        )
+
+    def forward(self, z: torch.Tensor, inputs: Dict[str, torch.tensor]) -> torch.Tensor:
+        return self._linear(z)

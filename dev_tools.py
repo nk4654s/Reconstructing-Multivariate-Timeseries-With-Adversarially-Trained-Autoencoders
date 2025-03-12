@@ -1,13 +1,11 @@
 import argparse
 import os.path
 import shutil
-from uuid import UUID
-import elementpath
 import xml
+from uuid import UUID
 
 import onnx
-
-from Comprisk.helper.structure import  search_models
+from Comprisk.helper.structure import search_models
 from Dataflux.helper import get_sensors
 
 
@@ -78,15 +76,15 @@ def update_pom():
     model_count = len(set([onnx.load(f).domain for f in models]))
 
     # get the code version
-    with open(os.path.join("packages", "Comprisk", "Comprisk", "version.txt"), "r") as f:
-        code = float(f.read())
+    code = 0
+    for package in os.listdir("packages/"):
+        if package.startswith("."):
+            continue
 
-    with open(os.path.join("packages", "Dataflux", "Dataflux", "version.txt"), "r") as f:
-        code += float(f.read())
-
-    with open(os.path.join("packages", "Toking", "Toking", "version.txt"), "r") as f:
-        code += float(f.read())
-    code = round(code)
+        with open(os.path.join("packages", package, package, "version.txt"), "r") as f:
+            major, minor = f.read().split(".")
+            code += safe_cast(major, int, 1)
+            model_versions += safe_cast(minor, int, 0)
 
     # modify the pom.xml version tag
     tag = "{http://maven.apache.org/POM/4.0.0}"
@@ -128,7 +126,7 @@ def delete_model():
 def show_sensors(uuid_str):
     rename = get_sensors(UUID(uuid_str))
     result = []
-    for i, (uuid, name) in enumerate(rename.items()):
+    for uuid, name in rename.items():
         result.append((uuid, name))
 
     for uuid, name in sorted(result, key=lambda x: x[1]):

@@ -1,7 +1,7 @@
 # CAS specific
 environment: dev
 tag: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
-normalizer: configs/gasunie-version-1/4_custom_normalizer.yml
+normalizer: configs/gasunie-version-1/4_custom_normalizer2.yml
 
 # model configuration
 model:
@@ -22,7 +22,7 @@ trainer:
     - class_path: lightning.pytorch.callbacks.EarlyStopping
       init_args:
         monitor: validate/MSELoss
-        min_delta: 1.0e-04
+        min_delta: 1.0e-05
         patience: 3
     - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
 
@@ -52,7 +52,6 @@ data:
   - e44c6aca-cf06-434e-9257-4d15839c29ce # Temperature_Discharge_Valve_Crank_End_1._Stage_TT0-387 (°C)
   - 4927d58d-b7ac-4bb5-9fd7-1257bb92b340 # Temperature_Discharge_Valve_Head_End_2._Stage_TT0-367 (°C)
   - f9523a90-71ae-48d2-8e8b-f1288138eb28 # Temperature_Discharge_Valve_Crank_End_2._Stage_TT0-386 (°C)
-  - 5c4a7fab-23e7-4d0c-8420-5a826f0fa27f # Flow_Leakage_Gas_1.st+2.nd_Cylinder_Packing_FIT0-389 (Nm³/h)
   - 35e974db-1ed9-414d-b39f-fa584443f559 # Temperature_Lube_Oil_Upstream_Bearings_TIT0-538 (°C)
   - 29129d0a-7898-49f5-b139-e9154f173278 # Differential_Pressure_Crank_Case_Lube_Oil_Upstream_Bearings_PDIT0-553 (bar)
   - f72fe32a-7537-4651-91af-91116ef20475 # Temperature_Cooling_Water_Upstream_Consumers_TIT0-420 (°C)
@@ -72,7 +71,6 @@ data:
   - e44c6aca-cf06-434e-9257-4d15839c29ce # Temperature_Discharge_Valve_Crank_End_1._Stage_TT0-387 (°C)
   - 4927d58d-b7ac-4bb5-9fd7-1257bb92b340 # Temperature_Discharge_Valve_Head_End_2._Stage_TT0-367 (°C)
   - f9523a90-71ae-48d2-8e8b-f1288138eb28 # Temperature_Discharge_Valve_Crank_End_2._Stage_TT0-386 (°C)
-  - 5c4a7fab-23e7-4d0c-8420-5a826f0fa27f # Flow_Leakage_Gas_1.st+2.nd_Cylinder_Packing_FIT0-389 (Nm³/h)
   - 35e974db-1ed9-414d-b39f-fa584443f559 # Temperature_Lube_Oil_Upstream_Bearings_TIT0-538 (°C)
   - 29129d0a-7898-49f5-b139-e9154f173278 # Differential_Pressure_Crank_Case_Lube_Oil_Upstream_Bearings_PDIT0-553 (bar)
   - f72fe32a-7537-4651-91af-91116ef20475 # Temperature_Cooling_Water_Upstream_Consumers_TIT0-420 (°C)

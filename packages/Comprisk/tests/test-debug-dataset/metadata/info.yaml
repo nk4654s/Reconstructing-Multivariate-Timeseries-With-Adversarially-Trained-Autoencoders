@@ -1,0 +1,18 @@
+path: "test-debug-dataset"
+uuid: "0b3426b3-94af-4b8c-89c1-da57493c099a"
+files:
+  0b3426b3-94af-4b8c-89c1-da57493c099a_2025-02-03.feather:
+    path: "0b3426b3-94af-4b8c-89c1-da57493c099a_2025-02-03.feather"
+    features: 23
+    samples: 5483
+    day: "2025-02-03"
+state_alpha:
+  0f4deafe-56ce-41bc-a522-99c88c8f26e2:
+    delay: 300
+    lower: 0
+    upper: 0
+  eedce5b6-b341-4c58-bf3a-c6c1f265ba02:
+    delay: 1800
+    lower: 1
+    upper: 1
+total_recordings: 5483
