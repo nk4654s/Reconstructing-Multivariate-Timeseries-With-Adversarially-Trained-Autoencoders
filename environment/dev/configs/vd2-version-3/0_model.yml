@@ -1,7 +1,7 @@
 # CAS specific
 environment: dev
 tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
-normalizer: configs/vd2-version-1/4_custom_normalizer.yml
+normalizer: configs/vd2-version-1/3_custom_normalizer.yml
 
 # model configuration
 model:
@@ -24,7 +24,7 @@ trainer:
     - class_path: lightning.pytorch.callbacks.EarlyStopping
       init_args:
         monitor: validate/MSELoss
-        min_delta: 1.0e-04
+        min_delta: 1.0e-05
         patience: 3
     - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
 

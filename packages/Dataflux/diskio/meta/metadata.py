@@ -15,6 +15,7 @@ class Metadata:
     uuid: UUID
     files: Dict[str, FileMeta] = field(default_factory=dict)
     total_recordings: int = 0
+    state_alpha: Dict[str, Dict] = field(default_factory=dict)
 
     def as_dict(self) -> Dict:
         files = {}
@@ -26,12 +27,9 @@ class Metadata:
             "uuid": str(self.uuid),
             "path": self.path,
             "files": files,
-            "total_recordings": sum([f.samples for f in self.files.values()])
+            "total_recordings": sum([f.samples for f in self.files.values()]),
+            "state_alpha": self.state_alpha
         }
-
-    @property
-    def normalizer_path(self):
-        return os.path.join(self.path, "metadata", "normalizer.pkl")
 
     @property
     def config_file(self):
@@ -70,4 +68,5 @@ class Metadata:
                 uuid=data["uuid"],
                 files=files,
                 total_recordings=data["total_recordings"],
+                state_alpha=data["state_alpha"]
             )

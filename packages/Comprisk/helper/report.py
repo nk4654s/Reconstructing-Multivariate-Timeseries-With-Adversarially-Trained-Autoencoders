@@ -156,7 +156,6 @@ class Report:
             # save histogram of data
             figure(figsize=self._size, dpi=self._dpi)
             values = s_inputs[sensor].to_numpy()
-            values = ((values - values.min()) / (values.max() - values.min()))
 
             bins, vals = np.histogram(values, bins=1000)
             plt.title(f"Histogram: {name}")

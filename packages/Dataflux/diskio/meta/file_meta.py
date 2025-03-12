@@ -79,6 +79,7 @@ class FileMeta:
 
     def save(self, df: pd.DataFrame) -> None:
         self.state = FileState.MODIFIED
+        self.samples = len(df)
         return df.to_feather(self.full_path)
 
     @staticmethod

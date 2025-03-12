@@ -50,18 +50,15 @@ class State(FileWorkerCallable):
     
     def _find_corresponding_key(self, column_names) -> bool:
         if not self._key:
-            # the variable self._key might be accessed by multiple threads, prevent racing
-            # condition when setting this variable
-            with mutex:
-                # find the key matching the substring given
-                keys = [k for k in column_names if self._key_substring in k]
-                if len(keys) > 0:
-                    logger.debug("Found %s matching key(s) in header", len(keys))
-                    self._key = keys[0]
-                    return True
-                else:
-                    logger.debug("Can not find key %s", self._key_substring)
-                    return False
+            # find the key matching the substring given
+            keys = [k for k in column_names if self._key_substring in k]
+            if len(keys) > 0:
+                logger.debug("Found %s matching key(s) in header", len(keys))
+                self._key = keys[0]
+                return True
+            else:
+                logger.debug("Can not find key %s", self._key_substring)
+                return False
         
         return self._key in column_names
     
@@ -105,8 +102,10 @@ class State(FileWorkerCallable):
         return files
 
     def finish(self, context: Context, metadata: Metadata) -> None:
-        # requesting the metadata as dict recalculates the total number of recordings
+        # requesting the metadata as dict re-calculates the total number of recordings
         _ = metadata.as_dict()
         logger.debug("Splitting finished: length=%s", metadata.total_recordings)
+
+        metadata.state_alpha[self._key] = {"delay": self._alpha, "upper": self._upper, "lower": self._lower}
 
 
