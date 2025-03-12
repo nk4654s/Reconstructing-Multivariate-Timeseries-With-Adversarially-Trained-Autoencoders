@@ -39,12 +39,14 @@ dependencies = [
 ]
 [tool.uv.sources]
 comprisk = { path = "packages/Comprisk", editable = true }
+compmesh = { path = "packages/Compmesh", editable = true }
 dataflux = { path = "packages/Dataflux", editable = true }
 toking = { path = "packages/Toking", editable = true }
 
 [dependency-groups]
 dev = [
     "comprisk",
+    "compmesh",
     "dataflux",
     "toking",
 ]
