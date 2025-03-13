@@ -81,7 +81,7 @@ def update_pom():
         if package.startswith("."):
             continue
 
-        with open(os.path.join("packages", package, package, "version.txt"), "r") as f:
+        with open(os.path.join("packages", package, "version.txt"), "r") as f:
             major, minor = f.read().split(".")
             code += safe_cast(major, int, 1)
             model_versions += safe_cast(minor, int, 0)

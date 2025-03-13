@@ -2128,6 +2128,15 @@ wheels = [
 ]
 
 [[package]]
+name = "torchrbf"
+version = "0.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/05/223f2037d4fa84f9471343334586912b0f92f43ef835dd3376fc6b682ec7/torchrbf-0.0.1.tar.gz", hash = "sha256:591a9de6f6beb0e14024328c034417739a7fee6056e648ce374b910f50c47db3", size = 8968 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/97/1c/1d34324b9b7d88971c5e2c20960d14f06e56889fa4258502b259f1e209b4/torchrbf-0.0.1-py3-none-any.whl", hash = "sha256:03dba76c92df073d6bc785fb8353602fbd4a7aad64cc27197f89485e970b26a8", size = 12909 },
+]
+
+[[package]]
 name = "torchview"
 version = "0.2.6"
 source = { registry = "https://pypi.org/simple" }

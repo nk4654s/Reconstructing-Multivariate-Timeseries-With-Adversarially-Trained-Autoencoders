@@ -31,13 +31,13 @@ class NormalizeModule(nn.Module):
         self._features_in = sorted(features_in)
         self._features_out = sorted(features_out)
 
-        self._input_idx = [i for i, n in enumerate(self._features_in)]
-        self._output_idx = [self._features_in.index(n) for n in self._features_out]
-
         self._trained = False
 
         self._min: nn.Parameter = Parameter(Tensor(np.zeros((len(self._features_in),))))
         self._scale: nn.Parameter = Parameter(Tensor(np.zeros((len(self._features_in),))))
+
+        self._min_out: nn.Parameter = Parameter(Tensor(np.zeros((len(self._features_out),))))
+        self._scale_out: nn.Parameter = Parameter(Tensor(np.zeros((len(self._features_out),))))
 
         self._init_params(normalize_data)
 
@@ -49,12 +49,20 @@ class NormalizeModule(nn.Module):
         if not data:
             return None
 
-        min_ = np.array([data[k]["min"] for k in self._features_in]).round(6)
-        max_ = np.array([data[k]["max"] for k in self._features_in]).round(6)
-        scale_ = (1 / (max_ - min_)).round(6)
+        def min_scale(names):
+            min_ = np.array([data[k]["min"] for k in names]).round(6)
+            max_ = np.array([data[k]["max"] for k in names]).round(6)
+            scale_ = (1 / (max_ - min_)).round(6)
+            return min_, scale_
 
+        min_, scale_ = min_scale(self._features_in)
         self._min = Parameter(Tensor(min_))
         self._scale = Parameter(Tensor(scale_))
+
+        min_, scale_ = min_scale(self._features_out)
+        self._min_out = Parameter(Tensor(min_))
+        self._scale_out = Parameter(Tensor(scale_))
+
         self._trained = True
 
     @staticmethod
@@ -99,32 +107,41 @@ class NormalizeModule(nn.Module):
         dataset.set_stride(60)
 
         # find the min and max values of the data
-        mins: np.ndarray | None = dataset[0][0]
-        maxs: np.ndarray | None = dataset[0][0]
-        for x, _ in tqdm(data, desc="Normalize Wrapper", disable=not verbose):
-            mins_ = np.min(x, axis=0)
-            mins[mins_ < mins] = mins_
+        mins_in: np.ndarray | None = dataset[0][0]
+        maxs_in: np.ndarray | None = dataset[0][0]
+        mins_out: np.ndarray | None = dataset[0][0]
+        maxs_out: np.ndarray | None = dataset[0][0]
 
+        for x, y in tqdm(data, desc="Normalize Wrapper", disable=not verbose):
+            mins_ = np.min(x, axis=0)
+            mins_in[mins_ < mins_in] = mins_
             maxs_ = np.max(x, axis=0)
-            mins[maxs_ > maxs] = maxs_
+            mins_in[maxs_ > maxs_in] = maxs_
+
+            mins_ = np.min(x, axis=0)
+            mins_out[mins_ < mins_out] = mins_
+            maxs_ = np.max(x, axis=0)
+            mins_out[maxs_ > maxs_out] = maxs_
 
         # the min and scale must be a parameter of this model such that it will be
         # visible in the model graph. This is required by ONNX
-        self._min = Parameter(Tensor(mins))
-        self._scale = Parameter(Tensor(1 / (maxs - mins)))
+        self._min = Parameter(Tensor(mins_in))
+        self._scale = Parameter(Tensor(1 / (maxs_in - mins_in)))
+
+        self._min_out = Parameter(Tensor(mins_out))
+        self._scale_out = Parameter(Tensor(1 / (maxs_out - mins_out)))
+
         self._trained = True
 
         logger.debug("Trained %s successfully", self.__name__)
-        logger.debug("Minimum values %s", mins)
-        logger.debug("Maximum values %s", maxs)
 
     @torch.no_grad()
     def apply(self, x: BATCH_TYPE) -> BATCH_TYPE:
         x, y = x
 
         # normalize to 0 to 1
-        x = (x - self._min[self._input_idx]) * self._scale[self._input_idx]
-        y = (y - self._min[self._output_idx]) * self._scale[self._output_idx]
+        x = (x - self._min) * self._scale
+        y = (y - self._min_out) * self._scale_out
 
         # change range to -1 to 1
         x = (x + self._trange_min / self._trange) * self._trange
@@ -136,11 +153,11 @@ class NormalizeModule(nn.Module):
     def reverse(self, x: Tensor | None, y: Tensor | None) -> BATCH_TYPE:
         if x is not None:
             x = (x / self._trange) - self._trange_min / self._trange
-            x = (x / self._scale[self._input_idx]) + self._min[self._input_idx]
+            x = (x / self._scale) + self._min
 
         if y is not None:
             y = (y / self._trange) - self._trange_min / self._trange
-            y = (y / self._scale[self._output_idx]) + self._min[self._output_idx]
+            y = (y / self._scale_out) + self._min_out
 
         return x, y
 
