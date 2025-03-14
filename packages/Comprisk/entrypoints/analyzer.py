@@ -18,8 +18,10 @@ class AnalyzerEntrypoint(EntrypointBase):
 
     If a different dataset should be used, then overwrite the validation set using `--data.validate`.
     """
-    def __init__(self) -> None:
+    def __init__(self, default_tag: str = "analysis/validate") -> None:
         super().__init__()
+
+        self._default_tag = default_tag
 
         self._scores_path = None
         self._scores_summary_path = None
@@ -37,7 +39,7 @@ class AnalyzerEntrypoint(EntrypointBase):
         result = iterator.run(batch_size=128, num_workers=2)
 
         # create a report and generate the graphs
-        name = "analysis" if not context.config.prefix else context.config.prefix
+        name = self._default_tag if not context.config.prefix else context.config.prefix
         report = Report(context.config_folder, name)
         graphs = report.generate_report_graphs(result)
         report.generate_pdf(graphs)
