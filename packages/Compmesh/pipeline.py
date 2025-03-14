@@ -1,3 +1,5 @@
+import os
+
 from Compmesh.entrypoints.export import SPExportEntrypoint
 from Compmesh.entrypoints.trainer import SPTrainEntrypoint
 from Compmesh.cli import CompmeshCLI
@@ -30,3 +32,8 @@ def cli_train() -> None:
         analyzer
     ])
     pipeline_runner(pipeline, cli)
+
+if __name__ == "__main__":
+    pycharm_entry = os.environ.get("PYCHARM_ENTRY", "train")
+    if pycharm_entry == "train":
+        cli_train()

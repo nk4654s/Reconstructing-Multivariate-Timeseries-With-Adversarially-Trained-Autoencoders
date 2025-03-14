@@ -3,11 +3,11 @@ from torch import nn, Tensor
 
 
 class ScatteredGridInterpolator(nn.Module):
-    def __init__(self, gx: torch.Tensor, gy: torch.Tensor):
+    def __init__(self, gx: Tensor, gy: Tensor):
         super().__init__()
 
-        self._gx = gx
-        self._gy = gy
+        self._gx = nn.Parameter(gx, requires_grad=False)
+        self._gy = nn.Parameter(gy, requires_grad=False)
 
     @torch.no_grad()
     def forward(self, x: Tensor):

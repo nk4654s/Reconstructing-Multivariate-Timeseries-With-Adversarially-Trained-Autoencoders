@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
 from torch import nn, Tensor
+from torch.nn.modules.module import T
 
 from Compmesh.model import ScatteredGridInterpolator
+from Compmesh.model.calibration import LinearCalibration
 from Comprisk.model import BaseModel
 
 
@@ -16,7 +18,7 @@ def process_df(data: pd.DataFrame, label: dict[str, str]) -> tuple[Tensor, list[
 
 
 class SupportPointModel(BaseModel):
-    def __init__(self, data: pd.DataFrame, x_label: dict[str, str], y_label: dict[str, str]):
+    def __init__(self, *args, **kwargs):
         """
         A model that first interpolates, then applies a learnable linear transformation.
         Args:
@@ -24,18 +26,23 @@ class SupportPointModel(BaseModel):
             x_label: (dict[str, str]): The name mapping of input vars.
             x_label: (dict[str, str]): The name mapping of output vars.
         """
-        # process the support points and initialize the normalization layer
+        super().__init__(*args, **kwargs)
+
+        self.interpolator: ScatteredGridInterpolator | None = None
+        self.calibrator: LinearCalibration | None = None
+
+    def init_grid(self, data: pd.DataFrame, x_label: dict[str, str], y_label: dict[str, str]):
         gx, x_label, x_norm = process_df(data, x_label)
         gy, y_label, y_norm = process_df(data, y_label)
-        super().__init__(features_in=list(x_norm.keys()), features_out=list(y_norm.keys()))
 
         self.init_normalization(x_norm, y_norm)
-
-        # build the grid interpolation and linear transformation parameters
         gx, gy = self.normalizer.apply((gx, gy))
+
         self.interpolator = ScatteredGridInterpolator(gx, gy)
-        self.slope = nn.Parameter(Tensor(np.zeros(gy.shape[1])))
-        self.intercept = nn.Parameter(Tensor(np.zeros(gy.shape[1])))
+        self.calibrator = LinearCalibration(gy.shape[1])
+
+        self.interpolator.to(self.device)
+        self.calibrator.to(self.device)
 
     def init_normalization(self, x: dict, y: dict):
         dx = x.copy()
@@ -50,8 +57,8 @@ class SupportPointModel(BaseModel):
 
     def forward(self, x: Tensor):
         y_interp = self.interpolator(x)
-        y_final = y_interp + self.intercept
-        return y_final
+        y_calib = self.calibrator(y_interp)
+        return y_calib
 
     def predict_step(self, x: Tensor, y: Tensor) -> tuple[Tensor, Tensor]:
         x, y = self.normalizer.apply((x, y))
