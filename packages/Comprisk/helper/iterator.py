@@ -49,12 +49,17 @@ class ModelIterator:
         self._args = data.get_args()
         self._len = len(data)
 
+        x_shape, y_shape = self._data[0]
+        x_shape, y_shape = x_shape.shape, y_shape.shape
+        logger.info("ModelIterator input shape %s, output shape %s", x_shape, y_shape)
+
         # create the ONNX session and find the input/output names
         self._session = onnxruntime.InferenceSession(onnx_path)
         self._i_onnx = [i.name for i in self._session.get_inputs()]
         self._o_onnx = [i.name for i in self._session.get_outputs()]
         self._s_idx = self._o_onnx.index("score")
         self._y_idx = self._o_onnx.index("y_hat")
+        logger.info("ModelIterator initialized.")
 
     def _init_container(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         f_out = self._args.features_out

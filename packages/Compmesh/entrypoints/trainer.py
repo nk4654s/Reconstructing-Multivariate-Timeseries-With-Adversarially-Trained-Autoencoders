@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 import yaml
 from Comprisk.entrypoints import EntrypointBase, EntrypointContext
-from Comprisk.entrypoints.trainer import set_logging_path
+from Comprisk.entrypoints.trainer import set_logging_path, get_trainer_callback
+from Comprisk.helper import BasicCheckpointCallback
 from Dataflux import get_logger, logging_mode
 
 logger = get_logger(__name__, path="logfile", level=logging_mode)
@@ -16,6 +17,8 @@ class SPTrainEntrypoint(EntrypointBase):
 
         self._x_values = dict()
         self._y_values = dict()
+
+        self._logging_path = None
 
     def load_name_mapping(self, context: EntrypointContext) -> None:
         path = context.config.name_mapping
@@ -44,6 +47,19 @@ class SPTrainEntrypoint(EntrypointBase):
 
         return df
 
+    def _set_checkpoint_path(self, context: EntrypointContext) -> None:
+        # set up the model saving as configuring the checkpoint path in the yaml config does not
+        # work. The config file does not know the model's output folder name with the increasing
+        # suffix number
+        checkpoint = get_trainer_callback(context.trainer, BasicCheckpointCallback.__name__)
+        if checkpoint:
+            self._checkpoint_path = os.path.join(self._logging_path, "checkpoints")
+            os.makedirs(self._checkpoint_path)
+            checkpoint.dirpath = self._checkpoint_path
+
+        else:
+            logger.warning("ModelCheckpoint callback not defined in yaml-config.")
+
     def check_dataset_compatibility(self, context: EntrypointContext) -> bool:
         data = context.datamodule.trainset
         args = data.get_args()
@@ -62,7 +78,8 @@ class SPTrainEntrypoint(EntrypointBase):
             logger.warning("Dataset configuration does not match model configuration. Adjust columns used.")
             return context
 
-        _ = set_logging_path(context)
+        self._logging_path = set_logging_path(context)
+        self._set_checkpoint_path(context)
 
         # initialize the support point mode
         df = self.load_support_points_table(context)
@@ -72,4 +89,6 @@ class SPTrainEntrypoint(EntrypointBase):
         context.datamodule.setup("fit")
         context.trainer.fit(context.model, context.datamodule)
 
+        context.config_folder = self._logging_path
+        context.config.data.shuffle = False
         return context

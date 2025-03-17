@@ -3,27 +3,28 @@ from torch import nn, Tensor
 
 
 class ScatteredGridInterpolator(nn.Module):
-    def __init__(self, gx: Tensor, gy: Tensor):
+    def __init__(self, gx, gy):
         super().__init__()
 
-        self._gx = nn.Parameter(gx, requires_grad=False)
-        self._gy = nn.Parameter(gy, requires_grad=False)
+        self._gx = nn.Parameter(gx)
+        self._gy = nn.Parameter(gy)
 
     @torch.no_grad()
     def forward(self, x: Tensor):
         # Compute squared Euclidean distance between x and all gx points
-        dists = torch.cdist(x, self._gx)  # Shape: (batch, samples)
+        dists = torch.sqrt(torch.sum((x.unsqueeze(1) - self._gx.unsqueeze(0)) ** 2, dim=-1))
 
         # Get indices of the two nearest neighbors
         knn_idx = torch.topk(dists, k=2, largest=False).indices  # Shape: (batch, 2)
 
         # Get the two nearest neighbor points and outputs
-        x0, x1 = self._gx[knn_idx[:, :, 0]], self._gx[knn_idx[:, :, 1]]  # (batch, samples, num_inputs)
-        y0, y1 = self._gy[knn_idx[:, :, 0]], self._gy[knn_idx[:, :, 1]]  # (batch, samples, num_outputs)
+        x0, x1 = self._gx[knn_idx[:, :, 0], :], self._gx[knn_idx[:, :, 1], :]  # (batch, samples, num_inputs)
+        y0, y1 = self._gy[knn_idx[:, :, 0], :], self._gy[knn_idx[:, :, 1], :]  # (batch, samples, num_outputs)
 
         # Compute interpolation weights (based on inverse distance)
-        d0, d1 = torch.norm(x - x0, dim=1, keepdim=True), torch.norm(x - x1, dim=1, keepdim=True)
+        d0, d1 = torch.norm(x - x0, dim=-1, keepdim=True), torch.norm(x - x1, dim=-1, keepdim=True)
         weight = d1 / (d0 + d1)  # Linear interpolation weight
+        weight = torch.nan_to_num(weight, nan=1.0)
 
         # Perform interpolation
         y_interp = y0 * weight + y1 * (1 - weight)  # Shape: (batch, num_outputs)

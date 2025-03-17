@@ -1,7 +1,7 @@
 # CAS specific
 environment: dev
 tag: a6252582-01dd-49cb-8dbe-0742b28bc007
-name_mapping: environment/dev/configs/thyssen/1_mapping.yml
+name_mapping: environment/dev/configs/thyssen/3_mapping.yml
 support_points: environment/dev/support_points/thyssen_gas/
 
 # model configuration
@@ -27,13 +27,13 @@ trainer:
     - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
 
   precision: 32
-  max_epochs: 3
+  max_epochs: 10
   gradient_clip_val: 1.0
   log_every_n_steps: 1
 
 data:
-  train: configs/vd1-version-1/1_dataset_train.yml
-  validate: configs/vd1-version-1/2_dataset_validate.yml
+  train: configs/thyssen/1_dataset_train.yml
+  validate: configs/thyssen/2_dataset_validate.yml
   sequence_in: 1
   sequence_out: 0
   features_in:
@@ -50,7 +50,7 @@ data:
     - 5630cba4-cc34-4b94-b6a7-0b55f250ffca
   skip: 1
   stride: 1
-  batch_size: 256
+  batch_size: 512
   shuffle: true
   num_workers: 8
   behavior: autoencoder

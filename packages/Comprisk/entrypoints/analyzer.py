@@ -1,5 +1,6 @@
 import os
 
+from Comprisk.data import DataModule
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
@@ -18,10 +19,11 @@ class AnalyzerEntrypoint(EntrypointBase):
 
     If a different dataset should be used, then overwrite the validation set using `--data.validate`.
     """
-    def __init__(self, default_tag: str = "analysis/validate") -> None:
+    def __init__(self, default_tag: str = "analysis/validate", model_name: str = "model") -> None:
         super().__init__()
 
         self._default_tag = default_tag
+        self._model_name = model_name
 
         self._scores_path = None
         self._scores_summary_path = None
@@ -34,13 +36,13 @@ class AnalyzerEntrypoint(EntrypointBase):
         context.datamodule.set_path(None, context.config.data.validate)
         dataset = context.datamodule.valset
 
-        onnx_path = os.path.join(context.config_folder, "model.onnx")
+        onnx_path = os.path.join(context.config_folder, f"{self._model_name}.onnx")
         iterator = ModelIterator(onnx_path, dataset)
         result = iterator.run(batch_size=128, num_workers=2)
 
         # create a report and generate the graphs
         name = self._default_tag if not context.config.prefix else context.config.prefix
-        report = Report(context.config_folder, name)
+        report = Report(context.config_folder, name, self._model_name)
         graphs = report.generate_report_graphs(result)
         report.generate_pdf(graphs)
 

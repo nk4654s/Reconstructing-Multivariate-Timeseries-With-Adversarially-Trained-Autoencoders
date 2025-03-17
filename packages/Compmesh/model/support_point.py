@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from torch import nn, Tensor
-from torch.nn.modules.module import T
 
 from Compmesh.model import ScatteredGridInterpolator
 from Compmesh.model.calibration import LinearCalibration
@@ -14,7 +13,7 @@ def process_df(data: pd.DataFrame, label: dict[str, str]) -> tuple[Tensor, list[
     sub = sub.reindex(sorted(sub.columns), axis=1)
 
     norm_data = {key: {"min": sub[key].min(), "max": sub[key].max()} for key in sub.columns}
-    return Tensor(sub.values), sub.columns, norm_data
+    return Tensor([sub.values]), sub.columns, norm_data
 
 
 class SupportPointModel(BaseModel):
@@ -38,8 +37,8 @@ class SupportPointModel(BaseModel):
         self.init_normalization(x_norm, y_norm)
         gx, gy = self.normalizer.apply((gx, gy))
 
-        self.interpolator = ScatteredGridInterpolator(gx, gy)
-        self.calibrator = LinearCalibration(gy.shape[1])
+        self.interpolator = ScatteredGridInterpolator(gx[0].data, gy[0].data)
+        self.calibrator = LinearCalibration(gy.shape[-1])
 
         self.interpolator.to(self.device)
         self.calibrator.to(self.device)
