@@ -1,6 +1,5 @@
 import os
 
-from Comprisk.data import DataModule
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 

@@ -206,6 +206,7 @@ dependencies = [
     { name = "tensorboard" },
     { name = "torch" },
     { name = "torchinfo" },
+    { name = "torchrbf" },
     { name = "torchview" },
     { name = "torchvision" },
     { name = "tqdm" },
@@ -242,6 +243,7 @@ requires-dist = [
     { name = "tensorboard", specifier = "==2.18.0" },
     { name = "torch", specifier = ">=2.5.1" },
     { name = "torchinfo", specifier = ">=1.8.0" },
+    { name = "torchrbf", specifier = ">=0.0.1" },
     { name = "torchview", specifier = ">=0.2.6" },
     { name = "torchvision", specifier = ">=0.20.1" },
     { name = "tqdm", specifier = ">=4.67.1" },
@@ -2169,6 +2171,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/14/c5/8d916585d4d6eb158105c21b28cd4b0ed296d74e499bf8f104368de16619/torchmetrics-1.6.1.tar.gz", hash = "sha256:a5dc236694b392180949fdd0a0fcf2b57135c8b600e557c725e077eb41e53e64", size = 540022 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9d/e1/84066ff60a20dfa63f4d9d8ddc280d5ed323b7f06504dbb51c523b690116/torchmetrics-1.6.1-py3-none-any.whl", hash = "sha256:c3090aa2341129e994c0a659abb6d4140ae75169a6ebf45bffc16c5cb553b38e", size = 927305 },
+]
+
+[[package]]
+name = "torchrbf"
+version = "0.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/05/223f2037d4fa84f9471343334586912b0f92f43ef835dd3376fc6b682ec7/torchrbf-0.0.1.tar.gz", hash = "sha256:591a9de6f6beb0e14024328c034417739a7fee6056e648ce374b910f50c47db3", size = 8968 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/97/1c/1d34324b9b7d88971c5e2c20960d14f06e56889fa4258502b259f1e209b4/torchrbf-0.0.1-py3-none-any.whl", hash = "sha256:03dba76c92df073d6bc785fb8353602fbd4a7aad64cc27197f89485e970b26a8", size = 12909 },
 ]
 
 [[package]]

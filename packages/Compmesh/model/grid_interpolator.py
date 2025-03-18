@@ -12,14 +12,15 @@ class ScatteredGridInterpolator(nn.Module):
     @torch.no_grad()
     def forward(self, x: Tensor):
         # Compute squared Euclidean distance between x and all gx points
-        dists = torch.sqrt(torch.sum((x.unsqueeze(1) - self._gx.unsqueeze(0)) ** 2, dim=-1))
+        dists = torch.sqrt(torch.sum((x - self._gx) ** 2, dim=-1))
 
         # Get indices of the two nearest neighbors
-        knn_idx = torch.topk(dists, k=2, largest=False).indices  # Shape: (batch, 2)
+        knn_idx = torch.topk(dists, k=2, largest=False, dim=1).indices  # Shape: (batch, 2)
 
         # Get the two nearest neighbor points and outputs
-        x0, x1 = self._gx[knn_idx[:, :, 0], :], self._gx[knn_idx[:, :, 1], :]  # (batch, samples, num_inputs)
-        y0, y1 = self._gy[knn_idx[:, :, 0], :], self._gy[knn_idx[:, :, 1], :]  # (batch, samples, num_outputs)
+        gx, gy = self._gx.unsqueeze(1), self._gy.unsqueeze(1)
+        x0, x1 = gx[knn_idx[:, 0], :], gx[knn_idx[:, 1], :]  # (batch, samples, num_inputs)
+        y0, y1 = gy[knn_idx[:, 0], :], gy[knn_idx[:, 1], :]  # (batch, samples, num_outputs)
 
         # Compute interpolation weights (based on inverse distance)
         d0, d1 = torch.norm(x - x0, dim=-1, keepdim=True), torch.norm(x - x1, dim=-1, keepdim=True)

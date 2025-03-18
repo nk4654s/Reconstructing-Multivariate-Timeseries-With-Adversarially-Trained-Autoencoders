@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -47,6 +48,12 @@ class SPTrainEntrypoint(EntrypointBase):
 
         return df
 
+    def _import_dataset_config(self, context: EntrypointContext) -> None:
+        # copy the dataset config of the training data to the model
+        source = context.datamodule.trainset.config_file
+        dest = os.path.join(self._logging_path, "dataset.yaml")
+        shutil.copyfile(source, dest)
+
     def _set_checkpoint_path(self, context: EntrypointContext) -> None:
         # set up the model saving as configuring the checkpoint path in the yaml config does not
         # work. The config file does not know the model's output folder name with the increasing
@@ -80,6 +87,7 @@ class SPTrainEntrypoint(EntrypointBase):
 
         self._logging_path = set_logging_path(context)
         self._set_checkpoint_path(context)
+        self._import_dataset_config(context)
 
         # initialize the support point mode
         df = self.load_support_points_table(context)

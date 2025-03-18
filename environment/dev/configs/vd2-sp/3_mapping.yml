@@ -1,0 +1,12 @@
+inputs:
+    "Saugdruck": c751ece1-b8f7-46ea-8cb1-8bf00aec1592
+    "Enddruck": 61aeafba-2dcc-4dc1-b13b-9ee2ed21aa88
+    "Drehzahl": db2da2b3-e1a0-4bae-af79-fe500d4db4b4
+    "Saugtemperatur": 80ca41cf-1b35-4073-aa63-9836058b9dd2
+    "Rückkühltemperatur": 04c06635-d298-4e6d-b0fb-7389fcc0a7c7
+outputs:
+    "Massenstrom": e737c6bc-7d00-4d41-82ad-7a542400751d
+    "Enddruck Stufe 1": 91ae9642-0a9f-4784-9682-a6e75352c196
+    "Endtemperatur Stufe 1": fe0083b5-a0af-45b6-bbcf-2f472d621ce3
+    "Saugdruck Stufe 2": 11f3c840-7472-45e8-bdff-38d483348f27
+    "Endtemperatur Stufe 2": f9365c4a-05f8-4730-a606-2b0b6b68eb0f

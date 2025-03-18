@@ -70,7 +70,7 @@ class SPExportEntrypoint(EntrypointBase):
                 "score": {0: "batch_size"},
                 "y_hat": {0: "batch_size"},
             },  # Support dynamic batch size
-            opset_version=11,  # Choose an appropriate ONNX opset version
+            opset_version=13,  # Choose an appropriate ONNX opset version
         )
 
         self.modify_model_metadata(context)

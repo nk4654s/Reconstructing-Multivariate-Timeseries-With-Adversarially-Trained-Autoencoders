@@ -118,9 +118,9 @@ class NormalizeModule(nn.Module):
             maxs_ = np.max(x, axis=0)
             mins_in[maxs_ > maxs_in] = maxs_
 
-            mins_ = np.min(x, axis=0)
+            mins_ = np.min(y, axis=0)
             mins_out[mins_ < mins_out] = mins_
-            maxs_ = np.max(x, axis=0)
+            maxs_ = np.max(y, axis=0)
             mins_out[maxs_ > maxs_out] = maxs_
 
         # the min and scale must be a parameter of this model such that it will be

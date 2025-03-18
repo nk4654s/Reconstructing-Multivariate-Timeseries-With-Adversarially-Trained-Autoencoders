@@ -1,8 +1,7 @@
-import numpy as np
 import pandas as pd
-from torch import nn, Tensor
+from torch import Tensor
 
-from Compmesh.model import ScatteredGridInterpolator
+from Compmesh.model import ScatteredGridInterpolator, RBFGridInterpolator
 from Compmesh.model.calibration import LinearCalibration
 from Comprisk.model import BaseModel
 
@@ -37,7 +36,7 @@ class SupportPointModel(BaseModel):
         self.init_normalization(x_norm, y_norm)
         gx, gy = self.normalizer.apply((gx, gy))
 
-        self.interpolator = ScatteredGridInterpolator(gx[0].data, gy[0].data)
+        self.interpolator = RBFGridInterpolator(gx[0].data, gy[0].data)
         self.calibrator = LinearCalibration(gy.shape[-1])
 
         self.interpolator.to(self.device)
