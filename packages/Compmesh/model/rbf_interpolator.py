@@ -4,6 +4,15 @@ from torchrbf import RBFInterpolator
 
 
 class RBFGridInterpolator(nn.Module):
+    """The RBFGridInterpolator learns a surrogate model given a grid of support points. The surrogate consists of
+    Gaussian's and is applicable to high-dimension problems.
+
+    > Note: This module disable the gradient to prevent changes to the surrogate.
+
+    Args:
+        gx (Tensor): The input coordinated.
+        gy (Tensor): The output vectors according to the input coordinates.
+    """
     def __init__(self, gx: Tensor, gy: Tensor, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

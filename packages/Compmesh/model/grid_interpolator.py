@@ -3,6 +3,16 @@ from torch import nn, Tensor
 
 
 class ScatteredGridInterpolator(nn.Module):
+    """The ScatteredGridInterpolated gets a grid of support points and enables sampling points between cells. To
+    achieve this, the two nearest neighbours were searched and a linear interpolation of the output is applied.
+    Neighbours are defined by their euclidean distance to the input.
+
+    > Note: This module disables the gradient to prevent changing the grid.
+
+    Args:
+        gx (Tensor): The input coordinated.
+        gy (Tensor): The output vectors according to the input coordinates.
+    """
     def __init__(self, gx, gy):
         super().__init__()
 

@@ -16,6 +16,11 @@ def process_df(data: pd.DataFrame, label: dict[str, str]) -> tuple[Tensor, list[
 
 
 class SupportPointModel(BaseModel):
+    """The SupportPointModel loads a grid exported by KO3 to perform a prediction of sensors given an input. This model
+    uses the RBFGridInterpolator to build a surrogate model and to sample coordinates from inbetween cells. Then, a
+    linear transformation is applied to the surrogate's output as the exported grid from KO3 may require a calibration
+    to work properly.
+    """
     def __init__(self, *args, **kwargs):
         """
         A model that first interpolates, then applies a learnable linear transformation.
@@ -30,6 +35,14 @@ class SupportPointModel(BaseModel):
         self.calibrator: LinearCalibration | None = None
 
     def init_grid(self, data: pd.DataFrame, x_label: dict[str, str], y_label: dict[str, str]):
+        """This method loads the KO3 grid loaded as dataframe.
+
+        Args:
+            data (pd.DataFrame): The KO3 export.
+            x_label (dict): The mapping of input values where the key corresponds to the value name of KO3 and the
+                value represents the UUID used by Xplore.
+            y_label (dict): Equal to `x_label` but maps the output values.
+        """
         gx, x_label, x_norm = process_df(data, x_label)
         gy, y_label, y_norm = process_df(data, y_label)
 
@@ -43,6 +56,14 @@ class SupportPointModel(BaseModel):
         self.calibrator.to(self.device)
 
     def init_normalization(self, x: dict, y: dict):
+        """This method initializes the normalization layer.
+
+        > Note: This should be called by this class automatically after initializing the KO3 grid.
+
+        Args:
+            x (dict): The input values in the shape {"name": value}.
+            y (dict): Same as for `x`.
+        """
         dx = x.copy()
         dx.update(y)
         data = {

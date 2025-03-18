@@ -9,23 +9,29 @@ from Comprisk.entrypoints import EntrypointBase, EntrypointContext
 
 
 class SPExportEntrypoint(EntrypointBase):
+    """This entrypoint exports the torch model into the ONNX format used by Xplore's backend."""
     def __init__(self):
         super().__init__()
 
         self._model_name = "support"
 
     def modify_model_metadata(self, context: EntrypointContext):
+        """This function modifies the metadata of the exported ONNX file."""
         dataset = context.datamodule.valset
         args = dataset.get_args()
 
+        # load the exported model
         onnx_path = os.path.join(context.config_folder, self._model_name + ".onnx")
         model = onnx.load(onnx_path)
 
         enc = json.encoder.JSONEncoder()
 
+        # store the machine UUID, seed and company name
         model.domain = str(dataset.UUID)
         model.model_version = context.config.seed_everything
         model.producer_name = "NEA-X"
+
+        # store the input and output sensor UUIDs required by this model as an input
         meta = model.metadata_props.add()
         meta.key = "input_names"
         meta.value = enc.encode(args.names_in)

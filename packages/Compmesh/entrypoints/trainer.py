@@ -22,6 +22,7 @@ class SPTrainEntrypoint(EntrypointBase):
         self._logging_path = None
 
     def load_name_mapping(self, context: EntrypointContext) -> None:
+        """This method loads the mapping of KO3 names to Xplore's sensor UUIDs."""
         path = context.config.name_mapping
         with open(path, "r") as f:
             mapping = yaml.safe_load(f)
@@ -29,6 +30,11 @@ class SPTrainEntrypoint(EntrypointBase):
             self._y_values = mapping["outputs"]
 
     def load_support_points_table(self, context: EntrypointContext) -> pd.DataFrame:
+        """This method loads the partitioned KO3 export as pandas DataFrame.
+
+        Returns:
+            pd.DataFrame: The KO3 export.
+        """
         path = context.config.support_points
         files = [os.path.join(path, f) for f in os.listdir(path) if ".csv" in f]
 
@@ -68,6 +74,12 @@ class SPTrainEntrypoint(EntrypointBase):
             logger.warning("ModelCheckpoint callback not defined in yaml-config.")
 
     def check_dataset_compatibility(self, context: EntrypointContext) -> bool:
+        """This method checks if the dataset for training is compatible given the manual mapping of
+        KO3 names to sensor UUIDs.
+
+        Returns:
+            bool: True if it is safe to proceed, otherwise False.
+        """
         data = context.datamodule.trainset
         args = data.get_args()
 
@@ -85,6 +97,7 @@ class SPTrainEntrypoint(EntrypointBase):
             logger.warning("Dataset configuration does not match model configuration. Adjust columns used.")
             return context
 
+        # setup the logging folder and paths required by a training session
         self._logging_path = set_logging_path(context)
         self._set_checkpoint_path(context)
         self._import_dataset_config(context)
@@ -97,6 +110,7 @@ class SPTrainEntrypoint(EntrypointBase):
         context.datamodule.setup("fit")
         context.trainer.fit(context.model, context.datamodule)
 
+        # now, the folder has changed to the model output folder. Everything important should be located in here.
         context.config_folder = self._logging_path
         context.config.data.shuffle = False
         return context
