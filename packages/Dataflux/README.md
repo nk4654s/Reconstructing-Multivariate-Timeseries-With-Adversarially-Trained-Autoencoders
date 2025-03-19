@@ -1,49 +1,68 @@
-# Installation
-Make sure to have [Miniconda](https://docs.anaconda.com/miniconda/#quick-command-line-install) installed on your system and this repository cloned. Then, open a terminal in the root folder of this repository and run:
+# Dataflux
+## Usage
+The package can be executed as standalone using `flux-pipeline`. In general, the `flux-pipeline` downloads a dataset 
+from the Amazon S3 bucket, runs some preprocessing and stores the files on the local disk. Afterward, the data is 
+further processed (e.g. normalize the dataset). The recommended way to execute the pipeline is by configuring a 
+`yaml`-config file.
 
+```yaml
+folder: <output folder name>
+machine_uuid: <machine UUID>
+intervals:
+  - <start date (optional time> <end date (optional time)>
+  - ...
+num_workers: <processing threads>
+overwrite: <overwrite existing folder>
+
+modules:
+  - class_path: Dataflux.modules.State
+    init_args:
+      key: <sensor UUID>
+      lower: <split data where sensor is lower equal than x>
+      upper: <split data where sensor is higher equal than x>
+      alpha_threshold: <seconds to remove after split>
+      beta_threshold: <seconds to remove before split>
+  - ...
 ```
-conda env create -f environment.yml
+
+## Modules
+### Available Modules
+```yaml
+- Dataflux.modules.features.Features
+- Dataflux.modules.filter.Filter
+- Dataflux.modules.normalize.[NormalizeFit | NormalizeTransform]
+- Dataflux.modules.rename.Rename
+- Dataflux.modules.slice.Slice
+- Dataflux.modules.state.State
 ```
 
-Wait for the environment to be set up. Then, activate it with:
+### Adding Modules
+> Note: A detailed description of the named classes can be found in the developer documentation. The guide on how
+> to generate the `docs/` folder can be found in the repository's main `README.md` or click [here](https://github.com/neaxplore/xplore-ai-cas/blob/master/README.md).
 
+Adding a new module can be achieved, by creating a new class in `Dataflux.modules` with 
+`Dataflux.diskio.FileWorkerCallable` as base class. The base class serves as interface and requires to implement the
+following methods.
+
+```python
+class FileWorkerCallable:
+    def get_dependencies(self) -> Dict[str, CallableDependency]:
+        return {}
+
+    def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
+        raise NotImplementedError
+
+    def run(self, fm: FileMeta, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:
+        raise NotImplementedError
 ```
-conda activate dataflux
-```
+> Note: Even though `get_dependencies` is not necessary, adding dependencies to each module can help building a valid
+> pipeline. To learn more about `CallableDependency`, head to the developer documentation.
 
-To build and link the library, run:
+An instance of a module will be created for each processing thread defined in the configuration. Therefore, the
+`run()` method will be executed on a subset of dataset files downloaded. The number of files an instance processes
+can be calculated by
 
-```
-pip install -e .
-```
+$$\hat{n}_\textit{files}=\frac{n_\textit{files}}{m_\textit{threads}}$$
 
-> Note: The last output line should contain `Successfully installed Dataflux-1.0`.
+> Note: The algorithm responsible for assigning the files to each thread can be found in `Dataflux.diskio.factory`.
 
-# Documentation
-The documentation can be generated with:
-```
-sh scripts/build-docs.sh
-```
-
-# Usage
-The application main script can be executed by typing `flux-pipeline`. In general, the `flux-pipeline` downloads a dataset from the Amazon S3 bucket, runs some preprocessing and stores the files on the local disk. Afterward, the data is further processed (e.g. normalize the dataset). The recommended way to execute the pipeline is by configuring a `yaml`-config file. An example for a config file is available under `configs/green_config.yaml`.
-
-# Modules
-## Preprocessing
-The preprocessing module's code is located under `Dataflux/modules/preprocess`. Adding a new module can be achieved, by simply inheriting the base class from `Dataflux/modules/preprocess/module.py` and publishing the class to the package in `Dataflux/modules/preprocess/__init__.py`. Finally, define the created class path in a config file to enable the newly created module.
-
-Available modules are:
-- Homogeneous columns and rows
-- Interpolate values (e.g. to fill NaN)
-- Split the dataset when machine goes offline
-- Rename the columns from UUID to human-readable name
-- Create a report to analyze the dataset
-
-## Postprocessing
-Similar to preprocessing, the code is located under `Dataflux/modules/postprocess` but a new module is added to `Dataflux/postprocess.py` instead. Also, the postprocess modules are build to run on multiple threads enabling faster postprocessing.
-
-Available modules are:
-- Normalization (MinMax, Standardize)
-- Detect and remove outlier
-- Remove one ore multiple columns by name
-- Add historical weather data from an external source
