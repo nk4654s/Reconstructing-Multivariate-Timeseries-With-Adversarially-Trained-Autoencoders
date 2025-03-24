@@ -40,6 +40,9 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
+          server-id: ai-cas-repo
+          server-username: jl-neax
+          server-password: GH_TOKEN
 
       - name: Deploy to GitHub Packages
         run: mvn deploy
