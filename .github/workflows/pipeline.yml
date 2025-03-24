@@ -21,6 +21,11 @@ jobs:
   build-jar:
     runs-on: ubuntu-latest
     steps:
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.12
+
       - name: Build Jar
         run: |
           python ./dev_tools.py
