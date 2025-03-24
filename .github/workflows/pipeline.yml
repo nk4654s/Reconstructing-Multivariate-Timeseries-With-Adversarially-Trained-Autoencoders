@@ -26,9 +26,13 @@ jobs:
         with:
           python-version: 3.12
 
+      - name: Debug - Listdir
+        run: |
+          ls .
+
       - name: Build Jar
         run: |
-          python ./dev_tools.py
+          python /home/runner/work/xplore-ai-cas/xplore-ai-cas/dev_tools.py
 
       - name: Set up Java and Maven
         uses: actions/setup-java@v4
