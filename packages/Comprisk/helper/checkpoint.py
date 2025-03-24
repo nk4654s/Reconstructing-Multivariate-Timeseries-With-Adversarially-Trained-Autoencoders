@@ -35,6 +35,9 @@ class BasicCheckpointCallback(ModelCheckpoint):
             enable_version_counter=True
         )
     def _save_checkpoint(self, trainer: Trainer, filepath: str) -> None:
+        if not os.path.exists(os.path.dirname(filepath)):
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
         torch.save(trainer.model, filepath)
 
         self._last_global_step_saved = trainer.global_step

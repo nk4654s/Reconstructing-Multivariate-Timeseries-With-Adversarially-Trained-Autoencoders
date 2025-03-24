@@ -16,6 +16,8 @@ events.out.tfevents.*
 # exclude dev environment (but include config set)
 environment/dev/models/*
 !environment/dev/models/README.md
+environment/dev/support_points/*
+!environment/dev/support_points/README.md
 
 environment/dev/datasets/
 !environment/dev/datasets/README.md

@@ -1,0 +1,2 @@
+# Support Points
+This folder is excluded from git as the support points exports are likely to be large. To build AI models based on the support points, create a subdirectory in this folder with the export as csv-files. Multiple files are allowed in a subdirectory, but make sure to have one folder for each machine.

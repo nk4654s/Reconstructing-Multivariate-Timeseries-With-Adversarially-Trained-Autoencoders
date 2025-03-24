@@ -33,7 +33,7 @@ def deploy_model():
     print("\tVersion:", model.model_version)
     print("\tMachine:", model.domain)
 
-    dst = os.path.join(path, f"{model.domain}_{model.model_version}_{version.split('_')[-1]}.onnx")
+    dst = os.path.join(path, f"{model.domain}_{os.path.basename(src)}")
     print("\tCopy to:", dst)
     print("\tExists:", os.path.exists(dst))
 
@@ -57,23 +57,27 @@ def deploy_model():
     if not os.path.exists(dst):
         os.makedirs(dst)
 
+    name = os.path.basename(src).split(".")[0]
     src = os.path.dirname(src)
     config = os.path.join(src, "config.yaml")
-    shutil.copyfile(config, os.path.join(dst, f"config_{model.model_version}.yaml"))
+    shutil.copyfile(config, os.path.join(dst, f"config_{name}.yaml"))
 
     dataset = os.path.join(src, "dataset.yaml")
-    shutil.copyfile(dataset, os.path.join(dst, f"dataset_{model.model_version}.yaml"))
+    shutil.copyfile(dataset, os.path.join(dst, f"dataset_{name}.yaml"))
     print("Done.")
 
 
 def update_pom():
+    if os.path.exists("classes"):
+        shutil.rmtree("classes")
+
     # get the total model version (simply by calculating the model version sum)
     models = [f for f in os.listdir("environment/production/models") if "onnx" in f]
     models = [os.path.join("environment/production/models", f) for f in models]
     model_versions = sum([onnx.load(f).model_version for f in models])
 
     # get the number of model domains
-    model_count = len(set([onnx.load(f).domain for f in models]))
+    model_count = len([onnx.load(f).domain for f in models])
 
     # get the code version
     code = 0
@@ -81,7 +85,7 @@ def update_pom():
         if package.startswith("."):
             continue
 
-        with open(os.path.join("packages", package, package, "version.txt"), "r") as f:
+        with open(os.path.join("packages", package, "version.txt"), "r") as f:
             major, minor = f.read().split(".")
             code += safe_cast(major, int, 1)
             model_versions += safe_cast(minor, int, 0)

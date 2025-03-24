@@ -82,7 +82,8 @@ class BaseModel(NormalizeWrapper):
         y_hat = y_hat.detach().cpu().numpy()
         y = y.detach().cpu().numpy()
 
-        return np.sqrt(np.power(y_hat - y, 2)).mean(1)[0]
+        # mean over batch and sequence, but keep sensors
+        return np.sqrt(np.power(y_hat - y, 2)).mean(axis=(0, 1))
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         """The forward method defines how the input is passed through the
@@ -109,8 +110,10 @@ class BaseModel(NormalizeWrapper):
 
         # the feature loss is required by the LossMeasurement callback to calculate
         # the model's performance during training.
-        for name_, loss_ in zip(self._features_out, self._get_feature_loss(y_hat, y), strict=False):
-            self.log(f"train/{name_}", loss_)
+        loss_ = self._get_feature_loss(y_hat, y).tolist()
+        for i, name in enumerate(self._features_out):
+            self.log(f"train/{name}", loss_[i])
+
         return loss
 
     def test_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:

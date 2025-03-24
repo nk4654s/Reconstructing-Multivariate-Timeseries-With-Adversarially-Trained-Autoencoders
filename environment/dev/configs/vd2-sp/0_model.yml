@@ -1,0 +1,56 @@
+# CAS specific
+environment: dev
+tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
+name_mapping: environment/dev/configs/vd2-sp/3_mapping.yml
+support_points: environment/dev/support_points/thyssen_gas/
+
+# model configuration
+model:
+  class_path: Compmesh.model.support_point.SupportPointModel
+  init_args:
+    activation: linear
+    loss: MSELoss
+    optimizer: Adam
+    lr: 0.001
+    lr_decay: 0.9
+
+# trainer and dataset config
+seed_everything: 0
+trainer:
+  accelerator: mps
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        monitor: validate/MSELoss
+        min_delta: 1.0e-05
+        patience: 3
+    - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
+
+  precision: 32
+  max_epochs: 10
+  gradient_clip_val: 1.0
+  log_every_n_steps: 1
+
+data:
+  train: configs/vd2-sp/1_dataset_train.yml
+  validate: configs/vd2-sp/2_dataset_validate.yml
+  sequence_in: 1
+  sequence_out: 0
+  features_in:
+    - c751ece1-b8f7-46ea-8cb1-8bf00aec1592 # Saugdruck
+    - 61aeafba-2dcc-4dc1-b13b-9ee2ed21aa88 # Enddruck
+    - db2da2b3-e1a0-4bae-af79-fe500d4db4b4 # Drehzahl
+    - 80ca41cf-1b35-4073-aa63-9836058b9dd2 # Saugtemperatur
+    - 04c06635-d298-4e6d-b0fb-7389fcc0a7c7 # Rückkühltemperatur
+  features_out:
+    - e737c6bc-7d00-4d41-82ad-7a542400751d # Massenstrom
+    - 91ae9642-0a9f-4784-9682-a6e75352c196 # Enddruck Stufe 1
+    - fe0083b5-a0af-45b6-bbcf-2f472d621ce3 # Endtemperatur Stufe 1
+    - 11f3c840-7472-45e8-bdff-38d483348f27 # Saugdruck Stufe 2
+    - f9365c4a-05f8-4730-a606-2b0b6b68eb0f # Endtemperatur Stufe 2
+  skip: 1
+  stride: 1
+  batch_size: 512
+  shuffle: true
+  num_workers: 8
+  behavior: autoencoder
