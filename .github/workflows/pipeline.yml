@@ -30,7 +30,7 @@ jobs:
 
       - name: Build Jar
         run: |
-          python dev_tools.py
+          uv run dev_tools.py
 
       - name: Set up Java and Maven
         uses: actions/setup-java@v4
