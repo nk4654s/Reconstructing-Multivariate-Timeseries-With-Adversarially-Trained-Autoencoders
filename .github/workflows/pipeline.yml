@@ -1,5 +1,11 @@
 name: CAS CI/CD
 
+permissions:
+  contents: read
+  actions: read
+  checks: write
+  packages: write
+  
 on:
   push:
     paths:
