@@ -23,7 +23,7 @@ class Report:
         output_folder (str): The folder where the report will be saved.
         report_name (str): The name of the report file.
     """
-    def __init__(self, output_folder: str, report_name: str):
+    def __init__(self, output_folder: str, report_name: str, model_name: str = "model"):
         self._folder = output_folder
         self._name = report_name
         self._path = os.path.join(self._folder, self._name)
@@ -39,7 +39,7 @@ class Report:
             os.makedirs(path)
 
         # get the features used by the model
-        onnx_path = os.path.join(self._folder, "model.onnx")
+        onnx_path = os.path.join(self._folder, f"{model_name}.onnx")
         onnx = onnxruntime.InferenceSession(onnx_path)
 
         meta = onnx.get_modelmeta()

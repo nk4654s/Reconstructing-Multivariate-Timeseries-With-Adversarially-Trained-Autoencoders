@@ -5,7 +5,12 @@ from collections.abc import Callable
 
 import torch
 
-_str_to_activation = {"relu": torch.relu, "sigmoid": torch.sigmoid, "tanh": torch.tanh, "linear": lambda x: x}
+
+def linear(x: torch.Tensor) -> torch.Tensor:
+    return x
+
+
+_str_to_activation = {"relu": torch.relu, "sigmoid": torch.sigmoid, "tanh": torch.tanh, "linear": linear}
 
 
 def get_activation_from_string(activation_str: str) -> Callable:

@@ -36,6 +36,23 @@ def get_trainer_callback(trainer, callback_name: str) -> Callback | None:
     return None
 
 
+def set_logging_path(context: EntrypointContext) -> str:
+    path = os.path.join(context.base_folder, context.environment.value, "models")
+
+    # set up the logger depending on the environment and create a sub folder if a tag was given
+    sub_path = context.model.__class__.__name__
+    if context.config.tag:
+        sub_path = f"{sub_path}/{context.config.tag}"
+
+    # create the tensorboard logger and add it to the trainer
+    tb_logger = TensorBoardLogger(path, sub_path)
+    context.trainer.logger = tb_logger
+
+    os.makedirs(tb_logger.log_dir)
+    logger.debug("Using log folder %s", tb_logger.log_dir)
+    return tb_logger.log_dir
+
+
 class TrainerEntrypoint(EntrypointBase):
     """
     This entrypoints builds on the FluxEntrypoint and uses the datasets to train a model. First, the model's
@@ -61,22 +78,6 @@ class TrainerEntrypoint(EntrypointBase):
         self._logging_path = None
         self._checkpoint_path = None
         self._metadata_path = None
-
-    def _set_logging_path(self, context: EntrypointContext) -> None:
-        path = os.path.join(context.base_folder, context.environment.value, "models")
-
-        # set up the logger depending on the environment and create a sub folder if a tag was given
-        sub_path = context.model.__class__.__name__
-        if context.config.tag:
-            sub_path = f"{sub_path}/{context.config.tag}"
-
-        # create the tensorboard logger and add it to the trainer
-        tb_logger = TensorBoardLogger(path, sub_path)
-        self._logging_path = tb_logger.log_dir
-        context.trainer.logger = tb_logger
-
-        os.makedirs(tb_logger.log_dir)
-        logger.debug("Using log folder %s", tb_logger.log_dir)
 
     def _set_checkpoint_path(self, context: EntrypointContext) -> None:
         # set up the model saving as configuring the checkpoint path in the yaml config does not
@@ -115,7 +116,7 @@ class TrainerEntrypoint(EntrypointBase):
         self, context: EntrypointContext, *args, **kwargs
     ) -> EntrypointContext:
         # set up the logging and checkpoint directory
-        self._set_logging_path(context)
+        self._logging_path = set_logging_path(context)
         self._set_checkpoint_path(context)
 
         # save model metadata to log folder and import the normalization

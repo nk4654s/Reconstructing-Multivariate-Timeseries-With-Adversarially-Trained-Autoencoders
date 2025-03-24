@@ -91,6 +91,9 @@ class DataModule(L.LightningDataModule):
         self._val = None
         self._collate_fn = None
 
+        self._train_sampler = None
+        self._val_sampler = None
+
         self.set_path(train, validate)
 
     def set_path(self, train: str, validate: str) -> None:
@@ -162,10 +165,12 @@ class DataModule(L.LightningDataModule):
             if self._train is not None:
                 kwargs["data_length"] = len(self._train)
                 self._train_sampler = RBS(**kwargs)
+                logger.debug("Initialized trainset sampler.")
 
             if self._val is not None:
                 kwargs["data_length"] = len(self._val)
                 self._val_sampler = RBS(**kwargs)
+                logger.debug("Initialized valset sampler.")
 
         if stage == "test":
             raise NotImplementedError
