@@ -22,10 +22,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: 3.12
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Build Jar
         run: |
