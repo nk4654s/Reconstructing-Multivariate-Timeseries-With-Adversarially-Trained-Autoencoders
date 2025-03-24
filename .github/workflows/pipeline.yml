@@ -21,27 +21,15 @@ jobs:
   build-jar:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: 3.12
 
-      - name: Print current working directory
+      - name: Build Jar
         run: |
-          pwd
-
-      - name: Check for dev_tools.py
-        run: |
-          ls /home/runner/work/xplore-ai-cas/xplore-ai-cas
-
-      - name: Run Python script
-        run: |
-          chmod +x dev_tools.py
-          ./dev_tools.py
-
-     # - name: Build Jar
-     #   run: |
-     #     python /home/runner/work/xplore-ai-cas/xplore-ai-cas/dev_tools.py
+          python dev_tools.py
 
       - name: Set up Java and Maven
         uses: actions/setup-java@v4
