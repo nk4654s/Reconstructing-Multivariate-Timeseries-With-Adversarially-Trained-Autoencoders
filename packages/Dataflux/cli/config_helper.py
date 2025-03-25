@@ -19,7 +19,6 @@ def build_config(path: str, config: Dict = None) -> Dict:
             the strings for the class paths defined with the key 'class_path'.
     """
     if path is None or not os.path.isfile(path):
-        # FIXME: logging
         return {}
 
     if not config:
