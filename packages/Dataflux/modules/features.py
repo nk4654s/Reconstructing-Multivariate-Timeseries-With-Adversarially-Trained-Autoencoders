@@ -14,11 +14,12 @@ class Features(FileWorkerCallable):
     Args:
         include (str): The list of column names to keep, provided as string
             where each list entry is separated by a ','.
+        force_features (bool): If set to True, all columns of "include" will be present, but may contain NaN.
     """
-    def __init__(self, include: List[str] = None) -> None:
+    def __init__(self, include: List[str] = None, force_features: bool = False) -> None:
         include = include if include else []
         self._include = include + ["ts"] if "ts" not in include else include
-        self._drop = []
+        self._force_features = force_features
 
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {NormalizeFit.__name__: CallableDependency.NOT_BEFORE}
@@ -31,11 +32,16 @@ class Features(FileWorkerCallable):
         df = fm.read()
 
         # mark file to be deleted if the number of features does not align with the rest of the files
-        if not self._check_integrity(df.columns.values):
+        if not self._force_features and not self._check_integrity(df.columns.values):
             fm.state = FileState.DELETED
             return fm
 
         # adjust the content by only including certain features
+        if self._force_features:
+            for feature in self._include:
+                if feature not in df.columns:
+                    df[feature] = np.nan
+
         df = df[self._include]
         fm.features = df.shape[1]
 
