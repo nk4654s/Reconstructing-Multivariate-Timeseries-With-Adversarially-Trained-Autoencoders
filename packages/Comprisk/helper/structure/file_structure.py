@@ -84,6 +84,9 @@ def search_models(path: str, search_depth: int = 50) -> List[str]:
     Returns:
         List[str]: The list of found paths to ONNX models
     """
+    if os.path.basename(path) == "derived_from":
+        return []
+
     result = []
     for sub_path in os.listdir(path):
         sub_path = os.path.join(path, sub_path)

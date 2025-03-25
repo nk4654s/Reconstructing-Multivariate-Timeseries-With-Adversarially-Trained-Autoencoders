@@ -132,6 +132,8 @@ class TrainerEntrypoint(EntrypointBase):
         if checkpoint.from_disk:
             context.config.seed_everything += 1
             L.seed_everything(context.config.seed_everything)
+            dst = os.path.join(self._logging_path, "derived_from")
+            shutil.copytree(context.config_folder, dst)
 
         # start the training
         logger.debug("Starting training (seed=%s)", context.config.seed_everything)
