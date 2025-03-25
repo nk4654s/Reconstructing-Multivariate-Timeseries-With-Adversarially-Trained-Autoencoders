@@ -2,6 +2,7 @@ import argparse
 import os.path
 import shutil
 import xml
+import zipfile
 from uuid import UUID
 
 import onnx
@@ -52,19 +53,25 @@ def deploy_model():
 
     shutil.copyfile(src, dst)
 
-    # copy the configs
-    dst = os.path.join("environment", "production", "configs", model.domain)
-    if not os.path.exists(dst):
-        os.makedirs(dst)
-
+    # create a zip of the model output dir in production, make sure to exclude the
+    # analysis subdirectory as it might be huge
     name = os.path.basename(src).split(".")[0]
     src = os.path.dirname(src)
-    config = os.path.join(src, "config.yaml")
-    shutil.copyfile(config, os.path.join(dst, f"config_{name}.yaml"))
+    dst = os.path.join("environment", "production", "configs", model.domain)
 
-    dataset = os.path.join(src, "dataset.yaml")
-    shutil.copyfile(dataset, os.path.join(dst, f"dataset_{name}.yaml"))
-    print("Done.")
+    with zipfile.ZipFile(f"{dst}_{name}.zip", "w", zipfile.ZIP_DEFLATED) as zf:
+        for dir_name, _, files in os.walk(src):
+            if "analysis" in dir_name:
+                continue
+
+            zf.write(dir_name)
+            for filename in files:
+                if "tfevents" in filename:
+                    continue
+
+                zf.write(os.path.join(dir_name, filename))
+
+    print("Deployment done.")
 
 
 def update_pom():
@@ -97,11 +104,12 @@ def update_pom():
     root = et.getroot()
 
     version_child = root.find(tag + "version")
-    version_child.text = f"{code}.{model_count}.{model_versions}"
+    version = f"{code}.{model_count}.{model_versions}"
+    version_child.text = version
 
     # Write back to file
     et.write("pom.xml")
-    print("Done.")
+    print(f"POM updated (v{version}).")
 
 
 def delete_model():
