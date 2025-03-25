@@ -48,5 +48,5 @@ jobs:
         run: mvn deploy
         env:
           GITHUB_USERNAME: ${{ secrets.DEPLOY_ACTOR }}
-          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
 
