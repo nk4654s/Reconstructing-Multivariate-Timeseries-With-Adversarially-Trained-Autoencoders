@@ -4,6 +4,7 @@ __pycache__/
 *egg-info/
 requirements.txt
 *.whl
+*.jar
 
 docs/
 build/
@@ -40,3 +41,5 @@ logfile-bug
 # specific
 /.venv/
 .env
+/classes/
+/maven-archiver/
