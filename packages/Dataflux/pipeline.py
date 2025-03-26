@@ -68,7 +68,7 @@ def download(flux: FluxConfigManager) -> None:
             for (p, n) in interval_list
         ],
     )
-    downloader = ContinuousDataDownloader(machine_uuid, interval_list)
+    downloader = ContinuousDataDownloader(machine_uuid, interval_list, file_postfix=flux.args.aws_postfix)
     downloader.set_data_type(DataType.MEASUREMENTS)
 
     # download and process data

@@ -19,6 +19,9 @@
       <repository>
           <id>ai-cas-repo</id>
           <url>https://maven.pkg.github.com/neaxplore/xplore-ai-cas</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
       </repository>
   </distributionManagement>
 </project>
