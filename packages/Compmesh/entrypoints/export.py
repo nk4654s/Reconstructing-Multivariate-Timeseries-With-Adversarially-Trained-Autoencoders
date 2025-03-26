@@ -6,6 +6,9 @@ import torch
 from Comprisk.anomaly import ScoreWrapper
 from Comprisk.entrypoints import EntrypointBase, EntrypointContext
 from Comprisk.helper import ONNXArgs
+from Dataflux import get_logger, logging_mode
+
+logger = get_logger(__name__, "logfile", logging_mode)
 
 
 class SPExportEntrypoint(EntrypointBase):
@@ -13,14 +16,14 @@ class SPExportEntrypoint(EntrypointBase):
     def __init__(self):
         super().__init__()
 
-        self._model_name = "support"
+        self._model_name = "support.onnx"
 
     def modify_model_metadata(self, context: EntrypointContext):
         """This function modifies the metadata of the exported ONNX file."""
         dataset = context.datamodule.trainset or context.datamodule.valset
         data_args = dataset.get_args()
 
-        onnx_path = os.path.join(context.config_folder, self._model_name + ".onnx")
+        onnx_path = os.path.join(context.config_folder, self._model_name)
         args = ONNXArgs.load_from_model(onnx_path)
         args.machine_uuid = str(dataset.UUID)
         args.version = context.config.seed_everything
@@ -34,13 +37,12 @@ class SPExportEntrypoint(EntrypointBase):
         args.save_to_model(onnx_path)
 
     def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
-        if os.path.exists(os.path.join(context.config_folder, "support.onnx")):
+        if os.path.exists(os.path.join(context.config_folder, self._model_name)):
             return context
 
         # train the score wrapper
-        valset = context.datamodule.val_dataloader()
         wrapper = ScoreWrapper(context.model, threshold=0.8, threshold_deviation=3)
-        wrapper.train_wrapper(valset, verbose=True)
+        wrapper.train_wrapper(context.datamodule, reduced=False, verbose=True)
         wrapper.export_to(context.config_folder)
 
         # export finished model as ONNX file
@@ -54,7 +56,7 @@ class SPExportEntrypoint(EntrypointBase):
         output_sample = torch.Tensor([output_sample])
 
         # then save the model into the ONNX format
-        onnx_path = os.path.join(context.config_folder, "support.onnx")
+        onnx_path = os.path.join(context.config_folder, self._model_name)
         wrapper.to_onnx(
             file_path=onnx_path,
             input_sample=(input_sample, output_sample),
@@ -66,8 +68,8 @@ class SPExportEntrypoint(EntrypointBase):
                 "y": {0: "batch_size"},
                 "score": {0: "batch_size"},
                 "y_hat": {0: "batch_size"},
-            },  # Support dynamic batch size
-            opset_version=13,  # Choose an appropriate ONNX opset version
+            },
+            opset_version=13,
         )
 
         self.modify_model_metadata(context)

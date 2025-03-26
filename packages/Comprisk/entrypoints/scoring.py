@@ -30,8 +30,6 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
         if dataset_args.behavior != DatasetTypes.AUTOENCODER:
             stride = dataset_args.sequence_out
 
-        n = len(context.datamodule.valset) + len(context.datamodule.trainset)
-        logger.info("Fitting score transformer on n=%s samples.", n)
         context.datamodule.valset.set_stride(stride)
         context.datamodule.trainset.set_stride(stride)
         context.datamodule.setup(stage="fit")
@@ -47,7 +45,8 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
         # included in the model graph. This is required for ONNX
         wrapper = ScoreWrapper(checkpoint.get_model())
         wrapper.train_wrapper(
-            context.datamodule.val_dataloader(),
+            context.datamodule,
+            reduced=True,
             verbose=DEBUG_MODE,
         )
         wrapper.export_to(context.config_folder)

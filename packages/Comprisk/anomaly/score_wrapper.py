@@ -4,6 +4,8 @@ from typing import Tuple
 import numpy as np
 import torch
 import yaml
+
+from Comprisk.data import DataModule
 from Dataflux import get_logger, logging_mode
 from lightning import LightningModule
 from torch import Tensor, nn
@@ -66,13 +68,8 @@ class ScoreWrapper(LightningModule):
     def sub_model(self) -> nn.Module:
         return self._model
 
-    @torch.no_grad()
-    def train_wrapper(self, data: DataLoader, verbose: bool = False) -> None:
-        # initialize the parameters
-        loss = []
-
-        # find the mean and scale of the data to run a transformation
-        for x, y in tqdm(data, desc="Prediction with Model", disable=not verbose):
+    def _gather_loss(self, data: DataLoader, loss: list[float], verbose) -> list:
+        for x, y in tqdm(data, desc="Gather Loss", disable=not verbose):
             x = x.to(self._model.device)
             y = y.to(self._model.device)
             y_hat, y = self._model.predict_step(x, y)
@@ -80,6 +77,16 @@ class ScoreWrapper(LightningModule):
             loss_ = torch.abs(y_hat - y).cpu().detach()
             loss_ = loss_.numpy().reshape(-1, y_hat.shape[-1])
             loss += list(loss_)
+
+        return loss
+
+    @torch.no_grad()
+    def train_wrapper(self, data: DataModule, reduced: bool = True, verbose: bool = False) -> None:
+        # calculate the loss of the validation set to get an idea of the loss distribution
+        # if reduced is set to false, consider the training set in addition to the validation set
+        loss = self._gather_loss(data.val_dataloader(), [], verbose)
+        if not reduced:
+            loss = self._gather_loss(data.train_dataloader(), loss, verbose)
 
         # finalize loss to search for percentiles
         loss = np.array(loss)
