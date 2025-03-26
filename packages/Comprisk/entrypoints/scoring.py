@@ -15,10 +15,16 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
     This entrypoint loads a given model and runs the prediction loop on the validation set. Then, by calculating the
      loss between prediction and expected values, the Comprisk.anomaly.ScoreTransformer is fitted. Finally, the
      entrypoint stores the trained ScoreTransformer in the models output directory under `metadata`.
+
+     Args:
+         reduced_mode (bool): Whether to use the trainset in addition to the validation set to fit the
+            ScoreTransformer. Defaults to False.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, reduced_mode: bool = True) -> None:
         super().__init__()
+
+        self._reduced = reduced_mode
 
     def __call__(
         self, context: EntrypointContext, *args, **kwargs
@@ -46,11 +52,10 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
         wrapper = ScoreWrapper(checkpoint.get_model())
         wrapper.train_wrapper(
             context.datamodule,
-            reduced=True,
+            reduced=self._reduced,
             verbose=DEBUG_MODE,
         )
         wrapper.export_to(context.config_folder)
-
         logger.info("Fitted ScoreTransformer successfully.")
 
         context.model = wrapper

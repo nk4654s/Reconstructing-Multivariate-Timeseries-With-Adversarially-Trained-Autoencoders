@@ -52,16 +52,18 @@ class ONNXArgs:
         model = parse_model(path_or_model)
 
         args = ONNXArgs()
-        args.producer = model.producer_name
+        args.producer = model.producer_name or "NEA-X"
         args.machine_uuid = model.domain
         args.creation_date = model.doc_string or "N/A"
         args.version = model.model_version
 
-        dec = json.decoder.JSONDecoder()
-        args.input_names = dec.decode(model.metadata_props[0].value)
-        args.output_names = dec.decode(model.metadata_props[1].value)
-        args.type = model.metadata_props[2].value
-        args.delays = dec.decode(model.metadata_props[3].value)
+        # on first load, the model might not have any metadata
+        if len(model.metadata_props) == 4:
+            dec = json.decoder.JSONDecoder()
+            args.input_names = dec.decode(model.metadata_props[0].value)
+            args.output_names = dec.decode(model.metadata_props[1].value)
+            args.type = model.metadata_props[2].value
+            args.delays = dec.decode(model.metadata_props[3].value)
 
         return args
 
