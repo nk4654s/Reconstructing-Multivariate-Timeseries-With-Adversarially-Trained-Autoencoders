@@ -4,7 +4,7 @@ import shutil
 import xml
 from uuid import UUID
 
-import onnx
+from Comprisk.helper import ONNXArgs
 from Comprisk.helper.structure import search_models, copy_folder
 from Dataflux.helper import get_sensors
 
@@ -28,22 +28,25 @@ def deploy_model():
     dst = src.replace("environment/dev/models", "environment/production/models")
     path, _, _, version, _ = dst.rsplit(os.path.sep, maxsplit=4)
 
-    model = onnx.load(src)
-    print("Loaded selected model")
-    print("\tVersion:", model.model_version)
-    print("\tMachine:", model.domain)
-    print("\tCreation:", model.doc_string if model.doc_string else "N/A")
+    onnx = ONNXArgs.load_from_model(src)
 
-    dst = os.path.join(path, f"{model.domain}_{os.path.basename(src)}")
+    print("Loaded selected model")
+    print("\tProducer:", onnx.producer)
+    print("\tMachine:", onnx.machine_uuid)
+    print("\tVersion:", onnx.version)
+    print("\tCreation:", onnx.creation_date)
+
+    dst = os.path.join(path, f"{onnx.machine_uuid}_{os.path.basename(src)}")
     print("\tCopy to:", dst)
     print("\tExists:", os.path.exists(dst))
 
     if os.path.exists(dst):
         print("Found existing model in location")
-        model = onnx.load(dst)
-        print("\tVersion:", model.model_version)
-        print("\tMachine:", model.domain)
-        print("\tCreation:", model.doc_string if model.doc_string else "N/A")
+        onnx = ONNXArgs.load_from_model(dst)
+        print("\tProducer:", onnx.producer)
+        print("\tMachine:", onnx.machine_uuid)
+        print("\tVersion:", onnx.version)
+        print("\tCreation:", onnx.creation_date)
         answer = input("Continue [yes|no]> ")
         if answer != "yes":
             print("Abort.")
@@ -58,7 +61,7 @@ def deploy_model():
     # analysis subdirectory as it might be huge
     name = os.path.basename(src).split(".")[0]
     src = os.path.dirname(src)
-    dst = os.path.join("environment", "production", "configs", model.domain)
+    dst = os.path.join("environment", "production", "configs", onnx.machine_uuid)
 
     copy_folder(src, os.path.join(dst, name), exclude_folders=["analysis"], exclude_files=["tfevents", ".onnx"])
     print("Deployment done.")
@@ -71,10 +74,10 @@ def update_pom():
     # get the total model version (simply by calculating the model version sum)
     models = [f for f in os.listdir("environment/production/models") if "onnx" in f]
     models = [os.path.join("environment/production/models", f) for f in models]
-    model_versions = sum([onnx.load(f).model_version for f in models])
+    model_versions = sum([ONNXArgs.load_from_model(f).version for f in models])
 
     # get the number of model domains
-    model_count = len([onnx.load(f).domain for f in models])
+    model_count = len([ONNXArgs.load_from_model(f).machine_uuid for f in models])
 
     # get the code version
     code = 0
@@ -111,10 +114,12 @@ def delete_model():
     i = safe_cast(input(f"0-{len(models)-1}> "), int)
     path = models[i]
 
-    model = onnx.load(path)
+    onnx = ONNXArgs.load_from_model(path)
     print("Loaded selected model")
-    print("\tVersion:", model.model_version)
-    print("\tMachine:", model.domain)
+    print("\tProducer:", onnx.producer)
+    print("\tMachine:", onnx.machine_uuid)
+    print("\tVersion:", onnx.version)
+    print("\tCreation:", onnx.creation_date)
 
     answer = input("Continue [yes|no]> ")
     if answer != "yes":

@@ -43,3 +43,4 @@ logfile-bug
 .env
 /classes/
 /maven-archiver/
+/logfile

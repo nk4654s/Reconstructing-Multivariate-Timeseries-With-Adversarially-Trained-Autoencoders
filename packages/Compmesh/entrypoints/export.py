@@ -1,12 +1,11 @@
-import json
 import os
 from datetime import datetime
 
-import onnx
 import torch
 
 from Comprisk.anomaly import ScoreWrapper
 from Comprisk.entrypoints import EntrypointBase, EntrypointContext
+from Comprisk.helper import ONNXArgs
 
 
 class SPExportEntrypoint(EntrypointBase):
@@ -18,31 +17,21 @@ class SPExportEntrypoint(EntrypointBase):
 
     def modify_model_metadata(self, context: EntrypointContext):
         """This function modifies the metadata of the exported ONNX file."""
-        dataset = context.datamodule.valset
-        args = dataset.get_args()
+        dataset = context.datamodule.trainset or context.datamodule.valset
+        data_args = dataset.get_args()
 
-        # load the exported model
         onnx_path = os.path.join(context.config_folder, self._model_name + ".onnx")
-        model = onnx.load(onnx_path)
+        args = ONNXArgs.load_from_model(onnx_path)
+        args.machine_uuid = str(dataset.UUID)
+        args.version = context.config.seed_everything
+        args.creation_date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
 
-        enc = json.encoder.JSONEncoder()
+        args.input_names = data_args.names_in
+        args.output_names = data_args.names_out
+        args.type = data_args.behavior.value
+        args.set_delays(dataset)
 
-        # store the machine UUID, seed and company name
-        model.domain = str(dataset.UUID)
-        model.model_version = context.config.seed_everything
-        model.producer_name = "NEA-X"
-        model.doc_string = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-
-        # store the input and output sensor UUIDs required by this model as an input
-        meta = model.metadata_props.add()
-        meta.key = "input_names"
-        meta.value = enc.encode(args.names_in)
-
-        meta = model.metadata_props.add()
-        meta.key = "output_names"
-        meta.value = enc.encode(args.names_out)
-
-        onnx.save(model, onnx_path)
+        args.save_to_model(onnx_path)
 
     def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
         if os.path.exists(os.path.join(context.config_folder, "support.onnx")):

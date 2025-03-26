@@ -1,9 +1,9 @@
-import json
 import os
 from datetime import datetime
 
-import onnx
 import torch
+
+from Comprisk.helper import ONNXArgs
 from Dataflux import get_logger, logging_mode
 
 from Comprisk.anomaly import ScoreWrapper
@@ -20,42 +20,21 @@ class ExportEntrypoint(EntrypointBase):
         self._graph_image = "model_graph"
 
     def modify_model_metadata(self, context: EntrypointContext):
-        dataset = context.datamodule.valset
-        args = dataset.get_args()
+        dataset = context.datamodule.trainset or context.datamodule.valset
+        data_args = dataset.get_args()
 
         onnx_path = os.path.join(context.config_folder, self._model_name)
-        model = onnx.load(onnx_path)
+        args = ONNXArgs.load_from_model(onnx_path)
+        args.machine_uuid = str(dataset.UUID)
+        args.version = context.config.seed_everything
+        args.creation_date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
 
-        enc = json.encoder.JSONEncoder()
+        args.input_names = data_args.names_in
+        args.output_names = data_args.names_out
+        args.type = data_args.behavior.value
+        args.set_delays(dataset)
 
-        model.domain = str(dataset.UUID)
-        model.model_version = context.config.seed_everything
-        model.producer_name = "NEA-X"
-        model.doc_string = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-
-        meta = model.metadata_props.add()
-        meta.key = "input_names"
-        meta.value = enc.encode(args.names_in)
-
-        meta = model.metadata_props.add()
-        meta.key = "output_names"
-        meta.value = enc.encode(args.names_out)
-
-        meta = model.metadata_props.add()
-        meta.key = "type"
-        meta.value = args.behavior.value
-
-        meta = model.metadata_props.add()
-        meta.key = "delays"
-        dataset = context.datamodule.trainset or context.datamodule.valset
-        delays = {}
-        for key, value in dataset.metadata.state_alpha.items():
-            delays[key] = value
-            delays[key]["delay"] *= 1_000 # transform to milliseconds
-
-        meta.value = enc.encode(delays)
-
-        onnx.save(model, onnx_path)
+        args.save_to_model(onnx_path)
 
     def __call__(
         self, context: EntrypointContext, *args, **kwargs
