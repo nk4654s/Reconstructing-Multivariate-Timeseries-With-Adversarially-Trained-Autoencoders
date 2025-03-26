@@ -5,25 +5,22 @@ from the Amazon S3 bucket, runs some preprocessing and stores the files on the l
 further processed (e.g. normalize the dataset). The recommended way to execute the pipeline is by configuring a 
 `yaml`-config file.
 
-```yaml
-folder: <output folder name>
-machine_uuid: <machine UUID>
-intervals:
-  - <start date (optional time> <end date (optional time)>
-  - ...
-num_workers: <processing threads>
-overwrite: <overwrite existing folder>
-
-modules:
-  - class_path: Dataflux.modules.State
-    init_args:
-      key: <sensor UUID>
-      lower: <split data where sensor is lower equal than x>
-      upper: <split data where sensor is higher equal than x>
-      alpha_threshold: <seconds to remove after split>
-      beta_threshold: <seconds to remove before split>
-  - ...
-```
+## Source Code
+- `Dataflux/`
+  - `cli/`
+  _Command line interface configuring the data processing._
+  - `data/`
+  _AWS connectors to download and upload `tsv`-files._
+  - `diskio/`
+  _I/O of dataframe files defining a dataset. Here, the module's base class is defined._
+  - `helper/`
+  _Contains helper methods (e.g. dataframe operations)._
+  - `modules/`
+  _Contains processing modules of the flux-pipeline._
+  - `pytorch/`
+  _The classes to load a dataset in a PyTorch compatible manner._
+  - `visualization/`
+  _Helper methods to visualize a dataset._
 
 ## Modules
 ### Available Modules

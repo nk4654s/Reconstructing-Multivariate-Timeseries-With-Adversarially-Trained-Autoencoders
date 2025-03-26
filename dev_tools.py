@@ -5,7 +5,7 @@ import xml
 from uuid import UUID
 
 import onnx
-from Comprisk.helper.structure import search_models
+from Comprisk.helper.structure import search_models, copy_folder
 from Dataflux.helper import get_sensors
 
 
@@ -32,6 +32,7 @@ def deploy_model():
     print("Loaded selected model")
     print("\tVersion:", model.model_version)
     print("\tMachine:", model.domain)
+    print("\tCreation:", model.doc_string if model.doc_string else "N/A")
 
     dst = os.path.join(path, f"{model.domain}_{os.path.basename(src)}")
     print("\tCopy to:", dst)
@@ -42,6 +43,7 @@ def deploy_model():
         model = onnx.load(dst)
         print("\tVersion:", model.model_version)
         print("\tMachine:", model.domain)
+        print("\tCreation:", model.doc_string if model.doc_string else "N/A")
         answer = input("Continue [yes|no]> ")
         if answer != "yes":
             print("Abort.")
@@ -52,19 +54,14 @@ def deploy_model():
 
     shutil.copyfile(src, dst)
 
-    # copy the configs
-    dst = os.path.join("environment", "production", "configs", model.domain)
-    if not os.path.exists(dst):
-        os.makedirs(dst)
-
+    # create a zip of the model output dir in production, make sure to exclude the
+    # analysis subdirectory as it might be huge
     name = os.path.basename(src).split(".")[0]
     src = os.path.dirname(src)
-    config = os.path.join(src, "config.yaml")
-    shutil.copyfile(config, os.path.join(dst, f"config_{name}.yaml"))
+    dst = os.path.join("environment", "production", "configs", model.domain)
 
-    dataset = os.path.join(src, "dataset.yaml")
-    shutil.copyfile(dataset, os.path.join(dst, f"dataset_{name}.yaml"))
-    print("Done.")
+    copy_folder(src, os.path.join(dst, name), exclude_folders=["analysis"], exclude_files=["tfevents", ".onnx"])
+    print("Deployment done.")
 
 
 def update_pom():
@@ -97,11 +94,12 @@ def update_pom():
     root = et.getroot()
 
     version_child = root.find(tag + "version")
-    version_child.text = f"{code}.{model_count}.{model_versions}"
+    version = f"{code}.{model_count}.{model_versions}"
+    version_child.text = version
 
     # Write back to file
     et.write("pom.xml")
-    print("Done.")
+    print(f"POM updated (v{version}).")
 
 
 def delete_model():

@@ -1,5 +1,6 @@
 """This module contains the base model implementing widely-used functions. Layers
 of a neural network are not implemented."""
+
 from typing import List
 
 import numpy as np
@@ -49,7 +50,7 @@ class BaseModel(NormalizeWrapper):
         behavior: str = DatasetTypes.AUTOENCODER.value,
         output_length: int = 1,
         *args,
-        **kwargs
+        **kwargs,
     ) -> None:
         super().__init__(features_in, features_out, *args, **kwargs)
 
@@ -145,7 +146,7 @@ class BaseModel(NormalizeWrapper):
             self._optim = optim_cls(filter(lambda p: p.requires_grad, self.parameters()), lr=self.lr)
             self._lr_scheduler = ExponentialLR(self._optim, gamma=self._lr_decay)
 
-        return [self._optim], [{"scheduler": self._lr_scheduler, "interval": "epoch"}] # type: ignore
+        return [self._optim], [{"scheduler": self._lr_scheduler, "interval": "epoch"}]  # type: ignore
 
     def predict_step(self, x: torch.Tensor, y: torch.Tensor) -> BATCH_TYPE:
         """
