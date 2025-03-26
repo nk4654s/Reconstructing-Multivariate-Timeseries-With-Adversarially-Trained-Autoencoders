@@ -6,6 +6,7 @@ from Comprisk.helper.structure.file_structure import (
     get_config_path,
     load_model,
     search_models,
+    copy_folder
 )
 from Comprisk.helper.structure.loss import get_loss_by_name, r2_score
 from Comprisk.helper.structure.optimizer import get_optimizer_by_name
@@ -20,5 +21,6 @@ __all__ = [
     "get_optimizer_by_name",
     "get_activation_from_string",
     "load_model",
-    "search_models"
+    "search_models",
+    "copy_folder"
 ]

@@ -2,11 +2,10 @@ import argparse
 import os.path
 import shutil
 import xml
-import zipfile
 from uuid import UUID
 
 import onnx
-from Comprisk.helper.structure import search_models
+from Comprisk.helper.structure import search_models, copy_folder
 from Dataflux.helper import get_sensors
 
 
@@ -59,18 +58,7 @@ def deploy_model():
     src = os.path.dirname(src)
     dst = os.path.join("environment", "production", "configs", model.domain)
 
-    with zipfile.ZipFile(f"{dst}_{name}.zip", "w", zipfile.ZIP_DEFLATED) as zf:
-        for dir_name, _, files in os.walk(src):
-            if "analysis" in dir_name:
-                continue
-
-            zf.write(dir_name)
-            for filename in files:
-                if "tfevents" in filename:
-                    continue
-
-                zf.write(os.path.join(dir_name, filename))
-
+    copy_folder(src, os.path.join(dst, name), exclude_folders=["analysis"], exclude_files=["tfevents", ".onnx"])
     print("Deployment done.")
 
 
