@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 
 import onnx
 import torch
@@ -30,6 +31,7 @@ class SPExportEntrypoint(EntrypointBase):
         model.domain = str(dataset.UUID)
         model.model_version = context.config.seed_everything
         model.producer_name = "NEA-X"
+        model.doc_string = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
 
         # store the input and output sensor UUIDs required by this model as an input
         meta = model.metadata_props.add()

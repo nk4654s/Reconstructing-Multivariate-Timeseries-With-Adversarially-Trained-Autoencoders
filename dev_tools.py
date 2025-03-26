@@ -32,6 +32,7 @@ def deploy_model():
     print("Loaded selected model")
     print("\tVersion:", model.model_version)
     print("\tMachine:", model.domain)
+    print("\tCreation:", model.doc_string if model.doc_string else "N/A")
 
     dst = os.path.join(path, f"{model.domain}_{os.path.basename(src)}")
     print("\tCopy to:", dst)
@@ -42,6 +43,7 @@ def deploy_model():
         model = onnx.load(dst)
         print("\tVersion:", model.model_version)
         print("\tMachine:", model.domain)
+        print("\tCreation:", model.doc_string if model.doc_string else "N/A")
         answer = input("Continue [yes|no]> ")
         if answer != "yes":
             print("Abort.")
