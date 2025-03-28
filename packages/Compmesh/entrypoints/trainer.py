@@ -57,7 +57,12 @@ class SPTrainEntrypoint(EntrypointBase):
     def _import_dataset_config(self, context: EntrypointContext) -> None:
         # copy the dataset config of the training data to the model
         source = context.datamodule.trainset.config_file
-        dest = os.path.join(self._logging_path, "dataset.yaml")
+        dest = os.path.join(self._logging_path, "dataset_train.yaml")
+        shutil.copyfile(source, dest)
+
+        # copy the dataset config of the training data to the model
+        source = context.datamodule.valset.config_file
+        dest = os.path.join(self._logging_path, "dataset_validate.yaml")
         shutil.copyfile(source, dest)
 
     def _set_checkpoint_path(self, context: EntrypointContext) -> None:

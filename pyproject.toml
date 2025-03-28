@@ -50,6 +50,7 @@ comprisk-train="Comprisk.pipeline:cli_train"
 comprisk-generate="Comprisk.pipeline:cli_generate"
 
 compmesh-train="Compmesh.pipeline:cli_train"
+compmesh-score="Compmesh.pipeline:cli_score_trainer"
 compmesh-analyze="Compmesh.pipeline:cli_analyze"
 
 flux-pipeline="Dataflux.pipeline:main"
