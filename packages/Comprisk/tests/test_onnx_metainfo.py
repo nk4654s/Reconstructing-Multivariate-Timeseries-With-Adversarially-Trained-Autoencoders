@@ -22,6 +22,6 @@ class TestONNXArgs(unittest.TestCase):
         }
 
     def test_loading_args(self):
-        self.args.save_to_model("dummy.onnx")
-        args = ONNXArgs.load_from_model("dummy.onnx")
+        self.args.save_to_model("tests/dummy.onnx")
+        args = ONNXArgs.load_from_model("tests/dummy.onnx")
         self.assertTrue(self.args.equals(args))
