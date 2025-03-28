@@ -17,6 +17,23 @@ def safe_cast(val, to_type, default=None):
         exit(1)
 
 
+def load_existing_onnx():
+    models = search_models("environment/production/models")
+    for i, path in enumerate(models):
+        print(f"({i}) {path}")
+
+    i = safe_cast(input(f"0-{len(models)-1}> "), int)
+    path = models[i]
+
+    onnx = ONNXArgs.load_from_model(path)
+    print("Loaded selected model")
+    print("\tProducer:", onnx.producer)
+    print("\tMachine:", onnx.machine_uuid)
+    print("\tVersion:", onnx.version)
+    print("\tCreation:", onnx.creation_date)
+    return path, onnx
+
+
 def deploy_model():
     models = search_models("environment/dev/models")
     for i, path in enumerate(models):
@@ -144,6 +161,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Useful tools for development and deployment.")
     parser.add_argument("--deploy", "-d", action="store_true", default=False)
     parser.add_argument("--edit", "-e", action="store_true", default=False)
+    parser.add_argument("--redeploy", "-r", action="store_true", default=False)
     parser.add_argument("--sensors", "-s", type=str, default="")
     args = parser.parse_args()
 
@@ -152,6 +170,9 @@ if __name__ == "__main__":
 
     if args.deploy:
         deploy_model()
+
+    if args.redeploy:
+        redeploy()
 
     if args.sensors:
         show_sensors(args.sensors)

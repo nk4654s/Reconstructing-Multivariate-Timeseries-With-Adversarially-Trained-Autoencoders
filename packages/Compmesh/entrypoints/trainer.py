@@ -1,11 +1,10 @@
 import os
-import shutil
 
 import numpy as np
 import pandas as pd
 import yaml
 from Comprisk.entrypoints import EntrypointBase, EntrypointContext
-from Comprisk.entrypoints.trainer import set_logging_path, get_trainer_callback
+from Comprisk.entrypoints.trainer import get_trainer_callback
 from Comprisk.helper import BasicCheckpointCallback
 from Dataflux import get_logger, logging_mode
 
@@ -103,9 +102,7 @@ class SPTrainEntrypoint(EntrypointBase):
             return context
 
         # setup the logging folder and paths required by a training session
-        self._logging_path = set_logging_path(context)
         self._set_checkpoint_path(context)
-        self._import_dataset_config(context)
 
         # initialize the support point mode
         df = self.load_support_points_table(context)
@@ -115,7 +112,5 @@ class SPTrainEntrypoint(EntrypointBase):
         context.datamodule.setup("fit")
         context.trainer.fit(context.model, context.datamodule)
 
-        # now, the folder has changed to the model output folder. Everything important should be located in here.
-        context.config_folder = self._logging_path
         context.config.data.shuffle = False
         return context

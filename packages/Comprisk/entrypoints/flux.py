@@ -41,6 +41,11 @@ class FluxEntrypoint(EntrypointBase):
         if not path.startswith(base_path):
             path = os.path.join(base_path, path)
 
+        # if the previous path did not exist, do a fallback and check if the path exists in the
+        # config folder. This is likely when loading a model.
+        if (path.endswith("yaml") or path.endswith("yml")) and check_exists and not os.path.exists(path):
+            path = os.path.join(context.config_folder, _original_path)
+
         # if requested, check if the path exists. If the path does not exist, then return 'None'.
         if check_exists:
             path = path if os.path.exists(path) else None

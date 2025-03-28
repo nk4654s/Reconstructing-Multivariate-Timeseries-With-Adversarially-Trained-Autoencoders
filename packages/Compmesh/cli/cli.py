@@ -5,6 +5,9 @@ LightningCLI
 
 
 class CompmeshCLI(LightningCLI):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs, save_config_callback=None)
+
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--tag", type=str, default=None)
         parser.add_argument("--environment", type=str, default="dev")
