@@ -44,12 +44,15 @@ class ExportEntrypoint(EntrypointBase):
 
         # get a sample input first which is used to trace the model's grap
         input_sample, output_sample = context.datamodule.trainset[0]
-        input_sample, output_sample = input_sample[0:1], output_sample[0:1]
+        input_sample, output_sample = input_sample, output_sample
         input_sample = torch.Tensor([input_sample])
         output_sample = torch.Tensor([output_sample])
 
         # match devices
         context.model.to(input_sample.device)
+        logger.debug("Running model export on '%s'", input_sample.device)
+        logger.debug("Export input  sample: %s", input_sample.shape)
+        logger.debug("Export output sample: %s", output_sample.shape)
 
         # then save the model into the ONNX format
         onnx_path = os.path.join(context.config_folder, self._model_name)
