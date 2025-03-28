@@ -61,7 +61,6 @@ def cli_analyze() -> None:
     cli = CompmeshCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
-        export,
         analyzer
     ])
     pipeline_runner(pipeline, cli)
