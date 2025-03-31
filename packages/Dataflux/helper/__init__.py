@@ -20,6 +20,7 @@ from Dataflux.helper.utils import (
     parse_datestring,
     simple_graph,
     to_float,
+    modify_flux_config
 )
 
 __all__ = [
@@ -37,6 +38,7 @@ __all__ = [
     "gen_health_score_sensor_ids",
     "get_sensors_ai",
     "filter_upload",
+    "modify_flux_config",
     "SensorRegisterFormat",
     "compress",
     "decompress",

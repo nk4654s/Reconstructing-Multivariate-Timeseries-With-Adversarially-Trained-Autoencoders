@@ -1,7 +1,8 @@
 folder: environment/dev/datasets/thyssen-vd1-sp-val
 machine_uuid: a6252582-01dd-49cb-8dbe-0742b28bc007
 intervals:
-  - 2025-03-08 2025-03-11
+  - 2024-09-12 2024-09-14
+  - 2024-11-24 2024-11-26
 num_workers: 8
 overwrite: false
 

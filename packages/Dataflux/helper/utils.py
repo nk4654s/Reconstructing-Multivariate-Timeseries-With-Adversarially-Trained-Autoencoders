@@ -11,6 +11,7 @@ from typing import List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import yaml
 from matplotlib import rcParams
 
 from Dataflux import logger
@@ -315,3 +316,19 @@ def deterministic_split_algorithm(
     )
 
     return trimmed_days, selected_days
+
+
+def modify_flux_config(src: str, dst: str) -> None:
+    """This function replaces the dataset folder path and defines a temporary path.
+
+    Args:
+        src (str): The flux config path to load.
+        dst (src): The path to save the config to.
+    """
+    with open(src, "r") as f:
+        config = yaml.safe_load(f)
+        name = os.path.basename(config["folder"])
+        config["folder"] = os.path.join("temp", name)
+
+    with open(dst, "w") as f:
+        yaml.safe_dump(config, f)

@@ -123,7 +123,7 @@ class IndexTree:
             node = Node(node, cum_weights, node_size)
 
             # skip dataframes which are smaller than the window size
-            if node_size < self._win:
+            if node_size <= self._win:
                 samples_dropped += node_size
                 continue
 

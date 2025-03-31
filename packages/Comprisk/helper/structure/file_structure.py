@@ -7,6 +7,7 @@ from typing import List
 
 import torch
 from Dataflux import logging_mode
+from Dataflux.helper import modify_flux_config
 from Dataflux.logger import get_logger
 
 # switch logging mode depending on DEBUG_MODE
@@ -134,7 +135,11 @@ def load_model(path: str, eval_mode: bool = True):
 
 
 def copy_folder(
-    source: str, destination: str, exclude_folders: list[str] = None, exclude_files: list[str] = None
+    source: str,
+    destination: str,
+    exclude_folders: list[str] = None,
+    exclude_files: list[str] = None,
+    modify_flux: bool = False,
 ) -> None:
     """
     Copies a folder from the source to the destination, excluding specified subfolders.
@@ -144,12 +149,17 @@ def copy_folder(
         destination (str): The path where the folder should be copied.
         exclude_folders (list of str): A list of subfolder names to exclude from the copy process.
         exclude_files (list of str): A list of file names (can be substrings) to exclude from the copy process.
+        modify_flux (bool): Whether to modify the flux config paths. Defaults to False.
 
     Returns:
         None
     """
     exclude_folders = exclude_folders or []
     exclude_files = exclude_files or []
+
+    flux_files = ["dataset_train.yaml", "dataset_val.yaml"]
+    if modify_flux:
+        exclude_files += flux_files
 
     # Create the destination folder if it doesn't exist
     if not os.path.exists(destination):
@@ -175,3 +185,7 @@ def copy_folder(
             source_file_path = os.path.join(root, f)
             destination_file_path = os.path.join(destination_path, f)
             shutil.copy2(source_file_path, destination_file_path)
+
+    if modify_flux:
+        for flux in flux_files:
+            modify_flux_config(os.path.join(source, flux), os.path.join(destination, flux))

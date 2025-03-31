@@ -13,6 +13,7 @@ from Comprisk.entrypoints import (
     Pipeline,
     TrainerEntrypoint,
     TrainScoreTransformerEntrypoint,
+    PrepareEntrypoint,
 )
 from Comprisk.helper.structure import get_config_folder
 from Comprisk.model import NormalizeWrapper
@@ -25,6 +26,7 @@ train = TrainerEntrypoint()
 analyze = AnalyzerEntrypoint()
 generate = GeneratorEntrypoint()
 export = ExportEntrypoint()
+prepare = PrepareEntrypoint()
 
 
 def get_context(cli: CompriskCLI) -> EntrypointContext:
@@ -50,6 +52,7 @@ def cli_train() -> None:
     cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
+        prepare,
         train,
         score,
         export,

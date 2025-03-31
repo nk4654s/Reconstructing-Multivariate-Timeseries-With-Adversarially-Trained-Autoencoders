@@ -1,0 +1,35 @@
+folder: temp/thyssen-vd2-sp-train
+intervals:
+- 2024-09-10 2024-09-13
+- 2024-12-22 2024-12-25
+machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
+modules:
+- class_path: Dataflux.modules.State
+  init_args:
+    alpha_threshold: 1800
+    beta_threshold: 0
+    key: eedce5b6-b341-4c58-bf3a-c6c1f265ba02
+    lower: 1
+    upper: 1
+- class_path: Dataflux.modules.state.State
+  init_args:
+    alpha_threshold: 900
+    beta_threshold: 0
+    key: 0f4deafe-56ce-41bc-a522-99c88c8f26e2
+    lower: 0
+    upper: 0
+- class_path: Dataflux.modules.features.Features
+  init_args:
+    include:
+    - c751ece1-b8f7-46ea-8cb1-8bf00aec1592
+    - 61aeafba-2dcc-4dc1-b13b-9ee2ed21aa88
+    - db2da2b3-e1a0-4bae-af79-fe500d4db4b4
+    - 80ca41cf-1b35-4073-aa63-9836058b9dd2
+    - 04c06635-d298-4e6d-b0fb-7389fcc0a7c7
+    - e737c6bc-7d00-4d41-82ad-7a542400751d
+    - 91ae9642-0a9f-4784-9682-a6e75352c196
+    - fe0083b5-a0af-45b6-bbcf-2f472d621ce3
+    - 11f3c840-7472-45e8-bdff-38d483348f27
+    - f9365c4a-05f8-4730-a606-2b0b6b68eb0f
+num_workers: 8
+overwrite: true

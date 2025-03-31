@@ -1,7 +1,8 @@
 folder: environment/dev/datasets/thyssen-vd2-sp-train
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-  - 2024-12-17 2024-12-20
+  - 2024-09-10 2024-09-13
+  - 2024-12-22 2024-12-25
 num_workers: 8
 overwrite: false
 
