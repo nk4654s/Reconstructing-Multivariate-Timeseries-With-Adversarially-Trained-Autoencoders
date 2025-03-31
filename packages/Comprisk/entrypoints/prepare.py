@@ -86,6 +86,9 @@ class PrepareEntrypoint(EntrypointBase):
         # copy the normalizer as is
         if self._copy_normalizer:
             src = os.path.join(context.base_folder, context.environment.value, context.config["normalizer"])
+            if not os.path.exists(src):
+                # in case the model continues training
+                src = os.path.join(context.config_folder, "normalizer.yaml")
             dst_norm = os.path.join(output_folder, "normalizer.yaml")
             shutil.copyfile(src, dst_norm)
 

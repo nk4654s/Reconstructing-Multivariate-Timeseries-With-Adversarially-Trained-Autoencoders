@@ -76,9 +76,7 @@ class TrainerEntrypoint(EntrypointBase):
         meta = {"features": {"input": args.names_in, "output": args.names_out}}
 
         # load the normalization
-        norm_file = os.path.join(
-            context.base_folder, context.environment.value, context.config.normalizer
-        )
+        norm_file = os.path.join(context.config_folder, "normalizer.yaml")
         with open(norm_file, "r") as f:
             meta |= yaml.safe_load(f)
 
