@@ -41,9 +41,9 @@ class ScoreWrapper(LightningModule):
     def __init__(
         self,
         model: BaseModel,
-        threshold: float = 0.9,
-        threshold_deviation: float = 5,
-        noise_floor: float = 1,
+        threshold: float = 0.8,
+        threshold_deviation: float = 7,
+        noise_floor: float = 2,
     ) -> None:
         super().__init__()
 

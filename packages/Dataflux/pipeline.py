@@ -139,7 +139,10 @@ def pipeline(flux: FluxConfigManager) -> str | None:
 
     # 3. copy the pipeline configuration used for consistency
     config_path = os.path.join(flux.args.folder, "metadata", "config.yaml")  # type: ignore
-    shutil.copyfile(flux.args.config_path, config_path)
+    if os.path.exists(flux.args.config_path):
+        shutil.copyfile(flux.args.config_path, config_path)
+    else:
+        logger.warning("Unable to copy flux configuration to dataset folder. Could not find config file.")
     return flux.args.folder
 
 

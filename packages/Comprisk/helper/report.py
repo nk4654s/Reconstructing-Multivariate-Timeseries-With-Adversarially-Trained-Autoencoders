@@ -15,6 +15,55 @@ from matplotlib.pyplot import figure
 from Comprisk.helper import IteratorResult
 
 
+def sensor_fig(s_name, s_inputs, s_outputs, loss, scores, noise_floor, sigma, size: tuple[int, int] = (16, 8), dpi: int = 120):
+    fig, axs = plt.subplots(3, 1, sharex=True, figsize=size, dpi=dpi)
+    s_name, unit = s_name.rsplit(" ", maxsplit=1)
+
+    axs[0].set_title("Sensor")
+    axs[0].plot(s_inputs, label="Real Value", color="teal", alpha=0.7)
+    axs[0].plot(
+        s_outputs, label="AI Reconstruction", color="orange", alpha=0.7
+    )
+    axs[0].set_ylabel(unit[1:-1])
+    axs[0].legend(loc="lower right")
+
+    axs[1].set_title("Error Rate")
+    axs[1].plot(loss, label="Model Error", color="teal")
+    axs[1].plot(
+        scores.index,
+        [noise_floor for _ in scores.index],
+        label="Noise Floor",
+        color="black",
+        alpha=0.7,
+    )
+    axs[1].plot(
+        scores.index,
+        [sigma for _ in scores.index],
+        label="Acceptable Deviation",
+        color="orange",
+    )
+    axs[1].set_ylabel("Abs. Error")
+    axs[1].set_ylim(bottom=0)
+    axs[1].legend(loc="lower right")
+
+    axs[2].set_title("Healthscore")
+    axs[2].plot(scores, label="Healthscore", color="teal")
+    axs[2].plot(
+        scores.index,
+        [0.8 for _ in scores],
+        label="Acceptable",
+        linestyle="dashed",
+        color="black",
+        alpha=0.7,
+    )
+    axs[2].set_ylabel("Higher is better")
+    axs[2].set_xlabel("Seconds")
+    axs[2].set_ylim(bottom=0, top=1)
+    axs[2].legend(loc="lower right")
+    fig.suptitle(f"{s_name} Analysis")
+    return fig
+
+
 class Report:
     """
     Class to generate a comprehensive report based on the analysis of sensor data and AI model outputs.
@@ -64,7 +113,7 @@ class Report:
 
         lossy_loss = (scores - intercept) / slope
         noise_floor = (1 - np.array(intercept)) / slope
-        sigma_loss = -0.2 / np.array(slope) + noise_floor
+        sigma_loss = -0.1 / np.array(slope) + noise_floor
         return lossy_loss, noise_floor, sigma_loss
 
     def generate_report_graphs(self, result: IteratorResult):
@@ -106,49 +155,15 @@ class Report:
         # plot deeper analysis for each sensor
         graphs = []
         for i, sensor in enumerate(scores.columns.values):
-            fig, axs = plt.subplots(3, 1, sharex=True, figsize=self._size, dpi=self._dpi)
-
-            axs[0].set_title("Sensor")
-            axs[0].plot(s_inputs[sensor], label="Real Value", color="teal", alpha=0.7)
-            axs[0].plot(
-                s_outputs[sensor], label="AI Reconstruction", color="orange", alpha=0.7
-            )
-            axs[0].legend(loc="lower right")
-
-            axs[1].set_title("Error Rate")
-            axs[1].plot(loss[sensor], label="Model Error", color="teal")
-            axs[1].plot(
-                scores.index,
-                [noise_floor[i] for _ in scores.index],
-                label="Noise Floor",
-                color="black",
-                alpha=0.7,
-            )
-            axs[1].plot(
-                scores.index,
-                [sigma_loss[i] for _ in scores.index],
-                label="Acceptable Deviation",
-                color="orange",
-            )
-            axs[1].set_ylim(bottom=0)
-            axs[1].legend(loc="lower right")
-
-            axs[2].set_title("Healthscore")
-            axs[2].plot(scores[sensor], label="Healthscore", color="teal")
-            axs[2].plot(
-                scores.index,
-                [0.8 for _ in scores[sensor]],
-                label="Acceptable",
-                linestyle="dashed",
-                color="black",
-                alpha=0.7,
-            )
-            axs[2].set_ylim(bottom=0, top=1)
-            axs[2].legend(loc="lower right")
-            fig.suptitle(f"{sensor} Analysis")
-
-            # save ai analysis
-            fig.suptitle(f"{sensor} Analysis")
+            fig = sensor_fig(sensor,
+                             s_inputs[sensor],
+                             s_outputs[sensor],
+                             loss[sensor],
+                             scores[sensor],
+                             noise_floor[i],
+                             sigma_loss[i],
+                             self._size,
+                             self._dpi)
             name = sensor.split()[0]
             fig.savefig(os.path.join(self._sensors, f"ai_{name}.jpg"))
             plt.close()

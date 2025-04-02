@@ -32,7 +32,7 @@ class BaseModel(NormalizeWrapper):
     Args:
         loss (str, optional): Loss function to use. Defaults to "MSELoss".
         activation (str, optional): Activation function to use. Defaults to "sigmoid"
-        optimizer (str, optional): Optimizer to use. Defaults to "Adam".
+        optimizer (dict, optional): Optimizer to use. Defaults to None causing the software to fail.
         lr (float, optional): Initial learning rate. Defaults to 1e-3.
         lr_decay (float, optional): Learning rate decaying factor. Defaults to 0.99.
     """
@@ -41,7 +41,7 @@ class BaseModel(NormalizeWrapper):
         self,
         loss: str = "MSELoss",
         activation: str = "sigmoid",
-        optimizer: str = "Adam",
+        optimizer: dict = None,
         lr: float = 1e-3,
         lr_decay: float = 0.99,
         sequence_out: int = 0,
@@ -58,10 +58,11 @@ class BaseModel(NormalizeWrapper):
         self._loss_name = loss
         self._loss = get_loss_by_name(loss)
         self._activation = get_activation_from_string(activation)
-        self._optim: Optimizer | str = optimizer
         self._lr_scheduler: ExponentialLR | None = None
         self._lr_decay = lr_decay
         self.lr = lr
+
+        self._optim: Optimizer | dict = optimizer
 
         self._sequence_out = sequence_out
         self._features_in = sorted(features_in)
@@ -140,10 +141,13 @@ class BaseModel(NormalizeWrapper):
 
     def configure_optimizers(self) -> Optimizer:
         # init optimizer if it's a string
-        if isinstance(self._optim, str):
-            logger.debug("Initialize optimizer: %s", self._optim)
-            optim_cls = get_optimizer_by_name(self._optim)
-            self._optim = optim_cls(filter(lambda p: p.requires_grad, self.parameters()), lr=self.lr)
+        if isinstance(self._optim, dict):
+            optimizer_name = self._optim.pop("name")
+            logger.debug("Initialize optimizer: %s", optimizer_name)
+            optim_cls = get_optimizer_by_name(optimizer_name)
+
+            self._optim["lr"] = self.lr
+            self._optim = optim_cls(filter(lambda p: p.requires_grad, self.parameters()), **self._optim)
             self._lr_scheduler = ExponentialLR(self._optim, gamma=self._lr_decay)
 
         return [self._optim], [{"scheduler": self._lr_scheduler, "interval": "epoch"}]  # type: ignore

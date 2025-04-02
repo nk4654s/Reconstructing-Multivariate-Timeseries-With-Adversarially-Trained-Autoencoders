@@ -13,6 +13,7 @@ build/
 *.png
 events.out.tfevents.*
 .temp.ckpt
+temp/*
 
 # exclude dev environment (but include config set)
 environment/dev/models/*
