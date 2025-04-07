@@ -132,6 +132,12 @@ class DataModule(L.LightningDataModule):
         logger.debug("Dataset output sequence: %s",self._dataset_args ["sequence_out"])
 
     @property
+    def loader_args(self) -> dict:
+        kwargs = self._loader_kwargs
+        kwargs["collate_fn"] = self._collate_fn
+        return kwargs
+
+    @property
     def trainset(self) -> Dataset:
         """Returns the loaded training dataset of this data module.
 

@@ -2,7 +2,7 @@ from Dataflux import DEBUG_MODE, logging_mode
 from Dataflux.logger import get_logger
 from Dataflux.pytorch import DatasetTypes
 
-from Comprisk.anomaly import ScoreWrapper
+from Comprisk.anomaly import ScoreWrapper, R2ScoreWrapper
 from Comprisk.entrypoints.base import EntrypointBase, EntrypointContext
 from Comprisk.helper import ModelCheckpoint
 
@@ -21,7 +21,7 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
             ScoreTransformer. Defaults to False.
     """
 
-    def __init__(self, reduced_mode: bool = True) -> None:
+    def __init__(self, reduced_mode: bool = False) -> None:
         super().__init__()
 
         self._reduced = reduced_mode
@@ -49,13 +49,13 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
 
         # wrap the model with a score transformer such that the fitted values are
         # included in the model graph. This is required for ONNX
-        wrapper = ScoreWrapper(checkpoint.get_model())
+        wrapper = R2ScoreWrapper(checkpoint.get_model())
         wrapper.train_wrapper(
             context.datamodule,
             reduced=self._reduced,
             verbose=DEBUG_MODE,
         )
-        wrapper.export_to(context.config_folder)
+        #wrapper.export_to(context.config_folder)
         logger.info("Fitted ScoreTransformer successfully.")
 
         context.model = wrapper
