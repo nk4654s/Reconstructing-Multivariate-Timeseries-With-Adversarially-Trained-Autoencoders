@@ -2,7 +2,7 @@ from Dataflux import DEBUG_MODE, logging_mode
 from Dataflux.logger import get_logger
 from Dataflux.pytorch import DatasetTypes
 
-from Comprisk.anomaly import ScoreWrapper, R2ScoreWrapper
+from Comprisk.anomaly import R2ScoreWrapper
 from Comprisk.entrypoints.base import EntrypointBase, EntrypointContext
 from Comprisk.helper import ModelCheckpoint
 
