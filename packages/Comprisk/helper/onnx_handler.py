@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 import onnx
 from onnx.onnx_ml_pb2 import ModelProto
 
-from Dataflux.pytorch import Dataset
+from Dataflux.pytorch import Dataset, dataset_type_from_string
 
 
 def parse_model(path_or_model: str | ModelProto) -> ModelProto:
@@ -16,12 +16,30 @@ def parse_model(path_or_model: str | ModelProto) -> ModelProto:
     raise ValueError(f"Unable to parse type {type(path_or_model)}")
 
 
+def extract_shape(model: ModelProto):
+    def shape_generator(inputs):
+        for dim in inputs.shape.dim:
+            if dim.dim_param:
+                yield 1
+                continue
+
+            yield dim.dim_value
+
+    shapes = {}
+    for i in model.graph.input:
+        shapes[i.name] = tuple([_ for _ in shape_generator(i.type.tensor_type)])
+
+    return shapes
+
+
 @dataclass
 class ONNXArgs:
     producer: str = "NEA-X"
     machine_uuid: str = "N/A"
     creation_date: str = "N/A"
     version: int = 0
+    input_length: int = 0
+    output_length: int = 0
     input_names: list[str] = field(init=False)
     output_names: list[str] = field(init=False)
     type: str = field(init=False)
@@ -43,6 +61,8 @@ class ONNXArgs:
             and self.output_names == other.output_names
             and self.type == other.type
             and self.delays == other.delays
+            and self.input_length == other.input_length
+            and self.output_length == other.output_length
         )
 
         return value
@@ -64,6 +84,11 @@ class ONNXArgs:
             args.output_names = dec.decode(model.metadata_props[1].value)
             args.type = model.metadata_props[2].value
             args.delays = dec.decode(model.metadata_props[3].value)
+
+        # get the input/output sequence length of the model
+        shapes = extract_shape(model)
+        args.input_length = shapes["x"][1]
+        args.output_length = shapes["y"][1]
 
         return args
 
@@ -98,3 +123,15 @@ class ONNXArgs:
         meta.value = enc.encode(self.delays)
 
         onnx.save(model, path)
+
+    def build_dataset(self, path: str) -> Dataset:
+        dtype = dataset_type_from_string(self.type)
+        d = Dataset(
+            path=path,
+            sequence_in=self.input_length,
+            sequence_out=self.output_length,
+            feature_names_in=self.input_names,
+            feature_names_out=self.output_names,
+            behavior=dtype.value
+        )
+        return d

@@ -5,11 +5,14 @@ from typing import List, Tuple
 import numpy as np
 import onnxruntime
 import pandas as pd
+
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 from Dataflux.pytorch import Dataset, collate_fn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+
+from Comprisk.helper import ONNXArgs
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
@@ -41,10 +44,15 @@ class ModelIterator:
 
     Args:
         onnx_path (str): The model to load (ONNX format).
-        data (Dataset): The dataset to use
+        data (Dataset | str): The dataset to use (if given aas path, the dataset will be configured to
+            match the provided ONNX model).
     """
 
-    def __init__(self, onnx_path: str, data: Dataset) -> None:
+    def __init__(self, onnx_path: str, data: Dataset | str) -> None:
+        if isinstance(data, str):
+            args = ONNXArgs.load_from_model(onnx_path)
+            data = args.build_dataset(data)
+
         self._data = data
         self._args = data.get_args()
         self._len = len(data)
@@ -94,9 +102,10 @@ class ModelIterator:
 
             # extract the model output/input into the containers
             batch_size = onnx_output[self._s_idx].shape[0]
-            scores[limit:limit + batch_size] = onnx_output[self._s_idx][:, -1, :]
-            sensor_input[limit:limit + batch_size] = y[:, -1, :].numpy()
-            sensor_output[limit:limit + batch_size] = onnx_output[self._y_idx][:, -1, :]
+            batch_size = len(scores[limit:limit + batch_size])
+            scores[limit:limit + batch_size] = onnx_output[self._s_idx][:batch_size, -1, :]
+            sensor_input[limit:limit + batch_size] = y[:batch_size, -1, :].numpy()
+            sensor_output[limit:limit + batch_size] = onnx_output[self._y_idx][:batch_size, -1, :]
 
             ts_sub = np.array([self._data.get_timestamp(limit) + t for t in range(batch_size)], dtype=np.int64)
             ts[limit:limit + batch_size] = ts_sub
