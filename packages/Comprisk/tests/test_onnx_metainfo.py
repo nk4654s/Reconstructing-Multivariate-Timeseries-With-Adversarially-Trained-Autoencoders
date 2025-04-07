@@ -14,12 +14,15 @@ class TestONNXArgs(unittest.TestCase):
         self.args.input_names = ["a", "b"]
         self.args.output_names = ["b", "c"]
         self.args.type = "autoencoder"
+        self.args.input_length = 60
+        self.args.output_length = 60
         self.args.delays = {
             "some-other-uuid": {
                 "lower": 0,
                 "upper": 1
             }
         }
+
 
     def test_loading_args(self):
         self.args.save_to_model("tests/dummy.onnx")

@@ -41,9 +41,9 @@ class ScoreWrapper(LightningModule):
     def __init__(
         self,
         model: BaseModel,
-        threshold: float = 0.9,
-        threshold_deviation: float = 5,
-        noise_floor: float = 1,
+        threshold: float = 0.8,
+        threshold_deviation: float = 7,
+        noise_floor: float = 2,
     ) -> None:
         super().__init__()
 
@@ -142,13 +142,3 @@ class ScoreWrapper(LightningModule):
 
         with open(os.path.join(path, "score.yaml"), "w") as f:
             yaml.safe_dump({"slope": a, "intercept": b}, f)
-
-    def import_from(self, path: str) -> None:
-        with open(os.path.join(path, "score.yaml"), "r") as f:
-            data = yaml.safe_load(f)
-
-        self._slope = Parameter(Tensor(data["slope"]))
-        self._intercept = Parameter(Tensor(data["intercept"]))
-        self._trained = True
-
-        self.to(self.device)

@@ -93,10 +93,12 @@ def redeploy():
     path, onnx = load_existing_onnx()
     type_ = "model" if "model" in path else "support"
     config = os.path.join("environment", "production", "configs", onnx.machine_uuid, type_, "config.yaml")
-    #os.system("comprisk-score -c " + config)
 
     src = os.path.join(os.path.dirname(config), f"{type_}.onnx")
-    shutil.move(src, path)
+    if not os.path.exists(src):
+        os.system("comprisk-score -c " + config)
+
+    shutil.copyfile(src, path)
 
 
 def update_pom():

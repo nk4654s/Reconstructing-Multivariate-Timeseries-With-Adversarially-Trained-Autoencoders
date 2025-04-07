@@ -11,8 +11,63 @@ import yaml
 from Dataflux.helper.sensor_register import get_sensors
 from markdown_pdf import MarkdownPdf, Section
 from matplotlib.pyplot import figure
+import matplotlib.dates as mdates
 
 from Comprisk.helper import IteratorResult
+
+
+def sensor_fig(
+    s_name: str,
+    s_inputs: pd.Series,
+    s_outputs: pd.Series,
+    scores: pd.Series,
+    size: tuple[int, int] = (16, 8),
+    dpi: int = 120,
+) -> figure:
+    """This method visualizes a single given sensor data in three sub-graphs. The upper graph shows a comparison
+    between the real sensor value and its prediction. The middle graph shows the absolute error of the prediction.
+    The lower graph shows the Healthscore calculated by the model.
+
+    Args:
+        s_name (str): The sensor name to be shown as the graphs title. Note that the name should contain the unit.
+        s_inputs (pd.Series): The real sensor values as pd.Series.
+        s_outputs (pd.Series): The predicted sensor values as pd.Series.
+        scores (pd.Series): The healthscores as pd.Series.
+        size (tuple): The graphs size.
+        dpi (int): The graphs' resolution.
+
+    Returns:
+        figure: The matplotlib's figure to be shown or saved.
+    """
+    fig, axs = plt.subplots(3, 1, sharex=True, figsize=size, dpi=dpi)
+    s_name, unit = s_name.rsplit(" ", maxsplit=1)
+    s_inputs.index = pd.to_datetime(s_inputs.index, unit="s")
+    s_outputs.index = pd.to_datetime(s_inputs.index, unit="s")
+    scores.index = pd.to_datetime(s_inputs.index, unit="s")
+
+
+    axs[0].set_title("Sensor")
+    axs[0].plot(s_inputs.index, s_inputs.values, label="Real Value", color="teal", alpha=0.7)
+    axs[0].plot(s_outputs.index, s_outputs.values, label="AI Reconstruction", color="orange", alpha=0.7)
+    axs[0].set_ylabel(unit[1:-1])
+    axs[0].legend(loc="lower left")
+
+    axs[1].set_title("Error Rate")
+    axs[1].plot(s_inputs.index, abs(s_inputs - s_outputs), label="Model Error", color="teal")
+    axs[1].set_ylabel("Abs. Error")
+    axs[1].set_ylim(bottom=0)
+    axs[1].legend(loc="lower left")
+
+    axs[2].set_title("Healthscore")
+    axs[2].plot(scores.index, scores, label="Healthscore", color="teal")
+    axs[2].set_ylabel("Higher is better")
+    axs[2].set_xlabel("Time")
+    axs[2].set_ylim(bottom=0, top=1)
+    axs[2].legend(loc="lower left")
+
+    axs[2].xaxis.set_major_formatter(mdates.DateFormatter("%m.%d.%Y %H:%M"))
+    fig.suptitle(f"{s_name} Analysis")
+    return fig
 
 
 class Report:
@@ -23,6 +78,7 @@ class Report:
         output_folder (str): The folder where the report will be saved.
         report_name (str): The name of the report file.
     """
+
     def __init__(self, output_folder: str, report_name: str, model_name: str = "model"):
         self._folder = output_folder
         self._name = report_name
@@ -64,7 +120,7 @@ class Report:
 
         lossy_loss = (scores - intercept) / slope
         noise_floor = (1 - np.array(intercept)) / slope
-        sigma_loss = -0.2 / np.array(slope) + noise_floor
+        sigma_loss = -0.1 / np.array(slope) + noise_floor
         return lossy_loss, noise_floor, sigma_loss
 
     def generate_report_graphs(self, result: IteratorResult):
@@ -96,8 +152,16 @@ class Report:
         plt_data = [(name, sigma_loss[i], noise_floor[i]) for i, name in enumerate(scores.columns)]
         plt_data = sorted(plt_data, key=lambda x: x[1], reverse=True)
         plt.title("Loss Deviation")
-        plt.bar([d[0] for d in plt_data], [d[1] for d in plt_data], color="orange", label="Acceptable Deviation")
-        plt.bar([d[0] for d in plt_data], [d[2] for d in plt_data], bottom=[d[1] for d in plt_data], color="teal", label="Noise Floor")
+        plt.bar(
+            [d[0] for d in plt_data], [d[1] for d in plt_data], color="orange", label="Acceptable Deviation"
+        )
+        plt.bar(
+            [d[0] for d in plt_data],
+            [d[2] for d in plt_data],
+            bottom=[d[1] for d in plt_data],
+            color="teal",
+            label="Noise Floor",
+        )
         plt.xticks(scores.columns, rotation=90)
         plt.legend()
         plt.savefig(os.path.join(self._path, "loss_deviation.jpg"))
@@ -106,49 +170,14 @@ class Report:
         # plot deeper analysis for each sensor
         graphs = []
         for i, sensor in enumerate(scores.columns.values):
-            fig, axs = plt.subplots(3, 1, sharex=True, figsize=self._size, dpi=self._dpi)
-
-            axs[0].set_title("Sensor")
-            axs[0].plot(s_inputs[sensor], label="Real Value", color="teal", alpha=0.7)
-            axs[0].plot(
-                s_outputs[sensor], label="AI Reconstruction", color="orange", alpha=0.7
+            fig = sensor_fig(
+                sensor,
+                s_inputs[sensor],
+                s_outputs[sensor],
+                scores[sensor],
+                self._size,
+                self._dpi,
             )
-            axs[0].legend(loc="lower right")
-
-            axs[1].set_title("Error Rate")
-            axs[1].plot(loss[sensor], label="Model Error", color="teal")
-            axs[1].plot(
-                scores.index,
-                [noise_floor[i] for _ in scores.index],
-                label="Noise Floor",
-                color="black",
-                alpha=0.7,
-            )
-            axs[1].plot(
-                scores.index,
-                [sigma_loss[i] for _ in scores.index],
-                label="Acceptable Deviation",
-                color="orange",
-            )
-            axs[1].set_ylim(bottom=0)
-            axs[1].legend(loc="lower right")
-
-            axs[2].set_title("Healthscore")
-            axs[2].plot(scores[sensor], label="Healthscore", color="teal")
-            axs[2].plot(
-                scores.index,
-                [0.8 for _ in scores[sensor]],
-                label="Acceptable",
-                linestyle="dashed",
-                color="black",
-                alpha=0.7,
-            )
-            axs[2].set_ylim(bottom=0, top=1)
-            axs[2].legend(loc="lower right")
-            fig.suptitle(f"{sensor} Analysis")
-
-            # save ai analysis
-            fig.suptitle(f"{sensor} Analysis")
             name = sensor.split()[0]
             fig.savefig(os.path.join(self._sensors, f"ai_{name}.jpg"))
             plt.close()
@@ -164,7 +193,9 @@ class Report:
             plt.savefig(os.path.join(self._sensors, f"ds_{name}.jpg"))
             plt.close()
 
-            bins_rndm, vals_rndm = np.histogram(np.random.normal(values.mean(), values.std(), len(values)), bins=1000)
+            bins_rndm, vals_rndm = np.histogram(
+                np.random.normal(values.mean(), values.std(), len(values)), bins=1000
+            )
             max_bin = np.max([bins, bins_rndm])
             euclidean = np.sqrt(np.power((bins / max_bin) - (bins_rndm / max_bin), 2).sum()) / len(bins)
             graphs.append((i, scores.columns[i], self._sensors, euclidean, sigma_loss[i]))
