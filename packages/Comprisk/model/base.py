@@ -41,7 +41,7 @@ class BaseModel(NormalizeWrapper):
         self,
         loss: str = "MSELoss",
         activation: str = "sigmoid",
-        optimizer: dict = None,
+        optimizer: dict | str = None,
         lr: float = 1e-3,
         lr_decay: float = 0.99,
         sequence_out: int = 0,
@@ -63,6 +63,8 @@ class BaseModel(NormalizeWrapper):
         self.lr = lr
 
         self._optim: Optimizer | dict = optimizer
+        if isinstance(optimizer, str):
+            self._optim = {"name": optimizer}
 
         self._sequence_out = sequence_out
         self._features_in = sorted(features_in)
