@@ -5,12 +5,14 @@ __pycache__/
 requirements.txt
 *.whl
 *.jar
+*.jpeg
+*.jpg
+*.png
 
 docs/
 build/
 
 # general exclude from model output folders
-*.png
 events.out.tfevents.*
 .temp.ckpt
 temp/*
@@ -25,7 +27,8 @@ environment/dev/datasets/
 !environment/dev/datasets/README.md
 
 # exclude ONNX files from production's config folder
-environment/production/configs/*/*.onnx
+*.onnx
+!/environment/production/models/*.onnx
 
 # exclude logs
 *.sqlite3
