@@ -20,13 +20,25 @@ logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 @dataclass
 class IteratorResult:
+    """This dataclass holds a model's iteration result including the scores, model inputs, and model outputs. 
+    Furthermore, this class is able to convert the result to pandas DataFrames.
+    """
     ts: np.ndarray
     scores: np.ndarray
     expected: np.ndarray
     prediction: np.ndarray
     names: List[str]
 
-    def to_dataframe(self):
+    def to_dataframe(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        """This method returns the iteration result as pandas DataFrames in the following order:
+
+            - scores
+            - expected
+            - predicted
+        
+            Returns:
+                tuple: The three mentioned DataFrames in a tuple.
+        """
         result = []
         for data in [self.scores, self.expected, self.prediction]:
             data_ = {n: data[:, i] for i, n in enumerate(self.names)}
@@ -36,7 +48,7 @@ class IteratorResult:
             data_ = data_.set_index(keys=["ts"])
             result.append(data_)
 
-        return result
+        return tuple(result)
 
 
 class ModelIterator:

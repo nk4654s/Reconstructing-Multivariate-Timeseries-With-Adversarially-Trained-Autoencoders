@@ -24,9 +24,8 @@ environment/dev/support_points/*
 environment/dev/datasets/
 !environment/dev/datasets/README.md
 
-# exclude the datasets from the production environment
-environment/production/datasets/
-!environment/production/datasets/README.md
+# exclude ONNX files from production's config folder
+environment/production/configs/*/*.onnx
 
 # exclude logs
 *.sqlite3
