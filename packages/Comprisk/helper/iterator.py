@@ -79,7 +79,7 @@ class ModelIterator:
         self._o_onnx = [i.name for i in self._session.get_outputs()]
         self._s_idx = self._o_onnx.index("score")
         self._y_idx = self._o_onnx.index("y_hat")
-        logger.info("ModelIterator initialized.")
+        logger.info(f"ModelIterator initialized. {self._session._model_meta.description}")
 
     def _init_container(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         f_out = self._args.features_out

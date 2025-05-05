@@ -1,3 +1,4 @@
+
 from tqdm import tqdm
 import torch
 
@@ -31,6 +32,7 @@ class R2ScoreWrapper(LightningModule):
 
         self._model = model
         self._model.eval()
+        self._factor = 1
 
         self._remove_noise = remove_noise
         self._param_s_total: Parameter | None = None
@@ -75,9 +77,10 @@ class R2ScoreWrapper(LightningModule):
         data, d = np.array(d), None
         logger.debug("Calculating parameters on data (shape=%s).", data.shape)
 
-        weight = 1 / data.std(axis=0)
-        weight[weight < 0] = 1
+        weight = 1 / (self._factor * data.std(axis=0))
+        weight[weight < 1] = 1
         self._param_weight = Parameter(Tensor(weight))
+        logger.debug("Add weights (min=%s, max=%s)", weight.min(), weight.max())
 
         s_total = ((data - data.mean(axis=0)) ** 2).mean(axis=0)
         self._param_s_total = Parameter(Tensor(s_total))
@@ -95,7 +98,7 @@ class R2ScoreWrapper(LightningModule):
             return y_hat, y
 
         # calculate the score following the R2 formula (note that s_total was modified)
-        s_res = torch.sum(torch.pow((y - y_hat), 2), dim=1).unsqueeze(1)
+        s_res = torch.mean(torch.pow((y - y_hat), 2), dim=1).unsqueeze(1)
         score = 1 - torch.div(s_res, self._param_s_total * self._param_weight)
 
         _, y_hat = self._model.normalizer.reverse(x=x, y=y_hat)
