@@ -1,4 +1,4 @@
-# Compressor AI Suite
+# Compressor AI Suite 🤖📈
 [![CAS CI/CD](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/pipeline.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/pipeline.yml)
 [![Dataflux](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/dataflux-tests.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/dataflux-tests.yml)
 [![Comprisk](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/comprisk-tests.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/comprisk-tests.yml)
@@ -11,7 +11,7 @@ about the standalone features and development of `Dataflux`. The `Comprisk` pack
 on the downloaded dataset. A set of multiple configuration files manages the training hyperparameters and 
 specifies the exact training. More information about Comprisk and its configuration can be in the `Usage`-Section.
 
-## Installation
+## Installation 📦
 CAS relies on [Python](https://www.python.org), [uv](https://docs.astral.sh/uv/getting-started/installation/), and supports a variety of deep learning acceleration backends
 (e.g. `CUDA`, `MPS`, ...). The installation is simplified by multiple script files, but Python must be 
 installed manually.
@@ -37,7 +37,7 @@ variables are set:
 - `CAS_PROJECT_ROOT=$(pwd)` set the local repository as the project root, which is required for the logger to find all 
   submodules of CAS.
 
-### Documentation
+### Documentation 🎓
 The developer documentation can be generated as `HTML`-files after installing the developer environment using the 
 following command:
 
@@ -45,7 +45,7 @@ following command:
 sh scripts/docs.sh
 ```
 
-## Configuration
+## Configuration 🛠️
 
 In CAS, everything is handled through `yaml` configuration files, which provide a flexible and scalable way to define 
 complex workflows. There are two types of configurations, one required for `Comprisk` and one required for `Dataflux`.
@@ -198,7 +198,7 @@ rules:
     - ...
 ```
 
-## Usage
+## Usage 🚀
 ### Training
 The AI training is handled Comprisk and mainly performed using the `comprisk-train` command, which uses a `YAML` 
 configuration file to define the training pipeline. After installing the developer environment and building the 
@@ -236,7 +236,7 @@ To apply a model for testing, use the `comprisk-analyze` command and provide a d
 comprisk-analyze -c path_to_config_of_trained_model --data.validate path_to_dataflux_config
 ```
 
-## Deployment
+## Deployment 💅🏽
 This repository comes with a set of handy scripts packed in a single python file, which can be accessed by calling 
 
 ```commandline

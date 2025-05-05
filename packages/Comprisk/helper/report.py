@@ -62,10 +62,11 @@ def sensor_fig(
     axs[2].plot(scores.index, scores, label="Healthscore", color="teal")
     axs[2].set_ylabel("Higher is better")
     axs[2].set_xlabel("Time")
+    axs[2].tick_params(axis='x', rotation=45)
     axs[2].set_ylim(bottom=0, top=1)
     axs[2].legend(loc="lower left")
 
-    axs[2].xaxis.set_major_formatter(mdates.DateFormatter("%m.%d.%Y %H:%M"))
+    axs[2].xaxis.set_major_formatter(mdates.DateFormatter("%d.%m.%Y %H:%M"))
     fig.suptitle(f"{s_name} Analysis")
     return fig
 

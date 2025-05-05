@@ -56,7 +56,7 @@ compmesh-analyze="Compmesh.pipeline:cli_analyze"
 flux-pipeline="Dataflux.pipeline:main"
 flux-merge="Dataflux.merge:main"
 
-toking="Toking.aws:main"
+toking="Toking.toking:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["packages/Comprisk", "packages/Compmesh", "packages/Dataflux", "packages/Toking"]
