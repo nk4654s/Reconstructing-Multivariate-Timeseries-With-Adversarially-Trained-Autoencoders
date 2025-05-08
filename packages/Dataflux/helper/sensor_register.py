@@ -162,7 +162,12 @@ def get_sensors(
     except requests.Timeout as _:
         return None
 
-    sensor_list = response.json()["data"]["machine"]["getMachine"]["sensors"]
+    data = response.json()
+    if not data.get("data", None):
+        logger.error("Unable to find machine, received following data %s", data)
+        return None
+
+    sensor_list = data["data"]["machine"]["getMachine"]["sensors"]
     sensor_dict = {}
     for sensor in sensor_list:
         unit = sensor["properties"].get("unit", None)
