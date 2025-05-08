@@ -1,0 +1,78 @@
+# CAS specific
+environment: dev
+tag: 52381507-e89c-473a-84ef-8e4810c4aa68
+normalizer: configs/hofer-sn02-2294-v7/3_custom_normalizer.yml
+
+# model configuration
+model:
+  class_path: Comprisk.model.auto_encoder.rnn.MultimodalRecurrentAutoEncoder
+  init_args:
+    activation: tanh
+    loss: MSELoss
+    optimizer: Adam
+    lr: 0.0001
+    lr_decay: 0.9
+    num_hidden_dim: 64
+    num_hidden_layers: 3
+    dropout_prob: 0.3
+
+seed_everything: true
+trainer:
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        monitor: validate/MSELoss
+        min_delta: 1.0e-05
+        patience: 3
+    - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
+
+  precision: 32
+  max_epochs: 25
+  gradient_clip_val: 1.0
+  log_every_n_steps: 1
+
+data:
+  train: configs/hofer-sn02-2294-v7/1_dataset_train.yml
+  validate: configs/hofer-sn02-2294-v7/2_dataset_validate.yml
+  sequence_in: 120
+  sequence_out: 1
+  features_in:
+    - b374f520-7c5a-439d-aeb8-3c821f4157c8  # Enddruck_max (bar)
+    - 0c20e95d-d759-46d6-a088-b9ce485e13c5  # Enddruck_min (bar)
+    - a93b3ff9-834e-4b0e-9763-ddd29605914e  # Saugdruck_max (bar)
+    - 689676cb-7a0a-43ce-a168-bf35938ef409  # Saugdruck_min (bar)
+    - f72037ab-1bf3-4f7d-bb04-2ad792f2f7ba  # TT 20 2. StufeDrucktemp (°C)
+    - 9cf57348-8fe1-4968-affb-8e23bb3c006a  # TT10 2. Stufe Saugtemp. (°C)
+    - 7b0e24f9-e159-4394-a765-3ee44b2e8399  # TT30 3. Stufe Saugtemp (°C)
+    - 427f3025-995b-4887-9df6-9f253bad9456  # TT40 3. Stufe Drucktemp (°C)
+    - 8cff9d57-2985-444b-b65a-45e3fb97024a  # Zwischendruck 1/2_max (bar)
+    - 1cc33e2f-b70f-4d8b-9bc1-eed67fd7d880  # Zwischendruck 1/2_min (bar)
+    - 3ba7032b-e67c-404c-acc3-03811dab342b  # Zwischendruck 2/3_max (bar)
+    - 56d65181-7372-4ed4-bf4f-ce15be734d9c  # Zwischendruck 2/3_min (bar)
+    - 689837a3-1feb-497a-8cd5-a560d3127697  # Öl 1. Stufe_max (bar)
+    - 411cac80-3c42-4f29-910e-246cb3855f94  # Öl 1. Stufe_min (bar)
+    - 599300ec-99e7-444e-8101-4d94e4cf3a97  # Öl 2. Stufe_max (bar)
+    - 05a88a88-9d39-4120-a837-ad67684af9ed  # Öl 2. Stufe_min (bar)
+    - a2740d43-8dea-4769-8a0f-9fdb551143fc  # Öl 3. Stufe_max (bar)
+    - d0d8b697-f261-462d-be4d-9a6f5f37b634  # Öl 3. Stufe_min (bar)
+  features_out:
+    - f72037ab-1bf3-4f7d-bb04-2ad792f2f7ba  # TT 20 2. StufeDrucktemp (°C)
+    - 9cf57348-8fe1-4968-affb-8e23bb3c006a  # TT10 2. Stufe Saugtemp. (°C)
+    - 7b0e24f9-e159-4394-a765-3ee44b2e8399  # TT30 3. Stufe Saugtemp (°C)
+    - 427f3025-995b-4887-9df6-9f253bad9456  # TT40 3. Stufe Drucktemp (°C)
+    - 8cff9d57-2985-444b-b65a-45e3fb97024a  # Zwischendruck 1/2_max (bar)
+    - 1cc33e2f-b70f-4d8b-9bc1-eed67fd7d880  # Zwischendruck 1/2_min (bar)
+    - 3ba7032b-e67c-404c-acc3-03811dab342b  # Zwischendruck 2/3_max (bar)
+    - 56d65181-7372-4ed4-bf4f-ce15be734d9c  # Zwischendruck 2/3_min (bar)
+    - 689837a3-1feb-497a-8cd5-a560d3127697  # Öl 1. Stufe_max (bar)
+    - 411cac80-3c42-4f29-910e-246cb3855f94  # Öl 1. Stufe_min (bar)
+    - 599300ec-99e7-444e-8101-4d94e4cf3a97  # Öl 2. Stufe_max (bar)
+    - 05a88a88-9d39-4120-a837-ad67684af9ed  # Öl 2. Stufe_min (bar)
+    - a2740d43-8dea-4769-8a0f-9fdb551143fc  # Öl 3. Stufe_max (bar)
+    - d0d8b697-f261-462d-be4d-9a6f5f37b634  # Öl 3. Stufe_min (bar)
+  skip: 1
+  stride: 1
+  batch_size: 128
+  shuffle: true
+  num_workers: 6
+  behavior: future
