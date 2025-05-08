@@ -1,0 +1,126 @@
+data:
+  batch_size: 128
+  behavior: future
+  features_in:
+  - b374f520-7c5a-439d-aeb8-3c821f4157c8
+  - 0c20e95d-d759-46d6-a088-b9ce485e13c5
+  - a93b3ff9-834e-4b0e-9763-ddd29605914e
+  - 689676cb-7a0a-43ce-a168-bf35938ef409
+  - f72037ab-1bf3-4f7d-bb04-2ad792f2f7ba
+  - 9cf57348-8fe1-4968-affb-8e23bb3c006a
+  - 7b0e24f9-e159-4394-a765-3ee44b2e8399
+  - 427f3025-995b-4887-9df6-9f253bad9456
+  - 8cff9d57-2985-444b-b65a-45e3fb97024a
+  - 1cc33e2f-b70f-4d8b-9bc1-eed67fd7d880
+  - 3ba7032b-e67c-404c-acc3-03811dab342b
+  - 56d65181-7372-4ed4-bf4f-ce15be734d9c
+  - 689837a3-1feb-497a-8cd5-a560d3127697
+  - 411cac80-3c42-4f29-910e-246cb3855f94
+  - 599300ec-99e7-444e-8101-4d94e4cf3a97
+  - 05a88a88-9d39-4120-a837-ad67684af9ed
+  - a2740d43-8dea-4769-8a0f-9fdb551143fc
+  - d0d8b697-f261-462d-be4d-9a6f5f37b634
+  features_out:
+  - f72037ab-1bf3-4f7d-bb04-2ad792f2f7ba
+  - 9cf57348-8fe1-4968-affb-8e23bb3c006a
+  - 7b0e24f9-e159-4394-a765-3ee44b2e8399
+  - 427f3025-995b-4887-9df6-9f253bad9456
+  - 8cff9d57-2985-444b-b65a-45e3fb97024a
+  - 1cc33e2f-b70f-4d8b-9bc1-eed67fd7d880
+  - 3ba7032b-e67c-404c-acc3-03811dab342b
+  - 56d65181-7372-4ed4-bf4f-ce15be734d9c
+  - 689837a3-1feb-497a-8cd5-a560d3127697
+  - 411cac80-3c42-4f29-910e-246cb3855f94
+  - 599300ec-99e7-444e-8101-4d94e4cf3a97
+  - 05a88a88-9d39-4120-a837-ad67684af9ed
+  - a2740d43-8dea-4769-8a0f-9fdb551143fc
+  - d0d8b697-f261-462d-be4d-9a6f5f37b634
+  num_workers: 6
+  persistent_workers: true
+  pin_memory: true
+  sequence_in: 120
+  sequence_out: 1
+  shuffle: true
+  skip: 1
+  stride: 1
+  train: dataset_train.yaml
+  validate: dataset_val.yaml
+environment: dev
+lr_scheduler: null
+model:
+  class_path: Comprisk.model.auto_encoder.rnn.MultimodalRecurrentAutoEncoder
+  init_args:
+    activation: tanh
+    behavior: autoencoder
+    dropout_prob: 0.3
+    features_in: null
+    features_out: null
+    loss: MSELoss
+    lr: 0.0001
+    lr_decay: 0.9
+    num_hidden_dim: 64
+    num_hidden_layers: 3
+    optimizer: Adam
+    output_length: 1
+    sequence_out: 0
+normalizer: normalizer.yaml
+optimizer: null
+prefix: null
+seed_everything: 0
+tag: 52381507-e89c-473a-84ef-8e4810c4aa68
+trainer:
+  accelerator: auto
+  accumulate_grad_batches: 1
+  barebones: false
+  benchmark: null
+  callbacks:
+  - class_path: lightning.pytorch.callbacks.EarlyStopping
+    init_args:
+      check_finite: true
+      check_on_train_epoch_end: null
+      divergence_threshold: null
+      log_rank_zero_only: false
+      min_delta: 1.0e-05
+      mode: min
+      monitor: validate/MSELoss
+      patience: 3
+      stopping_threshold: null
+      strict: true
+      verbose: false
+  - class_path: Comprisk.helper.BasicCheckpointCallback
+  check_val_every_n_epoch: 1
+  default_root_dir: null
+  detect_anomaly: false
+  deterministic: null
+  devices: auto
+  enable_checkpointing: null
+  enable_model_summary: null
+  enable_progress_bar: null
+  fast_dev_run: false
+  gradient_clip_algorithm: null
+  gradient_clip_val: 1.0
+  inference_mode: true
+  limit_predict_batches: null
+  limit_test_batches: null
+  limit_train_batches: null
+  limit_val_batches: null
+  log_every_n_steps: 1
+  logger: null
+  max_epochs: 25
+  max_steps: -1
+  max_time: null
+  min_epochs: null
+  min_steps: null
+  num_nodes: 1
+  num_sanity_val_steps: null
+  overfit_batches: 0.0
+  plugins: null
+  precision: 32
+  profiler: null
+  reload_dataloaders_every_n_epochs: 0
+  strategy: auto
+  sync_batchnorm: false
+  use_distributed_sampler: true
+  val_check_interval: null
+tuner_config: null
+tuner_trials: 1
