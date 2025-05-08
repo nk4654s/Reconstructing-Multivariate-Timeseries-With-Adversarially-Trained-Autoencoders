@@ -153,6 +153,10 @@ def delete_model():
 
 def show_sensors(uuid_str):
     rename = get_sensors(UUID(uuid_str))
+    if not rename:
+        print("Error. Unable to get sensors.")
+        return None
+
     result = []
     for uuid, name in rename.items():
         result.append((uuid, name))

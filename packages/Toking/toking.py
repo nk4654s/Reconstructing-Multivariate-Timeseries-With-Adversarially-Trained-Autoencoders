@@ -6,8 +6,12 @@ import boto3
 from botocore.exceptions import ClientError
 from pycognito.aws_srp import AWSSRP
 
+from Dataflux import get_logger, logging_mode
 from Toking.args import TokingCLI
 from Toking.resource import get_arg_default
+
+
+logger = get_logger(__name__, "logfile", logging_mode)
 
 
 class Toking:
@@ -84,6 +88,7 @@ class Toking:
 
         # no token found or expired, get a new one
         username, password = self._credentials
+        logger.debug("Try login into AWS using %s", username)
 
         aws = AWSSRP(
             username=username,
@@ -102,7 +107,7 @@ class Toking:
             )
 
             # extract the token
-            token = result["AuthenticationResult"]["AccessToken"].split(".")[0] + "."
+            token = result["AuthenticationResult"]["AccessToken"]
 
             # cache the token again and make it accessible to the borg pattern
             self._last_token = (token, expiration)
