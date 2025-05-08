@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import onnxruntime
 import pandas as pd
-import yaml
 from Dataflux.helper.sensor_register import get_sensors
 from markdown_pdf import MarkdownPdf, Section
 from matplotlib.pyplot import figure
