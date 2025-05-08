@@ -21,19 +21,22 @@ class Features(FileWorkerCallable):
         self._include = include + ["ts"] if "ts" not in include else include
         self._force_features = force_features
 
+        self._deletion_causes = []
+
     def get_dependencies(self) -> Dict[str, CallableDependency]:
         return {NormalizeFit.__name__: CallableDependency.NOT_BEFORE}
     
-    def _check_integrity(self, column_names: np.ndarray) -> bool:
-        found = sum([1 for name in self._include if name in column_names])
-        return found == len(self._include)
+    def _check_integrity(self, column_names: np.ndarray) -> list:
+        return [n for n in self._include if n not in column_names]
 
     def run(self, fm: FileMeta, context: FileWorkerContext) -> CALLABLE_RETURN_TYPE:  # noqa: F821
         df = fm.read()
 
         # mark file to be deleted if the number of features does not align with the rest of the files
-        if not self._force_features and not self._check_integrity(df.columns.values):
+        missing_columns = self._check_integrity(df.columns.values)
+        if not self._force_features and len(missing_columns) != 0:
             fm.state = FileState.DELETED
+            self._deletion_causes += missing_columns
             return fm
 
         # adjust the content by only including certain features
@@ -51,3 +54,5 @@ class Features(FileWorkerCallable):
 
     def finish(self, context: FileWorkerContext, metadata: Metadata) -> None:
         logger.debug("Finished including defined (n=%s) features only", len(self._include))
+        missing_columns = set(self._deletion_causes)
+        logger.debug("Removed dataset files due to %s columns missing.", missing_columns)
