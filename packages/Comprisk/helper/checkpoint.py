@@ -19,11 +19,12 @@ CHECKPOINT = "checkpoints"
 
 
 class BasicCheckpointCallback(ModelCheckpoint):
-    def __init__(self):
+    def __init__(self, monitor: str = "validate/MSELoss"):
+        name = monitor
         super().__init__(
             dirpath=CHECKPOINT,
-            filename="epoch={epoch}-val={validate/MSELoss:.6f}",
-            monitor="validate/MSELoss",
+            filename="epoch={epoch}-val={" + name + ":.6f}",
+            monitor=name,
             verbose=False,
             save_top_k=3,
             save_weights_only=False,

@@ -3,6 +3,7 @@
 import importlib
 import os
 import shutil
+from copy import deepcopy
 from typing import List
 
 import torch
@@ -57,6 +58,15 @@ def get_config_folder(cli) -> str:
     config_path = get_config_path(cli)
     base_path = os.path.dirname(config_path)
     return base_path
+
+
+def deepvars(val) -> dict:
+    val = deepcopy(val)
+    res = vars(val)
+    for key in res:
+        if hasattr(res[key], "__dict__"):
+            res[key] = deepvars(res[key])
+    return res
 
 
 def get_checkpoints(path: str) -> List[str]:

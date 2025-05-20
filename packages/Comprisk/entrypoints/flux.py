@@ -7,7 +7,7 @@ from Dataflux.cli import FluxConfigManager
 from Dataflux.pipeline import pipeline as flux_pipeline
 from Dataflux.pytorch import EmptyDatasetError
 
-from Comprisk.data import DataModule
+from Comprisk.custom import DataModule
 from Comprisk.entrypoints.base import EntrypointBase, EntrypointContext
 
 logger = get_logger(__name__, "logfile", logging_mode)

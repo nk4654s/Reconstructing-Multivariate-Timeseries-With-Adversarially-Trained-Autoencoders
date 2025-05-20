@@ -170,6 +170,9 @@ def get_sensors(
     sensor_list = data["data"]["machine"]["getMachine"]["sensors"]
     sensor_dict = {}
     for sensor in sensor_list:
+        if not sensor["properties"]:
+            continue
+
         unit = sensor["properties"].get("unit", None)
         unit = f" ({unit})" if unit else ""
         if sensor_format == SensorRegisterFormat.NAME_TO_UUID:

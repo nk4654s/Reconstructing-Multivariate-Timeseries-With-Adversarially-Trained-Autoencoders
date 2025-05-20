@@ -3,20 +3,16 @@ import os.path
 from Dataflux import get_logger, logging_mode
 
 from Comprisk.cli import CompriskCLI
-from Comprisk.data import DataModule
 from Comprisk.entrypoints import (
     AnalyzerEntrypoint,
-    EntrypointContext,
     ExportEntrypoint,
     FluxEntrypoint,
     GeneratorEntrypoint,
     Pipeline,
     TrainerEntrypoint,
     TrainScoreTransformerEntrypoint,
-    PrepareEntrypoint,
+    TuneEntrypoint,
 )
-from Comprisk.helper.structure import get_config_folder
-from Comprisk.model import NormalizeWrapper
 
 logger = get_logger(__name__, path="logfile", level=logging_mode)
 
@@ -26,21 +22,11 @@ train = TrainerEntrypoint()
 analyze = AnalyzerEntrypoint()
 generate = GeneratorEntrypoint()
 export = ExportEntrypoint()
-prepare = PrepareEntrypoint()
+tune = TuneEntrypoint()
 
-
-def get_context(cli: CompriskCLI) -> EntrypointContext:
-    return EntrypointContext(
-        config=cli.config,
-        config_folder=get_config_folder(cli),
-        model=cli.model,
-        datamodule=cli.datamodule,
-        trainer=cli.trainer,
-        environment_=cli.config.environment,
-    )
 
 def pipeline_runner(pipeline: Pipeline, cli: CompriskCLI) -> None:
-    for i, name in pipeline.run(context=get_context(cli)):
+    for i, name in pipeline.run(context=cli.context):
         logger.info("Finished entrypoint %s (%s)", name, i)
 
 
@@ -49,11 +35,26 @@ def cli_train() -> None:
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskCLI(subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
-        prepare,
         train,
+        score,
+        export,
+        analyze
+    ])
+    pipeline_runner(pipeline, cli)
+
+
+def cli_tune() -> None:
+    """
+    The main entry point for the Comprisk CLI. This function initializes the
+    CompriskCLI object and sets up the command-line interface.
+    """
+    cli = CompriskCLI(subclass_mode_model=True, run=False)
+    pipeline = Pipeline(entrypoints=[
+        flux,
+        tune,
         score,
         export,
         analyze
@@ -66,7 +67,7 @@ def cli_analyze() -> None:
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskCLI(subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
         analyze
@@ -79,7 +80,7 @@ def cli_train_score_transformer() -> None:
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskCLI(subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
         score,
@@ -93,7 +94,7 @@ def cli_generate() -> None:
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskCLI(subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
         generate
@@ -106,7 +107,7 @@ def cli_flux() -> None:
     The main entry point for the Comprisk CLI. This function initializes the
     CompriskCLI object and sets up the command-line interface.
     """
-    cli = CompriskCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskCLI(subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux
     ])
@@ -123,3 +124,5 @@ if __name__ == "__main__":
         cli_analyze()
     elif pycharm_entry == "generate":
         cli_generate()
+    elif pycharm_entry == "tune":
+        cli_tune()

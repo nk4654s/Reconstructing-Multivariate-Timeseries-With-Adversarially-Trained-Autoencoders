@@ -1,5 +1,6 @@
 """This module contains the tuner class based on the `optuna` package to find
 optimal hyperparameters for training."""
+
 import os
 from copy import deepcopy
 from typing import Any, Dict
@@ -7,6 +8,7 @@ from typing import Any, Dict
 import optuna
 from optuna.trial import Trial
 
+from Comprisk.entrypoints import EntrypointContext
 from Comprisk.tune.config import ConfigManager
 
 
@@ -21,18 +23,12 @@ class Tuner:
             will be re-initialized with a different set of hyperparameters.
     """
 
-    def __init__(self, config: ConfigManager) -> None:
-        self._model = config.cli.model
-        self._datamodule = config.cli.datamodule
-
-        self._trainer = config.cli.trainer
-        self._trainer.early_stopping_callback.monitor = "train/MSELoss"
-
-        self._trainer.save_config_callback = None
-        self._trainer.logger = False
+    def __init__(self, config: ConfigManager, context: EntrypointContext) -> None:
+        self._model = config.build_model()
+        self._datamodule = config.build_datamodule()
+        self._trainer = context.trainer
 
         self._config = config
-        self._hparam_deps = None
 
     def objective(self, trial: Trial) -> float:
         """The objective function is used by the `self.optimize` method and contains
@@ -46,18 +42,20 @@ class Tuner:
         suggestion, datamodule = self._config.suggest(trial)
         test_model = self._model.__class__(**suggestion)
 
-        datamodule.setup(stage="fit")
+        # instantiate a trainer
+        trainer = deepcopy(self._trainer)
+        trainer.config["model"]["init_args"] = suggestion
 
         # train the test model and validate it, the resulting loss is used to
-        trainer = deepcopy(self._trainer)
-        trainer.fit(
-            test_model, datamodule.train_dataloader(), val_dataloaders=None
-        )
+        datamodule.setup(stage="fit")
+        trainer.num_sanity_val_steps = 0
+        trainer.fit(test_model, datamodule.train_dataloader(), datamodule.val_dataloader())
+
+        # TODO create a custom Trainer holding the last validation loss, then remove the next lines
         trainer.save_checkpoint(".temp.ckpt")
-        result = trainer.validate(
-            dataloaders=datamodule.val_dataloader(), ckpt_path=".temp.ckpt"
-        )
-        loss = result[0]["validate/MSELoss"]
+        result = trainer.validate(dataloaders=datamodule.val_dataloader(), ckpt_path=".temp.ckpt")
+        loss = result[0]["validate/" + suggestion["loss"]]
+
         return loss
 
     def optimize(self, n_trials: int, tag: str = None) -> Dict[str, Any]:
@@ -68,16 +66,9 @@ class Tuner:
             n_trials (int): The number of search iterations before termination.
             tag (str): The tag str as prefix of the experiment name.
         """
-        if not os.path.exists("logs"):
-            os.makedirs("logs")
-
-        name = (
-            f"{self._model.__class__.__name__}-{tag}"
-            if tag
-            else self._model.__class__.__name__
-        )
+        name = f"{self._model.__class__.__name__}-{tag}" if tag else self._model.__class__.__name__
         study = optuna.create_study(
-            storage="sqlite:///logs/optuna.sqlite3",
+            storage="sqlite:///optuna.sqlite3",
             study_name=name,
             sampler=optuna.samplers.GPSampler(),
             load_if_exists=True,
@@ -86,7 +77,7 @@ class Tuner:
         study.optimize(
             self.objective,
             n_trials=n_trials,
-            #catch=(RuntimeWarning, TypeError, RuntimeError),
+            # catch=(RuntimeWarning, TypeError, RuntimeError),
         )
 
         # restore the datamodel to the training mode
