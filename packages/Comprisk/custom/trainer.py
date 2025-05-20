@@ -6,7 +6,6 @@ import yaml
 from lightning import Trainer, Callback, LightningDataModule
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADERS
-from pyarrow.dataset import dataset
 
 from Comprisk.custom import DataModule
 from Comprisk.helper import BasicCheckpointCallback
