@@ -6,7 +6,9 @@ import yaml
 from lightning import Trainer, Callback, LightningDataModule
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADERS
+from pyarrow.dataset import dataset
 
+from Comprisk.custom import DataModule
 from Comprisk.helper import BasicCheckpointCallback
 from Comprisk.model import NormalizeWrapper
 from Dataflux import get_logger, logging_mode
@@ -138,5 +140,10 @@ class CASTrainer(Trainer):
         if not self._setup_complete:
             self._post_init()
 
-        self.apply_normalization(model, train_dataloader.dataset.get_args())
+        if isinstance(train_dataloader, DataModule):
+            dataset_args = train_dataloader.trainset.get_args()
+        else:
+            dataset_args = train_dataloader.dataset.get_args()
+
+        self.apply_normalization(model, dataset_args)
         super().fit(model, train_dataloader, val_dataloaders, datamodule, ckpt_path)
