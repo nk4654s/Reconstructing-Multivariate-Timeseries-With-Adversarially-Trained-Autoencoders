@@ -1,7 +1,7 @@
 folder: environment/dev/datasets/hofer-sn02-2294-v7-anomaly-01
 machine_uuid: 52381507-e89c-473a-84ef-8e4810c4aa68
 intervals:
-  - 2024-05-01 2024-05-04
+  - 2024-09-29T00:00:00Z 2024-09-30T23:00:00Z
 num_workers: 6
 overwrite: true
 

@@ -1,7 +1,9 @@
 # CAS specific
 environment: dev
-tag: 52381507-e89c-473a-84ef-8e4810c4aa68
+tag: tuning-2-52381507-e89c-473a-84ef-8e4810c4aa68
 normalizer: configs/hofer-sn02-2294-v7/3_custom_normalizer.yml
+tuner_config: configs/hofer-sn02-2294-v7/a_tuning.yml
+tuner_trials: 20
 
 # model configuration
 model:
@@ -11,10 +13,9 @@ model:
     loss: MSELoss
     optimizer: Adam
     lr: 0.0001
-    lr_decay: 0.9
+    lr_decay: 0.99
     num_hidden_dim: 64
-    num_hidden_layers: 3
-    dropout_prob: 0.3
+    num_hidden_layers: 1
 
 seed_everything: true
 trainer:
@@ -22,12 +23,12 @@ trainer:
     - class_path: lightning.pytorch.callbacks.EarlyStopping
       init_args:
         monitor: validate/MSELoss
-        min_delta: 1.0e-05
+        min_delta: 1.0e-07
         patience: 3
     - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
 
   precision: 32
-  max_epochs: 25
+  max_epochs: 100
   gradient_clip_val: 1.0
   log_every_n_steps: 1
 
@@ -35,12 +36,8 @@ data:
   train: configs/hofer-sn02-2294-v7/1_dataset_train.yml
   validate: configs/hofer-sn02-2294-v7/2_dataset_validate.yml
   sequence_in: 120
-  sequence_out: 1
+  sequence_out: 60
   features_in:
-    - b374f520-7c5a-439d-aeb8-3c821f4157c8  # Enddruck_max (bar)
-    - 0c20e95d-d759-46d6-a088-b9ce485e13c5  # Enddruck_min (bar)
-    - a93b3ff9-834e-4b0e-9763-ddd29605914e  # Saugdruck_max (bar)
-    - 689676cb-7a0a-43ce-a168-bf35938ef409  # Saugdruck_min (bar)
     - f72037ab-1bf3-4f7d-bb04-2ad792f2f7ba  # TT 20 2. StufeDrucktemp (°C)
     - 9cf57348-8fe1-4968-affb-8e23bb3c006a  # TT10 2. Stufe Saugtemp. (°C)
     - 7b0e24f9-e159-4394-a765-3ee44b2e8399  # TT30 3. Stufe Saugtemp (°C)
@@ -72,7 +69,7 @@ data:
     - d0d8b697-f261-462d-be4d-9a6f5f37b634  # Öl 3. Stufe_min (bar)
   skip: 1
   stride: 1
-  batch_size: 128
+  batch_size: 256
   shuffle: true
   num_workers: 6
   behavior: future

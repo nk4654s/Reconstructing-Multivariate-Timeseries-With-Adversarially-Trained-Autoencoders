@@ -1,9 +1,9 @@
 folder: environment/dev/datasets/hofer-sn02-2294-v7-test-valve
 machine_uuid: 52381507-e89c-473a-84ef-8e4810c4aa68
 intervals:
-  - 2024-06-22T05:00:00Z 2024-06-22T11:00:00Z
+  - 2024-06-08 2024-06-16
 num_workers: 6
-overwrite: false
+overwrite: true
 
 modules:
   - class_path: Dataflux.modules.State
@@ -11,7 +11,7 @@ modules:
       key: b374f520-7c5a-439d-aeb8-3c821f4157c8 # Saugdruck_max
       lower: 180
       upper: 250
-      alpha_threshold: 600
+      alpha_threshold: 1800
       beta_threshold: 0
   - class_path: Dataflux.modules.features.Features
     init_args:

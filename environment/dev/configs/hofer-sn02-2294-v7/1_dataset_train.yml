@@ -4,7 +4,7 @@ intervals:
   - 2024-03-24 2024-04-07
   - 2025-01-01 2025-01-31
 num_workers: 6
-overwrite: true
+overwrite: false
 
 modules:
   - class_path: Dataflux.modules.State

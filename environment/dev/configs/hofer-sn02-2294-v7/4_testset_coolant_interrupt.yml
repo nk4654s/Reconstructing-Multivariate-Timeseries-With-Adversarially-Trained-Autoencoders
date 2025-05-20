@@ -11,7 +11,7 @@ modules:
       key: b374f520-7c5a-439d-aeb8-3c821f4157c8 # Saugdruck_max
       lower: 180
       upper: 250
-      alpha_threshold: 600
+      alpha_threshold: 1800
       beta_threshold: 0
   - class_path: Dataflux.modules.features.Features
     init_args:

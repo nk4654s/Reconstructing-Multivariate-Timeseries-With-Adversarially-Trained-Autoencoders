@@ -11,21 +11,7 @@ modules:
       key: b374f520-7c5a-439d-aeb8-3c821f4157c8 # Saugdruck_max
       lower: 180
       upper: 250
-      alpha_threshold: 600
-      beta_threshold: 0
-  - class_path: Dataflux.modules.State
-    init_args:
-      key: d0d8b697-f261-462d-be4d-9a6f5f37b634  # Öl 3. Stufe_min (bar)
-      lower: 10
-      upper: 70
-      alpha_threshold: 0
-      beta_threshold: 0
-  - class_path: Dataflux.modules.State
-    init_args:
-      key: f72037ab-1bf3-4f7d-bb04-2ad792f2f7ba  # TT 20 2. StufeDrucktemp (°C)
-      lower: 50
-      upper: 250
-      alpha_threshold: 0
+      alpha_threshold: 1800
       beta_threshold: 0
   - class_path: Dataflux.modules.features.Features
     init_args:
