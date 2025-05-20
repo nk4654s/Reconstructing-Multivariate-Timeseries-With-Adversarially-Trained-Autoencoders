@@ -24,7 +24,6 @@ class CompriskCLI(LightningCLI):
     """
     def __init__(self, **kwargs) -> None:
         super().__init__(model_class=NormalizeWrapper, datamodule_class=DataModule, trainer_class=Trainer, **kwargs, save_config_callback=None)
-
         self._context = EntrypointContext(
             config=self.config,
             config_folder=get_config_folder(self),
