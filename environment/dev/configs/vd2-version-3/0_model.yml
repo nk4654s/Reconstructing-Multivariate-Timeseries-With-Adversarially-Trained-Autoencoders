@@ -1,35 +1,39 @@
 # CAS specific
 environment: dev
-tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
+tag: tuning-0b3426b3-94af-4b8c-89c1-da57493c099a
 normalizer: configs/vd2-version-1/3_custom_normalizer.yml
+tuner_config: configs/vd2-version-3/a_tuning.yml
+tuner_trials: 30
 
 # model configuration
 model:
   class_path: Comprisk.model.auto_encoder.rnn.MultimodalRecurrentAutoEncoder
   init_args:
     activation: tanh
-    loss: MSELoss
+    loss: L1Loss
     optimizer: Adam
     lr: 0.0001
-    lr_decay: 0.9
+    lr_decay: 0.99
     num_hidden_dim: 64
     num_hidden_layers: 3
     dropout_prob: 0.3
 
 # trainer and dataset config
-seed_everything: 1
+seed_everything: 2
 trainer:
   accelerator: mps
   callbacks:
     - class_path: lightning.pytorch.callbacks.EarlyStopping
       init_args:
-        monitor: validate/MSELoss
-        min_delta: 1.0e-05
+        monitor: validate/L1Loss
+        min_delta: 1.0e-07
         patience: 3
     - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
+      init_args:
+        monitor: validate/L1Loss
 
   precision: 32
-  max_epochs: 10
+  max_epochs: 100
   gradient_clip_val: 1.0
   log_every_n_steps: 1
 
@@ -81,5 +85,5 @@ data:
   stride: 1
   batch_size: 256
   shuffle: true
-  num_workers: 8
+  num_workers: 6
   behavior: future
