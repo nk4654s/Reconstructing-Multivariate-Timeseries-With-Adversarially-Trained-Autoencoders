@@ -70,8 +70,8 @@ class ModelIterator:
         self._len = len(data)
 
         x_shape, y_shape = self._data[0]
-        x_shape, y_shape = x_shape.shape, y_shape.shape
-        logger.info("ModelIterator input shape %s, output shape %s", x_shape, y_shape)
+        self.x_shape, self.y_shape = x_shape.shape, y_shape.shape
+        logger.info("ModelIterator input shape %s, output shape %s", self.x_shape, self.y_shape)
 
         # create the ONNX session and find the input/output names
         self._session = onnxruntime.InferenceSession(onnx_path)

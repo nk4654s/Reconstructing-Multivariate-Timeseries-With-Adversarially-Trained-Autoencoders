@@ -73,18 +73,18 @@ class MultimodalRecurrentAutoEncoder(AutoEncoder):
 
         input_only = batch[:, -1, self._input_only]
         output_only = batch[:, -1, self._output_only]
-        input_decoder = torch.cat((input_only, output_only), dim=1)
-        input_decoder = torch.unsqueeze(input_decoder, 1)
+        decoder_data = torch.cat((input_only, output_only), dim=1)
+        decoder_data = torch.unsqueeze(decoder_data, 1)
 
-        for i in range(sequence - 1, -1, -1):
-            output_decoder, hidden_cell = self._decoder(input_decoder, hidden_cell)
+        for i in range(0, sequence, 1):
+            decoder_data, hidden_cell = self._decoder(decoder_data, hidden_cell)
+            output[:, i, :] = decoder_data[:, 0, :]
 
             if i != 0:
-                input_only = batch[:, i, self._input_only]
-                output_only = batch[:, i, self._output_only]
-                input_decoder = torch.cat((input_only, output_only), dim=1)
-                input_decoder = torch.unsqueeze(input_decoder, 1)
-
-            output[:, i, :] = output_decoder[:, 0, :]
+                # TODO: try zeros for input only?
+                input_only = torch.zeros((batch_size, len(self._input_only)), device=self.device)#batch[:, i, self._input_only]
+                output_only = decoder_data[:, 0, :] #batch[:, i, self._output_only]
+                decoder_data = torch.cat((input_only, output_only), dim=1)
+                decoder_data = torch.unsqueeze(decoder_data, 1)
 
         return self._activation(output)

@@ -48,6 +48,7 @@ comprisk-analyze="Comprisk.pipeline:cli_analyze"
 comprisk-score="Comprisk.pipeline:cli_train_score_transformer"
 comprisk-train="Comprisk.pipeline:cli_train"
 comprisk-generate="Comprisk.pipeline:cli_generate"
+comprisk-tune="Comprisk.pipeline:cli_tune"
 
 compmesh-train="Compmesh.pipeline:cli_train"
 compmesh-score="Compmesh.pipeline:cli_score_trainer"

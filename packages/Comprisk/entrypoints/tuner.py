@@ -2,66 +2,42 @@
 import os
 
 import yaml
+
+from Comprisk.entrypoints import EntrypointBase, EntrypointContext
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
-from Comprisk.cli import CompriskCLI
-from Comprisk.data import DataModule
-from Comprisk.model import BaseModel
 from Comprisk.tune import ConfigManager, Tuner
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 
-def run_tuner(cli: CompriskCLI) -> str:
-    """
-    This function runs the hyperparameter tuning using the Tuner class. It takes a
-    CompriskCLI object as input and returns the best model configuration.
+class TuneEntrypoint(EntrypointBase):
+    def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
+        config = ConfigManager(context)
+        if not config.initialized:
+            logger.warning("Tuner not initialized")
+            quit()
 
-    Args:
-        cli (CompriskCLI): A CompriskCLI object that contains the configuration
-            and data modules for hyperparameter tuning.
-    
-    Returns:
-        str: The best model configuration as a string in YAML.
-    """
-    # load the parameters to tune in a ConfigManager
-    config = ConfigManager(cli)
-    config.load(cli.config.tuner_config)
+        # run the hyperparameter optimization with the ConfigManager
+        tuner = Tuner(config, context)
+        params = tuner.optimize(context.config.tuner_trials, context.config.tag)
+        logger.info("Best parameters: %s", params)
 
-    # run the hyperparameter optimization with the ConfigManager
-    tuner = Tuner(config)
-    params = tuner.optimize(cli.config.tuner_trials, cli.config.tag)
-    logger.info("Best parameters: %s", params)
+        # get the base config for training and modify the parameters with the best ones
+        modified = config.modify_config(params)
 
-    # get the base config for training and modify the parameters with the best ones
-    modified = config.modify_config(params)
+        # save the modified config to a new file with increasing suffix
+        modified_path = os.path.join(config.train_path, "config_tuned_0.yml")
+        i = 0
+        while os.path.exists(modified_path):
+            modified_path = os.path.join(config.train_path, f"config_tuned_{i}.yml")
+            i += 1
 
-    # save the modified config to a new file with increasing suffix
-    modified_path = config.train_path.replace(".yml", "_tuned_0.yml")
-    i = 0
-    while os.path.exists(modified_path):
-        modified_path = config.train_path.replace(".yml", f"_tuned_{i}.yml")
-        i += 1
+        with open(modified_path, "w", encoding="utf-8") as f:
+            yaml.dump(modified, f)
 
-    with open(modified_path, "w", encoding="utf-8") as f:
-        yaml.dump(modified, f)
-    
-    return modified_path
+        quit()
 
-
-def cli_main():
-    """
-    The main entry point for the Comprisk CLI. This function initializes the
-    CompriskCLI object and sets up the command-line interface.
-    """
-    logger.debug("Starting CompriskCLI")
-    cli = CompriskCLI(BaseModel, DataModule, subclass_mode_model=True, run=False,
-                      save_config_callback=None)
-    cli.before_fit()
-    run_tuner(cli)
-
-
-if __name__ == "__main__":
-    cli_main()
+        return context

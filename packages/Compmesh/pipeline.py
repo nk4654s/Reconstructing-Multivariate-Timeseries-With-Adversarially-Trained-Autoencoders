@@ -2,13 +2,12 @@ import os
 
 from Compmesh.entrypoints.trainer import SPTrainEntrypoint
 from Compmesh.cli import CompmeshCLI
-from Comprisk.data import DataModule
+from Comprisk.lightning import DataModule
 from Comprisk.entrypoints import (
     Pipeline,
     AnalyzerEntrypoint,
     TrainScoreTransformerEntrypoint,
-    ExportEntrypoint,
-    PrepareEntrypoint,
+    ExportEntrypoint
 )
 from Comprisk.entrypoints.flux import FluxEntrypoint
 from Comprisk.model import NormalizeWrapper
@@ -20,7 +19,6 @@ logger = get_logger(__name__, path="logfile", level=logging_mode)
 
 flux = FluxEntrypoint()
 train = SPTrainEntrypoint()
-prepare = PrepareEntrypoint(copy_normalizer=False)
 score = TrainScoreTransformerEntrypoint(reduced_mode=False)
 export = ExportEntrypoint(name="support")
 analyzer = AnalyzerEntrypoint(default_tag="analysis/support_points", model_name="support")
@@ -34,7 +32,6 @@ def cli_train() -> None:
     cli = CompmeshCLI(NormalizeWrapper, DataModule, subclass_mode_model=True, run=False)
     pipeline = Pipeline(entrypoints=[
         flux,
-        prepare,
         train,
         score,
         export,

@@ -18,7 +18,7 @@ from Comprisk.entrypoints.analyzer import AnalyzerEntrypoint
 from Comprisk.entrypoints.flux import FluxEntrypoint
 from Comprisk.entrypoints.generate import GeneratorEntrypoint
 from Comprisk.entrypoints.export import ExportEntrypoint
-from Comprisk.entrypoints.prepare import PrepareEntrypoint
+from Comprisk.entrypoints.tuner import TuneEntrypoint
 
 __all__ = [
     "EntrypointContext",
@@ -29,7 +29,7 @@ __all__ = [
     "GeneratorEntrypoint",
     "FluxEntrypoint",
     "TrainerEntrypoint",
-    "PrepareEntrypoint",
     "TrainScoreTransformerEntrypoint",
     "Environment",
+    "TuneEntrypoint"
 ]
