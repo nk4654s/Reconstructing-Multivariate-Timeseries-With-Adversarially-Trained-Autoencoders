@@ -6,7 +6,7 @@ from typing import List, Tuple
 from lightning import Trainer
 from torch import nn
 
-from Comprisk.lightning import DataModule
+from Comprisk.custom import DataModule
 from Comprisk.model import BaseModel
 
 

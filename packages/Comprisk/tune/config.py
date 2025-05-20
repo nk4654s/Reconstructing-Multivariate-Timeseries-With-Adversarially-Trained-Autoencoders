@@ -10,7 +10,7 @@ from typing import Any
 import yaml
 from optuna import Trial
 
-from Comprisk.data import DataModule
+from Comprisk.custom import DataModule
 from Comprisk.entrypoints import EntrypointContext
 from Comprisk.helper.structure import class_for_name, deepvars
 from Comprisk.model import BaseModel

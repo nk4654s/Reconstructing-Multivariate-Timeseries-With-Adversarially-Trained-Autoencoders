@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import yaml
 
-from Comprisk.data import DataModule
+from Comprisk.custom import DataModule
 from Dataflux import get_logger, logging_mode
 from lightning import LightningModule
 from torch import Tensor, nn

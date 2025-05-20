@@ -11,7 +11,7 @@ import numpy as np
 
 from Dataflux import get_logger, logging_mode
 
-from Comprisk.data import DataModule
+from Comprisk.custom import DataModule
 from Comprisk.model import BaseModel
 from Dataflux.pytorch import Dataset
 

@@ -6,7 +6,7 @@ from Dataflux import logging_mode
 from Dataflux.data import DataType, DataUpdater, EmptyScoreRegister, UpdateCallable
 from Dataflux.logger import get_logger
 
-from Comprisk.lightning import DataModule
+from Comprisk.custom import DataModule
 from Comprisk.entrypoints import EntrypointBase, EntrypointContext
 from Comprisk.helper import IteratorResult, ModelCheckpoint, ModelIterator
 

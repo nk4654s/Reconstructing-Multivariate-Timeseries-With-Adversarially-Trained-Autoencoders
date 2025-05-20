@@ -3,8 +3,7 @@ a model. Moreover, the module expands the CLI by **lightning.ai**."""
 import datetime
 from typing import Any
 
-from Comprisk.data import DataModule
-from Comprisk.data.trainer import CASTrainer
+from Comprisk.custom import DataModule, CASTrainer
 from Comprisk.entrypoints import EntrypointContext
 from Comprisk.helper.structure import get_config_folder, deepvars
 from Comprisk.model import NormalizeWrapper
