@@ -1,7 +1,8 @@
 folder: environment/dev/datasets/thyssen-vd2-trainset-phase-3
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-  - 2024-12-20 2025-01-03 # 2 days after part change, 14 days
+  - 2024-12-22 2025-01-05 # 4 days after part change, 14 days
+  - 2025-01-16 2025-02-03
 num_workers: 8
 overwrite: false
 

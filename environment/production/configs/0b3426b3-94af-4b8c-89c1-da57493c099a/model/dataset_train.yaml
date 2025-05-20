@@ -1,6 +1,7 @@
 folder: temp/thyssen-vd2-trainset-phase-3
 intervals:
-- 2024-12-20 2025-01-03
+- 2024-12-22 2025-01-05
+- 2025-01-16 2025-02-03
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 modules:
 - class_path: Dataflux.modules.State
