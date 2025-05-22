@@ -4,6 +4,9 @@ import shutil
 import xml
 from uuid import UUID
 
+import numpy as np
+from onnxruntime import InferenceSession
+
 from Comprisk.helper import ONNXArgs
 from Comprisk.helper.structure import search_models, copy_folder
 from Dataflux.helper import get_sensors
@@ -98,7 +101,22 @@ def redeploy():
     if not os.path.exists(src):
         os.system("comprisk-score -c " + config)
 
+    # test for same model output
+    data_in = np.zeros(shape=(1, onnx.input_length, len(onnx.input_names)), dtype=np.float32)
+    data_out = np.zeros(shape=(1, onnx.output_length, len(onnx.output_names)), dtype=np.float32)
+
+    # compare pre-model and new-model (should be identical in terms of output)
+    output_pre = list(InferenceSession(path).run(None, {"x": data_in, "y": data_out}))
+    output_now = list(InferenceSession(src).run(None, {"x": data_in, "y": data_out}))
+    if not ((output_pre[0] == output_now[0]).all() and (output_pre[1] == output_now[1]).all()):
+        print("The deployed model outputs other values than the newly generated model.")
+        answer = input("Continue re-deployment [yes|no]> ")
+        if answer != "yes":
+            print("Abort.")
+            exit(0)
+
     shutil.copyfile(src, path)
+    print("Re-deployed model")
 
 
 def update_pom():

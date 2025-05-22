@@ -43,26 +43,26 @@ class ONNXArgs:
     input_names: list[str] = field(init=False)
     output_names: list[str] = field(init=False)
     type: str = field(init=False)
-    delays: dict = field(init=False)
+    value_corridor: dict = field(init=False)
 
-    def set_delays(self, data: Dataset) -> None:
-        self.delays = dict()
+    def set_value_corridor(self, data: Dataset) -> None:
+        self.value_corridor = dict()
         for key, value in data.metadata.state_alpha.items():
-            self.delays[key] = value
-            self.delays[key]["delay"] *= 1_000
+            self.value_corridor[key] = value
+            self.value_corridor[key]["delay"] *= 1_000
 
     def equals(self, other: "ONNXArgs") -> bool:
         value = (
-            self.machine_uuid == other.machine_uuid
-            and self.creation_date == other.creation_date
-            and self.version == other.version
-            and self.producer == other.producer
-            and self.input_names == other.input_names
-            and self.output_names == other.output_names
-            and self.type == other.type
-            and self.delays == other.delays
-            and self.input_length == other.input_length
-            and self.output_length == other.output_length
+                self.machine_uuid == other.machine_uuid
+                and self.creation_date == other.creation_date
+                and self.version == other.version
+                and self.producer == other.producer
+                and self.input_names == other.input_names
+                and self.output_names == other.output_names
+                and self.type == other.type
+                and self.value_corridor == other.value_corridor
+                and self.input_length == other.input_length
+                and self.output_length == other.output_length
         )
 
         return value
@@ -83,7 +83,7 @@ class ONNXArgs:
             args.input_names = dec.decode(model.metadata_props[0].value)
             args.output_names = dec.decode(model.metadata_props[1].value)
             args.type = model.metadata_props[2].value
-            args.delays = dec.decode(model.metadata_props[3].value)
+            args.value_corridor = dec.decode(model.metadata_props[3].value)
 
         # get the input/output sequence length of the model
         shapes = extract_shape(model)
@@ -119,8 +119,8 @@ class ONNXArgs:
         meta.value = self.type
 
         meta = model.metadata_props.add()
-        meta.key = "delays"
-        meta.value = enc.encode(self.delays)
+        meta.key = "value_corridor"
+        meta.value = enc.encode(self.value_corridor)
 
         onnx.save(model, path)
 
