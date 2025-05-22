@@ -31,7 +31,7 @@ class ExportEntrypoint(EntrypointBase):
         args.input_names = data_args.names_in
         args.output_names = data_args.names_out
         args.type = data_args.behavior.value
-        args.set_delays(dataset)
+        args.set_value_corridor(dataset)
 
         args.save_to_model(onnx_path)
 

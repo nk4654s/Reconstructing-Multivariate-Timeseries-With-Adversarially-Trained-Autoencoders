@@ -4,6 +4,9 @@ import shutil
 import xml
 from uuid import UUID
 
+import numpy as np
+from onnxruntime import InferenceSession
+
 from Comprisk.helper import ONNXArgs
 from Comprisk.helper.structure import search_models, copy_folder
 from Dataflux.helper import get_sensors
@@ -97,6 +100,14 @@ def redeploy():
     src = os.path.join(os.path.dirname(config), f"{type_}.onnx")
     if not os.path.exists(src):
         os.system("comprisk-score -c " + config)
+
+    # test for same model output
+    data_in = np.zeros(shape=(1, onnx.input_length, len(onnx.input_names)))
+    data_out = np.zeros(shape=(1, onnx.input_length, len(onnx.output_names)))
+
+    # load pre model
+    session = InferenceSession(path)
+    onnx_output = list(session.run(None, {"x": data_in, "y": data_out}))
 
     shutil.copyfile(src, path)
 

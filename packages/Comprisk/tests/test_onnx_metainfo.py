@@ -16,7 +16,7 @@ class TestONNXArgs(unittest.TestCase):
         self.args.type = "autoencoder"
         self.args.input_length = 60
         self.args.output_length = 60
-        self.args.delays = {
+        self.args.value_corridor = {
             "some-other-uuid": {
                 "lower": 0,
                 "upper": 1
