@@ -40,6 +40,7 @@ class CompriskCLI(LightningCLI):
         parser.add_argument("--prefix", type=str, default=None)
         parser.add_argument("--tuner-config", nargs="?")
         parser.add_argument("--tuner-trials", type=int, default=1)
+        parser.add_argument("--remove-noise-floor", action="store_true")
 
         # link the model's input/output features with the dataset's configuration
         parser.link_arguments("data.features_in", "model.init_args.features_in", apply_on="parse")

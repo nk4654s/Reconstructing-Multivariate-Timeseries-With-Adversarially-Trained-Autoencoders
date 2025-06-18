@@ -49,7 +49,8 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
 
         # wrap the model with a score transformer such that the fitted values are
         # included in the model graph. This is required for ONNX
-        wrapper = R2ScoreWrapper(checkpoint.get_model())
+        remove_noise = context.config.get("remove_noise_floor", False)
+        wrapper = R2ScoreWrapper(checkpoint.get_model(), remove_noise=remove_noise)
         wrapper.train_wrapper(
             context.datamodule,
             reduced=self._reduced,
