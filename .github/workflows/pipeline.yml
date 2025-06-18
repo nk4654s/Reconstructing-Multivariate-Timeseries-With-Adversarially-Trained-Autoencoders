@@ -21,6 +21,9 @@ jobs:
   comprisk-test:
     uses: ./.github/workflows/comprisk-tests.yml
 
+  compmesh-test:
+    uses: ./.github/workflows/compmesh-tests.yml
+
   toking-test:
     uses: ./.github/workflows/toking-tests.yml
 

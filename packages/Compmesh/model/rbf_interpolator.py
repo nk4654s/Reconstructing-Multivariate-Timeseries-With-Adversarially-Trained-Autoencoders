@@ -54,6 +54,8 @@ class RBFGridInterpolator(torch.nn.Module):
     def __init__(self, x, y, kernel="linear", **kwargs):
         super().__init__()
         assert kernel in kernels, f"given kernel '{kernel}' does not exist."
+        assert len(x) == len(y), f"'x' and 'y' must have the same length, got {len(x)} and {len(y)}"
+        assert len(x) > 1, f"More samples required, got {len(x)} but at least 2 are needed."
 
         self.register_buffer("x", x)
         self.register_buffer("y", y)
