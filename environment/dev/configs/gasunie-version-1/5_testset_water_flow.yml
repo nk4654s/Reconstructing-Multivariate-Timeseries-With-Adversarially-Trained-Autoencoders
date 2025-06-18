@@ -1,9 +1,9 @@
 folder: environment/dev/datasets/gasunie-testset-water-flow
 machine_uuid: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
 intervals:
-  - 2024-09-20 2024-10-04 # ALARM on 3rd of Oct
+  - 2024-09-28 2024-10-10 # ALARM on 3rd of Oct
 num_workers: 6
-overwrite: false
+overwrite: true
 
 modules:
   - class_path: Dataflux.modules.State
@@ -31,7 +31,6 @@ modules:
         - e44c6aca-cf06-434e-9257-4d15839c29ce # Temperature_Discharge_Valve_Crank_End_1._Stage_TT0-387 (°C)
         - 4927d58d-b7ac-4bb5-9fd7-1257bb92b340 # Temperature_Discharge_Valve_Head_End_2._Stage_TT0-367 (°C)
         - f9523a90-71ae-48d2-8e8b-f1288138eb28 # Temperature_Discharge_Valve_Crank_End_2._Stage_TT0-386 (°C)
-        - 5c4a7fab-23e7-4d0c-8420-5a826f0fa27f # Flow_Leakage_Gas_1.st+2.nd_Cylinder_Packing_FIT0-389 (Nm³/h)
         - 35e974db-1ed9-414d-b39f-fa584443f559 # Temperature_Lube_Oil_Upstream_Bearings_TIT0-538 (°C)
         - 29129d0a-7898-49f5-b139-e9154f173278 # Differential_Pressure_Crank_Case_Lube_Oil_Upstream_Bearings_PDIT0-553 (bar)
         - f72fe32a-7537-4651-91af-91116ef20475 # Temperature_Cooling_Water_Upstream_Consumers_TIT0-420 (°C)
@@ -39,3 +38,5 @@ modules:
         - 61707ebf-48ae-474f-a82d-067f5709ca26 # Vibration_Compressor_Frame_VT0-280 (mm/s)
         - b494f0c0-4446-4626-9eed-b8a8bba4f65d # Main_Motor_M0-331_Actual_Speed (rpm)
         - 77f861c4-1b1b-44e4-839f-188fc76e328e # PT100_Temperature_Compressor_Room_TIT0-221 (°C)
+        - 37f4f527-3e7e-4ca8-9456-dbad08cf7cd5  # SACE_Single_Acting (-)
+        - 2289399d-93ef-4352-88a9-4031c7d7798a  # DA_Double_Acting (-)

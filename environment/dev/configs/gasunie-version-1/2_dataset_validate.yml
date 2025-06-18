@@ -3,6 +3,7 @@ machine_uuid: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
 intervals:
   - 2024-12-25 2024-12-26 # outlier 2am on Dec 27th
   - 2024-12-28 2025-01-05
+  - 2025-05-07 2025-05-15
 num_workers: 6
 overwrite: false
 
@@ -39,3 +40,5 @@ modules:
         - 61707ebf-48ae-474f-a82d-067f5709ca26 # Vibration_Compressor_Frame_VT0-280 (mm/s)
         - b494f0c0-4446-4626-9eed-b8a8bba4f65d # Main_Motor_M0-331_Actual_Speed (rpm)
         - 77f861c4-1b1b-44e4-839f-188fc76e328e # PT100_Temperature_Compressor_Room_TIT0-221 (°C)
+        - 37f4f527-3e7e-4ca8-9456-dbad08cf7cd5  # SACE_Single_Acting (-)
+        - 2289399d-93ef-4352-88a9-4031c7d7798a  # DA_Double_Acting (-)

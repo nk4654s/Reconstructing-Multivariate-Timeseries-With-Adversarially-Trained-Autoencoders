@@ -68,3 +68,9 @@ data:
   f9523a90-71ae-48d2-8e8b-f1288138eb28: # Temperature_Discharge_Valve_Crank_End_2._Stage_TT0-386 (°C)
     min: -7
     max: 155
+  37f4f527-3e7e-4ca8-9456-dbad08cf7cd5: # SACE_Single_Acting (-)
+    min: 0
+    max: 1
+  2289399d-93ef-4352-88a9-4031c7d7798a: # DA_Double_Acting (-)
+    min: 0
+    max: 1
