@@ -39,7 +39,8 @@ def sensor_fig(
         figure: The matplotlib's figure to be shown or saved.
     """
     fig, axs = plt.subplots(3, 1, sharex=True, figsize=size, dpi=dpi)
-    s_name, unit = s_name.rsplit(" ", maxsplit=1)
+    temp = s_name.rsplit(" ", maxsplit=1)
+    s_name, unit = temp if len(temp) == 2 else temp, ""
     s_inputs.index = pd.to_datetime(s_inputs.index, unit="s")
     s_outputs.index = pd.to_datetime(s_inputs.index, unit="s")
     scores.index = pd.to_datetime(s_inputs.index, unit="s")

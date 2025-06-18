@@ -48,8 +48,11 @@ class CASTrainer(Trainer):
         pre_path = os.path.join("environment", config["environment"])
         self._train_config_path = os.path.join(pre_path, self._config["data"]["train"])
         self._val_config_path = os.path.join(pre_path, self._config["data"]["validate"])
-        self._normalizer_config_path = os.path.join(pre_path, self._config["normalizer"])
         self._tuner_config_path = os.path.join(pre_path, str(self._config.get("tuner_config", "N/A")))
+
+        self._normalizer_config_path = self._config.get("normalizer", None)
+        if self._normalizer_config_path:
+            self._normalizer_config_path = os.path.join(pre_path, self._normalizer_config_path)
 
         self._log_path = os.path.join(pre_path, "models")
 
@@ -74,11 +77,14 @@ class CASTrainer(Trainer):
         config["data"]["validate"] = "dataset_val.yaml"
 
         # copy the normalizer as is
-        src = self._normalizer_config_path
-        if not os.path.exists(src):
-            src = os.path.join(self._config_folder, "normalizer.yaml")
-        shutil.copyfile(src, os.path.join(self.logger.log_dir, "normalizer.yaml"))
-        config["normalizer"] = "normalizer.yaml"
+        if self._normalizer_config_path:
+            src = self._normalizer_config_path
+            if not os.path.exists(src):
+                src = os.path.join(self._config_folder, "normalizer.yaml")
+            shutil.copyfile(src, os.path.join(self.logger.log_dir, "normalizer.yaml"))
+            config["normalizer"] = ("normalizer.yaml")
+        else:
+            logger.warning("No normalizer defined.")
 
         # copy the tuner as is
         src = self._tuner_config_path
