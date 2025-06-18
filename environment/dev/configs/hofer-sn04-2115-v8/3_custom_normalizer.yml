@@ -1,0 +1,58 @@
+trange:
+  min: -1.0
+  max: 1.0
+data:
+  2527e879-d394-4e67-aaf6-4be93323658e: #  Öl 1. Stufe_min (bar)
+    min: -1
+    max: 1
+  aa257f12-ea1c-4ee3-8fbb-c46ac0622933: # Enddruck_min (bar)
+    min: 180
+    max: 220
+  ae75ea2c-6115-4151-b45e-08ab397a879b: # Saugdruck_min (bar)
+    min: -0.3
+    max: 0.5
+  9bcef960-1b4f-43da-aa43-c41f8a905352: # Zwischendruck 1/2_min (bar)
+    min: 4
+    max: 8
+  aa304a57-cb88-4760-8c5e-9b609ef845ee: # Zwischendruck 2/3_min (bar)
+    min: 25
+    max: 45
+  c2c64945-4b0a-4816-9b52-906ce8b5b0d7: # Öl 2. Stufe_min (bar)
+    min: 4
+    max: 8
+  b897cc6f-48fb-425d-800c-df4a8e8c9f18: # Öl 3. Stufe_min (bar)
+    min: 25
+    max: 50
+  440f9da6-380c-43fd-8ff1-bcdfbe7c1304: #  Öl 1. Stufe_max (bar)
+    min: 10
+    max: 18
+  af6435f7-a03d-4927-9b79-cba26c016c6d: # Enddruck_max (bar)
+    min: 180
+    max: 230
+  2928c90e-b727-46dc-84f2-af90216f677b: # Saugdruck_max (bar)
+    min: -0.3
+    max: 0.5
+  5ed5ad54-5c4f-4309-b8f8-82d76603f215: # TT 20 2. StufeDrucktemp_max (°C)
+    min: 60
+    max: 220
+  692c1d2b-01c9-4134-a41e-9907f16f6acf: # TT10 2. Stufe Saugtemp_max (°C)
+    min: 5
+    max: 40
+  447c2d28-51cf-44f5-baca-80783d7b9be4: # TT30 3. Stufe Saugtemp_max (°C)
+    min: 5
+    max: 40
+  c3600d5c-2e92-4b81-9e8a-426ee2813af3: # TT40 3. Stufe Drucktemp_max (°C)
+    min: 60
+    max: 220
+  85df370b-1f12-469b-969a-a04817d9b60c: # Zwischendruck 1/2_max (bar)
+    min: 6
+    max: 12
+  ba010fd2-aff8-4cd4-a353-663f65351fa9: # Zwischendruck 2/3_max (bar)
+    min: 30
+    max: 50
+  1e7d6ae6-f631-4353-8aa2-7592af19fb93: # Öl 2. Stufe_max (bar)
+    min: 50
+    max: 74
+  a692afa1-9dde-4d43-9b58-f08b74ed8c09: # Öl 3. Stufe_max (bar)
+    min: 230
+    max: 275
