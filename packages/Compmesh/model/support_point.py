@@ -21,7 +21,7 @@ class SupportPointModel(BaseModel):
     linear transformation is applied to the surrogate's output as the exported grid from KO3 may require a calibration
     to work properly.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, interpolator: str = "rbf", *args, **kwargs):
         """
         A model that first interpolates, then applies a learnable linear transformation.
         Args:
@@ -29,8 +29,10 @@ class SupportPointModel(BaseModel):
             x_label: (dict[str, str]): The name mapping of input vars.
             x_label: (dict[str, str]): The name mapping of output vars.
         """
+        assert interpolator in ["rbf", "grid"], "Allowed interpolator is either 'rbf' or 'grid'"
         super().__init__(*args, **kwargs)
 
+        self._interpolator_cls = RBFGridInterpolator if interpolator == "rbf" else ScatteredGridInterpolator
         self.interpolator: ScatteredGridInterpolator | None = None
         self.calibrator: LinearCalibration | None = None
 
@@ -49,7 +51,7 @@ class SupportPointModel(BaseModel):
         self.init_normalization(x_norm, y_norm)
         gx, gy = self.normalizer.apply((gx, gy))
 
-        self.interpolator = RBFGridInterpolator(gx[0].data, gy[0].data)
+        self.interpolator = self._interpolator_cls(gx[0].data, gy[0].data)
         self.calibrator = LinearCalibration(gy.shape[-1])
 
         self.interpolator.to(self.device)
