@@ -2,7 +2,7 @@ import os
 
 from Compmesh.entrypoints.trainer import SPTrainEntrypoint
 from Compmesh.cli import CompmeshCLI
-from Comprisk.lightning import DataModule
+from Comprisk.custom import DataModule
 from Comprisk.entrypoints import (
     Pipeline,
     AnalyzerEntrypoint,

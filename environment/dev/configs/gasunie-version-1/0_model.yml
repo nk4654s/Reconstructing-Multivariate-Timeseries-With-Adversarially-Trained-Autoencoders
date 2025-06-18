@@ -1,14 +1,16 @@
 # CAS specific
 environment: dev
-tag: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
+tag: tuning-9dc86e29-8c64-47c4-93ee-7b83c896b7ee
 normalizer: configs/gasunie-version-1/4_custom_normalizer2.yml
+tuner_config: configs/gasunie-version-1/a_tuning.yml
+tuner_trials: 30
 
 # model configuration
 model:
   class_path: Comprisk.model.auto_encoder.rnn.MultimodalRecurrentAutoEncoder
   init_args:
     activation: tanh
-    loss: MSELoss
+    loss: L1Loss
     optimizer: Adam
     lr: 0.0001
     lr_decay: 0.9
@@ -21,13 +23,15 @@ trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.EarlyStopping
       init_args:
-        monitor: validate/MSELoss
+        monitor: validate/L1Loss
         min_delta: 1.0e-05
         patience: 3
     - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
+      init_args:
+        monitor: validate/L1Loss
 
   precision: 32
-  max_epochs: 25
+  max_epochs: 100
   gradient_clip_val: 1.0
   log_every_n_steps: 1
 
@@ -59,6 +63,8 @@ data:
   - 61707ebf-48ae-474f-a82d-067f5709ca26 # Vibration_Compressor_Frame_VT0-280 (mm/s)
   - b494f0c0-4446-4626-9eed-b8a8bba4f65d # Main_Motor_M0-331_Actual_Speed (rpm)
   - 77f861c4-1b1b-44e4-839f-188fc76e328e # PT100_Temperature_Compressor_Room_TIT0-221 (°C)
+  - 37f4f527-3e7e-4ca8-9456-dbad08cf7cd5  # SACE_Single_Acting (-)
+  - 2289399d-93ef-4352-88a9-4031c7d7798a  # DA_Double_Acting (-)
   features_out:
   - d67bd4d9-7568-4452-a81c-84029a2f10b9 # Pressure_Discharge_Side_1._Stage_PIT0-339 (bar)
   - 7a84feb3-e6a0-4c3f-ac37-5269f6ca5390 # Temperature_Discharge_Side_1._Stage_TIT0-334 (°C)

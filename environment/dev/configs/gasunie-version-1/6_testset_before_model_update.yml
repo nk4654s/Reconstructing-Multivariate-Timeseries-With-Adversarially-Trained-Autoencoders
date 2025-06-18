@@ -1,9 +1,9 @@
 folder: environment/dev/datasets/gasunie-testset-before-phase-2
 machine_uuid: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
 intervals:
-  - 2024-11-01 2024-12-31 # service on 25th of Nov
+  - 2024-10-01 2025-05-31 # service on 25th of Nov
 num_workers: 6
-overwrite: false
+overwrite: true
 
 modules:
   - class_path: Dataflux.modules.State
@@ -11,7 +11,7 @@ modules:
       key: b494f0c0-4446-4626-9eed-b8a8bba4f65d # rpm
       lower: 470
       upper: 1100
-      alpha_threshold: 0
+      alpha_threshold: 300
       beta_threshold: 0
   - class_path: Dataflux.modules.features.Features
     init_args:
@@ -39,3 +39,5 @@ modules:
         - 61707ebf-48ae-474f-a82d-067f5709ca26 # Vibration_Compressor_Frame_VT0-280 (mm/s)
         - b494f0c0-4446-4626-9eed-b8a8bba4f65d # Main_Motor_M0-331_Actual_Speed (rpm)
         - 77f861c4-1b1b-44e4-839f-188fc76e328e # PT100_Temperature_Compressor_Room_TIT0-221 (°C)
+        - 37f4f527-3e7e-4ca8-9456-dbad08cf7cd5  # SACE_Single_Acting (-)
+        - 2289399d-93ef-4352-88a9-4031c7d7798a  # DA_Double_Acting (-)

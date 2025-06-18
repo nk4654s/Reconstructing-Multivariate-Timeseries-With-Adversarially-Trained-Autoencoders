@@ -1,0 +1,102 @@
+data:
+  batch_size: 512
+  behavior: autoencoder
+  features_in:
+  - 4174ecf6-af4b-44f3-bd2c-d3a7a2c68ece
+  - a7df6efc-91f1-423c-9896-69e7ef27692f
+  - b494f0c0-4446-4626-9eed-b8a8bba4f65d
+  - 3f9cf382-2e66-4805-9f44-8afe4ad6ba29
+  - 5be01343-45c0-40af-a93f-9368aff5e73d
+  - 2289399d-93ef-4352-88a9-4031c7d7798a
+  features_out:
+  - d67bd4d9-7568-4452-a81c-84029a2f10b9
+  - 7a84feb3-e6a0-4c3f-ac37-5269f6ca5390
+  - 75247d9f-29e8-4140-8a3a-aa04d55483e5
+  num_workers: 8
+  persistent_workers: true
+  pin_memory: true
+  sequence_in: 1
+  sequence_out: 0
+  shuffle: true
+  skip: 1
+  stride: 1
+  train: dataset_train.yaml
+  validate: dataset_val.yaml
+environment: dev
+lr_scheduler: null
+model:
+  class_path: Compmesh.model.SupportPointModel
+  init_args:
+    activation: linear
+    behavior: autoencoder
+    features_in: null
+    features_out: null
+    interpolator: rbf
+    loss: MSELoss
+    lr: 0.001
+    lr_decay: 0.9
+    optimizer: Adam
+    output_length: 1
+    sequence_out: 0
+name_mapping: environment/dev/configs/gasunie-sp/3_mapping.yml
+optimizer: null
+prefix: null
+seed_everything: 0
+support_points: environment/dev/support_points/gasunie/
+tag: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
+trainer:
+  accelerator: mps
+  accumulate_grad_batches: 1
+  barebones: false
+  benchmark: null
+  callbacks:
+  - class_path: lightning.pytorch.callbacks.EarlyStopping
+    init_args:
+      check_finite: true
+      check_on_train_epoch_end: null
+      divergence_threshold: null
+      log_rank_zero_only: false
+      min_delta: 1.0e-05
+      mode: min
+      monitor: validate/MSELoss
+      patience: 3
+      stopping_threshold: null
+      strict: true
+      verbose: false
+  - class_path: Comprisk.helper.BasicCheckpointCallback
+    init_args:
+      monitor: validate/MSELoss
+  check_val_every_n_epoch: 1
+  default_root_dir: null
+  detect_anomaly: false
+  deterministic: null
+  devices: auto
+  enable_checkpointing: null
+  enable_model_summary: null
+  enable_progress_bar: null
+  fast_dev_run: false
+  gradient_clip_algorithm: null
+  gradient_clip_val: 1.0
+  inference_mode: true
+  limit_predict_batches: null
+  limit_test_batches: null
+  limit_train_batches: null
+  limit_val_batches: null
+  log_every_n_steps: 1
+  logger: null
+  max_epochs: 10
+  max_steps: -1
+  max_time: null
+  min_epochs: null
+  min_steps: null
+  num_nodes: 1
+  num_sanity_val_steps: null
+  overfit_batches: 0.0
+  plugins: null
+  precision: 32
+  profiler: null
+  reload_dataloaders_every_n_epochs: 0
+  strategy: auto
+  sync_batchnorm: false
+  use_distributed_sampler: true
+  val_check_interval: null

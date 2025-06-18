@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 import yaml
 from Comprisk.entrypoints import EntrypointBase, EntrypointContext
-from Comprisk.entrypoints.trainer import get_trainer_callback
-from Comprisk.helper import BasicCheckpointCallback
 from Dataflux import get_logger, logging_mode
 
 logger = get_logger(__name__, path="logfile", level=logging_mode)
@@ -45,26 +43,13 @@ class SPTrainEntrypoint(EntrypointBase):
                 delimiter=";",
                 decimal=",",
                 dtype=np.float32,
-                skiprows=[0, 1, 2, 3, 5],
+                skiprows=[1],
                 header=0,
                 encoding="utf-8",
             )
             df = pd.concat([df, csv], ignore_index=True)
 
         return df
-
-    def _set_checkpoint_path(self, context: EntrypointContext) -> None:
-        # set up the model saving as configuring the checkpoint path in the yaml config does not
-        # work. The config file does not know the model's output folder name with the increasing
-        # suffix number
-        checkpoint = get_trainer_callback(context.trainer, BasicCheckpointCallback.__name__)
-        if checkpoint:
-            self._checkpoint_path = os.path.join(context.config_folder, "checkpoints")
-            os.makedirs(self._checkpoint_path)
-            checkpoint.dirpath = self._checkpoint_path
-
-        else:
-            logger.warning("ModelCheckpoint callback not defined in yaml-config.")
 
     def check_dataset_compatibility(self, context: EntrypointContext) -> bool:
         """This method checks if the dataset for training is compatible given the manual mapping of
@@ -89,9 +74,6 @@ class SPTrainEntrypoint(EntrypointBase):
         if not ok:
             logger.warning("Dataset configuration does not match model configuration. Adjust columns used.")
             return context
-
-        # setup the logging folder and paths required by a training session
-        self._set_checkpoint_path(context)
 
         # initialize the support point mode
         df = self.load_support_points_table(context)

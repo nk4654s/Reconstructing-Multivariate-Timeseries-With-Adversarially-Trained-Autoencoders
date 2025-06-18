@@ -1,0 +1,11 @@
+model:
+  num_hidden_dim:
+    type: int
+    min: 80
+    max: 200
+  num_hidden_layers:
+    type: int
+    min: 1
+    max: 2
+data:
+rules:

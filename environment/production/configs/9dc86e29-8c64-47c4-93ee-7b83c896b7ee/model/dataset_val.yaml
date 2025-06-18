@@ -2,6 +2,7 @@ folder: temp/gasunie-valset-phase-1
 intervals:
 - 2024-12-25 2024-12-26
 - 2024-12-28 2025-01-05
+- 2025-05-07 2025-05-15
 machine_uuid: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
 modules:
 - class_path: Dataflux.modules.State
@@ -36,5 +37,7 @@ modules:
     - 61707ebf-48ae-474f-a82d-067f5709ca26
     - b494f0c0-4446-4626-9eed-b8a8bba4f65d
     - 77f861c4-1b1b-44e4-839f-188fc76e328e
+    - 37f4f527-3e7e-4ca8-9456-dbad08cf7cd5
+    - 2289399d-93ef-4352-88a9-4031c7d7798a
 num_workers: 6
-overwrite: true
+overwrite: false
