@@ -39,4 +39,5 @@ class TrainerEntrypoint(EntrypointBase):
         )
 
         context.config.data.shuffle = False
+        context.config_folder = context.trainer.log_dir
         return context

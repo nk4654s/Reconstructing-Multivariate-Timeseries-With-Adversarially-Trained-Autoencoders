@@ -10,8 +10,11 @@ from lightning.pytorch.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADER
 from Comprisk.custom import DataModule
 from Comprisk.helper import BasicCheckpointCallback
 from Comprisk.model import NormalizeWrapper
+
 from Dataflux import get_logger, logging_mode
 from Dataflux.pytorch import DatasetArgs
+
+from Comprisk.custom.training_context import TrainingContext
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
@@ -145,10 +148,17 @@ class CASTrainer(Trainer):
         if not self._setup_complete:
             self._post_init()
 
+        machine_uuid = ""
         if isinstance(train_dataloader, DataModule):
             dataset_args = train_dataloader.trainset.get_args()
+            machine_uuid = train_dataloader.trainset.UUID
         else:
             dataset_args = train_dataloader.dataset.get_args()
+            machine_uuid = train_dataloader.dataset.UUID
 
+        # load the normalization
         self.apply_normalization(model, dataset_args)
+
+        # reset the TrainingContext
+        TrainingContext.__reset__(dataset_args=dataset_args, machine=machine_uuid)
         super().fit(model, train_dataloader, val_dataloaders, datamodule, ckpt_path)

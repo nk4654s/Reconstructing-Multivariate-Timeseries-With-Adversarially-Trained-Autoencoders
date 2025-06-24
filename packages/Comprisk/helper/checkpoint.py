@@ -70,9 +70,8 @@ class ModelCheckpoint:
         self.load_from(path, model)
 
         if not self._model:
+            logger.critical("Unable to load model %s", path)
             raise ValueError("Unable to load model")
-
-        logger.info("ModelCheckpoint initialized")
 
         self._configurations = {}
         self.load_configurations()
@@ -90,6 +89,7 @@ class ModelCheckpoint:
         if CHECKPOINT not in folders:
             # no checkpoint folder found
             self._model = backup_model
+            logger.warning("Checkpoint folder not found in %s", path)
             return None
 
         checkpoint_path = os.path.join(path, CHECKPOINT)
@@ -98,9 +98,11 @@ class ModelCheckpoint:
                 # checkpoint folder and checkpoints found, load the best one
                 self._model = load_model(path, eval_mode=False)
                 self._from_disk = True
+                logger.info("ModelCheckpoint initialized from %s", path)
                 return None
 
         # checkpoint folder is empty
+        logger.warning("ModelCheckpoint initialized from system memory")
         self._model = backup_model
 
     def load_configurations(self) -> None:

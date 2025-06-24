@@ -3,10 +3,9 @@ from dataclasses import InitVar, dataclass, field
 from enum import Enum
 from typing import List, Tuple
 
-from lightning import Trainer
 from torch import nn
 
-from Comprisk.custom import DataModule
+from Comprisk.custom import DataModule, CASTrainer
 from Comprisk.model import BaseModel
 
 
@@ -29,7 +28,7 @@ class EntrypointContext:
     config_folder: str
     model: BaseModel | nn.Module
     datamodule: DataModule
-    trainer: Trainer
+    trainer: CASTrainer
     base_folder: str = "environment"
     environment_: InitVar[Environment | str] = Environment.DEVELOPMENT
     environment: Environment = field(init=False)
