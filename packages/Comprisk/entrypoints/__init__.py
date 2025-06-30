@@ -5,13 +5,11 @@ tasks, such as downloading and processing a dataset, training the model, or runn
 these module in a way to form an executable pipeline. A pipeline can be run using the CLI after installing `Comprisk`.
 To learn more about the generic entrypoint structure check out `Comprisk.entrypoints.base` for more information.
 """
-
 from Comprisk.entrypoints.base import (
     EntrypointBase,
-    EntrypointContext,
-    Environment,
     Pipeline,
 )
+
 from Comprisk.entrypoints.trainer import TrainerEntrypoint
 from Comprisk.entrypoints.scoring import TrainScoreTransformerEntrypoint
 from Comprisk.entrypoints.analyzer import AnalyzerEntrypoint
@@ -21,7 +19,6 @@ from Comprisk.entrypoints.export import ExportEntrypoint
 from Comprisk.entrypoints.tuner import TuneEntrypoint
 
 __all__ = [
-    "EntrypointContext",
     "EntrypointBase",
     "Pipeline",
     "AnalyzerEntrypoint",
@@ -30,6 +27,5 @@ __all__ = [
     "FluxEntrypoint",
     "TrainerEntrypoint",
     "TrainScoreTransformerEntrypoint",
-    "Environment",
     "TuneEntrypoint"
 ]

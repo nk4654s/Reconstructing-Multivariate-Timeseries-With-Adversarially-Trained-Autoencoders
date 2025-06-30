@@ -3,7 +3,8 @@ import os
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
-from Comprisk.entrypoints import EntrypointBase, EntrypointContext
+from Comprisk.entrypoints import EntrypointBase
+from Comprisk.entrypoints.utils import EntrypointContext
 from Comprisk.helper import ModelIterator, Report
 
 # switch logging mode depending on DEBUG_MODE

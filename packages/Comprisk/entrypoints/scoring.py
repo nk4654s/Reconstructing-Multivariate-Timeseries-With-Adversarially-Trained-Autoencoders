@@ -4,7 +4,7 @@ from Dataflux.pytorch import DatasetTypes
 
 from Comprisk.anomaly import R2ScoreWrapper
 from Comprisk.entrypoints.base import EntrypointBase, EntrypointContext
-from Comprisk.helper import ModelCheckpoint
+from Comprisk.model.utils import Checkpoint
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
@@ -42,21 +42,19 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
 
         # load the best checkpoint, modifying an exported ONNX file does not work as the
         # score transformer is tightly integrated
-        checkpoint = ModelCheckpoint(path=context.config_folder, model=context.model)
-        if not checkpoint.from_disk:
-            logger.warning("Attempted to fit ScoreTransformer on an untrained model.")
-            return context
+        checkpoint = Checkpoint(path=context.config_folder)
 
         # wrap the model with a score transformer such that the fitted values are
         # included in the model graph. This is required for ONNX
-        wrapper = R2ScoreWrapper(checkpoint.get_model())
-        wrapper.train_wrapper(
-            context.datamodule,
+        checkpoint.apply_score_wrapper(
+            cls=R2ScoreWrapper,
+            data=context.datamodule,
             reduced=self._reduced,
-            verbose=DEBUG_MODE,
+            verbose=DEBUG_MODE
         )
+
         #wrapper.export_to(context.config_folder)
         logger.info("Fitted ScoreTransformer successfully.")
 
-        context.model = wrapper
+        context.model = checkpoint.model
         return context

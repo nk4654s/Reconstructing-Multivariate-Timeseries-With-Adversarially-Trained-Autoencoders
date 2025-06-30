@@ -8,7 +8,7 @@ from typing import Any, Dict
 import optuna
 from optuna.trial import Trial
 
-from Comprisk.entrypoints import EntrypointContext
+from Comprisk.entrypoints.utils import EntrypointContext
 from Comprisk.tune.config import ConfigManager
 
 

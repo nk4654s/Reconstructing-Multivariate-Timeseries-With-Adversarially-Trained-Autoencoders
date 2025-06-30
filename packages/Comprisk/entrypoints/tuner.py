@@ -3,11 +3,13 @@ import os
 
 import yaml
 
-from Comprisk.entrypoints import EntrypointBase, EntrypointContext
+from Comprisk.tune import ConfigManager, Tuner
+from Comprisk.entrypoints import EntrypointBase
+from Comprisk.entrypoints.utils import EntrypointContext
+
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 
-from Comprisk.tune import ConfigManager, Tuner
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)

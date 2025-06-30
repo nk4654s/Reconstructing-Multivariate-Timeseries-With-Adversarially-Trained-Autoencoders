@@ -6,7 +6,6 @@ import shutil
 from copy import deepcopy
 from typing import List
 
-import torch
 from Dataflux import logging_mode
 from Dataflux.helper import modify_flux_config
 from Dataflux.logger import get_logger
@@ -113,35 +112,6 @@ def search_models(path: str, search_depth: int = 50) -> List[str]:
             result.append(sub_path)
 
     return result
-
-
-def load_model(path: str, eval_mode: bool = True):
-    """This method loads the best checkpoint of a model. Requires checkpoints of model to have
-    the filename structure `...val=<validation_loss>.ckpt`.
-
-    Args:
-        path (str): The path where the model checkpoints were saved.
-        eval_mode (bool): Weather to set the loaded model to eval mode or not. Defaults to True.
-    """
-    # get the best checkpoint
-    checkpoints = get_checkpoints(path)
-    checkpoints = sorted(checkpoints, key=lambda x: float(x[:-5].split("val=")[-1]))
-    if len(checkpoints) == 0:
-        logger.warning("Could not find a checkpoint to load a model from. (%s)", path)
-        return None
-
-    ckpt_path = os.path.join(path, "checkpoints", checkpoints[0])
-
-    # get the model configuration to find the model class
-    model = torch.load(ckpt_path)
-
-    # initialize the mode
-    logger.debug("Loaded model class %s", model.__class__.__name__)
-    logger.info("Loaded from from %s", checkpoints[0])
-    if eval_mode:
-        model.eval()
-
-    return model
 
 
 def copy_folder(
