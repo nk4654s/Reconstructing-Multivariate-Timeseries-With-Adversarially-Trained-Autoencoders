@@ -2,10 +2,10 @@
 
 import os
 
-import torch
 from lightning import LightningModule
 
-from Comprisk.custom import CompriskCLI, DataModule
+from Comprisk.custom import CompriskCLI
+from Comprisk.helper.structure import class_for_name
 
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
@@ -23,14 +23,6 @@ def get_best_checkpoint(path: str, files: list[str]) -> str:
     return os.path.join(path, files[-1])
 
 
-def import_from_string(class_path: str):
-    components = class_path.split(".")
-    mod = __import__(components[0])
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
-
-
 class Checkpoint:
     def __init__(self, path: str):
         config_path = os.path.join(path, "config.yaml")
@@ -44,13 +36,11 @@ class Checkpoint:
             parser_kwargs={"default_config_files": [config_path]},
         )
 
-        self._embedding = cli.datamodule.trainset[0][0].shape
-
         self._path = os.path.join(path, CHECKPOINT)
         files = os.listdir(self._path)
         ckpt_path = get_best_checkpoint(self._path, files)
 
-        self._model_cls = import_from_string(cli.config.model.class_path)
+        self._model_cls = class_for_name(cli.config.model.class_path)
         self._checkpoint = self._model_cls.load_from_checkpoint(ckpt_path, **cli.config.model.init_args)
         self._checkpoint.eval()
 
@@ -60,15 +50,10 @@ class Checkpoint:
     def model(self) -> LightningModule:
         return self._checkpoint
 
-    def apply_score_wrapper(self, cls, data: DataModule, **kwargs):
+    def apply_score_wrapper(self, cls, data: LightningModule, **kwargs):
         wrapper = cls(self.model)
         wrapper.train_wrapper(data, **kwargs)
         self._checkpoint = wrapper
-
-    @property
-    def embedding(self) -> torch.Tensor:
-        embedding = torch.rand(*self._embedding, device="cpu").unsqueeze(0)
-        return embedding
 
 
 if __name__ == "__main__":

@@ -28,21 +28,6 @@ def class_for_name(module_name: str, class_name: str):
     return c
 
 
-def get_config_path(cli) -> str:
-    """Extracts the config path from the command line arguments.
-
-    Args:
-        cli (CLI): The command line interface object. To use this method,
-            cli must be called with the argument `-c`. Otherwise, no path
-            will be available.
-
-    Returns:
-        str: The config path from the command line arguments.
-    """
-    config_path = cli.parser.args[cli.parser.args.index("-c") + 1]
-    return config_path
-
-
 def get_config_folder(cli) -> str:
     """Extracts the config folder from the command line arguments.
 
@@ -54,7 +39,7 @@ def get_config_folder(cli) -> str:
     Returns:
         str: The config folder path from the command line arguments.
     """
-    config_path = get_config_path(cli)
+    config_path = cli.parser.args[cli.parser.args.index("-c") + 1]
     base_path = os.path.dirname(config_path)
     return base_path
 
@@ -66,25 +51,6 @@ def deepvars(val) -> dict:
         if hasattr(res[key], "__dict__"):
             res[key] = deepvars(res[key])
     return res
-
-
-def get_checkpoints(path: str) -> List[str]:
-    """Finds the checkpoints in the config folder from the command line
-    arguments.
-
-    Args:
-        path (str): The path to a model's output folder. This folder must contain
-            `checkpoints/`
-
-    Returns:
-        List[str]: The list of checkpoint paths, sorted.
-    """
-    base_path = os.path.join(path, "checkpoints")
-    if not os.path.exists(base_path):
-        return []
-
-    checkpoints = sorted([_ for _ in os.listdir(base_path) if "ckpt" in _])
-    return checkpoints
 
 
 def search_models(path: str, search_depth: int = 50) -> List[str]:
