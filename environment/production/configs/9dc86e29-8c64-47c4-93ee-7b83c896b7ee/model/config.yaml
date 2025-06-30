@@ -133,9 +133,6 @@ trainer:
       stopping_threshold: null
       strict: true
       verbose: false
-  - class_path: Comprisk.helper.BasicCheckpointCallback
-    init_args:
-      monitor: validate/L1Loss
   check_val_every_n_epoch: 1
   default_root_dir: null
   detect_anomaly: false

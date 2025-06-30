@@ -3,7 +3,8 @@ import os
 import numpy as np
 import pandas as pd
 import yaml
-from Comprisk.entrypoints import EntrypointBase, EntrypointContext
+from Comprisk.entrypoints import EntrypointBase
+from Comprisk.entrypoints.utils import EntrypointContext
 from Dataflux import get_logger, logging_mode
 
 logger = get_logger(__name__, path="logfile", level=logging_mode)

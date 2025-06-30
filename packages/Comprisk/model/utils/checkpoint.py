@@ -2,10 +2,8 @@
 
 import os
 
+import torch
 from lightning import LightningModule
-
-from Comprisk.custom import CompriskCLI
-from Comprisk.helper.structure import class_for_name
 
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
@@ -30,18 +28,11 @@ class Checkpoint:
             logger.error("Given path is not a model output folder: '%s'", path)
             raise ValueError("Could not find 'config.yaml' in path " + path)
 
-        cli = CompriskCLI(
-            run=False,
-            subclass_mode_model=True,
-            parser_kwargs={"default_config_files": [config_path]},
-        )
-
         self._path = os.path.join(path, CHECKPOINT)
         files = os.listdir(self._path)
         ckpt_path = get_best_checkpoint(self._path, files)
 
-        self._model_cls = class_for_name(cli.config.model.class_path)
-        self._checkpoint = self._model_cls.load_from_checkpoint(ckpt_path, **cli.config.model.init_args)
+        self._checkpoint = torch.load(ckpt_path)
         self._checkpoint.eval()
 
         logger.info("Loaded checkpoint '%s'", ckpt_path)

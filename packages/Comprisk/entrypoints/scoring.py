@@ -42,7 +42,7 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
 
         # load the best checkpoint, modifying an exported ONNX file does not work as the
         # score transformer is tightly integrated
-        checkpoint = Checkpoint(path=context.trainer.log_dir)
+        checkpoint = Checkpoint(path=context.config_folder)
 
         # wrap the model with a score transformer such that the fitted values are
         # included in the model graph. This is required for ONNX
