@@ -7,8 +7,9 @@ from Dataflux.data import DataType, DataUpdater, EmptyScoreRegister, UpdateCalla
 from Dataflux.logger import get_logger
 
 from Comprisk.custom import DataModule
-from Comprisk.entrypoints import EntrypointBase, EntrypointContext
-from Comprisk.helper import IteratorResult, ModelCheckpoint, ModelIterator
+from Comprisk.entrypoints import EntrypointBase
+from Comprisk.entrypoints.utils import EntrypointContext
+from Comprisk.helper import IteratorResult, ModelIterator
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
@@ -47,7 +48,6 @@ class GeneratorEntrypoint(EntrypointBase):
         super().__init__()
 
         self._updater_cls = DataUpdater
-        self._check_point_cls = ModelCheckpoint
 
     def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
         # get the upload dataset which must be set as validation set, disable training parameters such as shuffle

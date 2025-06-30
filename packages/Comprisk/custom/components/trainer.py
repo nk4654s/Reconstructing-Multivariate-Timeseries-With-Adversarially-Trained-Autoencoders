@@ -5,7 +5,7 @@ from lightning import Trainer, LightningDataModule
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADERS
 
-from Comprisk.custom import DataModule
+from Comprisk.custom.components import DataModule
 from Comprisk.model import NormalizeWrapper
 from Dataflux import get_logger, logging_mode
 from Dataflux.pytorch import DatasetArgs

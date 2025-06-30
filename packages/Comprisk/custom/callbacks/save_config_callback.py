@@ -46,7 +46,7 @@ class AdvancedSaveConfigCallback(SaveConfigCallback):
         super().setup(trainer, pl_module, stage)
 
     def _adjust_config(self, trainer) -> None:
-        if "ckpt" in self.config.keys():
+        if "ckpt" in self.config:
             del self.config["ckpt_path"]
 
         self.config["seed_everything"] = self.config["seed_everything"] + 1

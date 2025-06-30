@@ -3,6 +3,8 @@ from copy import deepcopy
 from typing import List
 
 import lightning as L
+import yaml
+
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
 from Dataflux.pytorch import Dataset, DatasetTypes, collate_fn
@@ -11,6 +13,20 @@ from torch.utils.data import DataLoader
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
+
+
+def validate_path(path: str) -> str | None:
+    if not path:
+        return None
+
+    if os.path.isfile(path):
+        with open(path, "r") as f:
+            return yaml.safe_load(f).get("folder")
+
+    if os.path.isdir(path):
+        return path
+
+    return None
 
 
 class DataModule(L.LightningDataModule):
@@ -109,14 +125,16 @@ class DataModule(L.LightningDataModule):
         # online collate normalizes the dataset on the fly
         # self._collate_fn = online_collate_train
 
-        if train and os.path.isdir(train):
+        train = validate_path(train)
+        if train:
             self._train = Dataset(
                 path=train,
                 **self._dataset_args
             )
             logger.debug("Dataset (train) consists of %s samples", len(self._train))
 
-        if validate and os.path.isdir(validate):
+        validate = validate_path(validate)
+        if validate:
             self._val = Dataset(
                 path=validate,
                 **self._dataset_args
