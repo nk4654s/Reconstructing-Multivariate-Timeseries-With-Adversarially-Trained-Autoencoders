@@ -4,7 +4,8 @@ import unittest
 from argparse import Namespace
 
 import yaml
-from Comprisk.entrypoints import EntrypointContext, FluxEntrypoint
+from Comprisk.entrypoints import FluxEntrypoint
+from Comprisk.entrypoints.utils import EntrypointContext
 from Comprisk.model.dummy import DummyModel
 
 DIRECTORY = "Comprisk/tests"
