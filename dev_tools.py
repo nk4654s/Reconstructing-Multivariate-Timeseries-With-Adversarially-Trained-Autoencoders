@@ -128,6 +128,7 @@ def info(path: str):
 
         print("Loaded model for", onnx.machine_uuid)
         print("\tProducer:", onnx.producer)
+        print("\tType:", model.split("_")[-1].replace(".onnx", ""))
         print("\tValue Corridor:", onnx.value_corridor)
         print("\tVersion:", onnx.version)
         print("\tCreation:", onnx.creation_date)
