@@ -1,5 +1,5 @@
 trange:
-  min: 0.0
+  min: -1.0
   max: 1.0
 data:
   2527e879-d394-4e67-aaf6-4be93323658e: #  Öl 1. Stufe_min (bar)

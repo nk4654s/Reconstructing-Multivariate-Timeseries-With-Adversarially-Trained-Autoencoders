@@ -9,8 +9,9 @@ tuner_trials: 20
 model:
   class_path: Comprisk.model.certainty.AutoRegressiveCertainty
   init_args:
-    activation: sigmoid
+    activation: tanh
     loss: GaussianNLLLoss
+    regression_loss: L1Loss
     optimizer: Adam
     lr: 0.0001
     lr_decay: 0.99
@@ -20,13 +21,13 @@ trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.EarlyStopping
       init_args:
-        monitor: validate/GaussianNLLLoss
+        monitor: validate/L1Loss
         min_delta: 1.0e-07
         patience: 5
         mode: min
     - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
       init_args:
-        monitor: validate/GaussianNLLLoss
+        monitor: validate/L1Loss
 
   precision: 32
   max_epochs: 100

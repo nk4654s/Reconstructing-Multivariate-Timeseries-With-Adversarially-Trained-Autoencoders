@@ -16,13 +16,13 @@ class InvalidCertaintyModelLoss(Exception):
 
 
 class CertaintyBase(BaseModel):
-    def __init__(self, regression_prob: float = 8.0, regression_decay: float = 0.8, regression_loss: str = "L1Loss",
+    def __init__(self, regression_prob: float = 0.8, regression_decay: float = 0.8, regression_loss: str = "L1Loss",
                  warmup_epochs: int = 0, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.automatic_optimization = False
 
         self._regression_loss = get_loss_by_name(regression_loss)
-        self._certainty_loss = torch.nn.GaussianNLLLoss()
+        self._certainty_loss = torch.nn.GaussianNLLLoss(reduction="sum")
 
         self._regression_decay = regression_decay
         self._regression_prob = regression_prob
