@@ -119,6 +119,20 @@ def redeploy():
     print("Re-deployed model")
 
 
+def info(path: str):
+    models = [path] if path else search_models("environment/production/models")
+    for model in models:
+        onnx = ONNXArgs.load_from_model(model)
+
+        print("Loaded model for", onnx.machine_uuid)
+        print("\tProducer:", onnx.producer)
+        print("\tVersion:", onnx.version)
+        print("\tCreation:", onnx.creation_date)
+        print()
+
+    exit(0)
+
+
 def update_pom():
     if os.path.exists("classes"):
         shutil.rmtree("classes")
@@ -188,8 +202,12 @@ if __name__ == "__main__":
     parser.add_argument("--deploy", "-d", action="store_true", default=False)
     parser.add_argument("--edit", "-e", action="store_true", default=False)
     parser.add_argument("--redeploy", "-r", action="store_true", default=False)
+    parser.add_argument("--info", "-i", type=str, default="")
     parser.add_argument("--sensors", "-s", type=str, default="")
     args = parser.parse_args()
+
+    if args.info:
+        info(args.info)
 
     if args.edit:
         delete_model()
