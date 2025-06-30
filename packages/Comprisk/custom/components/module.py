@@ -21,7 +21,10 @@ def validate_path(path: str) -> str | None:
 
     if os.path.isfile(path):
         with open(path, "r") as f:
-            return yaml.safe_load(f).get("folder")
+            path = yaml.safe_load(f).get("folder")
+            if os.path.exists(path):
+                return path
+            return None
 
     if os.path.isdir(path):
         return path

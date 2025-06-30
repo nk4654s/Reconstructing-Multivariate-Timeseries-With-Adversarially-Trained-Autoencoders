@@ -94,12 +94,14 @@ def deploy_model():
 def redeploy():
     print("Which model should be re-deployed?")
     path, onnx = load_existing_onnx()
-    type_ = "model" if "model" in path else "support"
+    type_ = "model" if "model.onnx" in path else "support"
     config = os.path.join("environment", "production", "configs", onnx.machine_uuid, type_, "config.yaml")
 
     src = os.path.join(os.path.dirname(config), f"{type_}.onnx")
     if not os.path.exists(src):
-        os.system("comprisk-score -c " + config)
+        print("Model location", src)
+        command = "comprisk" if type_ == "model" else "compmesh"
+        os.system(f"{command}-score -c " + config)
 
     # test for same model output
     data_in = np.zeros(shape=(1, onnx.input_length, len(onnx.input_names)), dtype=np.float32)
@@ -126,6 +128,7 @@ def info(path: str):
 
         print("Loaded model for", onnx.machine_uuid)
         print("\tProducer:", onnx.producer)
+        print("\tValue Corridor:", onnx.value_corridor)
         print("\tVersion:", onnx.version)
         print("\tCreation:", onnx.creation_date)
         print()
@@ -202,11 +205,11 @@ if __name__ == "__main__":
     parser.add_argument("--deploy", "-d", action="store_true", default=False)
     parser.add_argument("--edit", "-e", action="store_true", default=False)
     parser.add_argument("--redeploy", "-r", action="store_true", default=False)
-    parser.add_argument("--info", "-i", type=str, default="")
+    parser.add_argument("--info", "-i", type=str, default=None)
     parser.add_argument("--sensors", "-s", type=str, default="")
     args = parser.parse_args()
 
-    if args.info:
+    if args.info is not None:
         info(args.info)
 
     if args.edit:

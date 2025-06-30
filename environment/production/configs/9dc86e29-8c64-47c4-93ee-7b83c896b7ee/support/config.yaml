@@ -41,7 +41,7 @@ model:
 name_mapping: environment/dev/configs/gasunie-sp/3_mapping.yml
 optimizer: null
 prefix: null
-seed_everything: 0
+seed_everything: 1
 support_points: environment/dev/support_points/gasunie/
 tag: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
 trainer:
@@ -63,9 +63,6 @@ trainer:
       stopping_threshold: null
       strict: true
       verbose: false
-  - class_path: Comprisk.helper.BasicCheckpointCallback
-    init_args:
-      monitor: validate/MSELoss
   check_val_every_n_epoch: 1
   default_root_dir: null
   detect_anomaly: false

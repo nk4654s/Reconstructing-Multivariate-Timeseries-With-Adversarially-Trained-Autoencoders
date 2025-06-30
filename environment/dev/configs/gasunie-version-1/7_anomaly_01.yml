@@ -1,21 +1,22 @@
 folder: environment/dev/datasets/gasunie-testset-before-phase-2
 machine_uuid: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
 intervals:
-  - 2025-06-16 2025-06-18 # service on 25th of Nov
-num_workers: 6
-overwrite: false
+  - 2025-06-29 2025-07-01 # service on 25th of Nov
+num_workers: 2
+overwrite: true
 
 modules:
   - class_path: Dataflux.modules.State
     init_args:
-      key: b494f0c0-4446-4626-9eed-b8a8bba4f65d # rpm
-      lower: 470
-      upper: 1100
+      key: d4779e38-d29b-419c-a9c6-b4976108d911 # under load
+      lower: 1
+      upper: 1
       alpha_threshold: 60
       beta_threshold: 60
   - class_path: Dataflux.modules.features.Features
     init_args:
       include:
+        - d4779e38-d29b-419c-a9c6-b4976108d911
         - d67bd4d9-7568-4452-a81c-84029a2f10b9 # Pressure_Discharge_Side_1._Stage_PIT0-339 (bar)
         - 7a84feb3-e6a0-4c3f-ac37-5269f6ca5390 # Temperature_Discharge_Side_1._Stage_TIT0-334 (°C)
         - 449595df-042d-41d7-be45-bda695bc271d # Differential_Pressure_Suction_Strainer_1._Stage_PDIT0-320 (bar)
