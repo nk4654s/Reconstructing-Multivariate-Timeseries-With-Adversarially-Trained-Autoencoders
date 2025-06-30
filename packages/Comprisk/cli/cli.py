@@ -4,6 +4,7 @@ import datetime
 from typing import Any
 
 from Comprisk.custom import DataModule, CASTrainer
+from Comprisk.custom.callbacks import AdvancedSaveConfigCallback
 from Comprisk.entrypoints import EntrypointContext
 from Comprisk.helper.structure import get_config_folder, deepvars
 from Comprisk.model import NormalizeWrapper
@@ -23,7 +24,13 @@ class CompriskCLI(LightningCLI):
     """The CompriskCLI adds methods to the LightningCLI for training a model.
     """
     def __init__(self, **kwargs) -> None:
-        super().__init__(model_class=NormalizeWrapper, datamodule_class=DataModule, trainer_class=Trainer, **kwargs, save_config_callback=None)
+        kwargs["save_config_callback"] = AdvancedSaveConfigCallback
+        super().__init__(
+            model_class=NormalizeWrapper,
+            datamodule_class=DataModule,
+            trainer_class=Trainer,
+            **kwargs)
+
         self._context = EntrypointContext(
             config=self.config,
             config_folder=get_config_folder(self),

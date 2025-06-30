@@ -2,50 +2,17 @@
 
 import os
 
-import torch
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
-from lightning.pytorch import Trainer
-from lightning.pytorch.callbacks import ModelCheckpoint
 
 from Comprisk.helper.structure import load_model
-from Comprisk.model import BaseModel
+from lightning import LightningModule
 
 # switch logging mode depending on DEBUG_MODE
 logger = get_logger(__name__, path="./logfile", level=logging_mode)
 
 CHECKPOINT_FORMAT = ".ckpt"
 CHECKPOINT = "checkpoints"
-
-
-class BasicCheckpointCallback(ModelCheckpoint):
-    def __init__(self, monitor: str = "validate/MSELoss"):
-        name = monitor
-        super().__init__(
-            dirpath=CHECKPOINT,
-            filename="epoch={epoch}-val={" + name + ":.6f}",
-            monitor=name,
-            verbose=False,
-            save_top_k=3,
-            save_weights_only=False,
-            mode="min",
-            auto_insert_metric_name=False,
-            every_n_train_steps=None,
-            train_time_interval=None,
-            every_n_epochs=1,
-            enable_version_counter=True
-        )
-    def _save_checkpoint(self, trainer: Trainer, filepath: str) -> None:
-        if not os.path.exists(os.path.dirname(filepath)):
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-
-        torch.save(trainer.model, filepath)
-
-        self._last_global_step_saved = trainer.global_step
-        self._last_checkpoint_saved = filepath
-
-        # notify loggers
-        logger.debug("Saved Checkpoint %s", filepath)
 
 
 class ModelCheckpoint:
@@ -60,13 +27,13 @@ class ModelCheckpoint:
         is no model in `path/checkpoints`
     """
 
-    def __init__(self, path: str = None, model: BaseModel = None) -> None:
+    def __init__(self, path: str = None, model: LightningModule = None) -> None:
         if not path and not model:
             raise ValueError("Expected to either get a path or model. Got None.")
 
         self._path = path
         self._from_disk = False
-        self._model: BaseModel = model
+        self._model: LightningModule = model
         self.load_from(path, model)
 
         if not self._model:
@@ -77,13 +44,13 @@ class ModelCheckpoint:
         self._configurations = {}
         self.load_configurations()
 
-    def load_from(self, path: str, backup_model: BaseModel = None) -> None:
+    def load_from(self, path: str, backup_model: LightningModule = None) -> None:
         """This method tries to load the latest checkpoint from the given folder.
 
         Args:
             path (str): The model output folder containing a 'checkpoints' subdirectory with
                 '.ckpt' files in it.
-            backup_model (BaseModel): The model to use when there are no checkpoints.
+            backup_model (LightningModule): The model to use when there are no checkpoints.
         """
         self._from_disk = False
         folders = [_ for _ in os.listdir(path)]
@@ -133,11 +100,11 @@ class ModelCheckpoint:
             config_name (str): The configuration of which the path should be returned.
 
         Returns:
-            str: The configurations path.
+            str: The configurations' path.
         """
         return self._configurations.get(config_name, None)
 
-    def get_model(self) -> BaseModel:
+    def get_model(self) -> LightningModule:
         """A simple getter for the loaded model during object initialization.
 
         Returns:
