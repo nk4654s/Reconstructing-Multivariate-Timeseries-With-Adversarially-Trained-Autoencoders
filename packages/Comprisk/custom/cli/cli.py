@@ -3,9 +3,9 @@ a model. Moreover, the module expands the CLI by **lightning.ai**."""
 import datetime
 from typing import Any
 
-from Comprisk.custom import DataModule, CASTrainer
-from Comprisk.entrypoints import EntrypointContext
-from Comprisk.helper.structure import get_config_folder, deepvars
+from Comprisk.custom.components import DataModule, CASTrainer
+from Comprisk.custom.callbacks import AdvancedSaveConfigCallback
+from Comprisk.helper.structure import deepvars
 from Comprisk.model import NormalizeWrapper
 from Dataflux import logging_mode
 from Dataflux.logger import get_logger
@@ -23,15 +23,12 @@ class CompriskCLI(LightningCLI):
     """The CompriskCLI adds methods to the LightningCLI for training a model.
     """
     def __init__(self, **kwargs) -> None:
-        super().__init__(model_class=NormalizeWrapper, datamodule_class=DataModule, trainer_class=Trainer, **kwargs, save_config_callback=None)
-        self._context = EntrypointContext(
-            config=self.config,
-            config_folder=get_config_folder(self),
-            model=self.model,
-            datamodule=self.datamodule,
-            trainer=self.trainer,
-            environment_=self.config.environment,
-        )
+        kwargs["save_config_callback"] = AdvancedSaveConfigCallback
+        super().__init__(
+            model_class=NormalizeWrapper,
+            datamodule_class=DataModule,
+            trainer_class=Trainer,
+            **kwargs)
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--tag", type=str, default=None)
@@ -47,14 +44,9 @@ class CompriskCLI(LightningCLI):
         parser.link_arguments("data.behavior", "model.init_args.behavior", apply_on="parse")
         parser.link_arguments("data.sequence_out", "model.init_args.sequence_out", apply_on="parse")
 
-    @property
-    def context(self) -> EntrypointContext:
-        return self._context
-
     def instantiate_trainer(self, **kwargs: Any) -> Trainer:
         # use the custom trainer class with some modifications which are implicitly given in the config
         config = deepvars(self.config)
-        config["config"] = str(config["config"][0])
         self.trainer_class = CASTrainer
         return super().instantiate_trainer(config = config, **kwargs)
 

@@ -1,8 +1,10 @@
 import os.path
 
+from Comprisk.helper.structure import get_config_folder
 from Dataflux import get_logger, logging_mode
 
-from Comprisk.cli import CompriskCLI
+from Comprisk.custom import CompriskCLI
+from Comprisk.entrypoints.utils import EntrypointContext
 from Comprisk.entrypoints import (
     AnalyzerEntrypoint,
     ExportEntrypoint,
@@ -11,7 +13,7 @@ from Comprisk.entrypoints import (
     Pipeline,
     TrainerEntrypoint,
     TrainScoreTransformerEntrypoint,
-    TuneEntrypoint,
+    TuneEntrypoint
 )
 
 logger = get_logger(__name__, path="logfile", level=logging_mode)
@@ -26,7 +28,16 @@ tune = TuneEntrypoint()
 
 
 def pipeline_runner(pipeline: Pipeline, cli: CompriskCLI) -> None:
-    for i, name in pipeline.run(context=cli.context):
+    context = EntrypointContext(
+        config=cli.config,
+        config_folder=get_config_folder(cli),
+        model=cli.model,
+        datamodule=cli.datamodule,
+        trainer=cli.trainer,
+        environment_=cli.config.environment,
+    )
+
+    for i, name in pipeline.run(context=context):
         logger.info("Finished entrypoint %s (%s)", name, i)
 
 

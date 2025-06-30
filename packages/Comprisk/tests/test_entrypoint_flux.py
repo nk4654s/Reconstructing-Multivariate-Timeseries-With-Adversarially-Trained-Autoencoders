@@ -4,7 +4,8 @@ import unittest
 from argparse import Namespace
 from copy import deepcopy
 
-from Comprisk.entrypoints import EntrypointContext, FluxEntrypoint
+from Comprisk.entrypoints import FluxEntrypoint
+from Comprisk.entrypoints.utils import EntrypointContext
 from Dataflux.pytorch import Dataset
 
 DIRECTORY = "tests"
@@ -91,14 +92,12 @@ class TestEntrypointFlux(unittest.TestCase):
 
     def test_flux_entrypoint_trainset(self):
         context = deepcopy(self.context)
-        context.config.data.train = "test-debug-dataset"
+        context.config.data.train = "test-debug-dataset/metadata/config.yaml"
         train_path = self.flux._get_path(self.context, self.context.config.data.train)
-        val_path = self.flux._get_path(self.context, self.context.config.data.validate)
         context = self.flux(self.context)
 
         # the dataset's path must have changed
-        self.assertEqual(context.config.data.train, train_path)
-        self.assertEqual(context.config.data.validate, val_path)
+        self.assertEqual(os.path.join(context.base_folder, context.environment.value, self.train_dir), train_path)
         self.assertEqual(self.context, context)
 
         # dataset was empty and could not be loaded, values must be None
