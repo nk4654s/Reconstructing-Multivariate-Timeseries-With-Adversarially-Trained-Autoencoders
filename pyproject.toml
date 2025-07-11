@@ -40,7 +40,7 @@ dependencies = [
 ]
 
 [tool.uv.workspace]
-members = ["Comprisk", "Compmesh", "Dataflux", "Toking"]
+members = ["Comprisk", "Compmesh", "Dataflux", "Toking", "CompriskV2"]
 
 [project.scripts]
 comprisk-analyze="Comprisk.pipeline:cli_analyze"
@@ -48,6 +48,10 @@ comprisk-score="Comprisk.pipeline:cli_train_score_transformer"
 comprisk-train="Comprisk.pipeline:cli_train"
 comprisk-generate="Comprisk.pipeline:cli_generate"
 comprisk-tune="Comprisk.pipeline:cli_tune"
+
+cas-train="CompriskV2.pipeline:train"
+cas-export="CompriskV2.pipeline:export"
+cas-visualize="CompriskV2.pipeline:visualize"
 
 compmesh-train="Compmesh.pipeline:cli_train"
 compmesh-score="Compmesh.pipeline:cli_score_trainer"

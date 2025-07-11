@@ -1,42 +1,40 @@
 # CAS specific
-environment: dev
+env: dev
 tag: 62df7942-7815-4ccf-a722-4ba74b721732
-normalizer: configs/hofer-sn04-2115-v8-test/3_custom_normalizer.yml
-tuner_config: configs/hofer-sn04-2115-v8/a_tuning.yml
-tuner_trials: 20
 
 # model configuration
 model:
-  class_path: Comprisk.model.certainty.AutoRegressiveCertainty
+  class_path: CompriskV2.model.autoregressive.AutoregressiveCertaintyModel
   init_args:
-    activation: tanh
-    loss: GaussianNLLLoss
-    regression_loss: L1Loss
-    optimizer: Adam
-    lr: 0.0001
-    lr_decay: 0.99
+    hidden_dim: 128
+    num_layers: 3
+    dropout: 0.3
+    regression_training: 0.0
 
 seed_everything: true
 trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.EarlyStopping
       init_args:
-        monitor: validate/L1Loss
+        monitor: val/l1
         min_delta: 1.0e-07
-        patience: 5
+        patience: 10
         mode: min
-    - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
-        monitor: validate/L1Loss
+        save_top_k: 10
+        monitor: val/l1
+        filename: epoch={epoch:02d}-loss={val/l1:.5f}
+        auto_insert_metric_name: false
 
   precision: 32
   max_epochs: 100
-  # gradient_clip_val: 1.0
+  gradient_clip_val: 1.0
   log_every_n_steps: 1
 
 data:
-  train: configs/hofer-sn04-2115-v8/1_dataset_train.yml
-  validate: configs/hofer-sn04-2115-v8/2_dataset_validate.yml
+  train: environment/dev/configs/hofer-sn04-2115-v8-test/1_dataset_train.yml
+  validate: environment/dev/configs/hofer-sn04-2115-v8-test/2_dataset_validate.yml
   sequence_in: 120
   sequence_out: 1
   features_in:

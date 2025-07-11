@@ -56,7 +56,7 @@ class Dataset(torch.utils.data.Dataset):  # type: ignore
 
         self._features_in = feature_names_in
         self._features_out = feature_names_out
-        self._num_features = [fm for fm in self._metadata.files.values()][0].features
+        self._num_features = [fm for fm in self._metadata.files.values()][0].features - 1
 
         if behavior == DatasetTypes.AUTOENCODER:
             self._num_output = 0
