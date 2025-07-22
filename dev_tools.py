@@ -7,7 +7,7 @@ from uuid import UUID
 import numpy as np
 from onnxruntime import InferenceSession
 
-from Comprisk.helper import ONNXArgs
+from CompriskV2.model.utils import OnnxArgs
 from Comprisk.helper.structure import search_models, copy_folder
 from Dataflux.helper import get_sensors
 
@@ -20,80 +20,84 @@ def safe_cast(val, to_type, default=None):
         exit(1)
 
 
-def load_existing_onnx():
-    models = search_models("environment/production/models")
-    for i, path in enumerate(models):
-        print(f"({i}) {path}")
+def to_string(onnx) -> str:
+    return f"[{onnx.creation_date}] [v{onnx.version}] {onnx.machine_uuid}"
 
-    i = safe_cast(input(f"0-{len(models)-1}> "), int)
+
+def get_model_type(path: str) -> str:
+    name = os.path.basename(path)
+    return name.rsplit("_")[-1].replace(".onnx", "")
+
+
+def select_model(path: str, calls: int = 0):
+    if calls == 3 or calls > 0 and input("Exit? [y|n]") == "y":
+        print("Abort.")
+        exit(1)
+
+    print("Select model")
+    models = search_models(path)
+    for i, path in enumerate(sorted(models)):
+        model_type = get_model_type(path)
+        onnx = OnnxArgs.load_from_model(path)
+        print(f"{to_string(onnx)} -> {i} ({model_type})")
+
+    i = safe_cast(input(f"0-{len(models) - 1}> "), int)
     path = models[i]
 
-    onnx = ONNXArgs.load_from_model(path)
+    onnx = OnnxArgs.load_from_model(path)
     print("Loaded selected model")
     print("\tProducer:", onnx.producer)
     print("\tMachine:", onnx.machine_uuid)
     print("\tVersion:", onnx.version)
     print("\tCreation:", onnx.creation_date)
+
+    if input("Continue? [y|n]> ") != "y":
+        return select_model(path, calls + 1)
     return path, onnx
 
 
+def check_model_deployed(onnx, model_type):
+    for path in search_models("environment/production/models"):
+        model = OnnxArgs.load_from_model(path)
+        if onnx.machine_uuid == model.machine_uuid and get_model_type(path) == model_type:
+            return path, model
+
+    return None, None
+
+
 def deploy_model():
-    models = search_models("environment/dev/models")
-    for i, path in enumerate(models):
-        print(f"({i}) {path}")
+    n_path, n_model = select_model("environment/dev/models")
+    n_type = get_model_type(n_path)
+    c_path, c_model = check_model_deployed(n_model, n_type)
+    if c_path:
+        print("Model exists, use `re-deploy` route")
+        print(to_string(c_model))
+        exit(1)
 
-    print("Which model should be moved to deployment?")
-    i = safe_cast(input(f"0-{len(models)-1}> "), int)
-    src = models[i]
-    dst = src.replace("environment/dev/models", "environment/production/models")
-    path, _, _, version, _ = dst.rsplit(os.path.sep, maxsplit=4)
+    print("Deploying selected model")
+    print(to_string(n_model))
 
-    onnx = ONNXArgs.load_from_model(src)
-
-    print("Loaded selected model")
-    print("\tProducer:", onnx.producer)
-    print("\tMachine:", onnx.machine_uuid)
-    print("\tVersion:", onnx.version)
-    print("\tCreation:", onnx.creation_date)
-
-    dst = os.path.join(path, f"{onnx.machine_uuid}_{os.path.basename(src)}")
+    dst = os.path.join("environment/production/models", f"{n_model.machine_uuid}_{n_type}.onnx")
     print("\tCopy to:", dst)
-    print("\tExists:", os.path.exists(dst))
 
-    if os.path.exists(dst):
-        print("Found existing model in location")
-        onnx = ONNXArgs.load_from_model(dst)
-        print("\tProducer:", onnx.producer)
-        print("\tMachine:", onnx.machine_uuid)
-        print("\tVersion:", onnx.version)
-        print("\tCreation:", onnx.creation_date)
-        answer = input("Continue [yes|no]> ")
-        if answer != "yes":
-            print("Abort.")
-            exit(0)
-
-    if not os.path.exists(os.path.dirname(dst)):
+    if not os.path.exists("environment/production/models"):
         os.makedirs(os.path.dirname(dst))
+    shutil.copyfile(n_path, dst)
 
-    shutil.copyfile(src, dst)
-
-    # create a zip of the model output dir in production, make sure to exclude the
-    # analysis subdirectory as it might be huge
-    name = os.path.basename(src).split(".")[0]
-    src = os.path.dirname(src)
-    dst = os.path.join("environment", "production", "configs", onnx.machine_uuid)
-
-    copy_folder(src,
-                os.path.join(dst, name),
-                exclude_folders=["analysis"],
-                exclude_files=["tfevents", ".onnx"],
-                modify_flux=True)
+    dst = os.path.join("environment/production/configs", n_model.machine_uuid)
+    copy_folder(
+        os.path.dirname(n_path),
+        os.path.join(dst, n_type),
+        exclude_folders=["analysis"],
+        exclude_files=["tfevents", ".onnx"],
+        modify_flux=True,
+    )
     print("Deployment done.")
 
 
 def redeploy():
     print("Which model should be re-deployed?")
-    path, onnx = load_existing_onnx()
+    path, onnx = select_model()
     type_ = "model" if "model" in path else "support"
     config = os.path.join("environment", "production", "configs", onnx.machine_uuid, type_, "config.yaml")
 
@@ -159,7 +163,7 @@ def update_pom():
 
 def delete_model():
     print("Which model should be deleted?")
-    path, _ = load_existing_onnx()
+    path, _ = select_model()
     answer = input("Continue [yes|no]> ")
     if answer != "yes":
         print("Abort.")
