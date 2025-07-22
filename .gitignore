@@ -15,6 +15,7 @@ build/
 # general exclude from model output folders
 events.out.tfevents.*
 .temp.ckpt
+.tmp/
 temp/*
 
 # exclude dev environment (but include config set)
@@ -34,6 +35,7 @@ environment/dev/datasets/
 *.sqlite3
 logs/
 logfile-bug
+logfile.log
 
 # MacOS specific files
 .DS_Store

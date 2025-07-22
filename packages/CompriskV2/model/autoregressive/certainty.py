@@ -45,6 +45,10 @@ class AutoregressiveCertaintyModel(LinkedParameterModel):
         self._mean_fc = nn.Linear(hidden_dim // 4, self._features_out)
         self._var_fc = nn.Linear(hidden_dim // 4, self._features_out)
 
+    @property
+    def labels(self) -> tuple[str]:
+        return ("y", "y_hat", "var", "score")
+
     def _switch_loss(self) -> bool:
         return np.random.rand() < self._loss_switch
 

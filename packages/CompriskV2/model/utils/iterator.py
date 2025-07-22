@@ -1,7 +1,7 @@
 """This module contains helper methods related to the models."""
+
 from dataclasses import InitVar, dataclass, field
 
-from typing import Tuple
 
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
@@ -24,11 +24,13 @@ class SensorResult:
     def to_dataframe(self) -> pd.DataFrame:
         return pd.DataFrame(self.data)
 
+
 @dataclass
 class IteratorResult:
     """This dataclass holds a model's iteration result including the scores, model inputs, and model outputs.
     Furthermore, this class is able to convert the result to pandas DataFrames.
     """
+
     names: list[str]
     keys: list[str]
     ts: int
@@ -87,7 +89,8 @@ class ModelIterator:
         logger.info("Found model output names: %s", self._o_onnx)
 
     def _init_container(self) -> dict[str, np.ndarray]:
-        f_out = len(self._data._features_out)
+        args = self._data.get_args()
+        f_out = args.features_out
         sensor_output = {n: np.zeros(shape=(self._len, f_out), dtype=np.float32) for n in self._o_onnx}
 
         return sensor_output
@@ -107,7 +110,12 @@ class ModelIterator:
         sensor_output = self._init_container()
 
         limit = 0
-        dataloader = DataLoader(self._data, collate_fn=collate_fn, batch_size=batch_size, num_workers=num_workers)
+        dataloader = DataLoader(
+            self._data,
+            collate_fn=collate_fn,
+            batch_size=batch_size,
+            num_workers=num_workers,
+        )
         for i, (x, y) in enumerate(tqdm(dataloader)):
             # run onnx inference
             inputs = [x.numpy().astype(np.float32), y.numpy().astype(np.float32)]
@@ -115,23 +123,24 @@ class ModelIterator:
             onnx_output = list(self._session.run(None, inputs))
 
             if not isinstance(onnx_output, tuple):
-                onnx_output = (onnx_output)
+                onnx_output = onnx_output
 
             # extract the model output/input into the containers
-            batch_size = len(sensor_output[self._o_onnx[0]][limit:limit + batch_size])
+            batch_size = len(sensor_output[self._o_onnx[0]][limit : limit + batch_size])
             for i, name in enumerate(self._o_onnx):
-                sensor_output[name][limit:limit + batch_size] = onnx_output[i][:batch_size]
+                sensor_output[name][limit : limit + batch_size] = onnx_output[i][:batch_size]
 
             limit += batch_size
 
         # ensure correct length
         sensor_output = {n: d[:limit] for n, d in sensor_output.items()}
 
+        args = self._data.get_args()
         result = IteratorResult(
             prediction=sensor_output,
-            names=self._data._features_out,
+            names=args.names_out,
             keys=self._o_onnx,
-            ts=self._data.get_timestamp(0)
+            ts=self._data.get_timestamp(0),
         )
 
         return result

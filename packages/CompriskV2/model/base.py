@@ -23,6 +23,10 @@ class BaseModel(LightningModule):
 
         self._loss = loss()
 
+    @property
+    def labels(self) -> tuple[str]:
+        raise NotImplementedError()
+
     def training_step(self, batch: tuple[Tensor, Tensor]) -> Tensor:
         y, y_pred = self.predict_step(*batch)
 
@@ -52,7 +56,15 @@ class BaseModel(LightningModule):
 
 
 class LinkedParameterModel(BaseModel):
-    def __init__(self, features_in: list[str], features_out: list[str], sequence_in: int, sequence_out: int, *args, **kwargs) -> None:
+    def __init__(
+        self,
+        features_in: list[str],
+        features_out: list[str],
+        sequence_in: int,
+        sequence_out: int,
+        *args,
+        **kwargs,
+    ) -> None:
         super().__init__(*args, **kwargs)
 
         self._features_in = len(features_in)
@@ -70,10 +82,23 @@ class LinkedParameterModel(BaseModel):
 
         self._eps = 1e-6
 
+    @property
+    def embedding(self) -> tuple[Tensor, Tensor]:
+        return (
+            Tensor(1, self._sequence_in, self._features_in, device="cpu"),
+            Tensor(1, self._sequence_out, self._features_out, device="cpu"),
+        )
+
+    @property
+    def labels(self) -> tuple[str]:
+        return ("x", "y")
+
     @torch.no_grad()
     def forward(self, x: torch.Tensor, y: torch.Tensor, return_score: bool = True) -> tuple[Tensor, ...]:
         x = (x - self._mean) / (self._scale + self._eps)
-        y = (y - self._mean[self._features_out_indicies]) / (self._scale[self._features_out_indicies] + self._eps)
+        y = (y - self._mean[self._features_out_indicies]) / (
+            self._scale[self._features_out_indicies] + self._eps
+        )
         return x, y
 
     def set_standardizer(self, mean: np.ndarray, scale: np.ndarray) -> None:
