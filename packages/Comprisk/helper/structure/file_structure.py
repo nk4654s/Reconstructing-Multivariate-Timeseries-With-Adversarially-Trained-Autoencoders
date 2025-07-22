@@ -167,7 +167,7 @@ def copy_folder(
     exclude_folders = exclude_folders or []
     exclude_files = exclude_files or []
 
-    flux_files = ["dataset_train.yaml", "dataset_val.yaml"]
+    flux_files = ["train.yaml", "validate.yaml"]
     if modify_flux:
         exclude_files += flux_files
 

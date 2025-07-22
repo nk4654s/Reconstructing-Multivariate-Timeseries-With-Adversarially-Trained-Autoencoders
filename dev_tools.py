@@ -29,14 +29,28 @@ def get_model_type(path: str) -> str:
     return name.rsplit("_")[-1].replace(".onnx", "")
 
 
-def select_model(path: str, calls: int = 0):
-    if calls == 3 or calls > 0 and input("Exit? [y|n]") == "y":
+def model_comp(model):
+    args = OnnxArgs.load_from_model(model)
+    return args.machine_uuid, args.creation_date, get_model_type(model)
+
+
+def filter_models(models, filter):
+    if not filter:
+        return models
+
+    return [m for m in models if (filter.machine_uuid in m)]
+
+
+def select_model(path: str, calls: int = 0, filter=None):
+    if calls == 3 or calls > 0 and input("Exit? [y|n]> ") == "y":
         print("Abort.")
         exit(1)
 
     print("Select model")
     models = search_models(path)
-    for i, path in enumerate(sorted(models)):
+    models = filter_models(models, filter)
+    models = sorted(models, key=model_comp)
+    for i, path in enumerate(models):
         model_type = get_model_type(path)
         onnx = OnnxArgs.load_from_model(path)
         print(f"{to_string(onnx)} -> {i} ({model_type})")
@@ -97,21 +111,20 @@ def deploy_model():
 
 def redeploy():
     print("Which model should be re-deployed?")
-    path, onnx = select_model()
-    type_ = "model" if "model" in path else "support"
-    config = os.path.join("environment", "production", "configs", onnx.machine_uuid, type_, "config.yaml")
-
-    src = os.path.join(os.path.dirname(config), f"{type_}.onnx")
-    if not os.path.exists(src):
-        os.system("comprisk-score -c " + config)
+    c_path, onnx = select_model("environment/production/models")
+    n_path, n_model = select_model("environment/dev/models", filter=onnx)
+    n_type = get_model_type(n_path)
+    if get_model_type(c_path) != n_type:
+        print("Invalid model types")
+        exit(0)
 
     # test for same model output
     data_in = np.zeros(shape=(1, onnx.input_length, len(onnx.input_names)), dtype=np.float32)
     data_out = np.zeros(shape=(1, onnx.output_length, len(onnx.output_names)), dtype=np.float32)
 
     # compare pre-model and new-model (should be identical in terms of output)
-    output_pre = list(InferenceSession(path).run(None, {"x": data_in, "y": data_out}))
-    output_now = list(InferenceSession(src).run(None, {"x": data_in, "y": data_out}))
+    output_pre = list(InferenceSession(c_path).run(None, {"x": data_in, "y": data_out}))
+    output_now = list(InferenceSession(n_path).run(None, {"x": data_in, "y": data_out}))
     if not ((output_pre[0] == output_now[0]).all() and (output_pre[1] == output_now[1]).all()):
         print("The deployed model outputs other values than the newly generated model.")
         answer = input("Continue re-deployment [yes|no]> ")
@@ -119,7 +132,17 @@ def redeploy():
             print("Abort.")
             exit(0)
 
-    shutil.copyfile(src, path)
+    deployed = os.path.join("environment/production/configs", n_model.machine_uuid, n_type)
+    shutil.rmtree(deployed)
+    shutil.copyfile(n_path, c_path)
+
+    copy_folder(
+        os.path.dirname(n_path),
+        deployed,
+        exclude_folders=["analysis"],
+        exclude_files=["tfevents", ".onnx"],
+        modify_flux=True,
+    )
     print("Re-deployed model")
 
 
@@ -130,10 +153,10 @@ def update_pom():
     # get the total model version (simply by calculating the model version sum)
     models = [f for f in os.listdir("environment/production/models") if "onnx" in f]
     models = [os.path.join("environment/production/models", f) for f in models]
-    model_versions = sum([ONNXArgs.load_from_model(f).version for f in models])
+    model_versions = sum([OnnxArgs.load_from_model(f).version for f in models])
 
     # get the number of model domains
-    model_count = len([ONNXArgs.load_from_model(f).machine_uuid for f in models])
+    model_count = len([OnnxArgs.load_from_model(f).machine_uuid for f in models])
 
     # get the code version
     code = 0
