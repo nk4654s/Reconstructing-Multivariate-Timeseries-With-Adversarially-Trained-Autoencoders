@@ -45,6 +45,7 @@ class DummyDataset(torch.utils.data.Dataset):
             self._data = np.ones_like(self._data, dtype=np.float32)
 
         # init args
+        names = [str(uuid.uuid4()) for _ in range(n_features)]
         self._uuid = uuid.uuid4()
         self._args = DatasetArgs(
             sequence_in=n_sequence,
@@ -54,9 +55,9 @@ class DummyDataset(torch.utils.data.Dataset):
             skip=1,
             stride=stride,
             behavior_=(DatasetTypes.AUTOENCODER if n_future == 0 else DatasetTypes.PREDICTIVE),
-            names_in=[str(i) for i in range(n_features)],
-            names_out=[str(i) for i in range(n_features)],
-            names=[str(i) for i in range(n_features)],
+            names_in=names,
+            names_out=names,
+            names=names,
         )
 
     def set_stride(self, stride: int) -> None:
@@ -69,12 +70,13 @@ class DummyDataset(torch.utils.data.Dataset):
 
     @property
     def metadata(self) -> Metadata:
+        state = self._args.names_in[0]
         return Metadata(
             path="dummy",
             uuid=self.UUID,
             files=[],
             total_recordings=len(self),
-            state_alpha={},
+            state_alpha={state: {"delay": 1_000, "lower": 0, "upper": 1}},
         )
 
     @property

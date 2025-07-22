@@ -3,7 +3,7 @@ from datetime import datetime
 
 from Dataflux.pytorch import Dataset
 from Dataflux import get_logger
-from Comprisk.helper import ONNXArgs
+from CompriskV2.model.utils import OnnxArgs
 from CompriskV2.model import LinkedParameterModel
 
 logger = get_logger(__name__)
@@ -42,7 +42,7 @@ def export(model: LinkedParameterModel, save_dir: str, dataset: Dataset, version
         | {model.labels[i + 1]: {0: "batch_size"} for i, _ in enumerate(output)},
     )
 
-    onnx_args = ONNXArgs.load_from_model(path)
+    onnx_args = OnnxArgs.load_from_model(path)
 
     data_args = dataset.get_args()
     onnx_args.machine_uuid = str(dataset.UUID)
