@@ -8,11 +8,7 @@ from Dataflux.pipeline import pipeline as flux_pipeline
 
 
 class DataModule(BaseModule):
-    def __init__(self,
-                 train: str | None = None,
-                 validate: str | None = None,
-                 *args, **kwargs) -> None:
-
+    def __init__(self, train: str | None = None, validate: str | None = None, *args, **kwargs) -> None:
         train = flux_pipeline(FluxConfigManager(train))
         validate = flux_pipeline(FluxConfigManager(validate))
 
@@ -30,15 +26,15 @@ class DataModule(BaseModule):
 
         s = self.trainset.get_args().stride
         self.trainset.set_stride(self.trainset.get_args().sequence_in)
-        sn, l, f = self.trainset.shape
+        sn, le, f = self.trainset.shape
 
         if output:
             f = self.trainset.get_args().features_out
 
-        data = np.zeros((sn * l, f))
+        data = np.zeros((sn * le, f))
         j = 1 if output else 0
         for i in trange(0, sn, desc="Fitting Standard Scaler"):
-            data[i*l:(i+1)*l] = self.trainset[i][j]
+            data[i * le : (i + 1) * le] = self.trainset[i][j]
 
         self._scaler = self.scaler.fit(data)
         self.trainset.set_stride(s)

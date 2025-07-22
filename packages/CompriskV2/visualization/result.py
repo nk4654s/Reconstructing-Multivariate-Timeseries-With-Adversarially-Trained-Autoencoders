@@ -6,7 +6,14 @@ import pandas as pd
 from CompriskV2.model.utils import IteratorResult
 
 
-def visualize_single_result(df: pd.DataFrame, name: str, unit: str = "N/A", ts_offset: int = 0, show_mse: bool = True, std: int = 1):
+def visualize_single_result(
+    df: pd.DataFrame,
+    name: str,
+    unit: str = "N/A",
+    ts_offset: int = 0,
+    show_mse: bool = True,
+    std: int = 1,
+):
     # Ensure the index is datetime
     if not pd.api.types.is_datetime64_any_dtype(df.index):
         df = df.copy()
@@ -51,10 +58,11 @@ def visualize_single_result(df: pd.DataFrame, name: str, unit: str = "N/A", ts_o
 
 def visualize_results(
     result: IteratorResult,
-    units: dict = {},
+    units: dict | None = None,
     show_mse: bool = False,
     std: int = 1,
 ) -> None:
+    units = units or {}
     for name in result.names:
         unit, name_str = units.get(name, ("N/A", name))
         df = result.by_name(name).to_dataframe()

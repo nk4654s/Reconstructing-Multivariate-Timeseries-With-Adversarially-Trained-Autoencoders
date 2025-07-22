@@ -4,7 +4,6 @@ import yaml
 import uuid
 import sys
 import inspect
-import torch
 from contextlib import ContextDecorator
 
 from CompriskV2.model import LinkedParameterModel

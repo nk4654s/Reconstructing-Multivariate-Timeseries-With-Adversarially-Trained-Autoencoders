@@ -50,8 +50,9 @@ class IteratorResult:
         i = self.names.index(name)
         return self.sensors[i]
 
-    def revert_with(self, scaler: StandardScaler, except_keys: list[str] = []) -> None:
+    def revert_with(self, scaler: StandardScaler, except_keys: list[str] | None = None) -> None:
         assert scaler.scale_ is not None, "Scaler not trained."
+        except_keys = except_keys or []
         keys = [k for k in self.keys if k not in except_keys]
         keys.sort()
         for label in keys:
