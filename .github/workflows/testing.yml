@@ -1,4 +1,4 @@
-name: Toking Tests
+name: PyTest
 
 on:
   workflow_call:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-package:
+  test-packages:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,14 +17,10 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
-
-      - uses: astral-sh/ruff-action@v3
+      - name: Check Linting
+        uses: astral-sh/ruff-action@v3
         with:
-          src: "./packages/Compmesh"
-
-      # Run unit tests
-      - name: Run Unittests
-        id: compmesh-test
-        working-directory: ./packages/Compmesh
+          src: "./packages"
+      - name: Run PyTest
         run: |
-          sh scripts/run_tests.sh
+          pytest

@@ -29,7 +29,8 @@ environment/dev/datasets/
 
 # exclude ONNX files from production's config folder
 *.onnx
-!/environment/production/models/*.onnx
+environment/production/configs/*/*/analysis
+!environment/production/models/*.onnx
 
 # exclude logs
 *.sqlite3

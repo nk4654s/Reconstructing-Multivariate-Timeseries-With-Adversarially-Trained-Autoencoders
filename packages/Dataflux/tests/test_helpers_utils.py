@@ -9,7 +9,7 @@ from Dataflux.helper import get_file, to_float
 
 
 @contextmanager
-def test_folder():
+def environment():
     if os.path.exists(".tmp"):
         shutil.rmtree(".tmp")
     os.mkdir(".tmp")
@@ -31,7 +31,7 @@ def test_get_file_create_folder():
     name = "file.ext"
     postfix = "post"
     path = ".tmp"
-    with test_folder():
+    with environment():
         path = os.path.join(path, name)
         file_name = get_file(path, postfix)
 
@@ -44,7 +44,7 @@ def test_get_file_create_folder():
 
 
 def test_get_file_increasing_postfix():
-    with test_folder():
+    with environment():
         file_names = []
 
         name = "file.ext"
@@ -67,7 +67,7 @@ def test_get_file_overwrite():
     name = "file.ext"
     path = ".tmp"
 
-    with test_folder():
+    with environment():
         for i in range(10):
             file_name = get_file(os.path.join(path, name), overwrite=True)
 
