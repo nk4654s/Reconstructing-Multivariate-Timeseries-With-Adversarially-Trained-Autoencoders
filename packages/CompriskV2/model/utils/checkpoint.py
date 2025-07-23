@@ -11,8 +11,8 @@ logger = get_logger(__name__)
 
 def get_best_checkpoint(path: str, files: list[str]) -> str:
     files = [f for f in files if ".ckpt" in f]
-    files.sort()
-    return os.path.join(path, files[-1])
+    files = sorted(files, key=lambda x: x.split("loss=")[-1].replace(",", "."))
+    return os.path.join(path, files[0])
 
 
 class Checkpoint:
@@ -41,9 +41,7 @@ class Checkpoint:
         ckpt_path = get_best_checkpoint(self._path, files)
 
         self._model_cls = get_class_by_name(self._cli.config.model.class_path)
-        self._checkpoint = self._model_cls.load_from_checkpoint(
-            ckpt_path, **self._cli.config.model.init_args
-        )
+        self._checkpoint = self._model_cls.load_from_checkpoint(ckpt_path, **self._cli.config.model.init_args)
         self._checkpoint.eval()
 
         logger.info("Loaded checkpoint '%s'", ckpt_path)

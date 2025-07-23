@@ -2,8 +2,21 @@ import os
 
 from CompriskV2.model import LinkedParameterModel
 from CompriskV2.model.autoregressive import AutoregressiveCertaintyModel
+from CompriskV2.model.utils.checkpoint import get_best_checkpoint
 from CompriskV2.model.utils import Checkpoint, OnnxArgs
 from CompriskV2.tests.utils import CliContext
+
+
+def test_get_best_checkpoint():
+    files = [
+        "epoch=0;loss=1.ckpt",
+        "epoch=1;loss=0,5.ckpt",
+        "epoch=2;loss=0.4.ckpt",
+        "epoch=3;loss=1.ckpt",
+    ]
+
+    best = get_best_checkpoint("", files)
+    assert best == files[2]
 
 
 def test_checkpoint():

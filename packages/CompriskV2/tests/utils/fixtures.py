@@ -31,6 +31,9 @@ class CliContext(ContextDecorator):
             data = {
                 "env": "test",
                 "tag": "test",
+                "trainer": {
+                    "max_epochs": 1,
+                },
                 "model": {
                     "class_path": get_class_path(self._model_cls),
                 },
@@ -56,13 +59,14 @@ class CliContext(ContextDecorator):
         self.dataset = DummyDataset(DummyMode.RANDOM, 100, 3, 10, 1)
         args = self.dataset.get_args()
         self.cli.datamodule._train = self.dataset
+        self.cli.datamodule._val = self.dataset
         self.cli.datamodule.features_in = args.names_in
         self.cli.datamodule.features_out = args.names_out
 
-        ckpt_path = os.path.join(self.path, "checkpoints")
-        os.mkdir(ckpt_path)
+        self.ckpt_path = os.path.join(self.path, "checkpoints")
+        os.mkdir(self.ckpt_path)
         self.cli.trainer.strategy.connect(self.cli.model)
-        self.cli.trainer.save_checkpoint(os.path.join(ckpt_path, "test=0001.ckpt"))
+        self.cli.trainer.save_checkpoint(os.path.join(self.ckpt_path, "loss=99.ckpt"))
 
         return self
 

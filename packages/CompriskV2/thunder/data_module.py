@@ -5,6 +5,9 @@ from sklearn.preprocessing import StandardScaler
 from Comprisk.custom import DataModule as BaseModule
 from Dataflux.cli import FluxConfigManager
 from Dataflux.pipeline import pipeline as flux_pipeline
+from Dataflux import get_logger
+
+logger = get_logger(__name__)
 
 
 class DataModule(BaseModule):
@@ -26,13 +29,16 @@ class DataModule(BaseModule):
 
         s = self.trainset.get_args().stride
         self.trainset.set_stride(self.trainset.get_args().sequence_in)
-        sn, le, f = self.trainset.shape
+        j = 1 if output else 0
+
+        sn = len(self.trainset)
+        le, f = self.trainset[0][j].shape
+        logger.debug("Standardization on dataset shape (%s, %s, %s)", sn, le, f)
 
         if output:
             f = self.trainset.get_args().features_out
 
         data = np.zeros((sn * le, f))
-        j = 1 if output else 0
         for i in trange(0, sn, desc="Fitting Standard Scaler"):
             data[i * le : (i + 1) * le] = self.trainset[i][j]
 

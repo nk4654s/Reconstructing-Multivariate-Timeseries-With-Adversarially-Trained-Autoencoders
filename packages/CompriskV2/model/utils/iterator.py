@@ -62,7 +62,7 @@ class IteratorResult:
 
             for i, n in enumerate(self.names):
                 self.by_name(n).data[label] = df_data[:, i]
-                self.by_name(n).data["y_1"] *= scaler.scale_[i]
+                # self.by_name(n).data["y_1"] *= scaler.scale_[i]
 
 
 class ModelIterator:

@@ -37,7 +37,13 @@ class DummyDataset(torch.utils.data.Dataset):
         stride: int = 1,
     ) -> None:
         # init data
-        self._data = np.random.randn(n_samples, n_features)
+        self._data = np.array(
+            np.random.randn(
+                n_samples,
+                n_features,
+            ),
+            dtype=np.float32,
+        )
         if init_mode == DummyMode.ZEROS:
             self._data *= 0
 

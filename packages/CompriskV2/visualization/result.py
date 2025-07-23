@@ -21,26 +21,21 @@ def visualize_single_result(
 
     fig, axs = plt.subplots(1, 2, figsize=(12, 5))
 
-    y = np.array(df["y_scaled"])
-    mu = np.array(df["y_0"])
-    var = np.array(df["y_1"])
-    score = np.array(df["y_2"])
+    y_hat = np.array(df["y_hat"])
+    score = np.array(df["score"])
 
     axs[0].plot(df["y_scaled"], color="teal", label="Data")
-    axs[0].plot(df["y_0"], color="orange", label="Prediction")
+    axs[0].plot(df["y_hat"], color="orange", label="Prediction")
     axs[0].set_ylabel(unit)
 
-    x = df["y_0"].index
-    a2 = mu - std * (np.sqrt(var) + 1e-6)
-    a1 = mu + std * (np.sqrt(var) + 1e-6)
-    axs[0].fill_between(x, a1, a2, color="orange", alpha=0.3, label="Certainty")
+    x = df["y_hat"].index
+    if "var" in df.columns:
+        var = np.array(df["y_1"])
+        a2 = y_hat - std * (np.sqrt(var) + 1e-6)
+        a1 = y_hat + std * (np.sqrt(var) + 1e-6)
+        axs[0].fill_between(x, a1, a2, color="orange", alpha=0.3, label="Certainty")
 
-    axs[1].plot(score, color="black", label="Score (CDF)")
-
-    if show_mse:
-        mse = np.clip(1 - np.pow(y - mu, 2), 0, 1)
-        axs[1].plot(mse, color="red", alpha=0.3, label="Score (MSE)")
-
+    axs[1].plot(score, color="black", label="Healthscore")
     axs[1].set_ylabel("%")
     axs[1].set_ylim(-0.05, 1.05)
 
