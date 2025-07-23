@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from CompriskV2.model.autoregressive import AutoregressiveCertaintyModel
 from CompriskV2.model.utils import ModelIterator, Checkpoint
-from CompriskV2.tests.utils.fixtures import CliContext
+from CompriskV2.tests.utils import CliContext
 
 
 def test_iterator():

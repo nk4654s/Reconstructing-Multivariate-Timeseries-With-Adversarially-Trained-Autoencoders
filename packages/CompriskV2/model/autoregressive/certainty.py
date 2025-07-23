@@ -24,8 +24,10 @@ class AutoregressiveCertaintyModel(LinkedParameterModel):
         regression_training: float = 0.3,
         **kwargs,
     ) -> None:
-        super().__init__(loss=nn.GaussianNLLLoss, **kwargs)
-        assert self._sequence_out == 1, "This model does not work with other sequence output lengths than 1"
+        super().__init__(loss="GaussianNLLLoss", **kwargs)
+        assert (
+            self._sequence_out == 1
+        ), "This model does not work with other sequence output lengths than 1"
 
         self._loss = nn.GaussianNLLLoss()
         self._reg_loss = nn.L1Loss()
@@ -34,7 +36,9 @@ class AutoregressiveCertaintyModel(LinkedParameterModel):
         ones = torch.ones(self._features_out)
         self._dist_custom = torch.distributions.Normal(-1.6 * ones, 1.5 * ones)
 
-        self._lstm = nn.LSTM(self._features_in, hidden_dim, num_layers, dropout=dropout, batch_first=True)
+        self._lstm = nn.LSTM(
+            self._features_in, hidden_dim, num_layers, dropout=dropout, batch_first=True
+        )
         self._reduce = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
@@ -87,7 +91,9 @@ class AutoregressiveCertaintyModel(LinkedParameterModel):
         score = self._dist_custom.cdf(-torch.abs(y - mu) / var) * 1.2
         return torch.clip(score, 0, 1)
 
-    def forward(self, x: Tensor, y: Tensor, return_score: bool = True) -> tuple[Tensor, ...]:
+    def forward(
+        self, x: Tensor, y: Tensor, return_score: bool = True
+    ) -> tuple[Tensor, ...]:
         # standardize transform batch
         x, y = super().forward(x, y)
 

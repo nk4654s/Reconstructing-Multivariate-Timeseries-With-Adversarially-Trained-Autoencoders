@@ -1,8 +1,7 @@
-import numpy as np
-import torch
-from torch import nn, Tensor
-from torch.optim import AdamW
 from lightning import LightningModule
+from torch import Tensor
+
+from CompriskV2.model.parser import get_loss_by_name, get_optimizer_by_name
 
 
 def r2_score(i, t):
@@ -15,16 +14,35 @@ def r2_score(i, t):
 
 
 class BaseModel(LightningModule):
-    def __init__(self, optimizer: type = AdamW, lr: float = 1e-3, loss: type = nn.L1Loss) -> None:
+    """The BaseModel defines hyper parameters and methods used by every sub-class.
+
+    Args:
+        optimizer (str): The optimizer to use, must be registered in
+            `CompriskV2.model.utils.get_optimizer_by_name`. Defaults to `"AdamW"`.
+        loss (str): The loss function to use, must be registered in
+            `CompriskV2.model.utils.get_loss_by_name`. Defaults to `"L1Loss"`.
+        lr (float): The gradients learning rate, defaults to `lr=1e-3`.
+    """
+
+    def __init__(
+        self, optimizer: str = "AdamW", lr: float = 1e-3, loss: str = "L1Loss"
+    ) -> None:
         super().__init__()
 
-        self._lr = lr
-        self._optim = optimizer
+        self._loss = get_loss_by_name(loss)
+        self._optim = get_optimizer_by_name(optimizer)
 
-        self._loss = loss()
+        self._lr = lr
 
     @property
-    def labels(self) -> tuple[str]:
+    def labels(self) -> tuple[str, ...]:
+        """This method defines the names of each model output variable. E.g. if the
+        model outputs a the normalized input `x`, a prediction `y_hat`,
+        then this function should return `("x_norm", "y_hat")`.
+
+        Returns:
+            tuple[str, ...]: Model's output variable names.
+        """
         raise NotImplementedError()
 
     def training_step(self, batch: tuple[Tensor, Tensor]) -> Tensor:
@@ -49,58 +67,17 @@ class BaseModel(LightningModule):
         return self._optim
 
     def score(self, *args, **kwargs) -> Tensor:
+        """This method defines how to calculate the `Healthscore` for the current sample and
+        model output. E.g. `MAE` score implementation:
+
+        ```python
+        score(self, y, y_pred) -> Tensor:
+            return torch.mean(torch.abs(y - y_pred))
+        ````
+
+        > **Note:** All operations within this method must be tracable.
+        """
         raise NotImplementedError()
 
     def predict_step(self, x: Tensor, y: Tensor) -> tuple[Tensor, ...]:
         return self(x, y)
-
-
-class LinkedParameterModel(BaseModel):
-    def __init__(
-        self,
-        features_in: list[str],
-        features_out: list[str],
-        sequence_in: int,
-        sequence_out: int,
-        *args,
-        **kwargs,
-    ) -> None:
-        super().__init__(*args, **kwargs)
-
-        self._features_in = len(features_in)
-        self._features_out = len(features_out)
-
-        features_in = sorted(features_in)
-        features_out = sorted(features_out)
-        self._features_out_indicies = [features_in.index(_) for _ in features_out]
-
-        self._sequence_in = sequence_in
-        self._sequence_out = sequence_out
-
-        self._mean = nn.Parameter(torch.zeros(self._features_in))
-        self._scale = nn.Parameter(torch.zeros(self._features_in))
-
-        self._eps = 1e-6
-
-    @property
-    def embedding(self) -> tuple[Tensor, Tensor]:
-        return (
-            Tensor(1, self._sequence_in, self._features_in, device="cpu"),
-            Tensor(1, self._sequence_out, self._features_out, device="cpu"),
-        )
-
-    @property
-    def labels(self) -> tuple[str]:
-        return ("x", "y")
-
-    @torch.no_grad()
-    def forward(self, x: torch.Tensor, y: torch.Tensor, return_score: bool = True) -> tuple[Tensor, ...]:
-        x = (x - self._mean) / (self._scale + self._eps)
-        y = (y - self._mean[self._features_out_indicies]) / (
-            self._scale[self._features_out_indicies] + self._eps
-        )
-        return x, y
-
-    def set_standardizer(self, mean: np.ndarray, scale: np.ndarray) -> None:
-        self._mean = nn.Parameter(torch.Tensor(mean))
-        self._scale = nn.Parameter(torch.Tensor(scale))

@@ -15,6 +15,7 @@ modules:
     key: d4779e38-d29b-419c-a9c6-b4976108d911
     lower: 1
     upper: 1
+
 - class_path: Dataflux.modules.features.Features
   init_args:
     include:

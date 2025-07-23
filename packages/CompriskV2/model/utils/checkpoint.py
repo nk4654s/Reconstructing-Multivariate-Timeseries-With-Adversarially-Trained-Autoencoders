@@ -1,8 +1,9 @@
 import os
 
-from CompriskV2.model import BaseModel, LinkedParameterModel
+from CompriskV2.model import LinkedParameterModel
 from CompriskV2.thunder import DataModule, CompriskCLI
 from CompriskV2.model.utils.export import export
+from CompriskV2.model.parser import get_class_by_name
 from Dataflux import get_logger
 
 logger = get_logger(__name__)
@@ -14,15 +15,13 @@ def get_best_checkpoint(path: str, files: list[str]) -> str:
     return os.path.join(path, files[-1])
 
 
-def import_from_string(class_path: str):
-    components = class_path.split(".")
-    mod = __import__(components[0])
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
-
-
 class Checkpoint:
+    """This class loads the best checkpoint of a model given its output folder path.
+
+    Args:
+        path (Str): The model's output directory (should contain a `config.yaml` file).
+    """
+
     def __init__(self, path: str):
         config_path = os.path.join(path, "config.yaml")
         if not os.path.exists(config_path):
@@ -41,14 +40,16 @@ class Checkpoint:
         files = os.listdir(self._path)
         ckpt_path = get_best_checkpoint(self._path, files)
 
-        self._model_cls = import_from_string(self._cli.config.model.class_path)
-        self._checkpoint = self._model_cls.load_from_checkpoint(ckpt_path, **self._cli.config.model.init_args)
+        self._model_cls = get_class_by_name(self._cli.config.model.class_path)
+        self._checkpoint = self._model_cls.load_from_checkpoint(
+            ckpt_path, **self._cli.config.model.init_args
+        )
         self._checkpoint.eval()
 
         logger.info("Loaded checkpoint '%s'", ckpt_path)
 
     @property
-    def model(self) -> BaseModel:
+    def model(self) -> LinkedParameterModel:
         return self._checkpoint
 
     def export(self) -> None:

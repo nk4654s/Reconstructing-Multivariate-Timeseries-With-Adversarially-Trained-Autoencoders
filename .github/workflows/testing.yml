@@ -23,4 +23,4 @@ jobs:
           src: "./packages"
       - name: Run PyTest
         run: |
-          pytest
+          sh scripts/run_test.sh

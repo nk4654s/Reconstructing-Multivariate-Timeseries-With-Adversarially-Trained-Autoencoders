@@ -3,7 +3,7 @@ import os
 from CompriskV2.model import LinkedParameterModel
 from CompriskV2.model.autoregressive import AutoregressiveCertaintyModel
 from CompriskV2.model.utils import Checkpoint, OnnxArgs
-from CompriskV2.tests.utils.fixtures import CliContext
+from CompriskV2.tests.utils import CliContext
 
 
 def test_checkpoint():

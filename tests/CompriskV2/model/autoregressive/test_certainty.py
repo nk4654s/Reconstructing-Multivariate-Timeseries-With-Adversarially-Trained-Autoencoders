@@ -1,6 +1,6 @@
 import torch
 
-from CompriskV2.tests.utils.fixtures import CliContext
+from CompriskV2.tests.utils import CliContext
 from CompriskV2.model.autoregressive import AutoregressiveCertaintyModel
 
 
