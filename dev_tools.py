@@ -210,6 +210,10 @@ def show_sensors(uuid_str):
         print(f"- {uuid}\t# {name}")
 
 
+# TODO: move to own package, add files main.py deploy.py utils.py
+# TODO: exclude .pdf files from deployment
+# TODO: on reploy, show what changed
+# TODO: add model inspect  function
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Useful tools for development and deployment.")
     parser.add_argument("--deploy", "-d", action="store_true", default=False)
