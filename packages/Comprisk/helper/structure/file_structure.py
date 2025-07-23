@@ -6,7 +6,6 @@ import shutil
 from copy import deepcopy
 from typing import List
 
-import torch
 from Dataflux import logging_mode
 from Dataflux.helper import modify_flux_config
 from Dataflux.logger import get_logger
@@ -29,21 +28,6 @@ def class_for_name(module_name: str, class_name: str):
     return c
 
 
-def get_config_path(cli) -> str:
-    """Extracts the config path from the command line arguments.
-
-    Args:
-        cli (CLI): The command line interface object. To use this method,
-            cli must be called with the argument `-c`. Otherwise, no path
-            will be available.
-
-    Returns:
-        str: The config path from the command line arguments.
-    """
-    config_path = cli.parser.args[cli.parser.args.index("-c") + 1]
-    return config_path
-
-
 def get_config_folder(cli) -> str:
     """Extracts the config folder from the command line arguments.
 
@@ -55,7 +39,7 @@ def get_config_folder(cli) -> str:
     Returns:
         str: The config folder path from the command line arguments.
     """
-    config_path = get_config_path(cli)
+    config_path = cli.parser.args[cli.parser.args.index("-c") + 1]
     base_path = os.path.dirname(config_path)
     return base_path
 
@@ -67,25 +51,6 @@ def deepvars(val) -> dict:
         if hasattr(res[key], "__dict__"):
             res[key] = deepvars(res[key])
     return res
-
-
-def get_checkpoints(path: str) -> List[str]:
-    """Finds the checkpoints in the config folder from the command line
-    arguments.
-
-    Args:
-        path (str): The path to a model's output folder. This folder must contain
-            `checkpoints/`
-
-    Returns:
-        List[str]: The list of checkpoint paths, sorted.
-    """
-    base_path = os.path.join(path, "checkpoints")
-    if not os.path.exists(base_path):
-        return []
-
-    checkpoints = sorted([_ for _ in os.listdir(base_path) if "ckpt" in _])
-    return checkpoints
 
 
 def search_models(path: str, search_depth: int = 50) -> List[str]:
@@ -113,35 +78,6 @@ def search_models(path: str, search_depth: int = 50) -> List[str]:
             result.append(sub_path)
 
     return result
-
-
-def load_model(path: str, eval_mode: bool = True):
-    """This method loads the best checkpoint of a model. Requires checkpoints of model to have
-    the filename structure `...val=<validation_loss>.ckpt`.
-
-    Args:
-        path (str): The path where the model checkpoints were saved.
-        eval_mode (bool): Weather to set the loaded model to eval mode or not. Defaults to True.
-    """
-    # get the best checkpoint
-    checkpoints = get_checkpoints(path)
-    checkpoints = sorted(checkpoints, key=lambda x: float(x[:-5].split("val=")[-1]))
-    if len(checkpoints) == 0:
-        logger.warning("Could not find a checkpoint to load a model from. (%s)", path)
-        return None
-
-    ckpt_path = os.path.join(path, "checkpoints", checkpoints[0])
-
-    # get the model configuration to find the model class
-    model = torch.load(ckpt_path)
-
-    # initialize the mode
-    logger.debug("Loaded model class %s", model.__class__.__name__)
-    logger.info("Loaded from from %s", checkpoints[0])
-    if eval_mode:
-        model.eval()
-
-    return model
 
 
 def copy_folder(

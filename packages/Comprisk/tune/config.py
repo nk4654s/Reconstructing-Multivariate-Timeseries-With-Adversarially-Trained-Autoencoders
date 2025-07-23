@@ -11,7 +11,7 @@ import yaml
 from optuna import Trial
 
 from Comprisk.custom import DataModule
-from Comprisk.entrypoints import EntrypointContext
+from Comprisk.entrypoints.utils import EntrypointContext
 from Comprisk.helper.structure import class_for_name, deepvars
 from Comprisk.model import BaseModel
 from Comprisk.tune.provider import SuggestionProvider, TunedProvider

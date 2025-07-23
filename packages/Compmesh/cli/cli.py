@@ -7,7 +7,7 @@ LightningCLI
 )
 
 from Comprisk.custom import CASTrainer
-from Comprisk.entrypoints import EntrypointContext
+from Comprisk.entrypoints.utils import EntrypointContext
 from Comprisk.helper.structure import get_config_folder, deepvars
 
 

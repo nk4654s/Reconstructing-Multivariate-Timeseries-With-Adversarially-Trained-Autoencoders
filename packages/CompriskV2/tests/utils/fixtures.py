@@ -54,8 +54,10 @@ class CliContext(ContextDecorator):
         )
 
         self.dataset = DummyDataset(DummyMode.RANDOM, 100, 3, 10, 1)
-
+        args = self.dataset.get_args()
         self.cli.datamodule._train = self.dataset
+        self.cli.datamodule.features_in = args.names_in
+        self.cli.datamodule.features_out = args.names_out
 
         ckpt_path = os.path.join(self.path, "checkpoints")
         os.mkdir(ckpt_path)

@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 from typing import Dict
 
 import yaml
@@ -76,7 +77,7 @@ class FluxEntrypoint(EntrypointBase):
         if "__path__" in context.config.data:
             del context.config.data.__path__
 
-        datamodule_args_modified = vars(context.config.data)
+        datamodule_args_modified = deepcopy(vars(context.config.data))
         for key, path in dataset_paths.items():
             datamodule_args_modified[key] = path
             if path is None or os.path.isdir(path):
@@ -97,8 +98,8 @@ class FluxEntrypoint(EntrypointBase):
 
         # finalize the context
         try:
-            context.config.data.train = datamodule_args_modified["train"]
-            context.config.data.validate = datamodule_args_modified["validate"]
+            # context.config.data.train = datamodule_args_modified["train"]
+            # context.config.data.validate = datamodule_args_modified["validate"]
             context.datamodule = DataModule(**datamodule_args_modified)
         except EmptyDatasetError:
             logger.error("Unable to load dataset: EmptyDatasetError")

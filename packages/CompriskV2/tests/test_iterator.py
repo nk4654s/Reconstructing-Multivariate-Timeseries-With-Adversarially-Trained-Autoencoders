@@ -16,18 +16,23 @@ def test_iterator():
         iterator = ModelIterator(model_path, context.dataset)
         result = iterator.run()
 
-        names_out = context.dataset.get_args().names_out
-        assert set(result.names) == set(names_out), "Iteration features does not match dataset"
+        names_out = context.cli.datamodule.features_out
+        assert set(result.names) == set(
+            names_out
+        ), "Iteration features does not match dataset"
         for name in result.names:
             sensor = result.by_name(name)
             df = sensor.to_dataframe()
-            assert len(df) == len(context.dataset), "Length of iteration does not match dataset length"
+            assert len(df) == len(
+                context.dataset
+            ), "Length of iteration does not match dataset length"
 
         x, y = context.dataset[0]
         x, y = torch.Tensor(x), torch.Tensor(y)
         x, y = x.unsqueeze(0), y.unsqueeze(0)
 
         y, _, _, _ = context.cli.model(x, y)
-        name = sorted(result.names).pop(0)
-        y_ = result.by_name(name).data["y_scaled"][0]
-        assert np.allclose(y[0][0], y_, rtol=1e-3), "Checkpoint output does not match ONNX output"
+        y_ = result.by_name(names_out[0]).data["y_scaled"][0]
+        assert np.allclose(
+            y[0][0], y_, rtol=1e-3
+        ), "Checkpoint output does not match ONNX output"

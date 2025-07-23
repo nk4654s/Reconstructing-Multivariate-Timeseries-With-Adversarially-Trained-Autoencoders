@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>neax.onnx.ai.cas</groupId>
   <artifactId>models</artifactId>
-  <version>4.8.14</version>
+  <version>4.8.15</version>
   <packaging>jar</packaging>
   <build>
     <directory>.</directory>
