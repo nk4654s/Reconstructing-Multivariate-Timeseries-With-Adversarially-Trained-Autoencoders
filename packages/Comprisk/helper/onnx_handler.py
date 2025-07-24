@@ -53,16 +53,16 @@ class ONNXArgs:
 
     def equals(self, other: "ONNXArgs") -> bool:
         value = (
-                self.machine_uuid == other.machine_uuid
-                and self.creation_date == other.creation_date
-                and self.version == other.version
-                and self.producer == other.producer
-                and self.input_names == other.input_names
-                and self.output_names == other.output_names
-                and self.type == other.type
-                and self.value_corridor == other.value_corridor
-                and self.input_length == other.input_length
-                and self.output_length == other.output_length
+            self.machine_uuid == other.machine_uuid
+            and self.creation_date == other.creation_date
+            and self.version == other.version
+            and self.producer == other.producer
+            and self.input_names == other.input_names
+            and self.output_names == other.output_names
+            and self.type == other.type
+            and self.value_corridor == other.value_corridor
+            and self.input_length == other.input_length
+            and self.output_length == other.output_length
         )
 
         return value
@@ -132,6 +132,9 @@ class ONNXArgs:
             sequence_out=self.output_length,
             feature_names_in=self.input_names,
             feature_names_out=self.output_names,
-            behavior=dtype.value
+            behavior=dtype.value,
         )
         return d
+
+    def to_string(self) -> str:
+        return f"[{self.creation_date}] [v{self.version}] {self.machine_uuid}"

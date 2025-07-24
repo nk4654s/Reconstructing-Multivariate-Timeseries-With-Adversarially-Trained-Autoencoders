@@ -76,11 +76,11 @@ model:
     num_layers: 3
     dropout: 0.3
     regression_training: 0.0
-    optimizer: torch.optim.AdamW
+    optimizer: AdamW
     lr: 0.001
 data:
-  train: environment/dev/datasets/hofer-sn04-2115-v8-train
-  validate: environment/dev/datasets/hofer-sn04-2115-v8-val
+  train: environment/production/configs/62df7942-7815-4ccf-a722-4ba74b721732/model/train.yaml
+  validate: environment/production/configs/62df7942-7815-4ccf-a722-4ba74b721732/model/validate.yaml
   sequence_in: 120
   sequence_out: 1
   features_in:
@@ -121,6 +121,7 @@ data:
   persistent_workers: true
   pin_memory: true
 checkpoints: /Users/jonas/Dev/NEAX/Comprisk/lightning_logs/version_9/checkpoints
+env: production
 report_name: null
 tag: 62df7942-7815-4ccf-a722-4ba74b721732
 optimizer: null

@@ -41,7 +41,7 @@ dependencies = [
 ]
 
 [tool.uv.workspace]
-members = ["Comprisk", "Compmesh", "Dataflux", "Toking", "CompriskV2"]
+members = ["Comprisk", "Compmesh", "Dataflux", "Toking", "CompriskV2", "Tools"]
 
 [project.scripts]
 comprisk-analyze="Comprisk.pipeline:cli_analyze"
@@ -53,6 +53,7 @@ comprisk-tune="Comprisk.pipeline:cli_tune"
 cas-train="CompriskV2.pipeline:train"
 cas-export="CompriskV2.pipeline:export"
 cas-visualize="CompriskV2.pipeline:visualize"
+cas-tools="Tools.main:main"
 
 compmesh-train="Compmesh.pipeline:cli_train"
 compmesh-score="Compmesh.pipeline:cli_score_trainer"
@@ -92,5 +93,3 @@ select = [
     "I",
 ]
 ignore = ["E501", "UP015", "UP006", "I001", "UP035", "SIM108"]
-
-

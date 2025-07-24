@@ -30,7 +30,7 @@ def visualize_single_result(
 
     x = df["y_hat"].index
     if "var" in df.columns:
-        var = np.array(df["y_1"])
+        var = np.array(df["var"])
         a2 = y_hat - std * (np.sqrt(var) + 1e-6)
         a1 = y_hat + std * (np.sqrt(var) + 1e-6)
         axs[0].fill_between(x, a1, a2, color="orange", alpha=0.3, label="Certainty")

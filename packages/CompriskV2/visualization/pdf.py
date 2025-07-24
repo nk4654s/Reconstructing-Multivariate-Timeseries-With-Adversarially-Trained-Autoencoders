@@ -7,8 +7,7 @@ from tqdm import tqdm
 from markdown_pdf import MarkdownPdf, Section
 from matplotlib import pyplot as plt
 
-from Comprisk.helper import ONNXArgs
-from CompriskV2.model.utils import IteratorResult
+from CompriskV2.model.utils import IteratorResult, OnnxArgs
 from CompriskV2.visualization import visualize_single_result
 from Dataflux import get_logger
 from Dataflux.helper import get_sensors
@@ -25,29 +24,31 @@ class Report:
         report_name (str): The name of the report file.
     """
 
-    def __init__(self, output_folder: str,
-                 report_name: str,
-                 visualization_fn: Any | None = None,
-                 visualization_kwargs: dict | None = None,
-                 model_name: str = "model"):
+    def __init__(
+        self,
+        output_folder: str,
+        report_name: str,
+        visualization_fn: Any | None = None,
+        visualization_kwargs: dict | None = None,
+        model_name: str = "model",
+    ):
         self._folder = output_folder
         self._name = report_name
+        self._tmp = os.path.join(self._folder, "tmp")
 
         self._visualization_fn = visualization_fn or visualize_single_result
-        self._visualization_kwargs = visualization_kwargs or {
-            "std": 7
-        }
+        self._visualization_kwargs = visualization_kwargs or {"std": 7}
 
         self._dpi = 120
         self._size = (16, 8)
 
         # get the features used by the model
         onnx_path = os.path.join(self._folder, f"{model_name}.onnx")
-        onnx_args = ONNXArgs.load_from_model(onnx_path)
-        self._features = onnx_args.output_names
-        self._sensor_dict = get_sensors(UUID(onnx_args.machine_uuid))
+        self._onnx_args = OnnxArgs.load_from_model(onnx_path)
+        self._features = self._onnx_args.output_names
+        self._sensor_dict = get_sensors(UUID(self._onnx_args.machine_uuid))
 
-    def _generate_report_graphs(self, result: IteratorResult) -> tuple[list, str]:
+    def _generate_report_graphs(self, result: IteratorResult) -> str:
         """
         Generates various graphs for the report based on the provided analysis results.
 
@@ -55,10 +56,9 @@ class Report:
             result (IteratorResult): The analysis result containing scores, inputs, and outputs.
 
         Returns:
-            list: A list of tuples containing sensor data and related statistics.
+            str: The markdown containing AI result graphs.
         """
-        tmp = os.path.join(self._folder, "tmp")
-        os.mkdir(tmp)
+        os.mkdir(self._tmp)
 
         # plot deeper analysis for each sensor
         graphs = []
@@ -68,12 +68,33 @@ class Report:
 
             df = result.by_name(sensor).to_dataframe()
             fig = self._visualization_fn(df, name, unit, result.ts, **self._visualization_kwargs)
-            fig.savefig(os.path.join(tmp, sensor) + ".jpg")
+            fig.savefig(os.path.join(self._tmp, sensor) + ".jpg")
             plt.close()
 
-            graphs.append((name, os.path.join(tmp, sensor) + ".jpg"))
+            graphs.append((name, os.path.join(self._tmp, sensor) + ".jpg"))
 
-        return graphs, tmp
+        # plot all diagrams from generate_graphs()
+        markdown = "## Sensors"
+        for name, path in sorted(graphs, key=lambda g: g[0]):
+            markdown += f"![{name}]({path})\n"
+            logger.debug("Add graph %s", path)
+
+        return markdown
+
+    def _generate_model_info(self) -> str:
+        markdown = "# Model Information\n"
+        markdown += f"Training date: {self._onnx_args.creation_date}\n\n"
+        markdown += f"I/O sequence: {self._onnx_args.input_length}/{self._onnx_args.output_length}\n\n"
+        markdown += "## Delays\n"
+
+        value_corridor = self._onnx_args.value_corridor
+        for id, corridor in value_corridor.items():
+            delay = corridor["delay"] / 1_000
+            lower, upper = corridor["lower"], corridor["upper"]
+            markdown += f"{id}:\n\n"
+            markdown += f"- delay: {delay}s (bounds: {lower} | {upper})\n\n"
+
+        return markdown
 
     def generate_pdf(self, result: IteratorResult):
         """
@@ -82,25 +103,15 @@ class Report:
         Args:
             result (IteratorResult): The analysis result containing scores, inputs, and outputs.
         """
-        graphs, tmp = self._generate_report_graphs(result)
-
-        # also write to a raw md file
-        md = open(os.path.join(self._folder, "report.md"), "w")  # noqa: SIM115
-
         # get the graphs created and initialize the PDF
         pdf = MarkdownPdf()
         pdf.meta["title"] = f"Report: {self._name}"
 
-        # plot all diagrams from generate_graphs()
-        markdown = "# Sensors"
-        for name, path in sorted(graphs, key=lambda g: g[0]):
-            markdown += f"![{name}]({path})\n"
-            md.write(markdown)
-            logger.debug("Add graph %s", path)
-        pdf.add_section(Section(markdown, toc=True))
+        model_section = self._generate_model_info()
+        pdf.add_section(Section(model_section, toc=True))
+
+        graphs_section = self._generate_report_graphs(result)
+        pdf.add_section(Section(graphs_section, toc=True))
 
         pdf.save(os.path.join(self._folder, f"{self._name}.pdf"))
-        md.close()
-
-        os.remove(os.path.join(self._folder, "report.md"))
-        shutil.rmtree(tmp)
+        shutil.rmtree(self._tmp)
