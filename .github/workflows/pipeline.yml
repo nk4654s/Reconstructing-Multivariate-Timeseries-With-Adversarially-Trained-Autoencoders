@@ -30,7 +30,7 @@ jobs:
 
       - name: Raise Jar Version
         run: |
-          uv run dev_tools.py
+          uv run cas-tools
 
       - name: Set up Java and Maven
         uses: actions/setup-java@v4
@@ -41,4 +41,4 @@ jobs:
       - name: Deploy to GitHub Packages
         run: mvn deploy -X
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
