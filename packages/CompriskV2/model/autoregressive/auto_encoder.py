@@ -108,7 +108,9 @@ class AutoregressiveAutoencoder(LinkedParameterModel):
         if not self._ready:
             return torch.zeros_like(y)
 
-        res = torch.mean(torch.pow(y - y_hat, 2), dim=1).unsqueeze(1)
+        res = torch.pow(y - y_hat, 2)
+        # 1 std error is noise floor
+        res = torch.clip(res - torch.Tensor(1), 0, None)
         res = 1 - torch.div(res, self._total * self._weight)
         return torch.clip(res, 0, 1)
 

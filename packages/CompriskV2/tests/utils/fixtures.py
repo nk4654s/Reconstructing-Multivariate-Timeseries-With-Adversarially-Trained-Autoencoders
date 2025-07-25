@@ -33,6 +33,7 @@ class CliContext(ContextDecorator):
                 "tag": "test",
                 "trainer": {
                     "max_epochs": 1,
+                    "accelerator": "cpu",
                 },
                 "model": {
                     "class_path": get_class_path(self._model_cls),
