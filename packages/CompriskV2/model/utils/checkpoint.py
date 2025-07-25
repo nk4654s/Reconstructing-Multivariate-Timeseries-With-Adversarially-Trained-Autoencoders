@@ -55,7 +55,7 @@ class Checkpoint:
 
         export(
             model=self.model,
-            save_dir=path,
+            path=path,
             dataset=self._cli.datamodule.trainset,
             version=self._cli.config.seed_everything,
         )

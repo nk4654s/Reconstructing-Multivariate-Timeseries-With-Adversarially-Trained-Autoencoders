@@ -35,6 +35,7 @@ class LinkedParameterModel(BaseModel):
 
         self._mean = nn.Parameter(zeros(self._features_in))
         self._scale = nn.Parameter(zeros(self._features_in))
+        self._names = features_in
 
         self._eps = 1e-6
 

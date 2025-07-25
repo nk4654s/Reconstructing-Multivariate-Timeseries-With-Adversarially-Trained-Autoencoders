@@ -39,9 +39,9 @@ def test_get_model_type():
     model = get_model_type(invalid)
     assert model is None
 
-    invalid = "invalid-formatted.onnx"
+    invalid = "path/model.onnx"
     model = get_model_type(invalid)
-    assert model is None
+    assert model == "model"
 
 
 def test_search_models():

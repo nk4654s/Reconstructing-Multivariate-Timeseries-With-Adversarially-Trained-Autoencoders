@@ -112,8 +112,6 @@ def safe_cast(val: str, to_type: type):
 def get_model_type(path: str) -> str:
     name = os.path.basename(path)
     split = name.rsplit("_", maxsplit=1)
-    if len(split) == 1:
-        return None
 
     if ".onnx" not in name:
         return None

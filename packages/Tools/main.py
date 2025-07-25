@@ -72,6 +72,7 @@ def redeploy():
     print("Which model should be re-deployed?")
     c_path, onnx = select_model("environment/production/models")
     n_path, n_model = select_model("environment/dev/models", filter=onnx)
+    print(n_path, utils.get_model_type(n_path))
     n_type = utils.get_model_type(n_path)
     if utils.get_model_type(c_path) != n_type:
         print("Invalid model types")
