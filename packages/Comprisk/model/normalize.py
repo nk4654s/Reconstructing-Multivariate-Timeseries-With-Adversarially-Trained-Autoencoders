@@ -143,7 +143,7 @@ class NormalizeModule(nn.Module):
         x = (x - self._min) * self._scale
         y = (y - self._min_out) * self._scale_out
 
-        # change range to -1 to 1
+        # change range to -1 to 1 (or 0 to 1)
         x = (x + self._trange_min / self._trange) * self._trange
         y = (y + self._trange_min / self._trange) * self._trange
 

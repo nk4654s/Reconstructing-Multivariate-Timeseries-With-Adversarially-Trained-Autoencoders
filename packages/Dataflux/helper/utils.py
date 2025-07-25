@@ -65,9 +65,8 @@ def get_file(
         post_fix (str, optional): The postfix to be added (does not replace the
         increasing postfix-number)
     """
-    assert file_path.count(".") == 1, (
-        "File requires an extension (format: <file-name>.<extension>)"
-    )
+    file_name = os.path.basename(file_path)
+    assert file_name.count(".") > 0, "File requires an extension (format: <file-name>.<extension>)"
     # create folder of file if required
     folder_path = os.path.dirname(file_path)
     folder_exists = os.path.exists(folder_path)
@@ -75,7 +74,7 @@ def get_file(
         os.makedirs(folder_path)
 
     # create file name: add postfix, increase postfix-number (optional)
-    file_name_parts = os.path.basename(file_path).split(".")
+    file_name_parts = file_name.split(".")
     file_name = file_name_parts[0]
     file_extension = file_name_parts[-1]
     postfix = f"_{postfix}" if postfix else ""
@@ -173,9 +172,7 @@ def parse_datestring(date_str: str, force_utc: bool = True) -> datetime:
     return date_obj
 
 
-def daterange(
-    start_date: datetime, end_date: datetime
-) -> Iterator[Tuple[datetime, datetime]]:
+def daterange(start_date: datetime, end_date: datetime) -> Iterator[Tuple[datetime, datetime]]:
     """This function iterates over the start and end dates and returns the intervals with a timedelta of 1 day.
 
     Args:
@@ -193,9 +190,7 @@ def daterange(
 
     while end_of_day <= end_date:
         yield curr_day, end_of_day
-        curr_day = curr_day.replace(
-            hour=0, minute=0, second=0
-        )  # set time part to 00:00:00
+        curr_day = curr_day.replace(hour=0, minute=0, second=0)  # set time part to 00:00:00
         curr_day += timedelta(days=1)
         end_of_day = curr_day.replace(hour=23, minute=59, second=59, microsecond=999999)
 
@@ -257,9 +252,7 @@ def get_week_of_year(day_in_week: date | datetime):
     return date_obj.isocalendar()[1]
 
 
-def deterministic_split_algorithm(
-    meta: Metadata, percentage: float
-) -> Tuple[List, List]:
+def deterministic_split_algorithm(meta: Metadata, percentage: float) -> Tuple[List, List]:
     """
     This function splits the days of a dataset's metadata into two lists. The first list contains
     the days which make up `1 - percentage` of total recordings. The second list contains the remaining days.
@@ -306,9 +299,7 @@ def deterministic_split_algorithm(
 
     # log some data
     actual_percentage = round(iterative_recordings / total_recordings * 100, 2)
-    logger.debug(
-        "Targeted %s%% and settled on %s%%", percentage * 100, actual_percentage
-    )
+    logger.debug("Targeted %s%% and settled on %s%%", percentage * 100, actual_percentage)
     logger.debug(
         "Training set has %s days and validation set has %s",
         len(trimmed_days),

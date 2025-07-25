@@ -9,7 +9,7 @@ overwrite: false
 modules:
   - class_path: Dataflux.modules.State
     init_args:
-      key: b374f520-7c5a-439d-aeb8-3c821f4157c8 # Saugdruck_max
+      key: b374f520-7c5a-439d-aeb8-3c821f4157c8 # Enddruck_max (bar)
       lower: 180
       upper: 250
       alpha_threshold: 600

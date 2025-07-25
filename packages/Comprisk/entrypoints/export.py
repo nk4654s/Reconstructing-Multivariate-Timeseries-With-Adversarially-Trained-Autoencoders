@@ -35,9 +35,7 @@ class ExportEntrypoint(EntrypointBase):
 
         args.save_to_model(onnx_path)
 
-    def __call__(
-        self, context: EntrypointContext, *args, **kwargs
-    ) -> EntrypointContext:
+    def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
         # export finished model as ONNX file
         context.model.sub_model.eval()
         context.model.eval()
@@ -68,7 +66,7 @@ class ExportEntrypoint(EntrypointBase):
                 "score": {0: "batch_size"},
                 "y_hat": {0: "batch_size"},
             },
-            #opset_version=13,
+            # opset_version=13,
         )
 
         self.modify_model_metadata(context)

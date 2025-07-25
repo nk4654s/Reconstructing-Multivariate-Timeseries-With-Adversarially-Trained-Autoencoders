@@ -1,0 +1,26 @@
+name: PyTest
+
+on:
+  workflow_call:
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  test-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Check Linting
+        uses: astral-sh/ruff-action@v3
+        with:
+          src: "./packages"
+      - name: Run PyTest
+        run: |
+          sh scripts/run_test.sh

@@ -15,6 +15,7 @@ build/
 # general exclude from model output folders
 events.out.tfevents.*
 .temp.ckpt
+.tmp/
 temp/*
 
 # exclude dev environment (but include config set)
@@ -28,12 +29,14 @@ environment/dev/datasets/
 
 # exclude ONNX files from production's config folder
 *.onnx
-!/environment/production/models/*.onnx
+environment/production/configs/*/*/analysis
+!environment/production/models/*.onnx
 
 # exclude logs
 *.sqlite3
 logs/
 logfile-bug
+logfile.log
 
 # MacOS specific files
 .DS_Store

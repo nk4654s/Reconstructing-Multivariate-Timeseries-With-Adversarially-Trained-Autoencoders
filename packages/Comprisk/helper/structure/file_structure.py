@@ -2,12 +2,9 @@
 
 import importlib
 import os
-import shutil
 from copy import deepcopy
-from typing import List
 
 from Dataflux import logging_mode
-from Dataflux.helper import modify_flux_config
 from Dataflux.logger import get_logger
 
 # switch logging mode depending on DEBUG_MODE
@@ -51,87 +48,3 @@ def deepvars(val) -> dict:
         if hasattr(res[key], "__dict__"):
             res[key] = deepvars(res[key])
     return res
-
-
-def search_models(path: str, search_depth: int = 50) -> List[str]:
-    """Searches ONNX models in a given folder recursively.
-
-    Args:
-        path (str): Where to search, subfolders will be scanned as well if `search_depth` > 1:
-        search_depth (int): How deep to search recursively. Defaults to 50.
-
-    Returns:
-        List[str]: The list of found paths to ONNX models
-    """
-    if os.path.basename(path) == "derived_from":
-        return []
-
-    result = []
-    for sub_path in os.listdir(path):
-        sub_path = os.path.join(path, sub_path)
-
-        if os.path.isdir(sub_path):
-            result += search_models(sub_path, search_depth=search_depth - 1)
-            continue
-
-        if sub_path.split(".")[-1] == "onnx":
-            result.append(sub_path)
-
-    return result
-
-
-def copy_folder(
-    source: str,
-    destination: str,
-    exclude_folders: list[str] = None,
-    exclude_files: list[str] = None,
-    modify_flux: bool = False,
-) -> None:
-    """
-    Copies a folder from the source to the destination, excluding specified subfolders.
-
-    Args:
-        source (str): The path to the folder that needs to be copied.
-        destination (str): The path where the folder should be copied.
-        exclude_folders (list of str): A list of subfolder names to exclude from the copy process.
-        exclude_files (list of str): A list of file names (can be substrings) to exclude from the copy process.
-        modify_flux (bool): Whether to modify the flux config paths. Defaults to False.
-
-    Returns:
-        None
-    """
-    exclude_folders = exclude_folders or []
-    exclude_files = exclude_files or []
-
-    flux_files = ["dataset_train.yaml", "dataset_val.yaml"]
-    if modify_flux:
-        exclude_files += flux_files
-
-    # Create the destination folder if it doesn't exist
-    if not os.path.exists(destination):
-        os.makedirs(destination)
-
-    for root, dirs, files in os.walk(source):
-        # Filter out the directories to exclude
-        dirs[:] = [d for d in dirs if d not in exclude_folders]
-
-        # Construct the destination path for the current root
-        relative_path = os.path.relpath(root, source)
-        destination_path = os.path.join(destination, relative_path)
-
-        # Create the destination directory if it doesn't exist
-        if not os.path.exists(destination_path):
-            os.makedirs(destination_path)
-
-        # Copy the files to the destination
-        for f in files:
-            skip = sum([1 for _ in exclude_files if _ in f])
-            if skip:
-                continue
-            source_file_path = os.path.join(root, f)
-            destination_file_path = os.path.join(destination_path, f)
-            shutil.copy2(source_file_path, destination_file_path)
-
-    if modify_flux:
-        for flux in flux_files:
-            modify_flux_config(os.path.join(source, flux), os.path.join(destination, flux))

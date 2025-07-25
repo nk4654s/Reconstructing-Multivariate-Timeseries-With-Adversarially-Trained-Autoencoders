@@ -1,0 +1,255 @@
+# lightning.pytorch==2.5.0.post0
+seed_everything: 1
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 32
+  logger: null
+  callbacks:
+  - class_path: lightning.pytorch.callbacks.EarlyStopping
+    init_args:
+      monitor: val/l1
+      min_delta: 1.0e-07
+      patience: 10
+      verbose: false
+      mode: min
+      strict: true
+      check_finite: true
+      stopping_threshold: null
+      divergence_threshold: null
+      check_on_train_epoch_end: null
+      log_rank_zero_only: false
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: null
+      filename: epoch={epoch:02d}-loss={val/l1:.5f}
+      monitor: val/l1
+      verbose: false
+      save_last: null
+      save_top_k: 10
+      save_weights_only: false
+      mode: min
+      auto_insert_metric_name: false
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: null
+      save_on_train_epoch_end: null
+      enable_version_counter: true
+  fast_dev_run: false
+  max_epochs: 100
+  min_epochs: null
+  max_steps: -1
+  min_steps: null
+  max_time: null
+  limit_train_batches: null
+  limit_val_batches: null
+  limit_test_batches: null
+  limit_predict_batches: null
+  overfit_batches: 0.0
+  val_check_interval: null
+  check_val_every_n_epoch: 1
+  num_sanity_val_steps: null
+  log_every_n_steps: 1
+  enable_checkpointing: null
+  enable_progress_bar: null
+  enable_model_summary: null
+  accumulate_grad_batches: 1
+  gradient_clip_val: 1.0
+  gradient_clip_algorithm: null
+  deterministic: null
+  benchmark: null
+  inference_mode: true
+  use_distributed_sampler: true
+  profiler: null
+  detect_anomaly: false
+  barebones: false
+  plugins: null
+  sync_batchnorm: false
+  reload_dataloaders_every_n_epochs: 0
+  default_root_dir: null
+model:
+  class_path: CompriskV2.model.autoregressive.AutoregressiveCertaintyModel
+  init_args:
+    hidden_dim: 128
+    num_layers: 3
+    dropout: 0.3
+    regression_training: 0.0
+    optimizer: AdamW
+    lr: 0.001
+data:
+  train: environment/dev/models/AutoregressiveCertaintyModel/62df7942-7815-4ccf-a722-4ba74b721732/version_0/train.yaml
+  validate: environment/dev/models/AutoregressiveCertaintyModel/62df7942-7815-4ccf-a722-4ba74b721732/version_0/validate.yaml
+  sequence_in: 120
+  sequence_out: 1
+  features_in:
+  - 440f9da6-380c-43fd-8ff1-bcdfbe7c1304
+  - 2527e879-d394-4e67-aaf6-4be93323658e
+  - af6435f7-a03d-4927-9b79-cba26c016c6d
+  - aa257f12-ea1c-4ee3-8fbb-c46ac0622933
+  - 2928c90e-b727-46dc-84f2-af90216f677b
+  - ae75ea2c-6115-4151-b45e-08ab397a879b
+  - 5ed5ad54-5c4f-4309-b8f8-82d76603f215
+  - 692c1d2b-01c9-4134-a41e-9907f16f6acf
+  - 447c2d28-51cf-44f5-baca-80783d7b9be4
+  - c3600d5c-2e92-4b81-9e8a-426ee2813af3
+  - 85df370b-1f12-469b-969a-a04817d9b60c
+  - 9bcef960-1b4f-43da-aa43-c41f8a905352
+  - ba010fd2-aff8-4cd4-a353-663f65351fa9
+  - aa304a57-cb88-4760-8c5e-9b609ef845ee
+  - 1e7d6ae6-f631-4353-8aa2-7592af19fb93
+  - c2c64945-4b0a-4816-9b52-906ce8b5b0d7
+  - a692afa1-9dde-4d43-9b58-f08b74ed8c09
+  - b897cc6f-48fb-425d-800c-df4a8e8c9f18
+  features_out:
+  - 440f9da6-380c-43fd-8ff1-bcdfbe7c1304
+  - 5ed5ad54-5c4f-4309-b8f8-82d76603f215
+  - 692c1d2b-01c9-4134-a41e-9907f16f6acf
+  - 447c2d28-51cf-44f5-baca-80783d7b9be4
+  - c3600d5c-2e92-4b81-9e8a-426ee2813af3
+  - 85df370b-1f12-469b-969a-a04817d9b60c
+  - ba010fd2-aff8-4cd4-a353-663f65351fa9
+  - 1e7d6ae6-f631-4353-8aa2-7592af19fb93
+  - a692afa1-9dde-4d43-9b58-f08b74ed8c09
+  skip: 1
+  stride: 1
+  behavior: future
+  batch_size: 256
+  shuffle: true
+  num_workers: 6
+  persistent_workers: true
+  pin_memory: true
+env: dev
+checkpoints: /Users/jonas/Dev/NEAX/Comprisk/lightning_logs/version_9/checkpoints
+report_name: null
+tag: 62df7942-7815-4ccf-a722-4ba74b721732
+optimizer: null
+lr_scheduler: null
+checkpoints: /Users/jonas/Dev/NEAX/Comprisk/lightning_logs/version_9/checkpoints
+data:
+  batch_size: 256
+  behavior: future
+  features_in:
+  - 440f9da6-380c-43fd-8ff1-bcdfbe7c1304
+  - 2527e879-d394-4e67-aaf6-4be93323658e
+  - af6435f7-a03d-4927-9b79-cba26c016c6d
+  - aa257f12-ea1c-4ee3-8fbb-c46ac0622933
+  - 2928c90e-b727-46dc-84f2-af90216f677b
+  - ae75ea2c-6115-4151-b45e-08ab397a879b
+  - 5ed5ad54-5c4f-4309-b8f8-82d76603f215
+  - 692c1d2b-01c9-4134-a41e-9907f16f6acf
+  - 447c2d28-51cf-44f5-baca-80783d7b9be4
+  - c3600d5c-2e92-4b81-9e8a-426ee2813af3
+  - 85df370b-1f12-469b-969a-a04817d9b60c
+  - 9bcef960-1b4f-43da-aa43-c41f8a905352
+  - ba010fd2-aff8-4cd4-a353-663f65351fa9
+  - aa304a57-cb88-4760-8c5e-9b609ef845ee
+  - 1e7d6ae6-f631-4353-8aa2-7592af19fb93
+  - c2c64945-4b0a-4816-9b52-906ce8b5b0d7
+  - a692afa1-9dde-4d43-9b58-f08b74ed8c09
+  - b897cc6f-48fb-425d-800c-df4a8e8c9f18
+  features_out:
+  - 440f9da6-380c-43fd-8ff1-bcdfbe7c1304
+  - 5ed5ad54-5c4f-4309-b8f8-82d76603f215
+  - 692c1d2b-01c9-4134-a41e-9907f16f6acf
+  - 447c2d28-51cf-44f5-baca-80783d7b9be4
+  - c3600d5c-2e92-4b81-9e8a-426ee2813af3
+  - 85df370b-1f12-469b-969a-a04817d9b60c
+  - ba010fd2-aff8-4cd4-a353-663f65351fa9
+  - 1e7d6ae6-f631-4353-8aa2-7592af19fb93
+  - a692afa1-9dde-4d43-9b58-f08b74ed8c09
+  num_workers: 6
+  persistent_workers: true
+  pin_memory: true
+  sequence_in: 120
+  sequence_out: 1
+  shuffle: true
+  skip: 1
+  stride: 1
+  train: environment/production/configs/62df7942-7815-4ccf-a722-4ba74b721732/model/train.yaml
+  validate: environment/production/configs/62df7942-7815-4ccf-a722-4ba74b721732/model/validate.yaml
+env: production
+lr_scheduler: null
+model:
+  class_path: CompriskV2.model.autoregressive.AutoregressiveCertaintyModel
+  init_args:
+    dropout: 0.3
+    hidden_dim: 128
+    lr: 0.001
+    num_layers: 3
+    optimizer: AdamW
+    regression_training: 0.0
+optimizer: null
+report_name: null
+seed_everything: 1
+tag: 62df7942-7815-4ccf-a722-4ba74b721732
+trainer:
+  accelerator: auto
+  accumulate_grad_batches: 1
+  barebones: false
+  benchmark: null
+  callbacks:
+  - class_path: lightning.pytorch.callbacks.EarlyStopping
+    init_args:
+      check_finite: true
+      check_on_train_epoch_end: null
+      divergence_threshold: null
+      log_rank_zero_only: false
+      min_delta: 1.0e-07
+      mode: min
+      monitor: val/l1
+      patience: 10
+      stopping_threshold: null
+      strict: true
+      verbose: false
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      auto_insert_metric_name: false
+      dirpath: null
+      enable_version_counter: true
+      every_n_epochs: null
+      every_n_train_steps: null
+      filename: epoch={epoch:02d}-loss={val/l1:.5f}
+      mode: min
+      monitor: val/l1
+      save_last: null
+      save_on_train_epoch_end: null
+      save_top_k: 10
+      save_weights_only: false
+      train_time_interval: null
+      verbose: false
+  check_val_every_n_epoch: 1
+  default_root_dir: null
+  detect_anomaly: false
+  deterministic: null
+  devices: auto
+  enable_checkpointing: null
+  enable_model_summary: null
+  enable_progress_bar: null
+  fast_dev_run: false
+  gradient_clip_algorithm: null
+  gradient_clip_val: 1.0
+  inference_mode: true
+  limit_predict_batches: null
+  limit_test_batches: null
+  limit_train_batches: null
+  limit_val_batches: null
+  log_every_n_steps: 1
+  logger: null
+  max_epochs: 100
+  max_steps: -1
+  max_time: null
+  min_epochs: null
+  min_steps: null
+  num_nodes: 1
+  num_sanity_val_steps: null
+  overfit_batches: 0.0
+  plugins: null
+  precision: 32
+  profiler: null
+  reload_dataloaders_every_n_epochs: 0
+  strategy: auto
+  sync_batchnorm: false
+  use_distributed_sampler: true
+  val_check_interval: null

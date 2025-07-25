@@ -1,9 +1,9 @@
-folder: environment/dev/datasets/thyssen-vd2-latest
+folder: environment/dev/datasets/thyssen-vd2-longterm
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 intervals:
-  - 2025-05-19 2025-05-20 # the 2 days after part change
+  - 2024-01-01 2025-07-11
 num_workers: 8
-overwrite: false
+overwrite: true
 
 modules:
   - class_path: Dataflux.modules.State
@@ -12,13 +12,6 @@ modules:
       lower: 1
       upper: 1
       alpha_threshold: 1800
-      beta_threshold: 0
-  - class_path: Dataflux.modules.state.State
-    init_args:
-      key: 0f4deafe-56ce-41bc-a522-99c88c8f26e2 # PositionBypassregelventilPCV74381 (%)
-      lower: 0
-      upper: 0
-      alpha_threshold: 300
       beta_threshold: 0
   - class_path: Dataflux.modules.features.Features
     init_args:

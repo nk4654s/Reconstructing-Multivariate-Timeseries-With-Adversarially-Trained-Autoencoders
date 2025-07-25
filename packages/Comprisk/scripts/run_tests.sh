@@ -1,1 +1,0 @@
-CAS_PROJECT_ROOT=$(pwd) CAS_DEBUG_MODE=0 uv run python -m unittest discover -s tests -p 'test_*.py'

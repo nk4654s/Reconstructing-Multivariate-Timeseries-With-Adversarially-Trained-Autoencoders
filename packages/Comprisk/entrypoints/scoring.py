@@ -26,9 +26,7 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
 
         self._reduced = reduced_mode
 
-    def __call__(
-        self, context: EntrypointContext, *args, **kwargs
-    ) -> EntrypointContext:
+    def __call__(self, context: EntrypointContext, *args, **kwargs) -> EntrypointContext:
         # adjust the dataset's stride to be as long as an output window for
         # a faster transformer fit
         dataset_args = context.datamodule.valset.get_args()
@@ -50,10 +48,10 @@ class TrainScoreTransformerEntrypoint(EntrypointBase):
             cls=R2ScoreWrapper,
             data=context.datamodule,
             reduced=self._reduced,
-            verbose=DEBUG_MODE
+            verbose=DEBUG_MODE,
         )
 
-        #wrapper.export_to(context.config_folder)
+        # wrapper.export_to(context.config_folder)
         logger.info("Fitted ScoreTransformer successfully.")
 
         context.model = checkpoint.model

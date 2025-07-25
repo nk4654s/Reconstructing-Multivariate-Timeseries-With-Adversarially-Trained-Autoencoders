@@ -101,9 +101,9 @@ class BaseModel(NormalizeWrapper):
 
     def on_train_epoch_start(self) -> None:
         super().on_train_epoch_start()
-        assert self._lr_scheduler, "Learning rate scheduler not initialized."
-        self.log("epoch/lr", self._lr_scheduler.get_last_lr()[-1])
-        logger.debug("Starting epoch %s with lr=%s", self.current_epoch, self._lr_scheduler.get_last_lr()[-1])
+        if self._lr_scheduler:
+            self.log("epoch/lr", self._lr_scheduler.get_last_lr()[-1])
+            logger.debug("Starting epoch %s with lr=%s", self.current_epoch, self._lr_scheduler.get_last_lr()[-1])
 
     def training_step(self, batch: BATCH_TYPE, **kwargs) -> torch.Tensor:
         x, y = batch

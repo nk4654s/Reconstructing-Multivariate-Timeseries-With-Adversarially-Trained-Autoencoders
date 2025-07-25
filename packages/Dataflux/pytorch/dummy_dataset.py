@@ -1,14 +1,16 @@
 from enum import Enum, auto
 from typing import Tuple
-
+import uuid
 import numpy as np
 import torch
 
+from Dataflux.diskio.meta import Metadata
 from Dataflux.pytorch import DatasetArgs, DatasetTypes
 
 
 class DummyMode(Enum):
     """This enum helps to choose the initialization of the DummyDataset."""
+
     RANDOM = auto()
     ZEROS = auto()
     ONES = auto()
@@ -24,6 +26,7 @@ class DummyDataset(torch.utils.data.Dataset):
         n_sequence (int): The window or sequence size returned.
         stride (int): The stride factor of the window/sequence.
     """
+
     def __init__(
         self,
         init_mode: DummyMode,
@@ -34,7 +37,13 @@ class DummyDataset(torch.utils.data.Dataset):
         stride: int = 1,
     ) -> None:
         # init data
-        self._data = np.random.randn(n_samples, n_features)
+        self._data = np.array(
+            np.random.randn(
+                n_samples,
+                n_features,
+            ),
+            dtype=np.float32,
+        )
         if init_mode == DummyMode.ZEROS:
             self._data *= 0
 
@@ -42,6 +51,8 @@ class DummyDataset(torch.utils.data.Dataset):
             self._data = np.ones_like(self._data, dtype=np.float32)
 
         # init args
+        names = [str(uuid.uuid4()) for _ in range(n_features)]
+        self._uuid = uuid.uuid4()
         self._args = DatasetArgs(
             sequence_in=n_sequence,
             sequence_out=n_future,
@@ -49,11 +60,34 @@ class DummyDataset(torch.utils.data.Dataset):
             features_out=n_features,
             skip=1,
             stride=stride,
-            behavior_=DatasetTypes.AUTOENCODER if n_future == 0 else DatasetTypes.PREDICTIVE,
-            names_in=[str(i) for i in range(n_features)],
-            names_out=[str(i) for i in range(n_features)],
-            names=[str(i) for i in range(n_features)],
+            behavior_=(DatasetTypes.AUTOENCODER if n_future == 0 else DatasetTypes.PREDICTIVE),
+            names_in=names,
+            names_out=names,
+            names=names,
         )
+
+    def set_stride(self, stride: int) -> None:
+        self._args.stride = stride
+
+    @property
+    def UUID(self) -> str:
+        """Returns the unique ID of this."""
+        return self._uuid
+
+    @property
+    def metadata(self) -> Metadata:
+        state = self._args.names_in[0]
+        return Metadata(
+            path="dummy",
+            uuid=self.UUID,
+            files=[],
+            total_recordings=len(self),
+            state_alpha={state: {"delay": 1_000, "lower": 0, "upper": 1}},
+        )
+
+    @property
+    def shape(self) -> tuple[int, int, int]:
+        return (len(self), self._args.sequence_in, self._args.features_in)
 
     def get_args(self) -> DatasetArgs:
         return self._args.copy()
@@ -70,6 +104,11 @@ class DummyDataset(torch.utils.data.Dataset):
         i_n = index * self._args.stride + self._args.sequence_in + self._args.sequence_out
 
         if self._args.sequence_out > 0:
-            return self._data[i_t:i_n], self._data[i_t:i_n]
+            return self._data[i_0:i_t], self._data[i_t:i_n]
 
         return self._data[i_0:i_n], self._data[i_0:i_n]
+
+
+if __name__ == "__main__":
+    dataset = DummyDataset(DummyMode.RANDOM, n_samples=100, n_features=3, n_sequence=10, n_future=1)
+    print(dataset.metadata)

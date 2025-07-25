@@ -5,7 +5,7 @@ permissions:
   actions: read
   checks: write
   packages: write
-  
+
 on:
   push:
     paths:
@@ -15,17 +15,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  dataflux-test:
-    uses: ./.github/workflows/dataflux-tests.yml
-
-  comprisk-test:
-    uses: ./.github/workflows/comprisk-tests.yml
-
-  compmesh-test:
-    uses: ./.github/workflows/compmesh-tests.yml
-
-  toking-test:
-    uses: ./.github/workflows/toking-tests.yml
+  packages-test:
+    uses: ./.github/workflows/testing.yml
 
   build-jar:
     runs-on: ubuntu-latest
@@ -37,9 +28,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
-      - name: Build Jar
+      - name: Raise Jar Version
         run: |
-          uv run dev_tools.py
+          uv run cas-tools
 
       - name: Set up Java and Maven
         uses: actions/setup-java@v4
@@ -50,5 +41,4 @@ jobs:
       - name: Deploy to GitHub Packages
         run: mvn deploy -X
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
