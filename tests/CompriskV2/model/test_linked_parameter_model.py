@@ -1,7 +1,9 @@
+import os
 import numpy as np
 import torch
 
 from CompriskV2.tests.utils import CliContext
+from CompriskV2.model.utils import Checkpoint
 from CompriskV2.model import LinkedParameterModel
 
 
@@ -25,3 +27,17 @@ def test_standardizer():
         x, y = model(x, y, return_score=False)
         assert not x.requires_grad
         assert not y.requires_grad
+
+
+def test_standardizer_export():
+    with CliContext(LinkedParameterModel) as context:
+        model = context.cli.model
+        mean, scale = context.cli.datamodule.standardizer_params()
+        model.set_standardizer(mean, scale)
+
+        context.cli.trainer.save_checkpoint(os.path.join(context.ckpt_path, "loss=0.ckpt"))
+        checkpoint = Checkpoint(context.path)
+        model = checkpoint.model
+
+        assert np.allclose(mean, model._mean.detach().numpy(), rtol=1e-3)
+        assert np.allclose(scale, model._scale.detach().numpy(), rtol=1e-3)

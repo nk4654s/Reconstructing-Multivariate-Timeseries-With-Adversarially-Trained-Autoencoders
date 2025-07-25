@@ -72,6 +72,8 @@ class CliContext(ContextDecorator):
 
     def __exit__(self, *exc):
         shutil.rmtree(self.path)
+        if os.path.exists("environment/test"):
+            shutil.rmtree("environment/test")
 
 
 if __name__ == "__main__":

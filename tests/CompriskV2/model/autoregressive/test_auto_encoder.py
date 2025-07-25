@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 from CompriskV2.model.utils.checkpoint import get_best_checkpoint
 from CompriskV2.model.utils import Checkpoint, ModelIterator
@@ -24,6 +25,33 @@ def test_iterator():
         iterator = ModelIterator(f"{context.path}/model.onnx", context.dataset)
         result = iterator.run()
         assert result
+
+
+def test_score_data():
+    with CliContext(AutoregressiveAutoencoder) as context:
+        args = context.dataset.get_args()
+
+        score = context.cli.model._score_data
+        assert not score.ready
+
+        for _, y in context.cli.datamodule.train_dataloader():
+            score.record(y)
+
+        weight, total = score.finalize("cpu")
+        assert score.ready
+        assert len(weight) == args.features_out
+        assert len(total) == args.features_out
+
+        context.cli.model._weight = weight
+        context.cli.model._total = total
+        context.cli.trainer.save_checkpoint(os.path.join(context.ckpt_path, "loss=0.ckpt"))
+        model = Checkpoint(context.path).model
+
+        assert np.allclose(weight.detach().numpy(), model._weight.detach().numpy(), rtol=1e-3)
+        assert np.allclose(total.detach().numpy(), model._total.detach().numpy(), rtol=1e-3)
+        _, y = model.embedding
+        score = model.score(y, y * 2)
+        assert np.all(score.detach().numpy() > 0)
 
 
 def test_training():
