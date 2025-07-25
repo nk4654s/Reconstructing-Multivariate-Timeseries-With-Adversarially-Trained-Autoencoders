@@ -9,7 +9,9 @@ from CompriskV2.model import LinkedParameterModel
 logger = get_logger(__name__)
 
 
-def export(model: LinkedParameterModel, path: str, dataset: Dataset, version: int = 0) -> None:
+def export(
+    model: LinkedParameterModel, path: str, dataset: Dataset, version: int = 0
+) -> None:
     """This function exports a model to the ONNX format. Moreover, it adds custom metadata to the model
     based on the given dataset (should be the one used for training).
 
@@ -19,6 +21,7 @@ def export(model: LinkedParameterModel, path: str, dataset: Dataset, version: in
         dataset (Dataset): The dataset use for training, here the dataset arguments were used to add metadata to the model.
         version (int): The model's version.
     """
+    assert "score" in model.labels, "The score label is required by Xplore-backend"
     if not path.endswith(".onnx"):
         path = os.path.join(path, "model.onnx")
 
