@@ -9,14 +9,20 @@ logger = get_logger(__name__)
 
 
 def export():
-    cli = CompriskCLI(LinkedParameterModel, DataModule, subclass_mode_model=True, run=False)
+    cli = CompriskCLI(
+        LinkedParameterModel, DataModule, subclass_mode_model=True, run=False
+    )
 
     Checkpoint(cli.root_dir).export()
 
 
 def visualize():
-    cli = CompriskCLI(LinkedParameterModel, DataModule, subclass_mode_model=True, run=False)
-    assert cli.config.report_name, "No report name specified, use '--report-name <name>'"
+    cli = CompriskCLI(
+        LinkedParameterModel, DataModule, subclass_mode_model=True, run=False
+    )
+    assert (
+        cli.config.report_name
+    ), "No report name specified, use '--report-name <name>'"
 
     iterator = ModelIterator(f"{cli.root_dir}/model.onnx", cli.datamodule.valset)
     result = iterator.run(batch_size=512)
@@ -30,10 +36,15 @@ def visualize():
 
 
 def train():
-    cli = CompriskCLI(LinkedParameterModel, DataModule, subclass_mode_model=True, run=False)
-    cli.model.set_standardizer(*cli.datamodule.standardizer_params())
-    cli.trainer.fit(cli.model, cli.datamodule)
+    cli = CompriskCLI(
+        LinkedParameterModel, DataModule, subclass_mode_model=True, run=False
+    )
 
+    std_inputs = cli.datamodule.standardizer_params()
+    std_outputs = cli.datamodule.standardizer_params(output=True)
+    cli.model.set_transformers(std_inputs, std_outputs)
+
+    cli.trainer.fit(cli.model, cli.datamodule)
     Checkpoint(cli.trainer.log_dir).export()
 
 
