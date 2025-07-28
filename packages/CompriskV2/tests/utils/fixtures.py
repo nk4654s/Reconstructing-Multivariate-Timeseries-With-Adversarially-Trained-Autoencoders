@@ -36,11 +36,15 @@ class CliContext(ContextDecorator):
             parser_kwargs={"default_config_files": [config_path]},
         )
 
-        self.dataset = DummyDataset(DummyMode.RANDOM, 100, 3, 10, 1)
-        self.dataset._args.names_in = self.cli.datamodule.features_in
-        self.dataset._args.names_out = self.cli.datamodule.features_out
-        names = self.cli.datamodule.features_in + self.cli.datamodule.features_out
-        self.dataset._args.names = list(set(names))
+        self.dataset = DummyDataset(
+            DummyMode.RANDOM,
+            n_samples=100,
+            features_in=data["data"]["features_in"],
+            features_out=data["data"]["features_out"],
+            n_sequence=data["data"]["sequence_in"],
+            n_future=data["data"]["sequence_out"],
+        )
+
         self.cli.datamodule._train = self.dataset
         self.cli.datamodule._val = self.dataset
 

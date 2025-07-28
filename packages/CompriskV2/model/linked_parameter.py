@@ -21,11 +21,8 @@ class SampleTransformer(nn.Module):
         self._a = nn.Parameter(Tensor(a))
         self._b = nn.Parameter(Tensor(b))
 
-    def standardize(self, x: Tensor) -> Tensor:
+    def apply(self, x: Tensor) -> Tensor:
         return (x - self._a) / (self._b + self._eps)
-
-    def normalize(self, x: Tensor) -> Tensor:
-        return (x - self._b) / (self._a - self._b)
 
 
 class LinkedParameterModel(BaseModel):
@@ -75,8 +72,8 @@ class LinkedParameterModel(BaseModel):
     @torch.no_grad()
     def forward(self, x: Tensor, y: Tensor, **kwargs) -> tuple[Tensor, ...]:
         return (
-            self._input_transformer.standardize(x),
-            self._output_transformer.standardize(y),
+            self._input_transformer.apply(x),
+            self._output_transformer.apply(y),
         )
 
     def set_transformers(
