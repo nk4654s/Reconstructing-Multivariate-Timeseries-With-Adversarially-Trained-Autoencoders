@@ -11,9 +11,25 @@ def visualize_single_result(
     name: str,
     unit: str = "N/A",
     ts_offset: int = 0,
-    show_mse: bool = True,
     std: int = 1,
-):
+) -> plt.Figure:
+    """This function visualizes the model's result provided as pandas DataFrame. If
+    the output labels contain `var`, then the model's certainty is visualized as well.
+
+    Layout:
+        - left, real data and prediction (certainty optional)
+        - right, healthscore
+
+    Args:
+        df (pd.DataFrame): Prediction result.
+        name (str): Name of the prediction result (e.g. "Voltage").
+        unit (str): Y-Axis unit (e.g. "V").
+        ts_offset (int): X-Axis tiemstamp offset. Defaults to 0.
+        std (int): Certainty std factor. Defaults to 1.
+
+    Returns:
+        (plt.Figure): The created figure.
+    """
     # Ensure the index is datetime
     if not pd.api.types.is_datetime64_any_dtype(df.index):
         df = df.copy()
@@ -31,8 +47,8 @@ def visualize_single_result(
     x = df["y_hat"].index
     if "var" in df.columns:
         var = np.array(df["var"])
-        a2 = y_hat - std * np.sqrt(var) + 1
-        a1 = y_hat + std * np.sqrt(var) + 1
+        a2 = y_hat - std * np.sqrt(var)
+        a1 = y_hat + std * np.sqrt(var)
         axs[0].fill_between(x, a1, a2, color="orange", alpha=0.3, label="Certainty")
 
     axs[1].plot(score, color="black", label="Healthscore")

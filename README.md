@@ -4,21 +4,21 @@
 [![Comprisk](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/comprisk-tests.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/comprisk-tests.yml)
 [![Toking Tests](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/toking-tests.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/toking-tests.yml)
 
-The Compressor AI Suite (CAS) mainly consists of two packages `Comprisk` and `Dataflux` located under 
-`packages/`. The `Dataflux` package manages the download and processing of a compressor's dataset. Click 
-[here](https://github.com/neaxplore/xplore-ai-cas/tree/master/packages/Dataflux) to learn more 
-about the standalone features and development of `Dataflux`. The `Comprisk` package is responsible for training an AI based 
-on the downloaded dataset. A set of multiple configuration files manages the training hyperparameters and 
+The Compressor AI Suite (CAS) mainly consists of two packages `CompriskV2` and `Dataflux` located under
+`packages/`. The `Dataflux` package manages the download and processing of a compressor's dataset. Click
+[here](https://github.com/neaxplore/xplore-ai-cas/tree/master/packages/Dataflux) to learn more
+about the standalone features and development of `Dataflux`. The `CompriskV2` package is responsible for training an AI based
+on the downloaded dataset. A set of multiple configuration files manages the training hyperparameters and
 specifies the exact training. More information about Comprisk and its configuration can be in the `Usage`-Section.
 
 ## Installation 📦
 CAS relies on [Python](https://www.python.org), [uv](https://docs.astral.sh/uv/getting-started/installation/), and supports a variety of deep learning acceleration backends
-(e.g. `CUDA`, `MPS`, ...). The installation is simplified by multiple script files, but Python must be 
+(e.g. `CUDA`, `MPS`, ...). The installation is simplified by multiple script files, but Python must be
 installed manually.
 
 ### Development Environment
-Use the `setup.sh` script to set up the development environment, which comes with an installation of `uv`. After the 
-installation of `uv`, the project's dependencies will be installed. Make sure to run the following command within the 
+Use the `setup.sh` script to set up the development environment, which comes with an installation of `uv`. After the
+installation of `uv`, the project's dependencies will be installed. Make sure to run the following command within the
 downloaded repository. The installation may take a while.
 
 ```commandline
@@ -32,13 +32,13 @@ CAS utilizes environment variables to configure the development environment. If 
 section was used to install everything, then all `ENV` vars should be configured correctly. Currently, the following
 variables are set:
 
-- `CAS_DEBUG_MODE=1` enables logging, set to `0` to disable logging. Generated AI scores will be uploaded to the test 
+- `CAS_DEBUG_MODE=1` enables logging, set to `0` to disable logging. Generated AI scores will be uploaded to the test
     device, if `CAS_DEBUG_MODE=<machine-uuid>`.
-- `CAS_PROJECT_ROOT=$(pwd)` set the local repository as the project root, which is required for the logger to find all 
+- `CAS_PROJECT_ROOT=$(pwd)` set the local repository as the project root, which is required for the logger to find all
   submodules of CAS.
 
 ### Documentation 🎓
-The developer documentation can be generated as `HTML`-files after installing the developer environment using the 
+The developer documentation can be generated as `HTML`-files after installing the developer environment using the
 following command:
 
 ```commandline
@@ -47,11 +47,11 @@ sh scripts/docs.sh
 
 ## Configuration 🛠️
 
-In CAS, everything is handled through `yaml` configuration files, which provide a flexible and scalable way to define 
-complex workflows. There are two types of configurations, one required for `Comprisk` and one required for `Dataflux`.
+In CAS, everything is handled through `yaml` configuration files, which provide a flexible and scalable way to define
+complex workflows. There are two types of configurations, one required for `CompriskV2` and one required for `Dataflux`.
 
-> Note: To simplify things, one can link the Dataflux-Config to the Comprisk-Config, as `Dataflux` became part of 
-the `Comprsik` pipeline.
+> Note: To simplify things, one can link the Dataflux-Config to the CompriskV2-Config, as `Dataflux` became part of
+the `ComprsikV2` pipeline.
 
 ```
 configs/
@@ -66,13 +66,13 @@ configs/
         ...
 ```
 
-The key insight here is that each model has its own dedicated pipeline configuration, which defines the specific 
+The key insight here is that each model has its own dedicated pipeline configuration, which defines the specific
 training and data workflow for that model.
 
 ### Defining a Flux Configuration
 
-A `Dataflux` or `Flux` configuration is a critical component of the system, responsible for defining the data to be 
-downloaded and processed from each machine given a specific timespan. This pipeline serves as the foundation for 
+A `Dataflux` or `Flux` configuration is a critical component of the system, responsible for defining the data to be
+downloaded and processed from each machine given a specific timespan. This pipeline serves as the foundation for
 producing the data used to train and validate AI models.
 
 The dataset pipeline config requires three keys: `folder`, `machine_uuid`, and `intervals`. These keys define the dataset's
@@ -116,8 +116,8 @@ that the dataset is _always_ consistent and includes a given list of features. M
 
 ### Defining a Training
 
-A training configuration defines a `trainer`, the `model`, and the `data` to load. The `trainer` describes the training 
-process, including callbacks, the model's precision, maximum number epochs to train, and logging. The `model` keyword 
+A training configuration defines a `trainer`, the `model`, and the `data` to load. The `trainer` describes the training
+process, including callbacks, the model's precision, maximum number epochs to train, and logging. The `model` keyword
 points to the AI architecture including hyperparameters and potential sub-modules. Finally, the `data` defines the
 dataset's path, sample sequence length, and more.
 
@@ -126,8 +126,8 @@ dataset's path, sample sequence length, and more.
 
 ```yaml
 # CAS specific
+env: dev
 tag: <machine-uuid>
-normalizer: <path-to-normalizer-config>
 
 trainer:
     callbacks:
@@ -136,7 +136,6 @@ trainer:
               monitor: validate/MSELoss
               min_delta: 1.0e-05
               patience: 3
-        - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
     precision: 32
     max_epochs: <max-number-of-epochs>
 data:
@@ -151,13 +150,13 @@ model:
     ...
 ```
 
-> Note: Before training, the Flux-Configurations will be copied to the model's output folder as `dataset-train.yaml` and 
-`dataset-validate.yaml`.
+> Note: Before training, the Flux-Configurations will be copied to the model's output folder as `train.yaml` and
+`validate.yaml`.
 
 #### Model Configuration
 
-The model configuration heavily depends on the `Comprisk.model.BaseModel` initialization arguments. Additional arguments
-are likely, depending on the model class provided. E.g.
+The model configuration heavily depends on the `Comprisk2.model.LinkedParameterModel` initialization arguments. Additional
+arguments are likely, depending on the model class provided. E.g.
 
 ```yaml
 model:
@@ -176,9 +175,14 @@ model:
 
 ### Define Hyperparameter-Tuning
 
-The system implements a straightforward way to perform a hyperparameter search only on parameters of interest. To do so, a `yaml`  configuration can be created, which is totally optional to create a full pipeline. This config contains the specifications for the **model** hyperparameters, **data** configuration, and **rules** which may are important depending on the model architecture. 
+The system implements a straightforward way to perform a hyperparameter search only on parameters of interest. To do
+so, a `yaml`  configuration can be created, which is totally optional to create a full pipeline. This config contains
+the specifications for the **model** hyperparameters, **data** configuration, and **rules** which may are important
+depending on the model architecture.
 
-For instance, the auto-encoder architecture requires an output dimension of the encoder which equals the decoders input dimension. A rule whould simply define the hyperparameter path of the decoder input to be the encoder output. Then, the encoder output can be part of the hyperparameter search without resulting conflicts.
+For instance, the auto-encoder architecture requires an output dimension of the encoder which equals the decoders
+input dimension. A rule whould simply define the hyperparameter path of the decoder input to be the encoder output.
+Then, the encoder output can be part of the hyperparameter search without resulting conflicts.
 
 More complex rules with mathematical operators such as plus, minus, multiply, and divide are possible.
 
@@ -200,63 +204,79 @@ rules:
 
 ## Usage 🚀
 ### Training
-The AI training is handled Comprisk and mainly performed using the `comprisk-train` command, which uses a `YAML` 
-configuration file to define the training pipeline. After installing the developer environment and building the 
-documentation head to `docs/Comprisk/index.html`. Here, the configuration's structure is explained in more detail. 
-Depending on the environment, the training configuration file should be located in the `configs` folder next to the 
-`dataflux` files. Then, use the following command to start a training.
+The AI training is mainly performed using the `cas-train` command, which uses a `YAML` configuration file to define the
+training pipeline. After installing the developer environment and building the documentation head to
+`docs/Comprisk/index.html`. Here, the configuration's structure is explained in more detail.
 
 ```commandline
-comprisk-train -c path_to_config
+cas-train -c path_to_config
 ```
 
-> Note: When starting a training, the folder `environment/dev/models/` contains the model's weights, configuration 
+> Note: When starting a training, the folder `environment/dev/models/` contains the model's weights, configuration
 > used, tensorboard, and insights into the model's performance.
-> 
-> When a model should be deployed  to production, then use the `dev_tools.py -d` command. This will copy the 
-> configuration and model, while checking for overwrites. To minimise the folder size, the `analysis` subfolder and 
-> the `*.tfevents.*` file are excluded from the model's output folder.
+>
+> When a model should be deployed  to production, then use the `cas-tools -d` command. This will copy the
+> configuration and model, while checking for overwrites. To minimise the folder size, the `analysis` subfolder, any
+> `*.pdf` files, and the `*.tfevents.*` file are excluded from the model's output folder.
 
 ### Fine-Tuning
-Use the same command as for training when fine-tuning a model, but re-use the `config.yaml` file in the model's output 
-folder. This will automatically load the best checkpoint and continue training using the same settings as before. If a 
+Use the same command as for training when fine-tuning a model, but re-use the `config.yaml` file in the model's output
+folder. This will automatically load the best checkpoint and continue training using the same settings as before. If a
 different dataset should be used, set `--data.train path_to_dataflux_config` (repeat this for `validate`). Alternatively
-define another config containing the values of `data` only (name this file e.g. `update.yml`). Then use the following 
+define another config containing the values of `data` only (name this file e.g. `update.yml`). Then use the following
 command.
 
 ```commandline
-comprisk-train -c path_to_config_of_trained_model --data path_to_update.yml
+cas-train -c path_to_config_of_trained_model --data path_to_update.yml
 ```
 
+> Note: The deprecated models are available thorugh `comprisk-train`
+
 ### Evaluation
-To apply a model for testing, use the `comprisk-analyze` command and provide a dataset to use given the argument 
+To apply a model for testing, use the `cas-visualize` command and provide a dataset to use given the argument
 `--data.validate path_to_dataflux_config`.
 
 ```commandline
-comprisk-analyze -c path_to_config_of_trained_model --data.validate path_to_dataflux_config
+cas-visualize -c path_to_config_of_trained_model --data.validate path_to_dataflux_config
 ```
 
 ## Deployment 💅🏽
-This repository comes with a set of handy scripts packed in a single python file, which can be accessed by calling 
+This repository comes with a set of handy scripts packed in a single python file, which can be accessed by calling
 
 ```commandline
-python dev_tools.py -h
+cas-tools -h
 ```
 
-The Dev-Tools help organizing folders and copying a model from development (`-d`) to production environment. The deployment
+The `cas-tools` help organizing folders and copying a model from development (`-d`) to production environment. The deployment
 will copy the `model.onnx` file to the `environment/production/models/` folder and other files to the production's
 `configs` folder.
 
-The models trained for production are included in git, causing a GitHub Action pipeline to
-execute the `dev_tools.py`. The Dev-Tools calculates the current version number and updates the `pom.xml` accordingly. 
-Following the `pom.xml` update, a new `*.jar` file is built by GitHub Actions and published to GitHub packages. This 
-jar-file contains all `*.onnx` models located in `environment/production/models/`.
+Models within the production folder are included in git and packed in a `*.jar` file for deployment. The deployment version
+is calculated by the code version and number of models deployed, then the `cas-tools` entrypoint adds the updated version
+number to the `pom.xml`. After changing the production's folder content, create and deploy a new jar using
 
-### File Structure
+```commandline
+mvn deploy
+```
+
+Now, to deploy the updated `JAR`-file to the backend, clone the latest version of
+(xplore-backend-lambda-functions)[https://github.com/neaxplore/xplore-backend-lambda-functions] and switch to the folder
+`backend/clojure/virtual-sensor-processing/`. First, raise the `neax.onnx.ai.cas/models` version to the latest one deployed.
+Then, execute
+
+```commandlinei
+sh ./push_to_ecr.sh
+```
+
+The script will update the docker image on AWS with the newest models deployed.
+
+> TODO: describe how to register a model to the backend
+
+### Production File Structure
 
 The model filenames are constructed by the machine's `UUID` the model was trained on, followed by the type of model. Here,
 `support` stands for the support points model (refer to `packages/Compmesh`) and `model` means deep learning model
-(refer to `packages/Comprisk`).
+(refer to `packages/CompriskV2`).
 
 ```
 models/
