@@ -1,19 +1,13 @@
 # CAS specific
-environment: dev
+env: dev
 tag: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
-name_mapping: environment/dev/configs/gasunie-sp/3_mapping.yml
-support_points: environment/dev/support_points/gasunie/
 
 # model configuration
 model:
-  class_path: Compmesh.model.support_point.SupportPointModel
+  class_path: CompriskV2.model.ko3.SupportPointModel
   init_args:
-    interpolator: rbf
-    activation: linear
-    loss: MSELoss
-    optimizer: Adam
-    lr: 0.001
-    lr_decay: 0.9
+    kernel: linear
+    ko3_table: environment/dev/support_points/gasunie
 
 # trainer and dataset config
 seed_everything: 0
@@ -22,19 +16,25 @@ trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.EarlyStopping
       init_args:
-        monitor: validate/MSELoss
-        min_delta: 1.0e-05
-        patience: 3
-    - class_path: Comprisk.helper.checkpoint.BasicCheckpointCallback
+        monitor: val/loss
+        min_delta: 1.0e-07
+        patience: 10
+        mode: min
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        save_top_k: 10
+        monitor: val/loss
+        filename: epoch={epoch:02d}-loss={val/loss:.5f}
+        auto_insert_metric_name: false
 
   precision: 32
-  max_epochs: 10
+  max_epochs: 4
   gradient_clip_val: 1.0
   log_every_n_steps: 1
 
 data:
-  train: configs/gasunie-sp/1_dataset_train.yml
-  validate: configs/gasunie-sp/2_dataset_validate.yml
+  train: environment/dev/configs/gasunie-sp/1_dataset_train.yml
+  validate: environment/dev/configs/gasunie-sp/2_dataset_validate.yml
   sequence_in: 1
   sequence_out: 0
   features_in:
