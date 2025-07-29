@@ -56,8 +56,8 @@ class LinkedParameterModel(BaseModel):
         features_in = sorted(features_in)
         features_out = sorted(features_out)
 
-        self._sequence_in = sequence_in
-        self._sequence_out = sequence_out
+        self._sequence_in = max(sequence_in, 1)
+        self._sequence_out = max(sequence_out, 1)
 
         self._input_transformer = SampleTransformer(self._features_in)
         self._output_transformer = SampleTransformer(self._features_out)

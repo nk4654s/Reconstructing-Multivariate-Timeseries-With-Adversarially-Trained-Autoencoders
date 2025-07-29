@@ -9,7 +9,9 @@ from CompriskV2.model import LinkedParameterModel
 logger = get_logger(__name__)
 
 
-def export(model: LinkedParameterModel, path: str, dataset: Dataset, version: int = 0) -> None:
+def export(
+    model: LinkedParameterModel, path: str, dataset: Dataset, version: int = 0
+) -> None:
     """This function exports a model to the ONNX format. Moreover, it adds custom metadata to the model
     based on the given dataset (should be the one used for training).
 
@@ -20,7 +22,7 @@ def export(model: LinkedParameterModel, path: str, dataset: Dataset, version: in
         version (int): The model's version.
     """
     if not path.endswith(".onnx"):
-        path = os.path.join(path, "model.onnx")
+        path = os.path.join(path, f"{model.onnx_name}.onnx")
 
     os.makedirs(os.path.dirname(path), exist_ok=True)
 

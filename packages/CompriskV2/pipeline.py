@@ -27,10 +27,11 @@ def visualize():
     iterator = ModelIterator(f"{cli.root_dir}/model.onnx", cli.datamodule.valset)
     result = iterator.run(batch_size=512)
 
-    _ = cli.datamodule.standardizer_params(output=True)
-    exclude = [k for k in result.sensors[0].data if k not in ["y_scaled", "y_hat"]]
-    logger.info("Ignored keys for revert standardization: %s", exclude)
-    result.revert_with(cli.datamodule.scaler, except_keys=exclude)
+    if cli.model.require_standardization:
+        _ = cli.datamodule.standardizer_params(output=True)
+        exclude = [k for k in result.sensors[0].data if k not in ["y_scaled", "y_hat"]]
+        logger.info("Ignored keys for revert standardization: %s", exclude)
+        result.revert_with(cli.datamodule.scaler, except_keys=exclude)
 
     Report(cli.root_dir, cli.config.report_name).generate_pdf(result)
 

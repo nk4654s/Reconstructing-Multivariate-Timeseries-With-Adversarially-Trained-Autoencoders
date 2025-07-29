@@ -30,7 +30,7 @@ class SupportPointModel(LinkedParameterModel):
     def __init__(
         self,
         ko3_table: str = "",
-        kernel: str = "rbf",
+        kernel: str = "gaussian",
         *args,
         **kwargs,
     ):
@@ -67,6 +67,10 @@ class SupportPointModel(LinkedParameterModel):
     @property
     def require_standardization(self) -> bool:
         return False
+
+    @property
+    def onnx_name(self) -> str:
+        return "support"
 
     def on_train_start(self) -> None:
         self.interpolator.to(self.device)
