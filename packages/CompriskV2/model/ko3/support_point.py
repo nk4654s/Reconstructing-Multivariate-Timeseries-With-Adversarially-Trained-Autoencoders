@@ -64,6 +64,10 @@ class SupportPointModel(LinkedParameterModel):
         self.interpolator = RBFGridInterpolator(gx[0].data, gy[0].data, kernel)
         self.calibrator = LinearCalibration(gy.shape[-1])
 
+    @property
+    def require_standardization(self) -> bool:
+        return False
+
     def on_train_start(self) -> None:
         self.interpolator.to(self.device)
         self.calibrator.to(self.device)
@@ -77,7 +81,7 @@ class SupportPointModel(LinkedParameterModel):
         self._score.record(y)
 
         loss = self._loss(y, y_pred)
-        self.log("val/loss", loss)
+        self.log("train/loss", loss)
         return loss
 
     def validation_step(self, batch: tuple[Tensor, Tensor]) -> Tensor:

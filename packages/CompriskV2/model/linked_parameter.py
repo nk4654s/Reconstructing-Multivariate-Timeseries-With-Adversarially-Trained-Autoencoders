@@ -70,6 +70,10 @@ class LinkedParameterModel(BaseModel):
         )
 
     @property
+    def require_standardization(self) -> bool:
+        return True
+
+    @property
     def labels(self) -> tuple[str]:
         return ("x", "y")
 

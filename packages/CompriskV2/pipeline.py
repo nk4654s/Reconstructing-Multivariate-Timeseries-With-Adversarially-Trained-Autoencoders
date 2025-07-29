@@ -40,9 +40,11 @@ def train():
         LinkedParameterModel, DataModule, subclass_mode_model=True, run=False
     )
 
-    std_inputs = cli.datamodule.standardizer_params()
-    std_outputs = cli.datamodule.standardizer_params(output=True)
-    cli.model.set_transformers(std_inputs, std_outputs)
+    # not all models require automatic standardization, see `SupportPointModel`
+    if cli.model.require_standardization:
+        std_inputs = cli.datamodule.standardizer_params()
+        std_outputs = cli.datamodule.standardizer_params(output=True)
+        cli.model.set_transformers(std_inputs, std_outputs)
 
     cli.trainer.fit(cli.model, cli.datamodule)
     Checkpoint(cli.trainer.log_dir).export()
