@@ -21,6 +21,7 @@ def export(
         dataset (Dataset): The dataset use for training, here the dataset arguments were used to add metadata to the model.
         version (int): The model's version.
     """
+    assert "score" in model.labels, "The score label is required by Xplore-backend"
     if not path.endswith(".onnx"):
         path = os.path.join(path, f"{model.onnx_name}.onnx")
 
