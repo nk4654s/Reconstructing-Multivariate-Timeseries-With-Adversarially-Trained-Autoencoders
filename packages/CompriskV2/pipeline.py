@@ -1,3 +1,11 @@
+"""
+Define entrypoints as methods in this file and link them to commands in the `pyproject.toml` file.
+
+- `train()` Calculates standardization parameters (`mean` and `scale`) and sets them to the model. Then the model training begins followed by an export into the ONNX format.
+- `export()` Manual trigger to export a model (loaded from a checkpoint).
+- `visualize()` Creates a report of the model's performance.
+"""
+
 from CompriskV2.model import LinkedParameterModel
 from CompriskV2.thunder import CompriskCLI, DataModule
 from CompriskV2.model.utils import Checkpoint, ModelIterator
