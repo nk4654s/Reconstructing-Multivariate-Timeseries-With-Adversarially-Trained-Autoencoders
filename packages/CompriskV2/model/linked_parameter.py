@@ -12,6 +12,7 @@ class SampleTransformer(nn.Module):
     def __init__(self, dim: int) -> None:
         super().__init__()
         logger.debug("Init transfomer module with %s values", dim)
+
         self._a = nn.Parameter(zeros(dim))
         self._b = nn.Parameter(zeros(dim))
 
@@ -45,9 +46,6 @@ class LinkedParameterModel(BaseModel):
 
         self._features_in = len(features_in)
         self._features_out = len(features_out)
-        logger.debug(
-            "Init module with y=%s and y=%s", self._features_in, self._features_out
-        )
 
         features_in = sorted(features_in)
         features_out = sorted(features_out)
@@ -71,6 +69,8 @@ class LinkedParameterModel(BaseModel):
 
     @torch.no_grad()
     def forward(self, x: Tensor, y: Tensor, **kwargs) -> tuple[Tensor, ...]:
+        self._input_transformer.to(x.device)
+        self._output_transformer.to(y.device)
         return (
             self._input_transformer.apply(x),
             self._output_transformer.apply(y),

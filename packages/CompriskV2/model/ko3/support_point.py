@@ -1,4 +1,5 @@
 import os
+import torch
 from torch import Tensor
 
 from CompriskV2.model.ko3.utils import (
@@ -10,6 +11,7 @@ from CompriskV2.model.ko3 import (
     ScatteredGridInterpolator,
     RBFGridInterpolator,
     LinearCalibration,
+    ScoreModule,
 )
 from CompriskV2.model import LinkedParameterModel
 
@@ -46,6 +48,7 @@ class SupportPointModel(LinkedParameterModel):
         super().__init__(*args, **kwargs)
 
         self._ko3_table = ko3_table
+        self._score = ScoreModule(dim=self._features_out)
 
         self._interpolator_cls = RBFGridInterpolator
         if interpolator != "rbf":
@@ -53,6 +56,12 @@ class SupportPointModel(LinkedParameterModel):
 
         self.interpolator: ScatteredGridInterpolator | None = None
         self.calibrator: LinearCalibration | None = None
+
+    def on_train_start(self) -> None:
+        self._score.setup()
+
+    def on_validation_end(self) -> None:
+        self._score.finalize(self.device)
 
     def on_validation_start(self) -> None:
         if self.interpolator is not None:
@@ -66,17 +75,34 @@ class SupportPointModel(LinkedParameterModel):
         # process ko3 table
         gx, (mins, maxs) = process_df(df, x_mapping)
         self._input_transformer.set_params(mins, maxs - mins)
-        logger.debug("KO3 table takes %s values")
+        logger.debug("KO3 table takes %s values", len(mins))
 
         gy, (mins, maxs) = process_df(df, y_mapping)
         self._output_transformer.set_params(mins, maxs - mins)
-        logger.debug("KO3 table outputs %s values")
+        logger.debug("KO3 table outputs %s values", len(mins))
 
         self.interpolator = self._interpolator_cls(gx[0].data, gy[0].data)
         self.calibrator = LinearCalibration(gy.shape[-1])
 
         self.interpolator.to(self.device)
         self.calibrator.to(self.device)
+
+    def training_step(self, batch: tuple[Tensor, Tensor]) -> Tensor:
+        y, y_pred = self(*batch, return_score=False)
+        self._score.record(y)
+
+        loss = self._loss(y, y_pred)
+        self.log("val/loss", loss)
+        return loss
+
+    def validation_step(self, batch: tuple[Tensor, Tensor]) -> Tensor:
+        y, y_pred, score = self(*batch)
+        self._score.record(y)
+
+        loss = self._loss(y, y_pred)
+        self.log("val/loss", loss)
+        self.log("val/score", torch.mean(score))
+        return loss
 
     @property
     def labels(self) -> tuple[str, ...]:
@@ -87,9 +113,10 @@ class SupportPointModel(LinkedParameterModel):
     ) -> tuple[Tensor, ...]:
         x, y = super().forward(x, y)
 
-        if return_score:
-            pass
-
         y_interp = self.interpolator(x)
         y_calib = self.calibrator(y_interp)
+
+        if return_score:
+            return y, y_calib, self._score(y, y_calib)
+
         return y, y_calib
