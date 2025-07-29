@@ -20,19 +20,19 @@ class Report:
     Class to generate a comprehensive report based on the analysis of sensor data and AI model outputs.
 
     Args:
-        output_folder (str): The folder where the report will be saved.
+        onnx_path (str): The path where the model is located and the report will be saved.
         report_name (str): The name of the report file.
     """
 
     def __init__(
         self,
-        output_folder: str,
+        onnx_path: str,
         report_name: str,
         visualization_fn: Any | None = None,
         visualization_kwargs: dict | None = None,
         model_name: str = "model",
     ):
-        self._folder = output_folder
+        self._folder = os.path.dirname(onnx_path)
         self._name = report_name
         self._tmp = os.path.join(self._folder, "tmp")
 
@@ -43,7 +43,6 @@ class Report:
         self._size = (16, 8)
 
         # get the features used by the model
-        onnx_path = os.path.join(self._folder, f"{model_name}.onnx")
         self._onnx_args = OnnxArgs.load_from_model(onnx_path)
         self._features = self._onnx_args.output_names
         self._sensor_dict = get_sensors(UUID(self._onnx_args.machine_uuid))
@@ -63,11 +62,15 @@ class Report:
         # plot deeper analysis for each sensor
         graphs = []
         for sensor in tqdm(result.names, desc="Exporting Graph Images"):
-            readable = self._sensor_dict.get(sensor, f"{sensor} N/A").rsplit(" ", maxsplit=1)
+            readable = self._sensor_dict.get(sensor, f"{sensor} N/A").rsplit(
+                " ", maxsplit=1
+            )
             name, unit = readable[0], readable[1] if len(readable) >= 2 else "N/A"
 
             df = result.by_name(sensor).to_dataframe()
-            fig = self._visualization_fn(df, name, unit, result.ts, **self._visualization_kwargs)
+            fig = self._visualization_fn(
+                df, name, unit, result.ts, **self._visualization_kwargs
+            )
             fig.savefig(os.path.join(self._tmp, sensor) + ".jpg")
             plt.close()
 

@@ -44,6 +44,7 @@ class AutoregressiveAutoencoder(LinkedParameterModel):
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
+        self._features_out_indicies = [self._names_in.index(_) for _ in self._names_out]
 
         self._encoder = nn.LSTM(
             self._features_in,
@@ -114,7 +115,9 @@ class AutoregressiveAutoencoder(LinkedParameterModel):
         res = 1 - torch.div(res, self._total * self._weight)
         return torch.clip(res, 0, 1)
 
-    def forward(self, x: Tensor, y: Tensor, return_score: bool = True) -> tuple[Tensor, ...]:
+    def forward(
+        self, x: Tensor, y: Tensor, return_score: bool = True
+    ) -> tuple[Tensor, ...]:
         x, y = super().forward(x, y)
 
         _, hc = self._encoder(x[:, -2:, :])

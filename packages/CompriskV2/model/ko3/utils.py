@@ -10,7 +10,10 @@ def process_df(data: pd.DataFrame, label: dict[str, str]) -> tuple[Tensor, tuple
     sub.rename(columns=label, inplace=True)
     sub = sub.reindex(sorted(sub.columns), axis=1)
 
-    return Tensor([sub.values]), (sub.values.min(axis=0), sub.values.max(axis=0))
+    data = sub.values
+    data = (data - data.min(axis=0)) / (data.max(axis=0) - data.min(axis=0) + 1e-6)
+
+    return Tensor([data]), (sub.values.min(axis=0), sub.values.max(axis=0))
 
 
 def load_name_mapping(path: str) -> tuple[dict, dict]:

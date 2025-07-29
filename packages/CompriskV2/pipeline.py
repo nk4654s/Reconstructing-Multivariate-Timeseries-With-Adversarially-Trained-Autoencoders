@@ -24,7 +24,8 @@ def visualize():
         cli.config.report_name
     ), "No report name specified, use '--report-name <name>'"
 
-    iterator = ModelIterator(f"{cli.root_dir}/model.onnx", cli.datamodule.valset)
+    onnx_path = f"{cli.root_dir}/{cli.model.onnx_name}.onnx"
+    iterator = ModelIterator(onnx_path, cli.datamodule.valset)
     result = iterator.run(batch_size=512)
 
     if cli.model.require_standardization:
@@ -33,7 +34,7 @@ def visualize():
         logger.info("Ignored keys for revert standardization: %s", exclude)
         result.revert_with(cli.datamodule.scaler, except_keys=exclude)
 
-    Report(cli.root_dir, cli.config.report_name).generate_pdf(result)
+    Report(onnx_path, cli.config.report_name).generate_pdf(result)
 
 
 def train():

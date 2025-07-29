@@ -44,11 +44,17 @@ def test_score_data():
 
         context.cli.model._weight = weight
         context.cli.model._total = total
-        context.cli.trainer.save_checkpoint(os.path.join(context.ckpt_path, "loss=0.ckpt"))
+        context.cli.trainer.save_checkpoint(
+            os.path.join(context.ckpt_path, "loss=0.ckpt")
+        )
         model = Checkpoint(context.path).model
 
-        assert np.allclose(weight.detach().numpy(), model._weight.detach().numpy(), rtol=1e-3)
-        assert np.allclose(total.detach().numpy(), model._total.detach().numpy(), rtol=1e-3)
+        assert np.allclose(
+            weight.detach().numpy(), model._weight.detach().numpy(), rtol=1e-3
+        )
+        assert np.allclose(
+            total.detach().numpy(), model._total.detach().numpy(), rtol=1e-3
+        )
         _, y = model.embedding
         score = model.score(y, y * 2)
         assert np.all(score.detach().numpy() > 0)
@@ -57,7 +63,9 @@ def test_score_data():
 def test_training():
     with CliContext(AutoregressiveAutoencoder) as context:
         context.cli.trainer.fit(context.cli.model, context.cli.datamodule)
-        context.cli.trainer.save_checkpoint(os.path.join(context.ckpt_path, "loss=0.ckpt"))
+        context.cli.trainer.save_checkpoint(
+            os.path.join(context.ckpt_path, "loss=0.ckpt")
+        )
         assert "loss=0.ckpt" in os.listdir(context.ckpt_path)
 
         checkpoint = Checkpoint(context.path)

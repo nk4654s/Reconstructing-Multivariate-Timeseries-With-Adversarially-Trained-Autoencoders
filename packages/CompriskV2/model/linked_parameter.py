@@ -49,12 +49,14 @@ class LinkedParameterModel(BaseModel):
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
+        features_in = sorted(features_in)
+        features_out = sorted(features_out)
+
+        self._names_in = features_in
+        self._names_out = features_out
 
         self._features_in = len(features_in)
         self._features_out = len(features_out)
-
-        features_in = sorted(features_in)
-        features_out = sorted(features_out)
 
         self._sequence_in = max(sequence_in, 1)
         self._sequence_out = max(sequence_out, 1)
