@@ -19,10 +19,16 @@ class SampleTransformer(nn.Module):
         self._eps = 1e-6
 
     def set_params(self, a: np.array, b: np.array) -> None:
-        self._a = nn.Parameter(Tensor(a))
-        self._b = nn.Parameter(Tensor(b))
+        a, b = Tensor(a), Tensor(b)
+        if len(a.shape) == 1:
+            a = a.unsqueeze(0)
+            b = b.unsqueeze(0)
 
-    def apply(self, x: Tensor) -> Tensor:
+        self._a = nn.Parameter(a)
+        self._b = nn.Parameter(b)
+
+    @torch.no_grad()
+    def forward(self, x: Tensor) -> Tensor:
         return (x - self._a) / (self._b + self._eps)
 
 
@@ -72,8 +78,8 @@ class LinkedParameterModel(BaseModel):
         self._input_transformer.to(x.device)
         self._output_transformer.to(y.device)
         return (
-            self._input_transformer.apply(x),
-            self._output_transformer.apply(y),
+            self._input_transformer(x),
+            self._output_transformer(y),
         )
 
     def set_transformers(

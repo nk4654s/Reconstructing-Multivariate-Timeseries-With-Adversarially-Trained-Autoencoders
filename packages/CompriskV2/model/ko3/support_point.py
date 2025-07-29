@@ -30,7 +30,7 @@ class SupportPointModel(LinkedParameterModel):
     def __init__(
         self,
         ko3_table: str = "",
-        interpolator: str = "rbf",
+        kernel: str = "rbf",
         *args,
         **kwargs,
     ):
@@ -41,38 +41,17 @@ class SupportPointModel(LinkedParameterModel):
             x_label: (dict[str, str]): The name mapping of input vars.
             x_label: (dict[str, str]): The name mapping of output vars.
         """
-        assert interpolator in [
-            "rbf",
-            "grid",
-        ], "Allowed interpolator is either 'rbf' or 'grid'"
         super().__init__(*args, **kwargs)
 
         self._ko3_table = ko3_table
         self._score = ScoreModule(dim=self._features_out)
-
-        self._interpolator_cls = RBFGridInterpolator
-        if interpolator != "rbf":
-            self._interpolator_cls = ScatteredGridInterpolator
-
-        self.interpolator: ScatteredGridInterpolator | None = None
-        self.calibrator: LinearCalibration | None = None
-
-    def on_train_start(self) -> None:
-        self._score.setup()
-
-    def on_validation_end(self) -> None:
-        self._score.finalize(self.device)
-
-    def on_validation_start(self) -> None:
-        if self.interpolator is not None:
-            return
 
         # load ko3 files from disk
         mapping = os.path.join(self._ko3_table, "mapping.yaml")
         x_mapping, y_mapping = load_name_mapping(mapping)
         df = load_support_points_table(self._ko3_table)
 
-        # process ko3 table
+        # process ko3 table, re-define transformers
         gx, (mins, maxs) = process_df(df, x_mapping)
         self._input_transformer.set_params(mins, maxs - mins)
         logger.debug("KO3 table takes %s values", len(mins))
@@ -81,11 +60,17 @@ class SupportPointModel(LinkedParameterModel):
         self._output_transformer.set_params(mins, maxs - mins)
         logger.debug("KO3 table outputs %s values", len(mins))
 
-        self.interpolator = self._interpolator_cls(gx[0].data, gy[0].data)
+        # define interpolator and calibrator
+        self.interpolator = RBFGridInterpolator(gx[0].data, gy[0].data, kernel)
         self.calibrator = LinearCalibration(gy.shape[-1])
 
+    def on_train_start(self) -> None:
         self.interpolator.to(self.device)
         self.calibrator.to(self.device)
+        self._score.setup()
+
+    def on_validation_end(self) -> None:
+        self._score.finalize(self.device)
 
     def training_step(self, batch: tuple[Tensor, Tensor]) -> Tensor:
         y, y_pred = self(*batch, return_score=False)
