@@ -8,7 +8,6 @@ from CompriskV2.model.ko3.utils import (
     process_df,
 )
 from CompriskV2.model.ko3 import (
-    ScatteredGridInterpolator,
     RBFGridInterpolator,
     LinearCalibration,
     ScoreModule,
