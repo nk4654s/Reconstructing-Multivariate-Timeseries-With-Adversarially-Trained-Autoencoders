@@ -13,8 +13,8 @@ class SampleTransformer(nn.Module):
         super().__init__()
         logger.debug("Init transfomer module with %s values", dim)
 
-        self._a = nn.Parameter(zeros(dim))
-        self._b = nn.Parameter(zeros(dim))
+        self._a = nn.Parameter(zeros(dim).unsqueeze(0))
+        self._b = nn.Parameter(zeros(dim).unsqueeze(0))
 
         self._eps = 1e-6
 

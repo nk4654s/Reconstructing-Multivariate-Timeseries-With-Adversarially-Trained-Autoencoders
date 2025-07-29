@@ -18,8 +18,8 @@ def test_standardizer():
 
         it = model._input_transformer
 
-        assert std_inputs[0].shape == it._a.shape
-        assert std_inputs[1].shape == it._b.shape
+        assert it._a.shape == torch.Size([1, 3])
+        assert it._b.shape == torch.Size([1, 3])
 
         assert np.allclose(std_inputs[0], it._a.detach().numpy(), rtol=1e-3)
         assert np.allclose(std_inputs[1], it._b.detach().numpy(), rtol=1e-3)

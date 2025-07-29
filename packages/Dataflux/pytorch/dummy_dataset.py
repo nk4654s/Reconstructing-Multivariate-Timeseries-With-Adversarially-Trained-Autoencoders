@@ -62,8 +62,8 @@ class DummyDataset(torch.utils.data.Dataset):
             behavior_=(
                 DatasetTypes.AUTOENCODER if n_future == 0 else DatasetTypes.PREDICTIVE
             ),
-            names_in=features_in,
-            names_out=features_out,
+            names_in=sorted(features_in),
+            names_out=sorted(features_out),
             names=list(set(features_in + features_out)),
         )
 
