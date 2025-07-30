@@ -1,7 +1,6 @@
 folder: temp/thyssen-vd2-sp-val
 intervals:
-- 2024-09-08 2024-09-10
-- 2024-12-17 2024-12-19
+- 2024-12-21 2024-12-23
 machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
 modules:
 - class_path: Dataflux.modules.State
@@ -11,13 +10,6 @@ modules:
     key: eedce5b6-b341-4c58-bf3a-c6c1f265ba02
     lower: 1
     upper: 1
-- class_path: Dataflux.modules.state.State
-  init_args:
-    alpha_threshold: 900
-    beta_threshold: 0
-    key: 0f4deafe-56ce-41bc-a522-99c88c8f26e2
-    lower: 0
-    upper: 0
 - class_path: Dataflux.modules.features.Features
   init_args:
     include:
@@ -32,4 +24,4 @@ modules:
     - 11f3c840-7472-45e8-bdff-38d483348f27
     - f9365c4a-05f8-4730-a606-2b0b6b68eb0f
 num_workers: 8
-overwrite: true
+overwrite: false
