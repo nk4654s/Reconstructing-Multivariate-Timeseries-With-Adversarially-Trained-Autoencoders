@@ -13,12 +13,12 @@ def test_all_models_have_score_label():
 def test_all_models_have_3_dims():
     for model in search_models("environment/production"):
         session = InferenceSession(model)
-        dims = [len(o.shape) for o in session.get_outputs()]
-        assert np.all(dims == 3), model
+        dims = np.array([len(o.shape) for o in session.get_outputs()])
+        assert (dims == 3).all(), model
 
 
 def test_all_models_consistent_dims():
     for model in search_models("environment/production"):
         session = InferenceSession(model)
-        last_dim = [o.shape[-1] for o in session.get_outputs()]
-        assert np.all(last_dim == last_dim[0]), model
+        last_dim = np.array([o.shape[-1] for o in session.get_outputs()])
+        assert (last_dim == last_dim[0]).all(), model

@@ -50,7 +50,9 @@ class IteratorResult:
         i = self.names.index(name)
         return self.sensors[i]
 
-    def revert_with(self, scaler: StandardScaler, except_keys: list[str] | None = None) -> None:
+    def revert_with(
+        self, scaler: StandardScaler, except_keys: list[str] | None = None
+    ) -> None:
         assert scaler.scale_ is not None, "Scaler not trained."
         except_keys = except_keys or []
         keys = [k for k in self.keys if k not in except_keys]
@@ -92,7 +94,10 @@ class ModelIterator:
     def _init_container(self) -> dict[str, np.ndarray]:
         args = self._data.get_args()
         f_out = args.features_out
-        sensor_output = {n: np.zeros(shape=(self._len, f_out), dtype=np.float32) for n in self._o_onnx}
+        sensor_output = {
+            n: np.zeros(shape=(self._len, f_out), dtype=np.float32)
+            for n in self._o_onnx
+        }
 
         return sensor_output
 
@@ -126,10 +131,15 @@ class ModelIterator:
             if not isinstance(onnx_output, tuple):
                 onnx_output = onnx_output
 
+            if len(onnx_output[0].shape) == 3:
+                onnx_output = [o[:, 0, :] for o in onnx_output]
+
             # extract the model output/input into the containers
             batch_size = len(sensor_output[self._o_onnx[0]][limit : limit + batch_size])
             for i, name in enumerate(self._o_onnx):
-                sensor_output[name][limit : limit + batch_size] = onnx_output[i][:batch_size]
+                sensor_output[name][limit : limit + batch_size] = onnx_output[i][
+                    :batch_size
+                ]
 
             limit += batch_size
 
