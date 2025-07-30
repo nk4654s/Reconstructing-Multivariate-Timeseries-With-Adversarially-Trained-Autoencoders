@@ -1,8 +1,6 @@
 # Compressor AI Suite 🤖📈
 [![CAS CI/CD](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/pipeline.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/pipeline.yml)
-[![Dataflux](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/dataflux-tests.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/dataflux-tests.yml)
-[![Comprisk](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/comprisk-tests.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/comprisk-tests.yml)
-[![Toking Tests](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/toking-tests.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/toking-tests.yml)
+[![Tests](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/testing.yml/badge.svg)](https://github.com/neaxplore/xplore-ai-cas/actions/workflows/testing.yml)
 
 The Compressor AI Suite (CAS) mainly consists of two packages `CompriskV2` and `Dataflux` located under
 `packages/`. The `Dataflux` package manages the download and processing of a compressor's dataset. Click
@@ -269,8 +267,6 @@ sh ./push_to_ecr.sh
 ```
 
 The script will update the docker image on AWS with the newest models deployed.
-
-> TODO: describe how to register a model to the backend
 
 ### Production File Structure
 
