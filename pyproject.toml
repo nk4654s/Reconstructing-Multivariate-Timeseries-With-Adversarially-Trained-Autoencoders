@@ -41,7 +41,7 @@ dependencies = [
 ]
 
 [tool.uv.workspace]
-members = ["Comprisk", "Compmesh", "Dataflux", "Toking", "CompriskV2", "Tools"]
+members = ["Comprisk", "Dataflux", "Toking", "CompriskV2", "Tools"]
 
 [project.scripts]
 comprisk-analyze="Comprisk.pipeline:cli_analyze"
@@ -55,17 +55,13 @@ cas-export="CompriskV2.pipeline:export"
 cas-visualize="CompriskV2.pipeline:visualize"
 cas-tools="Tools.main:main"
 
-compmesh-train="Compmesh.pipeline:cli_train"
-compmesh-score="Compmesh.pipeline:cli_score_trainer"
-compmesh-analyze="Compmesh.pipeline:cli_analyze"
-
 flux-pipeline="Dataflux.pipeline:main"
 flux-merge="Dataflux.merge:main"
 
 toking="Toking.toking:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["packages/Comprisk", "packages/Compmesh", "packages/Dataflux", "packages/Toking"]
+packages = ["packages/Comprisk", "packages/Dataflux", "packages/Toking"]
 
 [build-system]
 requires = ["hatchling"]

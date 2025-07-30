@@ -1,6 +1,7 @@
 import os
 import shutil
 import yaml
+import uuid
 from contextlib import ContextDecorator
 
 from Dataflux.pytorch.dummy_dataset import DummyDataset, DummyMode
@@ -16,8 +17,9 @@ class ProductionFolder(ContextDecorator):
         self.dev = os.path.join(self.path, "dev")
 
     def _generate_onnx(self, model_types: list[str], env: str) -> list[OnnxArgs]:
-        dataset = DummyDataset(DummyMode.RANDOM, 100, 3, 10, 1)
-        uuid = str(dataset.UUID)
+        names = [str(uuid.uuid4()) for _ in range(3)]
+        dataset = DummyDataset(DummyMode.RANDOM, 100, names, names, 10, 10)
+        m_uuid = str(dataset.UUID)
         args = dataset.get_args()
 
         model = AutoregressiveAutoencoder(
@@ -29,15 +31,16 @@ class ProductionFolder(ContextDecorator):
 
         models = []
         for model_type in model_types:
-            path = os.path.join(env, "models", f"{uuid}_{model_type}.onnx")
+            path = os.path.join(env, "models", f"{m_uuid}_{model_type}.onnx")
             export(model, path, dataset)
             models.append(OnnxArgs.load_from_model(path))
 
         return models
 
     def _generate_output_folder(self) -> OnnxArgs:
-        dataset = DummyDataset(DummyMode.RANDOM, 100, 3, 10, 1)
-        uuid = str(dataset.UUID)
+        names = [str(uuid.uuid4()) for _ in range(3)]
+        dataset = DummyDataset(DummyMode.RANDOM, 100, names, names, 10, 10)
+        m_uuid = str(dataset.UUID)
         args = dataset.get_args()
 
         model = AutoregressiveAutoencoder(
@@ -47,7 +50,7 @@ class ProductionFolder(ContextDecorator):
             sequence_out=1,
         )
 
-        folder = os.path.join(self.dev, uuid)
+        folder = os.path.join(self.dev, m_uuid)
         os.mkdir(folder)
         export(model, os.path.join(folder, "model.onnx"), dataset)
 

@@ -23,7 +23,7 @@ def export(
     """
     assert "score" in model.labels, "The score label is required by Xplore-backend"
     if not path.endswith(".onnx"):
-        path = os.path.join(path, "model.onnx")
+        path = os.path.join(path, f"{model.onnx_name}.onnx")
 
     os.makedirs(os.path.dirname(path), exist_ok=True)
 

@@ -45,6 +45,10 @@ class BaseModel(LightningModule):
         """
         raise NotImplementedError()
 
+    @property
+    def onnx_name(self) -> str:
+        return "model"
+
     def training_step(self, batch: tuple[Tensor, Tensor]) -> Tensor:
         y, y_pred = self.predict_step(*batch)
 

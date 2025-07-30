@@ -22,7 +22,6 @@ class DummyDataset(torch.utils.data.Dataset):
     Args:
         init_mode (DummyMode): The initialization of the dataset's values.
         n_samples (int): The dataset's size.
-        n_features (int): The amount of features supported by the dataset.
         n_sequence (int): The window or sequence size returned.
         stride (int): The stride factor of the window/sequence.
     """
@@ -31,39 +30,41 @@ class DummyDataset(torch.utils.data.Dataset):
         self,
         init_mode: DummyMode,
         n_samples: int,
-        n_features: int,
+        features_in: list[str],
+        features_out: list[str],
         n_sequence: int,
         n_future: int = 0,
         stride: int = 1,
     ) -> None:
+        features_out = features_out or features_in
+
         # init data
-        self._data = np.array(
-            np.random.randn(
-                n_samples,
-                n_features,
-            ),
-            dtype=np.float32,
-        )
+        self._x = np.random.rand(n_samples, len(features_in)).astype(np.float32)
+        self._y = np.random.rand(n_samples, len(features_out)).astype(np.float32)
+
         if init_mode == DummyMode.ZEROS:
-            self._data *= 0
+            self._x *= 0
+            self._y *= 0
 
         elif init_mode == DummyMode.ONES:
-            self._data = np.ones_like(self._data, dtype=np.float32)
+            self._x = np.ones_like(self._x, dtype=np.float32)
+            self._y = np.ones_like(self._y, dtype=np.float32)
 
         # init args
-        names = [str(uuid.uuid4()) for _ in range(n_features)]
         self._uuid = uuid.uuid4()
         self._args = DatasetArgs(
             sequence_in=n_sequence,
             sequence_out=n_future,
-            features_in=n_features,
-            features_out=n_features,
+            features_in=len(features_in),
+            features_out=len(features_in),
             skip=1,
             stride=stride,
-            behavior_=(DatasetTypes.AUTOENCODER if n_future == 0 else DatasetTypes.PREDICTIVE),
-            names_in=names,
-            names_out=names,
-            names=names,
+            behavior_=(
+                DatasetTypes.AUTOENCODER if n_future == 0 else DatasetTypes.PREDICTIVE
+            ),
+            names_in=sorted(features_in),
+            names_out=sorted(features_out),
+            names=list(set(features_in + features_out)),
         )
 
     def set_stride(self, stride: int) -> None:
@@ -96,19 +97,21 @@ class DummyDataset(torch.utils.data.Dataset):
         return index + 1
 
     def __len__(self) -> int:
-        return (len(self._data) - self._args.sequence_in) // self._args.stride
+        return (len(self._x) - self._args.sequence_in) // self._args.stride
 
     def __getitem__(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
         i_0 = index * self._args.stride
         i_t = index * self._args.stride + self._args.sequence_in
-        i_n = index * self._args.stride + self._args.sequence_in + self._args.sequence_out
+        i_n = i_t + self._args.sequence_out
 
         if self._args.sequence_out > 0:
-            return self._data[i_0:i_t], self._data[i_t:i_n]
+            return self._x[i_0:i_t], self._y[i_t:i_n]
 
-        return self._data[i_0:i_n], self._data[i_0:i_n]
+        return self._x[i_0:i_n], self._y[i_0:i_n]
 
 
 if __name__ == "__main__":
-    dataset = DummyDataset(DummyMode.RANDOM, n_samples=100, n_features=3, n_sequence=10, n_future=1)
+    dataset = DummyDataset(
+        DummyMode.RANDOM, n_samples=100, n_features_in=3, n_sequence=10, n_future=1
+    )
     print(dataset.metadata)

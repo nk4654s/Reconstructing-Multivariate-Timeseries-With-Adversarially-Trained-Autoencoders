@@ -87,7 +87,7 @@ def test_check_model_deployed():
 
 def test_check_model_consistency():
     with ProductionFolder() as context:
-        models = search_models(context.prod)
+        models = sorted(search_models(context.prod))
         assert check_model_consistency(models[0], models[0])
         other = os.path.join(context.undeployed[1], "model.onnx")
         assert not check_model_consistency(models[0], other)

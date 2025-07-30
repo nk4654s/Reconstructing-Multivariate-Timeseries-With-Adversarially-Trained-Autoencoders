@@ -51,5 +51,6 @@ def test_onnx_metadata_export():
 
         # exported delay is in microseconds (not milliseconds)
         corridor = onnx.value_corridor
-        corridor[args.names[0]]["delay"] /= 1000
+        for key in corridor:
+            corridor[key]["delay"] /= 1000
         assert corridor == context.dataset.metadata.state_alpha

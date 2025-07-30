@@ -2,6 +2,7 @@ import os
 import shutil
 import xml
 import argparse
+import onnxruntime
 from uuid import UUID
 
 from Dataflux.helper import get_sensors
@@ -142,13 +143,16 @@ def info(path: str):
     models = [path] if path else utils.search_models("environment/production/models")
     for model in models:
         onnx = OnnxArgs.load_from_model(model)
+        session = onnxruntime.InferenceSession(model)
+        output_labels = [o.name for o in session.get_outputs()]
 
         print("Loaded model for", onnx.machine_uuid)
+        print("\tCreation:", onnx.creation_date)
+        print("\tVersion:", onnx.version)
         print("\tProducer:", onnx.producer)
         print("\tType:", model.split("_")[-1].replace(".onnx", ""))
         print("\tValue Corridor:", onnx.value_corridor)
-        print("\tVersion:", onnx.version)
-        print("\tCreation:", onnx.creation_date)
+        print("\tOutput Labels: ", output_labels)
         print()
 
     exit(0)
