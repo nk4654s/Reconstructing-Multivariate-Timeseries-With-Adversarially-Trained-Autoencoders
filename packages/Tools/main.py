@@ -40,7 +40,7 @@ def select_model(path: str, calls: int = 0, filter=None):
 
 
 def deploy_model():
-    n_path, n_model = utils.select_model("environment/dev/models")
+    n_path, n_model = select_model("environment/dev/models")
     n_type = utils.get_model_type(n_path)
     c_path, c_model = utils.check_model_deployed(n_model, n_type)
     if c_path:
@@ -51,7 +51,9 @@ def deploy_model():
     print("Deploying selected model")
     print(n_model.to_string())
 
-    dst = os.path.join("environment/production/models", f"{n_model.machine_uuid}_{n_type}.onnx")
+    dst = os.path.join(
+        "environment/production/models", f"{n_model.machine_uuid}_{n_type}.onnx"
+    )
     print("\tCopy to:", dst)
 
     if not os.path.exists("environment/production/models"):
@@ -87,7 +89,9 @@ def redeploy():
             print("Abort.")
             exit(0)
 
-    deployed = os.path.join("environment/production/configs", n_model.machine_uuid, n_type)
+    deployed = os.path.join(
+        "environment/production/configs", n_model.machine_uuid, n_type
+    )
     shutil.rmtree(deployed)
     shutil.copyfile(n_path, c_path)
 
@@ -173,7 +177,9 @@ def show_sensors(uuid_str):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Useful tools for development and deployment.")
+    parser = argparse.ArgumentParser(
+        description="Useful tools for development and deployment."
+    )
     parser.add_argument("--deploy", "-d", action="store_true", default=False)
     parser.add_argument("--redeploy", "-r", action="store_true", default=False)
     parser.add_argument("--info", "-i", type=str, default=None)

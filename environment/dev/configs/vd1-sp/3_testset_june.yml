@@ -1,10 +1,9 @@
-folder: environment/dev/datasets/thyssen-vd1-sp-train
+folder: environment/dev/datasets/thyssen-vd1-testset-june
 machine_uuid: a6252582-01dd-49cb-8dbe-0742b28bc007
 intervals:
-  - 2024-09-09 2024-09-12
-  - 2024-11-20 2024-11-23
+  - 2024-06-11 2024-06-11
 num_workers: 8
-overwrite: true
+overwrite: false
 
 modules:
   - class_path: Dataflux.modules.State
@@ -13,13 +12,6 @@ modules:
       lower: 1
       upper: 1
       alpha_threshold: 1800
-      beta_threshold: 0
-  - class_path: Dataflux.modules.state.State
-    init_args:
-      key: f525f9a2-4a84-40fb-a4c2-7f7d6a6a5efb # PositionBypassregelventilPCV73381 (%)
-      lower: 0
-      upper: 0
-      alpha_threshold: 300
       beta_threshold: 0
   - class_path: Dataflux.modules.features.Features
     init_args:

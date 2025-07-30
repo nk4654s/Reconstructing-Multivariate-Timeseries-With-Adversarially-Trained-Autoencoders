@@ -32,7 +32,9 @@ def test_iterator():
         x, y = x.unsqueeze(0), y.unsqueeze(0)
 
         y, _, _, _ = context.cli.model(x, y)
-        y_ = result.by_name(names_out[0]).data["y_scaled"][0]
-        assert np.allclose(
-            y[0][0], y_, rtol=1e-3
-        ), "Checkpoint output does not match ONNX output"
+        for i in range(3):
+            y_ = result.by_name(names_out[i]).data["y_scaled"][0]
+            yt = y[0][0][i]
+            assert np.allclose(
+                yt, y_, rtol=1e-3
+            ), "Checkpoint output does not match ONNX output"

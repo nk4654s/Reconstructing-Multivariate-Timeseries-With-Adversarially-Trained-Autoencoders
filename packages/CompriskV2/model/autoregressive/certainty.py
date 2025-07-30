@@ -100,11 +100,10 @@ class AutoregressiveCertaintyModel(LinkedParameterModel):
 
         x = self._reduce(x[:, -1, :])
 
-        xm = self._mean_fc(x)
-        xv = self._var_fc(x)
+        xm = self._mean_fc(x).unsqueeze(1)
+        xv = self._var_fc(x).unsqueeze(1)
         xv = torch.pow(xv, 2)
 
-        y = y[:, 0, :]
         if return_score:
             return y, xm, xv, self.score(xm, y, xv)
 

@@ -1,8 +1,8 @@
-folder: temp/gasunie-sp-train
+folder: temp/gasunie-sp-val
 intervals:
-- 2024-12-06 2024-12-24
-- 2025-04-10 2025-04-21
-- 2025-04-23 2025-05-06
+- 2024-12-25 2024-12-26
+- 2024-12-28 2025-01-05
+- 2025-05-07 2025-05-15
 machine_uuid: 9dc86e29-8c64-47c4-93ee-7b83c896b7ee
 modules:
 - class_path: Dataflux.modules.State
@@ -15,7 +15,6 @@ modules:
 - class_path: Dataflux.modules.features.Features
   init_args:
     include:
-    - d4779e38-d29b-419c-a9c6-b4976108d911
     - 4174ecf6-af4b-44f3-bd2c-d3a7a2c68ece
     - a7df6efc-91f1-423c-9896-69e7ef27692f
     - b494f0c0-4446-4626-9eed-b8a8bba4f65d
