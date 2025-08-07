@@ -1,6 +1,6 @@
 import torch
 
-from CompriskV2.model.auto_encoder import EncoderBase
+from Comprisk.model.auto_encoder import EncoderBase
 
 
 class GANEncoder(EncoderBase):

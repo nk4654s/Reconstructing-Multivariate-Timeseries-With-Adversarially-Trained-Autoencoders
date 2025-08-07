@@ -38,7 +38,7 @@ class CliContext(ContextDecorator):
 
         self.dataset = DummyDataset(
             DummyMode.RANDOM,
-            n_samples=100,
+            n_samples=300,
             features_in=data["data"]["features_in"],
             features_out=data["data"]["features_out"],
             n_sequence=data["data"]["sequence_in"],

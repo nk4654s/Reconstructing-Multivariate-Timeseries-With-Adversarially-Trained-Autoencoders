@@ -28,23 +28,29 @@ def export(
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
     model = model.to("cpu")
-    x, y = model.embedding
-    output = model.predict_step(x, y)[1:]
+    output = model.predict_step(*model.embedding)[1:]
 
     if not isinstance(output, tuple):
         output = output
+    # FIXME
+    #logger.info("Start export with embedding %s, %s", x.shape, y.shape)
+    input_names = ["x", "y"]
+    dynamic_axes = {
+        "x": {0: "batch_size"},
+        "y": {0: "batch_size"},
+    }
 
-    logger.info("Start export with embedding %s, %s", x.shape, y.shape)
+    if len(model.embedding) == 1:
+        input_names = ["x"]
+        dynamic_axes = {"x": {0: "batch_size"}}
+
     model.to_onnx(
         file_path=path,
         input_sample=model.embedding,
-        input_names=["x", "y"],
+        input_names=input_names,
         output_names=["y_scaled"] + [model.labels[i + 1] for i, _ in enumerate(output)],
         export_params=True,
-        dynamic_axes={
-            "x": {0: "batch_size"},
-            "y": {0: "batch_size"},
-        }
+        dynamic_axes=dynamic_axes
         | {model.labels[i + 1]: {0: "batch_size"} for i, _ in enumerate(output)},
     )
 

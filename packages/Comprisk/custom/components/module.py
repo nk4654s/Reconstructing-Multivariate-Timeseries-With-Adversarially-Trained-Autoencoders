@@ -73,6 +73,7 @@ class DataModule(L.LightningDataModule):
         num_workers: int = 1,
         persistent_workers: bool = True,
         pin_memory: bool = True,
+        cache_size: int = -1
     ) -> None:
         super().__init__()
 
@@ -103,7 +104,8 @@ class DataModule(L.LightningDataModule):
             "feature_names_out": self.features_out,
             "stride": stride,
             "skip": skip,
-            "behavior": behavior
+            "behavior": behavior,
+            "cache_size": cache_size,
         }
 
         self._train = None

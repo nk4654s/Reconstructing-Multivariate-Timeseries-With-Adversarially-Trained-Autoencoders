@@ -3,11 +3,11 @@ import os
 from CompriskV2.tests.utils import CliContext
 from CompriskV2.model.utils import Checkpoint, ModelIterator
 from CompriskV2.model.utils.checkpoint import get_best_checkpoint
-from CompriskV2.model.autoregressive import AutoregressiveCertaintyModel
+from CompriskV2.model.gan.gan import GAN
 
 
 def test_export():
-    with CliContext(AutoregressiveCertaintyModel) as context:
+    with CliContext(GAN) as context:
         checkpoint = Checkpoint(context.path)
         checkpoint._cli.datamodule._train = context.dataset
         checkpoint.export()
@@ -16,7 +16,7 @@ def test_export():
 
 
 def test_iterator():
-    with CliContext(AutoregressiveCertaintyModel) as context:
+    with CliContext(GAN) as context:
         checkpoint = Checkpoint(context.path)
         checkpoint._cli.datamodule._train = context.dataset
         checkpoint.export()
@@ -27,7 +27,7 @@ def test_iterator():
 
 
 def test_training():
-    with CliContext(AutoregressiveCertaintyModel) as context:
+    with CliContext(GAN) as context:
         context.cli.trainer.fit(context.cli.model, context.cli.datamodule)
         context.cli.trainer.save_checkpoint(os.path.join(context.ckpt_path, "loss=0.ckpt"))
         assert "loss=0.ckpt" in os.listdir(context.ckpt_path)

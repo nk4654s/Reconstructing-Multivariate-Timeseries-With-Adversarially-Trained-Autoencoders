@@ -88,7 +88,9 @@ class ONNXArgs:
         # get the input/output sequence length of the model
         shapes = extract_shape(model)
         args.input_length = shapes["x"][1]
-        args.output_length = shapes["y"][1]
+        args.output_length = args.input_length
+        if "y" in shapes:
+            args.output_length = shapes["y"][1]
 
         return args
 

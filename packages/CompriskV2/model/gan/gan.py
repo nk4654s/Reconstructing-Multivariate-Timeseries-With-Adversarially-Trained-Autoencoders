@@ -41,8 +41,8 @@ class GAN(LinkedParameterModel):
         self.lambda_mse = 1
         self._steps = 0
         self._class_steps_per_gen_step = num_class_steps
+        self._lr_decay = 0.9
 
-        self._standardizer = None
 
         self.training_step_outputs = {
             "Generator MSE": [],
@@ -57,18 +57,24 @@ class GAN(LinkedParameterModel):
 
 
         self.generator = GANAutoEncoder(
-            num_features=self._input_dim,
-            num_features_out=self._output_dim,
+            num_features=self._features_in,
+            num_features_out=self._features_out,
         )
 
         self.discriminator = GANClassificator(
-            num_features=self._input_dim,
+            num_features=self._features_in,
             sequence_input_size=self._sequence_out,
         )
 
-    def get_standardizer(self, x):
-        return x
+    @property
+    def labels(self) -> tuple[str]:
+        return ("y_scaled", "y_hat", "score")
 
+    @property
+    def embedding(self) -> tuple[torch.Tensor]:
+        return (
+            torch.zeros((1, self._sequence_in, self._features_in)),
+        )
 
     def configure_optimizers(self) -> tuple[list[torch.optim.Optimizer], list[dict]]:
         g_optimizer = torch.optim.Adam(self.generator.parameters(), lr=self._gen_lr)
@@ -89,12 +95,13 @@ class GAN(LinkedParameterModel):
         mse_loss = torch.nn.functional.binary_cross_entropy(y_hat, x)
         return mse_loss + smoothness_loss * self.lambda_smooth
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         x, _ = super().forward(x, x)
         y_hat = self.generator(x)
+        score = torch.abs(x - y_hat)
         c = self.discriminator(x)
         # TODO beides ausgeben oder nur eins
-        return y_hat
+        return x, y_hat, score
 
     def on_train_start(self) -> None:
         print("Device: ", self.device)
@@ -103,10 +110,11 @@ class GAN(LinkedParameterModel):
         print("Discriminator steps per Generator step: ", self._num_class_steps)
 
     def training_step(self, batch: BATCH_TYPE, **kwargs):
-        logger.debug("Training step")
+        #logger.debug("Training step")
 
         x, y = batch
-        x, y = self.normalizer.apply((x,y))
+        x = self._input_transformer(x)
+        y = self._output_transformer(y)
         g_opt, d_opt = self.optimizers()
         #label_randomizer = ["flipped", "noisy"]
         #choice = random.choice(label_randomizer)
@@ -214,7 +222,8 @@ class GAN(LinkedParameterModel):
 
     def validation_step(self, batch: BATCH_TYPE, **kwargs):
         x, y = batch
-        x, y = self.normalizer.apply((x,y))
+        x = self._input_transformer(x)
+        y = self._output_transformer(y)
 
         self.generator.eval()
         self.discriminator.eval()
@@ -248,3 +257,6 @@ class GAN(LinkedParameterModel):
         self.discriminator.train()
 
         return loss_class_real+loss_class_fake
+
+    def predict_step(self, x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        return self(x)

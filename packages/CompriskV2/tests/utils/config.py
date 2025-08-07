@@ -13,7 +13,7 @@ def mock_config(model_cls: type, **kwargs) -> dict:
     f_in = [str(uuid4()) for _ in range(3)]
     f_out = f_in
 
-    seq = 10
+    seq = 60
     behavior = "future"
     model_args = {"class_path": get_class_path(model_cls)}
 

@@ -2,7 +2,7 @@ from typing import Tuple
 
 import torch
 
-from CompriskV2.model.auto_encoder import DecoderBase
+from Comprisk.model.auto_encoder import DecoderBase
 
 
 class GANDecoder(DecoderBase):

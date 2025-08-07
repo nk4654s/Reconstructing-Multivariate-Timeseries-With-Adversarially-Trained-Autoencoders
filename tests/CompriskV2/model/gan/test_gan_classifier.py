@@ -4,11 +4,11 @@ import numpy as np
 from CompriskV2.model.utils.checkpoint import get_best_checkpoint
 from CompriskV2.model.utils import Checkpoint, ModelIterator
 from CompriskV2.tests.utils import CliContext
-from CompriskV2.model.autoregressive import AutoregressiveAutoencoder
+from CompriskV2.model.gan import GANClassificator
 
-# TODO auf gan umschreiben
+
 def test_export():
-    with CliContext(AutoregressiveAutoencoder) as context:
+    with CliContext(GANClassificator) as context:
         checkpoint = Checkpoint(context.path)
         checkpoint._cli.datamodule._train = context.dataset
         checkpoint.export()
@@ -17,7 +17,7 @@ def test_export():
 
 
 def test_iterator():
-    with CliContext(AutoregressiveAutoencoder) as context:
+    with CliContext(GANClassificator) as context:
         checkpoint = Checkpoint(context.path)
         checkpoint._cli.datamodule._train = context.dataset
         checkpoint.export()
@@ -28,7 +28,7 @@ def test_iterator():
 
 
 def test_score_data():
-    with CliContext(AutoregressiveAutoencoder) as context:
+    with CliContext(GANClassificator) as context:
         args = context.dataset.get_args()
 
         score = context.cli.model._score_data
@@ -61,7 +61,7 @@ def test_score_data():
 
 
 def test_training():
-    with CliContext(AutoregressiveAutoencoder) as context:
+    with CliContext(GANClassificator) as context:
         context.cli.trainer.fit(context.cli.model, context.cli.datamodule)
         context.cli.trainer.save_checkpoint(
             os.path.join(context.ckpt_path, "loss=0.ckpt")
