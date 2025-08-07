@@ -40,7 +40,7 @@
       <excludeFolder url="file://$MODULE_DIR$/temp" />
       <excludeFolder url="file://$MODULE_DIR$/temp/ewe" />
     </content>
-    <orderEntry type="jdk" jdkName="cas-uv" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="uv (xplore-ai-cas)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PackageRequirementsSettings">

@@ -39,6 +39,7 @@ class DataModule(BaseModule):
             f = self.trainset.get_args().features_out
 
         data = np.zeros((sn * le, f))
+        # TODO partial fit iterator
         for i in trange(0, sn, desc="Fitting Standard Scaler"):
             data[i * le : (i + 1) * le] = self.trainset[i][j]
 

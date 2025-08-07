@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="comprisk" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="cas-uv" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="uv (xplore-ai-cas)" project-jdk-type="Python SDK" />
 </project>
