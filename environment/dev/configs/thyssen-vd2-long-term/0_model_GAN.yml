@@ -12,7 +12,7 @@ model:
     lr: 0.0001
     gen_lr: 1e-5
     disc_lr: 1e-5
-    num_class_steps: 3
+    num_class_steps: 2
     gradient_clipping_val: 1.0
 
 seed_everything: true
