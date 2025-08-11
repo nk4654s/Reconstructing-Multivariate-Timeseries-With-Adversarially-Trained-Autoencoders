@@ -119,8 +119,8 @@ class GAN(LinkedParameterModel):
         #label_randomizer = ["flipped", "noisy"]
         #choice = random.choice(label_randomizer)
 
-        real_label = torch.ones((y.shape[0], 60, 22), device=self.device) # TODO für jedes feature bewerten ?
-        fake_label = torch.zeros((y.shape[0], 60, 22), device=self.device)
+        real_label = torch.ones((y.shape[0], 1, 1), device=self.device)
+        fake_label = torch.zeros((y.shape[0], 1, 1), device=self.device)
 
         # Soft or flipped labels to mess with discriminator
         #if (self._steps + 1) % 4 == 0:
@@ -220,6 +220,8 @@ class GAN(LinkedParameterModel):
         for _, value in self.training_step_outputs.items():
             value.clear()
 
+        self._steps = 0
+
     def validation_step(self, batch: BATCH_TYPE, **kwargs):
         x, y = batch
         x = self._input_transformer(x)
@@ -229,8 +231,8 @@ class GAN(LinkedParameterModel):
         self.discriminator.eval()
         y_hat = self.generator(x)
         gen_loss = torch.nn.MSELoss()(y_hat, x)
-        real_label = torch.ones((y.shape[0], 60, 22), device=self.device)
-        fake_label = torch.zeros((y.shape[0], 60, 22), device=self.device)
+        real_label = torch.ones((y.shape[0], 1, 1), device=self.device)
+        fake_label = torch.zeros((y.shape[0], 1, 1), device=self.device)
 
         #loss = self._loss(y_hat, real_label)
         #self.log(f"validate_generator/{self._loss_name}", loss)

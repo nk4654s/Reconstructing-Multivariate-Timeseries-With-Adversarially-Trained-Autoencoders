@@ -27,23 +27,28 @@ class GANClassificator(torch.nn.Module):
             padding=1,
         )  # 60 * 88
 
-        self._pool1 = torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=1)  # 30 * 88
+        self._pool1 = torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=1)  # 60 * 88
 
         self._conv_layer2 = torch.nn.Conv1d(
             in_channels=self._num_features * 4,
             out_channels=self._num_features * 8,
             kernel_size=3,
             padding=1,
-        )  # 30 * 176
+        )  # 60 * 176
 
-        self._pool2 = torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=1) # 15 * 176
+        self._pool2 = torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=1) # 60 * 176
 
         self._conv_layer3 = torch.nn.Conv1d(
             in_channels=self._num_features * 8,
             out_channels=self._num_features,
             kernel_size=3,
             padding=1,
-        )  # 15 * 22
+        )  # 60 * 22
+
+        self._output_layer = torch.nn.Linear(
+            in_features=self._num_features * 60,
+            out_features=1,
+        ) # 1
 
 
 
@@ -60,7 +65,12 @@ class GANClassificator(torch.nn.Module):
 
         output = self._conv_layer3(output)
         output = self._activation(output)
+        output = output.view(batch.size(0), -1, 1)  # 1320 * 1
+
+
         output = torch.swapaxes(output, -2, -1)
+
+        output = self._output_layer(output)
         #output = torch.nn.Sigmoid()(output)
 
         return output
