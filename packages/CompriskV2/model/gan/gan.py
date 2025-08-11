@@ -55,11 +55,12 @@ class GAN(LinkedParameterModel):
         }
 
 
-
+        """
         self.generator = GANAutoEncoder(
             num_features=self._features_in,
             num_features_out=self._features_out,
-        )
+        )"""
+        self.generator = torch.load("packages/CompriskV2/model/gan/pretrained_gen_3E_B256.pt")
 
         self.discriminator = GANClassificator(
             num_features=self._features_in,
