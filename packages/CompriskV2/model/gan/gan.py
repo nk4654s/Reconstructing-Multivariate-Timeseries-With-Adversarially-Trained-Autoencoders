@@ -136,7 +136,6 @@ class GAN(LinkedParameterModel):
 
 
         #with torch.no_grad():
-        self.generator.zero_grad()
         y_hat = self.generator(x)
         self.training_step_outputs["Generator MSE"].append(torch.nn.MSELoss()(y_hat, x).item())
         self.log("training/gen_MSE", torch.nn.MSELoss()(y_hat, x).item())
@@ -144,7 +143,7 @@ class GAN(LinkedParameterModel):
         #######################
         # Update Discriminator: #
         #######################
-        self.discriminator.zero_grad()
+        self.toggle_optimizer(d_opt)
         # Forward pass real batch through D
         d_output_real = self.discriminator(x)
         # Calculate loss for real batch
@@ -155,7 +154,7 @@ class GAN(LinkedParameterModel):
         self.training_step_outputs["D real"].append(torch.mean(d_output_real))
         self.training_step_outputs["D loss real"].append(lossD_real.item())
         # Calculate gradients for D
-        lossD_real.backward()
+        self.manual_backward(lossD_real)
         torch.nn.utils.clip_grad_value_(self.discriminator.parameters(), self._gradient_clipping_val)
 
 
@@ -170,17 +169,19 @@ class GAN(LinkedParameterModel):
         self.training_step_outputs["D fake"].append(torch.mean(d_output_fake))
         self.training_step_outputs["D loss fake"].append(lossD_fake.item())
         # Calculate gradients for D
-        lossD_fake.backward()
+        self.manual_backward(lossD_fake)
         torch.nn.utils.clip_grad_value_(self.discriminator.parameters(), self._gradient_clipping_val)
         # Update Discriminator
         d_opt.step()
+        d_opt.zero_grad()
+        self.untoggle_optimizer(d_opt)
 
 
         ###################
         # Update Generator #
         ###################
         if (self._steps + 1) % self._class_steps_per_gen_step == 0:
-            self.generator.zero_grad()
+            self.toggle_optimizer(g_opt)
             y_hat = self.generator(x)
 
             #for param in self.discriminator.parameters():
@@ -192,14 +193,15 @@ class GAN(LinkedParameterModel):
             lossG = torch.nn.functional.binary_cross_entropy_with_logits(d_output_fool, real_label)
             #lossG_mse = torch.nn.MSELoss()(y_hat, x)
             #lossG = lossG + lossG_mse * self.lambda_mse
-            self.discriminator.zero_grad()
             self.log("training/D_loss_fool", lossG.item())
             self.log("training/D_output_fool", torch.mean(d_output_fool))
             self.training_step_outputs["D fool"].append(d_output_fool)
             self.training_step_outputs["D loss fool"].append(lossG.item())
-            lossG.backward()
+            self.manual_backward(lossG)
             torch.nn.utils.clip_grad_value_(self.generator.parameters(), self._gradient_clipping_val)
             g_opt.step()
+            g_opt.zero_grad()
+            self.untoggle_optimizer(g_opt)
 
             #for param in self.discriminator.parameters():
             #    param.requires_grad = True
