@@ -3,7 +3,6 @@ from typing import List
 import numpy
 import torch
 from torch.optim.lr_scheduler import ExponentialLR
-from torch.nn.utils import spectral_norm
 
 from CompriskV2.model.gan import GANAutoEncoder
 from CompriskV2.model.gan.gan_classificator import GANClassificator
