@@ -135,7 +135,7 @@ class GAN(LinkedParameterModel):
 
 
         # generate fake batch for D
-        y_hat = spectral_norm(self.generator(x))
+        y_hat = self.generator(x)
         self.training_step_outputs["Generator MSE"].append(torch.nn.MSELoss()(y_hat, x).item())
         self.log("training/gen_MSE", torch.nn.MSELoss()(y_hat, x).item())
 
@@ -144,7 +144,7 @@ class GAN(LinkedParameterModel):
         #########################
         self.toggle_optimizer(d_opt)
         # Forward pass real batch through D
-        d_output_real = spectral_norm(self.discriminator(x))
+        d_output_real = self.discriminator(x)
         # Calculate loss for real batch
         lossD_real = self._loss(d_output_real, real_label)
         # safe real loss for training monitoring
@@ -158,7 +158,7 @@ class GAN(LinkedParameterModel):
 
 
         # Forward pass fake batch through D
-        d_output_fake = spectral_norm(self.discriminator(y_hat))
+        d_output_fake = self.discriminator(y_hat)
         # Calculate loss for fake batch
         lossD_fake = self._loss(d_output_fake, fake_label)
         # safe fake loss for training monitoring
@@ -180,13 +180,13 @@ class GAN(LinkedParameterModel):
         ###################
         if (self._steps + 1) % self._class_steps_per_gen_step == 0:
             self.toggle_optimizer(g_opt)
-            y_hat = spectral_norm(self.generator(x))
+            y_hat = self.generator(x)
 
             #for param in self.discriminator.parameters():
             #    param.requires_grad = False
 
             # forward pass fake data through updated Discriminator
-            d_output_fool = spectral_norm(self.discriminator(y_hat))
+            d_output_fool = self.discriminator(y_hat)
             # generate loss on how well the Generator fooled to Discriminator
             lossG = torch.nn.functional.binary_cross_entropy_with_logits(d_output_fool, real_label)
             #lossG_mse = torch.nn.MSELoss()(y_hat, x)

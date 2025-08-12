@@ -1,4 +1,5 @@
 import torch
+from torch.nn.utils.parametrizations import spectral_norm
 
 from CompriskV2.model import BaseModel
 
@@ -55,22 +56,21 @@ class GANClassificator(torch.nn.Module):
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         batch = torch.swapaxes(batch, -2, -1)
 
-        output = self._conv_layer1(batch)
+        output = spectral_norm(self._conv_layer1(batch))
         output = self._activation(output)
         output = self._pool1(output)
 
-        output = self._conv_layer2(output)
+        output = spectral_norm(self._conv_layer2(output))
         output = self._activation(output)
         output = self._pool2(output)
 
-        output = self._conv_layer3(output)
+        output = spectral_norm(self._conv_layer3(output))
         output = self._activation(output)
         output = output.view(batch.size(0), -1, 1)  # 1320 * 1
 
-
         output = torch.swapaxes(output, -2, -1)
 
-        output = self._output_layer(output)
+        output = spectral_norm(self._output_layer(output))
         #output = torch.nn.Sigmoid()(output)
 
         return output
