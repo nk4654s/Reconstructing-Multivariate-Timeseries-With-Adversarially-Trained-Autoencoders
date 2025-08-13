@@ -21,30 +21,30 @@ class GANClassificator(torch.nn.Module):
         self._sequence_input_size = sequence_input_size
         self._activation = torch.nn.LeakyReLU()
 
-        self._conv_layer1 = torch.nn.Conv1d(
+        self._conv_layer1 = spectral_norm(torch.nn.Conv1d(
             in_channels=self._num_features,
             out_channels=self._num_features * 4,
             kernel_size=3,
             padding=1,
-        )  # 60 * 88
+        ))  # 60 * 88
 
         self._pool1 = torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=1)  # 60 * 88
 
-        self._conv_layer2 = torch.nn.Conv1d(
+        self._conv_layer2 = spectral_norm(torch.nn.Conv1d(
             in_channels=self._num_features * 4,
             out_channels=self._num_features * 8,
             kernel_size=3,
             padding=1,
-        )  # 60 * 176
+        ))  # 60 * 176
 
         self._pool2 = torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=1) # 60 * 176
 
-        self._conv_layer3 = torch.nn.Conv1d(
+        self._conv_layer3 = spectral_norm(torch.nn.Conv1d(
             in_channels=self._num_features * 8,
             out_channels=self._num_features,
             kernel_size=3,
             padding=1,
-        )  # 60 * 22
+        ))  # 60 * 22
 
         self._output_layer = spectral_norm(torch.nn.Linear(
             in_features=self._num_features * 60, # = 1320
