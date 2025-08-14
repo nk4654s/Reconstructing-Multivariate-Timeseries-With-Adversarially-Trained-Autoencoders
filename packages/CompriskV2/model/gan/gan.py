@@ -152,7 +152,7 @@ class GAN(LinkedParameterModel):
         self.training_step_outputs["D real"].append(torch.mean(d_output_real))
         self.training_step_outputs["D loss real"].append(lossD_real.item())
         # Calculate gradients for D
-        self.manual_backward(lossD_real)
+
         torch.nn.utils.clip_grad_value_(self.discriminator.parameters(), self._gradient_clipping_val)
 
 
@@ -166,7 +166,8 @@ class GAN(LinkedParameterModel):
         self.training_step_outputs["D fake"].append(torch.mean(d_output_fake))
         self.training_step_outputs["D loss fake"].append(lossD_fake.item())
         # Calculate gradients for D
-        self.manual_backward(lossD_fake)
+        loss = (lossD_fake + lossD_real) / 2
+        self.manual_backward(loss)
         torch.nn.utils.clip_grad_value_(self.discriminator.parameters(), self._gradient_clipping_val)
         # Update Discriminator
         d_opt.step()
