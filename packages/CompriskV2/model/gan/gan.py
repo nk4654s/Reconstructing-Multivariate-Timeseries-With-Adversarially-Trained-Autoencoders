@@ -151,9 +151,8 @@ class GAN(LinkedParameterModel):
         self.log("training/D_output_real", torch.mean(d_output_real))
         self.training_step_outputs["D real"].append(torch.mean(d_output_real))
         self.training_step_outputs["D loss real"].append(lossD_real.item())
-        # Calculate gradients for D
 
-        torch.nn.utils.clip_grad_value_(self.discriminator.parameters(), self._gradient_clipping_val)
+        #torch.nn.utils.clip_grad_value_(self.discriminator.parameters(), self._gradient_clipping_val)
 
 
         # Forward pass fake batch through D
@@ -168,7 +167,8 @@ class GAN(LinkedParameterModel):
         # Calculate gradients for D
         loss = (lossD_fake + lossD_real) / 2
         self.manual_backward(loss)
-        torch.nn.utils.clip_grad_value_(self.discriminator.parameters(), self._gradient_clipping_val)
+        self.clip_gradients(d_opt, self._gradient_clipping_val, "norm")
+        #torch.nn.utils.clip_grad_value_(self.discriminator.parameters(), self._gradient_clipping_val)
         # Update Discriminator
         d_opt.step()
         d_opt.zero_grad()
@@ -196,7 +196,8 @@ class GAN(LinkedParameterModel):
             self.training_step_outputs["D fool"].append(d_output_fool)
             self.training_step_outputs["D loss fool"].append(lossG.item())
             self.manual_backward(lossG)
-            torch.nn.utils.clip_grad_value_(self.generator.parameters(), self._gradient_clipping_val)
+            self.clip_gradients(g_opt, self._gradient_clipping_val, "norm")
+            #torch.nn.utils.clip_grad_value_(self.generator.parameters(), self._gradient_clipping_val)
             g_opt.step()
             g_opt.zero_grad()
             self.untoggle_optimizer(g_opt)
