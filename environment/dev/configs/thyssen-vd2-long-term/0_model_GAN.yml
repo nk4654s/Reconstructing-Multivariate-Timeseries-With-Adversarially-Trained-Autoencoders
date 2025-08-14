@@ -10,7 +10,7 @@ model:
     optimizer: Adam
     #autoencoder_dropout_prob: 0.15
     lr: 0.0001
-    gen_lr: 2e-5
+    gen_lr: 1e-5
     disc_lr: 1e-5
     num_class_steps: 1
     gradient_clipping_val: 1.0
