@@ -96,8 +96,7 @@ class GAN(LinkedParameterModel):
 
     def custom_BCELossWithLogits(self, y_hat, y, weight = 1): # custom BCE Loss with Logits with subtraction of logs instead of addition as per standard GAN objective
         y_hat = torch.Tensor(torch.nn.Sigmoid()(y_hat))
-        return - weight * (y * torch.log(y_hat) - (1-y) * torch.log(1 - y_hat))
-
+        return torch.mean(- weight * (y * torch.log(y_hat) - (1-y) * torch.log(1 - y_hat)))
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         x, _ = super().forward(x, x)
@@ -151,6 +150,7 @@ class GAN(LinkedParameterModel):
         d_output_real = self.discriminator(x)
         # Calculate loss for real batch
         lossD_real = self.custom_BCELossWithLogits(d_output_real, real_label)
+        lossD_real_test = self._loss(d_output_real, real_label)
         # safe real loss for training monitoring
         self.log("training/D_loss_real", lossD_real.item())
         self.log("training/D_output_real", torch.mean(d_output_real))
