@@ -1,3 +1,4 @@
+import math
 from typing import List
 
 import numpy
@@ -5,6 +6,7 @@ import torch
 from torch.optim.lr_scheduler import ExponentialLR
 
 from CompriskV2.model.gan import GANAutoEncoder
+from CompriskV2.model.gan.custom_BCELossWithLogits import CustomBCELossWithLogits
 from CompriskV2.model.gan.gan_classificator import GANClassificator
 
 from CompriskV2.model import LinkedParameterModel
@@ -37,6 +39,7 @@ class GAN(LinkedParameterModel):
         self.automatic_optimization = False
         #self._loss = torch.nn.BCEWithLogitsLoss()
         self._loss_name = "BCELoss"
+        self.custom_loss = CustomBCELossWithLogits()
         self.lambda_smooth = 0.35
         self.lambda_mse = 1
         self._steps = 0
@@ -94,10 +97,6 @@ class GAN(LinkedParameterModel):
         mse_loss = torch.nn.functional.binary_cross_entropy(y_hat, x)
         return mse_loss + smoothness_loss * self.lambda_smooth
 
-    def custom_BCELossWithLogits(self, y_hat, y, weight = 1): # custom BCE Loss with Logits with subtraction of logs instead of addition as per standard GAN objective
-        y_hat = torch.Tensor(torch.nn.Sigmoid()(y_hat))
-        return torch.mean(- weight * (y * torch.log(y_hat) - (1-y) * torch.log(1 - y_hat)))
-
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         x, _ = super().forward(x, x)
         y_hat = self.generator(x)
@@ -149,8 +148,7 @@ class GAN(LinkedParameterModel):
         # Forward pass real batch through D
         d_output_real = self.discriminator(x)
         # Calculate loss for real batch
-        lossD_real = self.custom_BCELossWithLogits(d_output_real, real_label)
-        lossD_real_test = self._loss(d_output_real, real_label)
+        lossD_real = self.custom_loss(d_output_real, real_label)
         # safe real loss for training monitoring
         self.log("training/D_loss_real", lossD_real.item())
         self.log("training/D_output_real", torch.mean(d_output_real))
@@ -163,7 +161,7 @@ class GAN(LinkedParameterModel):
         # Forward pass fake batch through D
         d_output_fake = self.discriminator(y_hat)
         # Calculate loss for fake batch
-        lossD_fake = self.custom_BCELossWithLogits(d_output_fake, fake_label)
+        lossD_fake = self.custom_loss(d_output_fake, fake_label)
         # safe fake loss for training monitoring
         self.log("training/D_loss_fake", lossD_fake.item())
         self.log("training/D_output_fake", torch.mean(d_output_fake))
@@ -193,7 +191,7 @@ class GAN(LinkedParameterModel):
             # forward pass fake data through updated Discriminator
             d_output_fool = self.discriminator(y_hat)
             # generate loss on how well the Generator fooled to Discriminator
-            lossG = self.custom_BCELossWithLogits(d_output_fool, real_label)
+            lossG = self.custom_loss(d_output_fool, real_label)
             #lossG_mse = torch.nn.MSELoss()(y_hat, x)
             #lossG = lossG + lossG_mse * self.lambda_mse
             self.log("training/D_loss_fool", lossG.item())
