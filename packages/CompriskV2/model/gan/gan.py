@@ -95,7 +95,7 @@ class GAN(LinkedParameterModel):
         return mse_loss + smoothness_loss * self.lambda_smooth
 
     def custom_BCELossWithLogits(self, y_hat, y, weight = 1): # custom BCE Loss with Logits with subtraction of logs instead of addition as per standard GAN objective
-        y_hat = torch.Tensor(torch.nn.Sigmoid(y_hat))
+        y_hat = torch.Tensor(torch.nn.Sigmoid()(y_hat))
         return - weight * (y * torch.log(y_hat) - (1-y) * torch.log(1 - y_hat))
 
 
