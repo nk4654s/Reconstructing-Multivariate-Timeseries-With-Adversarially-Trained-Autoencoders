@@ -94,6 +94,11 @@ class GAN(LinkedParameterModel):
         mse_loss = torch.nn.functional.binary_cross_entropy(y_hat, x)
         return mse_loss + smoothness_loss * self.lambda_smooth
 
+    def custom_BCELossWithLogits(self, y_hat, y, weight = 1): # custom BCE Loss with Logits with subtraction of logs instead of addition as per standard GAN objective
+        y_hat = torch.Tensor(torch.nn.Sigmoid(y_hat))
+        return - weight * (y * torch.log(y_hat) - (1-y) * torch.log(1 - y_hat))
+
+
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         x, _ = super().forward(x, x)
         y_hat = self.generator(x)
@@ -145,7 +150,7 @@ class GAN(LinkedParameterModel):
         # Forward pass real batch through D
         d_output_real = self.discriminator(x)
         # Calculate loss for real batch
-        lossD_real = self._loss(d_output_real, real_label)
+        lossD_real = self.custom_BCELossWithLogits(d_output_real, real_label)
         # safe real loss for training monitoring
         self.log("training/D_loss_real", lossD_real.item())
         self.log("training/D_output_real", torch.mean(d_output_real))
@@ -158,7 +163,7 @@ class GAN(LinkedParameterModel):
         # Forward pass fake batch through D
         d_output_fake = self.discriminator(y_hat)
         # Calculate loss for fake batch
-        lossD_fake = self._loss(d_output_fake, fake_label)
+        lossD_fake = self.custom_BCELossWithLogits(d_output_fake, fake_label)
         # safe fake loss for training monitoring
         self.log("training/D_loss_fake", lossD_fake.item())
         self.log("training/D_output_fake", torch.mean(d_output_fake))
@@ -188,7 +193,7 @@ class GAN(LinkedParameterModel):
             # forward pass fake data through updated Discriminator
             d_output_fool = self.discriminator(y_hat)
             # generate loss on how well the Generator fooled to Discriminator
-            lossG = torch.nn.functional.binary_cross_entropy_with_logits(d_output_fool, real_label)
+            lossG = self.custom_BCELossWithLogits(d_output_fool, real_label)
             #lossG_mse = torch.nn.MSELoss()(y_hat, x)
             #lossG = lossG + lossG_mse * self.lambda_mse
             self.log("training/D_loss_fool", lossG.item())
