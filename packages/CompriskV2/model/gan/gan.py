@@ -136,6 +136,7 @@ class GAN(LinkedParameterModel):
 
 
 
+
         # generate fake batch for D
         y_hat = self.generator(x)
         self.training_step_outputs["Generator MSE"].append(torch.nn.MSELoss()(y_hat, x).item())
