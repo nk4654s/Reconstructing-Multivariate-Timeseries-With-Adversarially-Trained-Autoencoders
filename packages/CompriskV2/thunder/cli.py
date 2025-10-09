@@ -43,6 +43,8 @@ class CompriskCLI(LightningCLI):
         parser.link_arguments("data.sequence_in", "model.init_args.sequence_in", apply_on="parse")
         parser.link_arguments("data.sequence_out", "model.init_args.sequence_out", apply_on="parse")
 
+        parser.link_arguments("data.standardize","model.init_args.standardize", apply_on="parse")
+
     def instantiate_trainer(self, **kwargs: Any) -> Trainer:
         path = f"environment/{self.config.env}/models/{self.model.__class__.__name__}"
         tb_logger = ptl.TensorBoardLogger(save_dir=path, name=self.config.tag)

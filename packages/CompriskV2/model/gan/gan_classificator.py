@@ -11,64 +11,81 @@ def check_tensor(tensor, name):
         raise ValueError(f"Inf detected in {name}")
 
 class GANClassificator(torch.nn.Module):
-    """
-    simple num_features to 1 classificator with 3 dense layers for now
-    """
+
     def __init__(
             self,
-            num_features: int,
-            sequence_input_size: int,
-            num_layers: int = 1, )-> None:
+            num_features_in: int,
+            sequence_in: int,
+            output_linear_hidden_dim: int,
+            weight_init,
+    )-> None:
         super().__init__()
-        self._num_features = num_features
-        self._sequence_input_size = sequence_input_size
+        self._num_features_in = num_features_in
+        self._sequence_in = sequence_in
+        self._output_linear_hidden_dim = output_linear_hidden_dim
         self._activation = torch.nn.LeakyReLU()
+        self._weight_init = weight_init
 
-        self._conv_layer1 = spectral_norm(torch.nn.Conv1d(
-            in_channels=self._num_features,
-            out_channels=self._num_features * 4,
-            kernel_size=3, padding=1,
-        )) # 60 * 88
-
-        self._pool1 = torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=1) # 60 * 88
-
-        self._conv_layer2 = spectral_norm(torch.nn.Conv1d(
-            in_channels=self._num_features * 4,
-            out_channels=self._num_features * 8,
+        self._conv_layer1 = torch.nn.Conv1d(
+            in_channels=self._num_features_in,
+            out_channels=self._num_features_in,
             kernel_size=3,
+            stride=1,
+            padding=1
+        )  # (22, 60)
+
+        self._pool_layer1 = torch.nn.AvgPool1d(
+            kernel_size=3,
+            stride=2,
             padding=1,
-        )) # 60 * 176
+        )  # (22, 30)
 
-        self._pool2 = torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=1) # 60 * 176
+        self._conv_layer2 = torch.nn.Conv1d(
+            in_channels=self._num_features_in,
+            out_channels=self._num_features_in,
+            kernel_size=3,
+            stride=1,
+            padding=1
+        )  # (22, 30)
 
-        self._conv_layer3 = spectral_norm(torch.nn.Conv1d(
-            in_channels=self._num_features * 8,
-            out_channels=self._num_features,
-            kernel_size=3, padding=1,
-        )) # 60 * 22
+        self._pool_layer2 = torch.nn.AvgPool1d(
+            kernel_size=3,
+            stride=2,
+            padding=1,
+        )  # (22, 15)
 
-        self._output_layer = spectral_norm(torch.nn.Linear(
-            in_features=self._num_features * 60, # = 1320
-            out_features=1,
-        )) # 1
+        self._output_linear = torch.nn.Sequential(
+            torch.nn.Linear(int(self._sequence_in / 4) * self._num_features_in, self._output_linear_hidden_dim),
+            self._activation,
+            torch.nn.Linear(self._output_linear_hidden_dim, self._output_linear_hidden_dim),
+            self._activation,
+            torch.nn.Linear(self._output_linear_hidden_dim, 1)  # logits
+        )
+
+        #########################
+        # Weight Initialization #
+        #########################
+        self._weight_init(self._conv_layer1.weight)
+        self._weight_init(self._conv_layer2.weight)
+        for layer in self._output_linear:
+            if isinstance(layer, torch.nn.Linear):
+                self._weight_init(layer.weight)
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         batch = torch.swapaxes(batch, -2, -1)
 
         output = self._conv_layer1(batch)
         output = self._activation(output)
-        output = self._pool1(output)
+        output = self._pool_layer1(output)
 
         output = self._conv_layer2(output)
         output = self._activation(output)
-        output = self._pool2(output)
-
-        output = self._conv_layer3(output)
-        output = self._activation(output)
-        output = output.view(batch.size(0), -1, 1) # 1320 * 1
+        output = self._pool_layer2(output)
 
         output = torch.swapaxes(output, -2, -1)
 
-        output = self._output_layer(output)
-        #output = torch.nn.Sigmoid()(output)
+        output = output.flatten(start_dim=1, end_dim=-1) # flatten dataspace to
+
+        output = self._output_linear(output)
+
         return output

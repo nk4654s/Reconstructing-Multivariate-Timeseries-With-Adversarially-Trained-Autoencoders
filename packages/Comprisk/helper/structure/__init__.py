@@ -6,6 +6,7 @@ from Comprisk.helper.structure.file_structure import (
 )
 from Comprisk.helper.structure.loss import get_loss_by_name, r2_score
 from Comprisk.helper.structure.optimizer import get_optimizer_by_name
+from Comprisk.helper.structure.weight_init import get_weight_init_by_name
 
 __all__ = [
     "class_for_name",
@@ -14,5 +15,6 @@ __all__ = [
     "get_loss_by_name",
     "get_optimizer_by_name",
     "get_activation_from_string",
+    "get_weight_init_by_name",
     "deepvars",
 ]

@@ -15,26 +15,34 @@ class GANAutoEncoder(torch.nn.Module):
 
     def __init__(
             self,
-            num_features: int,
+            num_features_in: int,
             num_features_out: int,
+            weight_init,
+            dropout_rate: float,
     ) -> None:
 
         super().__init__()
 
-        self._num_features = num_features
+        self._num_features_in = num_features_in
         self._num_features_out = num_features_out
+        self._weight_init = weight_init
+        self._dropout_rate = dropout_rate
 
         self._encoder = GANEncoder(
-            num_features=self._num_features,
+            num_features_in=self._num_features_in,
+            weight_init = self._weight_init,
         )
         self._decoder = GANDecoder(
-            num_features_out=self._num_features_out
+            num_features_out=self._num_features_out,
+            weight_init = self._weight_init,
         )
+
+        self.dropout_layer = nn.Dropout(self._dropout_rate)
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         encoder_output = self._encoder(batch)
-        #if self.training:
-        #    encoder_output = encoder_output + (0.1**0.5)*torch.randn(encoder_output.size()).to(batch.device)
+        if self.training:
+            encoder_output = self.dropout_layer(encoder_output)
         decoder_output = self._decoder(encoder_output)
         return decoder_output
 

@@ -1,4 +1,4 @@
-from Comprisk.helper.structure import get_optimizer_by_name, get_loss_by_name
+from Comprisk.helper.structure import get_optimizer_by_name, get_loss_by_name, get_weight_init_by_name
 from Comprisk.helper.structure import class_for_name
 
 
@@ -10,4 +10,4 @@ def get_class_by_name(name: str) -> type:
     return class_for_name(parts[0], parts[1])
 
 
-__all__ = ["get_optimizer_by_name", "get_loss_by_name", "get_class_by_name"]
+__all__ = ["get_optimizer_by_name", "get_loss_by_name", "get_class_by_name", "get_weight_init_by_name"]

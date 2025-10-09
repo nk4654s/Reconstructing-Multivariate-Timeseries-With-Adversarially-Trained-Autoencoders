@@ -2,20 +2,26 @@
 env: dev
 tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
 
+
 # model configuration
 model:
   class_path: CompriskV2.model.gan.GAN
   init_args:
     loss: BCEWithLogitsLoss
     optimizer: Adam
-    #autoencoder_dropout_prob: 0.15
+    weight_init: Xavier_normal
+    disc_output_linear_hidden_dim: 128
     lr: 0.0001
     gen_lr: 1e-5
     disc_lr: 3e-5
-    num_class_steps: 4
+    gen_lr_decay: 0.9
+    disc_lr_decay: 0.9
     gradient_clipping_val: 1.0
+    num_class_steps: 1
+    autoencoder_dropout_rate: 0.
+    label_smoothing: 0.
 
-seed_everything: true
+seed_everything: 42
 trainer:
   #fast_dev_run: True
   accelerator: gpu
@@ -28,9 +34,9 @@ trainer:
     #    mode: min
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
-        save_top_k: 10
-        monitor: validate/MSELoss
-        filename: epoch={epoch:02d}-loss={validate/MSELoss:.5f}
+        save_top_k: 5
+        monitor: generator_train/mse_loss
+        filename: epoch={epoch:02d}-loss={generator_train/mse_loss:.5f}
         auto_insert_metric_name: false
 
   precision: 32
@@ -41,6 +47,7 @@ trainer:
 data:
   train: environment/dev/configs/thyssen-vd2-long-term/1_dataset_train.yml
   validate: environment/dev/configs/thyssen-vd2-long-term/2_dataset_validate.yml
+  standardize: False
   sequence_in: 60
   sequence_out: 60
   features_in:

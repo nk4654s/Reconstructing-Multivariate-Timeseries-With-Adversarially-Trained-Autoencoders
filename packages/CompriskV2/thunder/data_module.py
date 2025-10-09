@@ -1,6 +1,6 @@
 import numpy as np
 from tqdm import trange
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 from Comprisk.custom import DataModule as BaseModule
 from Dataflux.cli import FluxConfigManager
@@ -11,13 +11,14 @@ logger = get_logger(__name__)
 
 
 class DataModule(BaseModule):
-    def __init__(self, train: str | None = None, validate: str | None = None, *args, **kwargs) -> None:
+    def __init__(self, train: str | None = None, validate: str | None = None, standardize: bool = True, *args, **kwargs) -> None:
         train = flux_pipeline(FluxConfigManager(train))
         validate = flux_pipeline(FluxConfigManager(validate))
 
         super().__init__(*args, train=train, validate=validate, **kwargs)
 
-        self._scaler = StandardScaler()
+        self.standardize = standardize
+        self._scaler = StandardScaler() if self.standardize else MinMaxScaler()
 
     @property
     def scaler(self):
@@ -39,10 +40,12 @@ class DataModule(BaseModule):
             f = self.trainset.get_args().features_out
 
         data = np.zeros((sn * le, f))
-        # TODO partial fit iterator
-        for i in trange(0, sn, desc="Fitting Standard Scaler"):
+        for i in trange(0, sn, desc="Fitting " + ("Standard Scaler" if self.standardize else "Normalizer")):
             data[i * le : (i + 1) * le] = self.trainset[i][j]
 
         self._scaler = self.scaler.fit(data)
         self.trainset.set_stride(s)
-        return self.scaler.mean_, self.scaler.scale_
+        if self.standardize:
+            return self.scaler.mean_, self.scaler.scale_
+        else:
+            return self.scaler.min_, self.scaler.scale_

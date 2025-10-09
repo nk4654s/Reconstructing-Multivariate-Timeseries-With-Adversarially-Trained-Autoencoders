@@ -1,7 +1,7 @@
 from lightning import LightningModule
 from torch import Tensor
 
-from CompriskV2.model.parser import get_loss_by_name, get_optimizer_by_name
+from CompriskV2.model.parser import get_loss_by_name, get_optimizer_by_name, get_weight_init_by_name
 
 
 def r2_score(i, t):
@@ -25,12 +25,13 @@ class BaseModel(LightningModule):
     """
 
     def __init__(
-        self, optimizer: str = "AdamW", lr: float = 1e-3, loss: str = "L1Loss"
+        self, optimizer: str = "AdamW", lr: float = 1e-3, loss: str = "L1Loss", weight_init: str = "He_normal"
     ) -> None:
         super().__init__()
 
         self._loss = get_loss_by_name(loss)
         self._optim = get_optimizer_by_name(optimizer)
+        self._weight_init = get_weight_init_by_name(weight_init)
 
         self._lr = lr
 

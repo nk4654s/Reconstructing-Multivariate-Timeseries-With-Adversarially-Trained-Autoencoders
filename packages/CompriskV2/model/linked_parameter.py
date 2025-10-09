@@ -9,12 +9,13 @@ logger = get_logger(__name__)
 
 
 class SampleTransformer(nn.Module):
-    def __init__(self, dim: int) -> None:
+    def __init__(self, dim: int, standardize: bool = True) -> None:
         super().__init__()
         logger.debug("Init transfomer module with %s values", dim)
 
         self._a = nn.Parameter(zeros(dim).unsqueeze(0))
         self._b = nn.Parameter(zeros(dim).unsqueeze(0))
+        self._standardize = standardize
 
         self._eps = 1e-6
 
@@ -29,7 +30,11 @@ class SampleTransformer(nn.Module):
 
     @torch.no_grad()
     def forward(self, x: Tensor) -> Tensor:
-        return (x - self._a) / (self._b + self._eps)
+        if self._standardize:
+            return (x - self._a) / (self._b + self._eps)
+        else:
+            # normalize to 0 to 1
+            return (x * self._b) + self._a
 
 
 class LinkedParameterModel(BaseModel):
@@ -37,7 +42,10 @@ class LinkedParameterModel(BaseModel):
     hyperparameters. The linking happens in `CompriskV2.thunder.cli`. Furthermore, this
     class implements standardization in its `forward()` method. This enables exporting
     the standardization to `ONNX` as all operations are tracable, while the gradient is
-    disabled."""
+    disabled.
+
+    When standardize is false a MinMaxScaler is used to scale the data.
+    """
 
     def __init__(
         self,
@@ -45,6 +53,7 @@ class LinkedParameterModel(BaseModel):
         features_out: list[str],
         sequence_in: int,
         sequence_out: int,
+        standardize: bool = True,
         *args,
         **kwargs,
     ) -> None:
@@ -60,9 +69,10 @@ class LinkedParameterModel(BaseModel):
 
         self._sequence_in = max(sequence_in, 1)
         self._sequence_out = max(sequence_out, 1)
+        self._standardize = standardize
 
-        self._input_transformer = SampleTransformer(self._features_in)
-        self._output_transformer = SampleTransformer(self._features_out)
+        self._input_transformer = SampleTransformer(self._features_in, self._standardize)
+        self._output_transformer = SampleTransformer(self._features_out, self._standardize)
 
     @property
     def embedding(self) -> tuple[Tensor, Tensor]:

@@ -18,55 +18,51 @@ class GANEncoder(EncoderBase):
 
     def __init__(
         self,
-        num_features: int,
-        ) -> None:
+        num_features_in: int,
+        weight_init,
+    ) -> None:
         super().__init__()
 
-        self._num_features = num_features
+        self._num_features_in = num_features_in
         self._activation = torch.nn.LeakyReLU()
+        self._weight_init = weight_init
 
         # (22 * 60)
 
         self._conv_layer1 = torch.nn.Conv1d(
-            in_channels=num_features,
-            out_channels=num_features * 2,
+            in_channels=self._num_features_in,
+            out_channels=self._num_features_in,
             kernel_size=3,
             stride=1,
             padding=1
-        )  # (44, 60)
+        )  # (22, 60)
 
-        self._pool_layer1 = torch.nn.AvgPool1d(kernel_size=16, stride=1)  # (44, 45)
+        self._pool_layer1 = torch.nn.AvgPool1d(
+            kernel_size=3,
+            stride=2,
+            padding=1,
+        )  # (22, 30)
 
         self._conv_layer2 = torch.nn.Conv1d(
-            in_channels=num_features * 2,
-            out_channels=num_features * 4,
+            in_channels=self._num_features_in,
+            out_channels=self._num_features_in,
             kernel_size=3,
             stride=1,
             padding=1
-        )  # (88, 45)
+        )  # (22, 30)
 
-        self._pool_layer2 = torch.nn.AvgPool1d(kernel_size=16, stride=1)  # (88, 30)
-
-        self._conv_layer3 = torch.nn.Conv1d(
-            in_channels=num_features * 4,
-            out_channels=num_features * 8,
+        self._pool_layer2 = torch.nn.AvgPool1d(
             kernel_size=3,
-            stride=1,
-            padding=1
-        )  # (176, 30)
+            stride=2,
+            padding=1,
+        )  # (22, 15)
 
-        self._pool_layer3 = torch.nn.AvgPool1d(kernel_size=16, stride=1)  # (176, 15)
+        #########################
+        # Weight Initialization #
+        #########################
+        self._weight_init(self._conv_layer1.weight)
+        self._weight_init(self._conv_layer2.weight)
 
-        """self._conv_layer4 = torch.nn.Conv1d(
-            in_channels=num_features * 8,
-            out_channels=num_features * 16,
-            kernel_size=3,
-            stride=1,
-            padding=1
-        )  # (352, 15)
-
-        self._pool_layer4 = torch.nn.AvgPool1d(kernel_size=15, stride=1)  # (352, 1)
-"""
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         output = torch.swapaxes(batch, -2, -1)
@@ -78,13 +74,5 @@ class GANEncoder(EncoderBase):
         output = self._conv_layer2(output)
         output = self._activation(output)
         output = self._pool_layer2(output)
-
-        output = self._conv_layer3(output)
-        output = self._activation(output)
-        output = self._pool_layer3(output)
-
-        #output = self._conv_layer4(output)
-        #output = self._activation(output)
-        #output = self._pool_layer4(output)
 
         return output
