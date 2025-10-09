@@ -4,8 +4,7 @@ from Comprisk.model.auto_encoder import EncoderBase
 
 
 class GANEncoder(EncoderBase):
-    # TODO keep improving model
-    """A simple Encoder using 2 Dense Layers for now.
+    """
 
     Args:
         num_features (int): The number of features input into the model.

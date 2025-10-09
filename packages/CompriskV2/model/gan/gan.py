@@ -176,7 +176,6 @@ class GAN(LinkedParameterModel):
         # Update Discriminator: #
         #########################
 
-        # TODO fix memory leak ??? exploding weights?
         #####################
         # Update Generator: #
         #####################
@@ -271,7 +270,6 @@ class GAN(LinkedParameterModel):
                 input_list.extend(x.cpu().tolist())
                 output.extend(x_hat)
 
-        # TODO mach schön
         input_list = np.array(input_list).T
         output = np.array(output).T
 
