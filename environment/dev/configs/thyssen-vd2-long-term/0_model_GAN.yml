@@ -9,13 +9,13 @@ model:
   init_args:
     loss: BCEWithLogitsLoss
     optimizer: Adam
-    weight_init: Xavier_normal
+    weight_init: He_uniform
     disc_output_linear_hidden_dim: 128
     lr: 0.0001
     gen_lr: 1e-5
-    disc_lr: 3e-5
-    gen_lr_decay: 0.9
-    disc_lr_decay: 0.9
+    disc_lr: 1e-5
+    gen_lr_decay: 1
+    disc_lr_decay: 1
     gradient_clipping_val: 1.0
     num_class_steps: 1
     autoencoder_dropout_rate: 0.
@@ -98,7 +98,7 @@ data:
     - b0887b0e-5cea-410b-b2be-0683a9919f96 # ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
   skip: 1
   stride: 1
-  batch_size: 128
+  batch_size: 64
   shuffle: true
   num_workers: 4
   behavior: autoencoder

@@ -242,7 +242,6 @@ class GAN(LinkedParameterModel):
 
         for k in self.training_step_outputs.keys():
             self.training_step_outputs[k].clear()
-        print(sys.getsizeof(self.training_step_outputs))
 
     def on_save_checkpoint(self, checkpoint: dict[str, Any]) -> None:
         self.generator.eval()
@@ -252,42 +251,34 @@ class GAN(LinkedParameterModel):
         file = "environment/dev/datasets/test_dataset_march_24/0b3426b3-94af-4b8c-89c1-da57493c099a_2024-03-23.feather"
 
         df = pd.read_feather(file)
-        df.drop(columns=["ts"], inplace=True)
+        df = df.reindex(sorted(df.columns), axis=1).drop(columns=["ts"])
+
         df_tensor = torch.tensor(df.values).to(self.device)
-        data = self._input_transformer(df_tensor)
-        num_features = data.shape[1]
-        num_sequences = data.shape[0] // self._sequence_in
-        #trim data to be divisible by num_sequence
-        data = data[:num_sequences * self._sequence_in]
-        data = data.reshape(num_sequences, self._sequence_in, num_features)
+        num_features = df_tensor.shape[1]
+        num_sequences = df_tensor.shape[0] // self._sequence_in
+        # trim data to be divisible by num_sequence
+        df_tensor = df_tensor[:num_sequences * self._sequence_in]
+        df_tensor = df_tensor.reshape(num_sequences, self._sequence_in, num_features)
 
-        output = []
-        input_list = []
-        with torch.no_grad():
-            for i in range(data.shape[0]):
-                x = data[i]
-                x_hat = self.generator(x).detach().cpu().tolist()
-                input_list.extend(x.cpu().tolist())
-                output.extend(x_hat)
+        x, x_hat, _ = self.forward(df_tensor)
 
-        input_list = np.array(input_list).T
-        output = np.array(output).T
+        x = x.detach().cpu().reshape(num_sequences * self._sequence_in, num_features).numpy()
+        x_hat = x_hat.detach().cpu().reshape(num_sequences * self._sequence_in, num_features).numpy()
 
 
         fig, axs = plt.subplots(self._features_out, 1, sharey="row", figsize=(12, 6 * self._features_out))
 
         for feature in range(self._features_out):
-            axs[feature].plot(input_list[feature], zorder=1)
+            axs[feature].plot(x[:,feature], zorder=1)
             axs[feature].set_title(f"{df.columns[feature]}")
-            axs[feature].plot(output[feature], alpha=0.5, zorder=2)
+            axs[feature].plot(x_hat[:,feature], alpha=0.5, zorder=2)
 
         plt.savefig(fname=f"{checkpoint_folder}/checkpoint_on_epoch_{self.current_epoch}_monitoring_graphs.jpg")
 
         plt.close("all")
         gc.collect()
 
-        del input_list, output, df, df_tensor, data, x_hat, x
-
+        del df, df_tensor, x_hat, x
         self.generator.train()
         return
 

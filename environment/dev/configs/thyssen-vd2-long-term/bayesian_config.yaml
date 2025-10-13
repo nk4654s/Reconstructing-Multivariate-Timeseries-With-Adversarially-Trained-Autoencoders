@@ -1,0 +1,17 @@
+model:
+  disc_output_linear_hidden_dim: 128
+  lr: 0.0001
+  gen_lr: 1e-5
+  disc_lr: 1e-5
+  gen_lr_decay: 1
+  disc_lr_decay: 1
+  gradient_clipping_val: 1.0
+  num_class_steps: 1
+  autoencoder_dropout_rate: 0.
+  label_smoothing:
+    type: float
+    min: 0.0
+    max: 0.2
+data:
+rules:
+  label_smoothing: lr * 10

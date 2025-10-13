@@ -1,4 +1,5 @@
 import os
+import sys
 
 from CompriskV2.model import LinkedParameterModel
 from CompriskV2.thunder import DataModule, CompriskCLI
@@ -28,6 +29,7 @@ class Checkpoint:
             logger.error("Given path is not a model output folder: '%s'", path)
             raise ValueError("Could not find 'config.yaml' in path")
 
+        sys.argv = [sys.argv[0]]
         self._cli = CompriskCLI(
             LinkedParameterModel,
             DataModule,
