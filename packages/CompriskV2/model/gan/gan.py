@@ -39,6 +39,10 @@ class GAN(LinkedParameterModel):
             num_class_steps: int = 4,  # number of classifier steps per autoencoder step
             autoencoder_dropout_rate: float = 0.0,
             label_smoothing: float = 0.0,
+
+            output_channels_first_stage: int = 22,
+            output_channels_second_stage: int = 22,
+            conv_kernel_size: int = 3,
             *args,
             **kwargs
     ) -> None:
@@ -58,6 +62,11 @@ class GAN(LinkedParameterModel):
 
         self._steps = 0 # counting number of steps for comparison with _class_steps_per_gen_step
         self.automatic_optimization = False
+
+        self._output_channels_first_stage = output_channels_first_stage
+        self._output_channels_second_stage = output_channels_second_stage
+
+        self._conv_kernel_size = conv_kernel_size
 
         #self.lambda_smooth = 0.35
         #self.lambda_mse = 1
@@ -81,6 +90,9 @@ class GAN(LinkedParameterModel):
             num_features_out=self._features_out,
             weight_init=self._weight_init,
             dropout_rate=self._autoencoder_dropout_rate,
+            output_channels_first_stage= self._output_channels_first_stage,
+            output_channels_second_stage=self._output_channels_second_stage,
+            conv_kernel_size = self._conv_kernel_size,
         )
 
         self.discriminator = GANClassificator(
@@ -88,6 +100,9 @@ class GAN(LinkedParameterModel):
             sequence_in=self._sequence_in,
             output_linear_hidden_dim= self._disc_output_linear_hidden_dim,
             weight_init=self._weight_init,
+            output_channels_first_stage=self._output_channels_first_stage,
+            output_channels_second_stage=self._output_channels_second_stage,
+            conv_kernel_size=self._conv_kernel_size,
         )
 
     @property

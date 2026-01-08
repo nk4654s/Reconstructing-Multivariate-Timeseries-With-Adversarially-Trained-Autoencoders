@@ -19,20 +19,26 @@ class GANDecoder(DecoderBase):
         self,
         num_features_out: int,
         weight_init,
+        output_channels_first_stage: int = 22,
+        output_channels_second_stage: int = 22,
+        conv_kernel_size: int = 3,
         ):
         super().__init__()
 
         self._num_features_out = num_features_out
         self._activation = torch.nn.LeakyReLU()
         self._weight_init = weight_init
+        self._output_channels_first_stage = output_channels_first_stage
+        self._output_channels_second_stage = output_channels_second_stage
+        self._conv_kernel_size = conv_kernel_size
         'aten::max_unpool1d is not supported by onnx so this is a workaround that should accomplish the same'
 
         # (22, 15)
 
         self._unpool_layer1 = torch.nn.ConvTranspose1d(
-            in_channels=self._num_features_out,
-            out_channels=self._num_features_out,
-            kernel_size=3,
+            in_channels=self._output_channels_second_stage,
+            out_channels=self._output_channels_first_stage,
+            kernel_size=self._conv_kernel_size,
             stride=2,
             padding=1,
             output_padding=1,
@@ -40,16 +46,16 @@ class GANDecoder(DecoderBase):
 
 
         self._conv_layer1 = torch.nn.ConvTranspose1d(
-            in_channels=self._num_features_out,
-            out_channels=self._num_features_out,
-            kernel_size=3,
+            in_channels=self._output_channels_first_stage,
+            out_channels=self._output_channels_first_stage,
+            kernel_size=self._conv_kernel_size,
             padding=1,
         )  # (22, 30)
 
         self._unpool_layer2 = torch.nn.ConvTranspose1d(
-            in_channels=self._num_features_out,
+            in_channels=self._output_channels_first_stage,
             out_channels=self._num_features_out,
-            kernel_size=3,
+            kernel_size=self._conv_kernel_size,
             stride=2,
             padding=1,
             output_padding=1,
@@ -58,7 +64,7 @@ class GANDecoder(DecoderBase):
         self._conv_layer2 = torch.nn.ConvTranspose1d(
             in_channels=self._num_features_out,
             out_channels=self._num_features_out,
-            kernel_size=3,
+            kernel_size=self._conv_kernel_size,
             padding=1,
         )  # (22, 60)
 
