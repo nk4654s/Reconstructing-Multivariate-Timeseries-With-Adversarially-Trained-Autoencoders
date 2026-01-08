@@ -9,7 +9,7 @@ model:
   init_args:
     loss: BCEWithLogitsLoss
     optimizer: Adam
-    weight_init: He_uniform
+    weight_init: Xavier_uniform
     disc_output_linear_hidden_dim: 128
     lr: 0.0001
     gen_lr: 1e-5
@@ -38,18 +38,18 @@ trainer:
         monitor: generator_train/mse_loss
         filename: epoch={epoch:02d}-loss={generator_train/mse_loss:.5f}
         auto_insert_metric_name: false
-
+  deterministic: True # reproduzierbarkeit für cuda
   precision: 32
-  max_epochs: 25
+  max_epochs: 125
   #gradient_clip_val: 1.0
   log_every_n_steps: 1
 
 data:
   train: environment/dev/configs/thyssen-vd2-long-term/1_dataset_train.yml
   validate: environment/dev/configs/thyssen-vd2-long-term/2_dataset_validate.yml
-  standardize: False
-  sequence_in: 60
-  sequence_out: 60
+  standardize: false
+  sequence_in: 300
+  sequence_out: 300
   features_in:
     - e737c6bc-7d00-4d41-82ad-7a542400751d # Biomethandurchfluss (m^3/min)
     - 57dfeadf-ac8d-4ad4-9d86-0a7c9cb38232 # DifferenzdruckTriebwerksölPDIT74553 (bar)

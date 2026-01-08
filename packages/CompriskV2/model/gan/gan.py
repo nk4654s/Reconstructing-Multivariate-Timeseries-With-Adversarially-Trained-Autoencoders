@@ -65,6 +65,7 @@ class GAN(LinkedParameterModel):
 
         self.training_step_outputs = {
             "G MSE": [],
+            "G L1": [],
             "G Wasserstein": [],
             "D output real": [],
             "D output fool": [],
@@ -125,6 +126,12 @@ class GAN(LinkedParameterModel):
         print("Discriminator learning rate: ", self._disc_lr)
         print("Generator learning rate: ", self._gen_lr)
         print("Discriminator steps per Generator step: ", self._class_steps_per_gen_step)
+        real_label = 1
+        fake_label = 0
+        real_label = real_label * (1 - (self._label_smoothing * 2)) + self._label_smoothing
+        fake_label = fake_label * (1 - (self._label_smoothing * 2)) + self._label_smoothing
+        print("Real Label: ", real_label)
+        print("Fake Label: ", fake_label)
 
     def training_step(self, batch: BATCH_TYPE, **kwargs):
         #logger.debug("Training step")
@@ -140,8 +147,8 @@ class GAN(LinkedParameterModel):
         # real_label = torch.squeeze(torch.nn.functional.one_hot(real_label.long(), num_classes=2).type(torch.float32))
         # fake_label = torch.squeeze(torch.nn.functional.one_hot(fake_label.long(), num_classes=2).type(torch.float32))
         #apply label smoothing
-        #real_label = real_label * (1 - (self._label_smoothing * 2)) + self._label_smoothing
-        #fake_label = fake_label * (1 - (self._label_smoothing * 2)) + self._label_smoothing
+        real_label = real_label * (1 - (self._label_smoothing * 2)) + self._label_smoothing
+        fake_label = fake_label * (1 - (self._label_smoothing * 2)) + self._label_smoothing
 
         # generate fake batch for D
         x_hat = self.generator(x).detach() # prevent disc update from flowing back into generator
@@ -165,7 +172,7 @@ class GAN(LinkedParameterModel):
         # Calculate loss for fake batch
         d_loss_fake = self._loss(d_output_fake, fake_label)
         # Calculate gradients for D
-        loss = d_loss_fake + d_loss_real
+        loss = d_loss_fake + d_loss_real # man cann auch hier an der ratio rumspielen actually
         self.manual_backward(loss)
         self.clip_gradients(d_opt, self._gradient_clipping_val, "norm")
         # Update Discriminator
@@ -211,14 +218,17 @@ class GAN(LinkedParameterModel):
         self.log("discriminator_train/loss_fool", d_loss_fool.item())
 
         gen_mse = torch.nn.MSELoss()(x_hat, x).detach()
+        gen_L1 = torch.nn.L1Loss()(x_hat, x).detach()
         gen_r2 = r2_score(x_hat, x).detach()
         ws_loss = batch_wasserstein(x_hat, x).detach()
 
         self.log("generator_train/mse_loss", gen_mse.item())
+        self.log("generator_train/L1_loss", gen_L1.item())
         self.log("generator_train/r2_score", gen_r2.item())
         self.log("generator_train/wasserstein_distance", ws_loss.item())
 
         self.training_step_outputs["G MSE"].append(gen_mse.item())
+        self.training_step_outputs["G L1"].append(gen_L1.item())
         self.training_step_outputs["G Wasserstein"].append(ws_loss.item())
         self.training_step_outputs["D output real"].append(d_output_real.mean().item())
         self.training_step_outputs["D output fool"].append(d_output_fool.mean().item())
@@ -232,6 +242,7 @@ class GAN(LinkedParameterModel):
 
     def on_train_epoch_end(self) -> None:
         print("Generator MSE: ", mean(self.training_step_outputs["G MSE"]))
+        print("Generator L1: ", mean(self.training_step_outputs["G L1"]))
         print("Generator Wasserstein: ", mean(self.training_step_outputs["G Wasserstein"]))
         print("Discriminator Output Real: ", mean(self.training_step_outputs["D output real"]))
         print("Discriminator Output Fool: ", mean(self.training_step_outputs["D output fool"]))
@@ -245,10 +256,13 @@ class GAN(LinkedParameterModel):
 
     def on_save_checkpoint(self, checkpoint: dict[str, Any]) -> None:
         self.generator.eval()
+        self.discriminator.eval()
         checkpoint_folder = self.trainer.checkpoint_callback.__dict__["dirpath"]
         if not os.path.exists(checkpoint_folder):
             os.makedirs(checkpoint_folder)
         file = "environment/dev/datasets/test_dataset_march_24/0b3426b3-94af-4b8c-89c1-da57493c099a_2024-03-23.feather"
+        column_names = pd.read_feather("environment/dev/datasets/id_to_feature_names.feather")
+        column_names = dict(zip(column_names["id"], column_names["name"]))
 
         df = pd.read_feather(file)
         df = df.reindex(sorted(df.columns), axis=1).drop(columns=["ts"])
@@ -270,7 +284,8 @@ class GAN(LinkedParameterModel):
 
         for feature in range(self._features_out):
             axs[feature].plot(x[:,feature], zorder=1)
-            axs[feature].set_title(f"{df.columns[feature]}")
+            title = column_names[df.columns[feature]]
+            axs[feature].set_title(f"{title}")
             axs[feature].plot(x_hat[:,feature], alpha=0.5, zorder=2)
 
         plt.savefig(fname=f"{checkpoint_folder}/checkpoint_on_epoch_{self.current_epoch}_monitoring_graphs.jpg")
@@ -280,6 +295,7 @@ class GAN(LinkedParameterModel):
 
         del df, df_tensor, x_hat, x
         self.generator.train()
+        self.discriminator.train()
         return
 
     def validation_step(self, batch: BATCH_TYPE, **kwargs):
@@ -304,6 +320,7 @@ class GAN(LinkedParameterModel):
         with torch.no_grad():
             gen_loss = torch.nn.MSELoss()(x_hat, x).detach()
             gen_r2 = r2_score(x_hat, x).detach()
+            gen_l1 = torch.nn.L1Loss()(x_hat, x).detach()
             ws_loss = batch_wasserstein(x_hat, x).detach()
 
         self.log("discriminator_validation/output_real", d_output_real.mean())
@@ -313,6 +330,7 @@ class GAN(LinkedParameterModel):
         self.log("discriminator_validation/loss_fake", d_loss_fake.item())
 
         self.log("generator_validation/mse_loss", gen_loss.item())
+        self.log("generator_validation/l1_loss", gen_l1.item())
         self.log("generator_validation/r2_score", gen_r2.item())
         self.log("generator_validation/wasserstein_distance", ws_loss.item())
 

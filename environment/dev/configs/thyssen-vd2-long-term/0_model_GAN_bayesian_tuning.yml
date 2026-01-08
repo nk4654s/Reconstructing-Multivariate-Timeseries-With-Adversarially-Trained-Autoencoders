@@ -2,6 +2,7 @@
 env: dev
 tag: bayesien_tuning-0b3426b3-94af-4b8c-89c1-da57493c099a
 tune: environment/dev/configs/thyssen-vd2-long-term/bayesian_config.yaml
+tuner_trails: 25
 
 
 # model configuration
