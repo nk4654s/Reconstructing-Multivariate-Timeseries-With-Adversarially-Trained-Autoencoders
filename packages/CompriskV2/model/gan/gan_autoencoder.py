@@ -21,7 +21,6 @@ class GANAutoEncoder(torch.nn.Module):
             dropout_rate: float,
             output_channels_first_stage: int = 22,
             output_channels_second_stage: int = 22,
-            conv_kernel_size: int = 3,
     ) -> None:
 
         super().__init__()
@@ -32,21 +31,18 @@ class GANAutoEncoder(torch.nn.Module):
         self._dropout_rate = dropout_rate
         self._output_channels_first_stage = output_channels_first_stage
         self._output_channels_second_stage = output_channels_second_stage
-        self._conv_kernel_size = conv_kernel_size
 
         self._encoder = GANEncoder(
             num_features_in=self._num_features_in,
             weight_init = self._weight_init,
             output_channels_first_stage=self._output_channels_first_stage,
             output_channels_second_stage=self._output_channels_second_stage,
-            conv_kernel_size=self._conv_kernel_size,
         )
         self._decoder = GANDecoder(
             num_features_out=self._num_features_out,
             weight_init = self._weight_init,
             output_channels_first_stage=self._output_channels_first_stage,
             output_channels_second_stage=self._output_channels_second_stage,
-            conv_kernel_size=self._conv_kernel_size,
         )
 
         self.dropout_layer = nn.Dropout(self._dropout_rate)

@@ -42,7 +42,6 @@ class GAN(LinkedParameterModel):
 
             output_channels_first_stage: int = 22,
             output_channels_second_stage: int = 22,
-            conv_kernel_size: int = 3,
             *args,
             **kwargs
     ) -> None:
@@ -65,8 +64,6 @@ class GAN(LinkedParameterModel):
 
         self._output_channels_first_stage = output_channels_first_stage
         self._output_channels_second_stage = output_channels_second_stage
-
-        self._conv_kernel_size = conv_kernel_size
 
         #self.lambda_smooth = 0.35
         #self.lambda_mse = 1
@@ -92,7 +89,6 @@ class GAN(LinkedParameterModel):
             dropout_rate=self._autoencoder_dropout_rate,
             output_channels_first_stage= self._output_channels_first_stage,
             output_channels_second_stage=self._output_channels_second_stage,
-            conv_kernel_size = self._conv_kernel_size,
         )
 
         self.discriminator = GANClassificator(
@@ -102,7 +98,6 @@ class GAN(LinkedParameterModel):
             weight_init=self._weight_init,
             output_channels_first_stage=self._output_channels_first_stage,
             output_channels_second_stage=self._output_channels_second_stage,
-            conv_kernel_size=self._conv_kernel_size,
         )
 
     @property

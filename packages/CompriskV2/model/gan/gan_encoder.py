@@ -21,7 +21,6 @@ class GANEncoder(EncoderBase):
         weight_init,
         output_channels_first_stage: int = 22,
         output_channels_second_stage: int = 22,
-        conv_kernel_size: int = 3,
     ) -> None:
         super().__init__()
 
@@ -30,20 +29,19 @@ class GANEncoder(EncoderBase):
         self._weight_init = weight_init
         self._output_channels_first_stage = output_channels_first_stage
         self._output_channels_second_stage = output_channels_second_stage
-        self._conv_kernel_size = conv_kernel_size
 
         # (22 * 60)
 
         self._conv_layer1 = torch.nn.Conv1d(
             in_channels=self._num_features_in,
             out_channels=self._output_channels_first_stage,
-            kernel_size=self._conv_kernel_size,
+            kernel_size=3,
             stride=1,
             padding=1
         )  # (22, 60)
 
         self._pool_layer1 = torch.nn.AvgPool1d(
-            kernel_size=self._conv_kernel_size,
+            kernel_size=3,
             stride=2,
             padding=1,
         )  # (22, 30)
@@ -51,13 +49,13 @@ class GANEncoder(EncoderBase):
         self._conv_layer2 = torch.nn.Conv1d(
             in_channels=self._output_channels_first_stage,
             out_channels=self._output_channels_second_stage,
-            kernel_size=self._conv_kernel_size,
+            kernel_size=3,
             stride=1,
             padding=1
         )  # (22, 30)
 
         self._pool_layer2 = torch.nn.AvgPool1d(
-            kernel_size=self._conv_kernel_size,
+            kernel_size=3,
             stride=2,
             padding=1,
         )  # (22, 15)
