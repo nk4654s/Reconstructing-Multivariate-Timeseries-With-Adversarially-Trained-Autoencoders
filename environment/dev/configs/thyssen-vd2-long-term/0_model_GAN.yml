@@ -22,7 +22,6 @@ model:
     label_smoothing: 0.
     output_channels_first_stage: 66
     output_channels_second_stage: 198
-    conv_kernel_size: 5
 
 seed_everything: 42
 trainer:
