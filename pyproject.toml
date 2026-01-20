@@ -39,6 +39,7 @@ dependencies = [
     "onnxscript>=0.2.2",
     "pytest>=8.4.1",
     "notebook>=7.4.5",
+    "torchviz>=0.0.3",
 ]
 
 [tool.uv.workspace]

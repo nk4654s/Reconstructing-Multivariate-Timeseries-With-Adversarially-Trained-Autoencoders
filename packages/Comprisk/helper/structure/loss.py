@@ -1,6 +1,48 @@
 """This module contains various loss functions."""
 import torch
 from torch import nn
+import math
+
+class GAN_Loss(nn.Module):
+    """
+    Args:
+        eps: clamp to prevent division by zero
+    Forward returns: loss derived from Goodfellows GAN paper (https://arxiv.org/pdf/1406.2661) for either discriminator
+    or generator, depending on model argument
+    """
+    def __init__(self, eps=1e-7):
+        super(GAN_Loss, self).__init__()
+        self.eps = eps
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, model, d_real:  torch.Tensor = 0.0, d_fake: torch.Tensor = 0.0):
+        """
+        Args:
+            model: String "disriminator" or "generator"
+            d_real: output for real samples
+            d_fake: output for fake/generated samples
+
+        Returns: loss derived from Goodfellows GAN paper (https://arxiv.org/pdf/1406.2661) for either discriminator
+        or generator, depending on model argument. d_real and d_fake are passed through Sigmoid before calculating loss.
+        """
+        if model == 'discriminator':
+            d_real = self.sigmoid(d_real)
+            d_fake = self.sigmoid(d_fake)
+            d_real = torch.clamp(d_real, self.eps, 1 - self.eps)
+            d_fake = torch.clamp(d_fake, self.eps, 1 - self.eps)
+
+            loss = -(
+                torch.log(d_real).mean()
+                + torch.log(1 - d_fake).mean()
+            )
+            return loss
+        elif model == 'generator':
+            d_fake = self.sigmoid(d_fake)
+            d_fake = torch.clamp(d_fake, self.eps, 1 - self.eps)
+            loss = -torch.log(d_fake).mean()
+            return loss
+        return None
+
 
 class CustomBCEWithLogitsLoss(nn.BCEWithLogitsLoss):
     def __init__(self, weight: float = 1.0):
@@ -22,6 +64,7 @@ _loss_register = {
     "BCELoss": nn.BCELoss(),
     "BCEWithLogitsLoss": nn.BCEWithLogitsLoss(),
     "CustomBCEWithLogitsLoss": CustomBCEWithLogitsLoss(),
+    "GANLoss": GAN_Loss(),
     "KLDivLoss": nn.KLDivLoss(),
     "GaussianNLLLoss": nn.GaussianNLLLoss()
 }

@@ -7,7 +7,7 @@ tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
 model:
   class_path: CompriskV2.model.gan.GAN
   init_args:
-    loss: BCEWithLogitsLoss
+    loss: GANLoss
     optimizer: Adam
     weight_init: Xavier_uniform
     disc_output_linear_hidden_dim: 128
@@ -20,8 +20,8 @@ model:
     num_class_steps: 1
     autoencoder_dropout_rate: 0.
     label_smoothing: 0.
-    output_channels_first_stage: 66
-    output_channels_second_stage: 198
+    output_channels_first_stage: 22
+    output_channels_second_stage: 22
 
 seed_everything: 42
 trainer:
