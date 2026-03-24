@@ -173,20 +173,20 @@ class GAN(LinkedParameterModel):
         # Forward pass real batch through D
         d_output_real = self.discriminator(x)
         # Calculate loss for real batch
-        #d_loss_real = self._loss(d_output_real, real_label)
+        d_loss_real = self._loss(d_output_real, real_label)
         # safe real loss for training monitoring
 
 
         # Forward pass fake batch through D
         d_output_fake = self.discriminator(x_hat)
         # Calculate loss for fake batch
-        #d_loss_fake = self._loss(d_output_fake, fake_label)
+        d_loss_fake = self._loss(d_output_fake, fake_label)
         # Calculate gradients for D
 
         # uncomment for normal loss classes like BCE
-        #loss = d_loss_fake + d_loss_real # man cann auch hier an der ratio rumspielen actually
+        loss = d_loss_fake + d_loss_real # man cann auch hier an der ratio rumspielen actually
         # uncomment for GAN_Loss class
-        loss = self._loss( model="discriminator", d_real=d_output_real, d_fake=d_output_fake)
+        #loss = self._loss( model="discriminator", d_real=d_output_real, d_fake=d_output_fake)
 
         self.manual_backward(loss)
         self.clip_gradients(d_opt, self._gradient_clipping_val, "norm")
@@ -209,9 +209,9 @@ class GAN(LinkedParameterModel):
         d_output_fool = self.discriminator(x_hat)
         # generate loss on how well the Generator fooled to Discriminator
         # uncomment for normal loss classes like BCE
-        #d_loss_fool = self._loss(d_output_fool, real_label)#
+        d_loss_fool = self._loss(d_output_fool, real_label)#
         # uncomment for GAN_Loss class
-        d_loss_fool = self._loss(model="generator", d_fake=d_output_fool)
+        #d_loss_fool = self._loss(model="generator", d_fake=d_output_fool)
 
         if self._steps % self._class_steps_per_gen_step == 0:
             self.manual_backward(d_loss_fool)
@@ -232,8 +232,8 @@ class GAN(LinkedParameterModel):
         self.log("discriminator_train/output_fake", d_output_fake.mean().item())
         self.log("discriminator_train/output_fool", d_output_fool.mean().item())
 
-        #self.log("discriminator_train/loss_real", d_loss_real.item())
-        #self.log("discriminator_train/loss_fake", d_loss_fake.item())
+        self.log("discriminator_train/loss_real", d_loss_real.item())
+        self.log("discriminator_train/loss_fake", d_loss_fake.item())
         self.log("discriminator_train/loss", loss.item())
         self.log("discriminator_train/loss_fool", d_loss_fool.item())
 
@@ -253,9 +253,9 @@ class GAN(LinkedParameterModel):
         self.training_step_outputs["D output real"].append(d_output_real.mean().item())
         self.training_step_outputs["D output fool"].append(d_output_fool.mean().item())
         self.training_step_outputs["D output fake"].append(d_output_fake.mean().item())
-        #self.training_step_outputs["D loss real"].append(d_loss_real.item())
+        self.training_step_outputs["D loss real"].append(d_loss_real.item())
         self.training_step_outputs["D loss fool"].append(d_loss_fool.item())
-        #self.training_step_outputs["D loss fake"].append(d_loss_fake.item())
+        self.training_step_outputs["D loss fake"].append(d_loss_fake.item())
         #####################
         # Log Step Results: #
         #####################
@@ -267,9 +267,9 @@ class GAN(LinkedParameterModel):
         print("Discriminator Output Real: ", mean(self.training_step_outputs["D output real"]))
         print("Discriminator Output Fool: ", mean(self.training_step_outputs["D output fool"]))
         print("Discriminator Output Fake: ", mean(self.training_step_outputs["D output fake"]))
-        #print("Discriminator Loss Real: ", mean(self.training_step_outputs["D loss real"]))
-        #print("Discriminator Loss Fool: ", mean(self.training_step_outputs["D loss fool"]))
-        #print("Discriminator Loss Fake: ", mean(self.training_step_outputs["D loss fake"]))
+        print("Discriminator Loss Real: ", mean(self.training_step_outputs["D loss real"]))
+        print("Discriminator Loss Fool: ", mean(self.training_step_outputs["D loss fool"]))
+        print("Discriminator Loss Fake: ", mean(self.training_step_outputs["D loss fake"]))
 
         for k in self.training_step_outputs.keys():
             self.training_step_outputs[k].clear()
@@ -334,12 +334,12 @@ class GAN(LinkedParameterModel):
         d_output_real = self.discriminator(x)
         d_output_fake = self.discriminator(x_hat)
 
-        #d_loss_real = self._loss(d_output_real, real_label)
-        #d_loss_fake = self._loss(d_output_fake, fake_label)
+        d_loss_real = self._loss(d_output_real, real_label)
+        d_loss_fake = self._loss(d_output_fake, fake_label)
         # uncomment for normal loss classes like BCE
-        # loss = d_loss_fake + d_loss_real
+        d_loss = d_loss_fake + d_loss_real
         # uncomment for GAN_Loss class
-        d_loss = self._loss(model="discriminator", d_real=d_output_real, d_fake=d_output_fake)
+        #d_loss = self._loss(model="discriminator", d_real=d_output_real, d_fake=d_output_fake)
 
 
 
@@ -350,11 +350,11 @@ class GAN(LinkedParameterModel):
             ws_loss = batch_wasserstein(x_hat, x).detach()
 
         self.log("discriminator_validation/output_real", d_output_real.mean())
-        #self.log("discriminator_validation/loss_real", d_loss_real.item())
+        self.log("discriminator_validation/loss_real", d_loss_real.item())
         self.log("discriminator_validation/loss", d_loss.item())
 
         self.log("discriminator_validation/output_fake", d_output_fake.mean())
-        #self.log("discriminator_validation/loss_fake", d_loss_fake.item())
+        self.log("discriminator_validation/loss_fake", d_loss_fake.item())
 
         self.log("generator_validation/mse_loss", gen_loss.item())
         self.log("generator_validation/l1_loss", gen_l1.item())

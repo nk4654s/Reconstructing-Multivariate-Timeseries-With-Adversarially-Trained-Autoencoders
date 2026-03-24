@@ -7,7 +7,7 @@ tag: 0b3426b3-94af-4b8c-89c1-da57493c099a
 model:
   class_path: CompriskV2.model.gan.GAN
   init_args:
-    loss: GANLoss
+    loss: BCEWithLogitsLoss
     optimizer: Adam
     weight_init: Xavier_uniform
     disc_output_linear_hidden_dim: 128
@@ -20,8 +20,8 @@ model:
     num_class_steps: 1
     autoencoder_dropout_rate: 0.
     label_smoothing: 0.
-    output_channels_first_stage: 22
-    output_channels_second_stage: 22
+    output_channels_first_stage: 198
+    output_channels_second_stage: 66
 
 seed_everything: 42
 trainer:
@@ -50,8 +50,8 @@ data:
   train: environment/dev/configs/thyssen-vd2-long-term/1_dataset_train.yml
   validate: environment/dev/configs/thyssen-vd2-long-term/2_dataset_validate.yml
   standardize: false
-  sequence_in: 60
-  sequence_out: 60
+  sequence_in: 660
+  sequence_out: 660
   features_in:
     - e737c6bc-7d00-4d41-82ad-7a542400751d # Biomethandurchfluss (m^3/min)
     - 57dfeadf-ac8d-4ad4-9d86-0a7c9cb38232 # DifferenzdruckTriebwerksölPDIT74553 (bar)
