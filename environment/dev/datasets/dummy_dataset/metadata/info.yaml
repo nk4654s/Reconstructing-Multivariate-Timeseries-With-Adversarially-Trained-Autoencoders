@@ -1,0 +1,17 @@
+files:
+  0b3426b3-94af-4b8c-89c1-da57493c099a_2024-03-01.feather:
+    day: '2024-03-01'
+    features: 23
+    samples: 30139
+path: environment/dev/datasets/train_dataset_march_24
+state_alpha:
+  0f4deafe-56ce-41bc-a522-99c88c8f26e2:
+    delay: 300
+    lower: 0
+    upper: 0
+  eedce5b6-b341-4c58-bf3a-c6c1f265ba02:
+    delay: 2400
+    lower: 1
+    upper: 1
+total_recordings: 30139
+uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a

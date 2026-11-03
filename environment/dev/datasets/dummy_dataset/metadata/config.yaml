@@ -1,0 +1,47 @@
+folder: environment/dev/datasets/train_dataset_march_24
+machine_uuid: 0b3426b3-94af-4b8c-89c1-da57493c099a
+intervals:
+  - 2023-03-01 2025-12-30
+num_workers: 8
+overwrite: false
+
+modules:
+  - class_path: Dataflux.modules.State
+    init_args:
+      key: eedce5b6-b341-4c58-bf3a-c6c1f265ba02 # Laeuft
+      lower: 1
+      upper: 1
+      alpha_threshold: 2400
+      beta_threshold: 600
+  - class_path: Dataflux.modules.state.State
+    init_args:
+      key: 0f4deafe-56ce-41bc-a522-99c88c8f26e2 # PositionBypassregelventilPCV74381 (%)
+      lower: 0
+      upper: 0
+      alpha_threshold: 300
+      beta_threshold: 150
+  - class_path: Dataflux.modules.features.Features
+    init_args:
+      include:
+        - e737c6bc-7d00-4d41-82ad-7a542400751d # Biomethandurchfluss (m^3/min)
+        - 57dfeadf-ac8d-4ad4-9d86-0a7c9cb38232 # DifferenzdruckTriebwerksölPDIT74553 (bar)
+        - 91ae9642-0a9f-4784-9682-a6e75352c196 # EnddruckErsteStufePIT74339 (bar)
+        - 61aeafba-2dcc-4dc1-b13b-9ee2ed21aa88 # EnddruckZweiteStufePIT74397 (bar)
+        - fe0083b5-a0af-45b6-bbcf-2f472d621ce3 # EndtemperaturErsteStufeTETIT74334 (°C)
+        - f9365c4a-05f8-4730-a606-2b0b6b68eb0f # EndtemperaturZweiteStufeTETIT74371 (°C)
+        - d4cab717-fa9c-42da-91e4-807b6d14d192 # EndtemperaturZweiteStufenachKühlerTETIT74378 (°C)
+        - db2da2b3-e1a0-4bae-af79-fe500d4db4b4 # KompressordrehzahlSE74201 (rpm)
+        - 6cbee536-a361-4cf3-aef9-c23c6547510c # KühlwasserdrucknachPumpePIT74425 (bar)
+        - 65115e53-a019-47f5-8076-eb5b81fef93a # KühlwasserdurchflussmengeFIT74423 (m^3/min)
+        - 60430d53-4d68-44b7-969a-d2988fb427b1 # KühlwassertemperaturnachKühlerTETIT74422 (°C)
+        - c1a03f95-a25c-49da-9a9a-7b68fe767deb # Motorlager (°C)
+        - 6e84bee8-9f91-4b01-ab98-962d9e692893 # PackungsleckageFIT74389 (Nm3h)
+        - c751ece1-b8f7-46ea-8cb1-8bf00aec1592 # SaugdruckErsteStufePIT74319 (bar)
+        - 11f3c840-7472-45e8-bdff-38d483348f27 # SaugdruckZweiteStufePIT74340 (bar)
+        - 80ca41cf-1b35-4073-aa63-9836058b9dd2 # SaugtemperaturErsteStufeTETIT74328 (°C)
+        - 04c06635-d298-4e6d-b0fb-7389fcc0a7c7 # SaugtemperaturZweiteStufeTETIT74341 (°C)
+        - 297aea91-b144-41a4-afb3-cbbbe9d22f7f # SchwingungsmessungTriebwerkVT74280 (mm/s)
+        - cca2f3ad-83a3-498b-b1a5-270631ce6ff4 # VentilnesttemperaturZweiteStufeDeckelseiteTETT74367 (°C)
+        - 2f0245ec-4292-4e92-acff-0a9851b6ee89 # VentilnesttemperaturZweiteStufeKurbelseiteTETT74386 (°C)
+        - bef9c574-0b27-4039-9b77-16e1430a50a2 # Wicklungstemperatur (°C)
+        - b0887b0e-5cea-410b-b2be-0683a9919f96 # ÖltemperaturVorlaufTriebwerkTETIT74538 (°C)
