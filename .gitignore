@@ -25,7 +25,7 @@ environment/dev/support_points/*
 !environment/dev/support_points/README.md
 
 environment/dev/datasets/
-!environment/dev/datasets/dummy_dataset/
+!environment/dev/datasets/dummy_dataset/*
 !environment/dev/datasets/README.md
 
 # exclude ONNX files from production's config folder
