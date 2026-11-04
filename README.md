@@ -1,5 +1,5 @@
 # !DISCLAIMER!
-The project of my thesis builds on an existing project built by Jonas Leuchtenberger (https://github.com/jl-neax). This version excludes files that are not needed for the scope of my use of this project. My models are located under packages/CompriskV2/model/gan.
+The project of my thesis builds on an existing project built by Jonas Leuchtenberger (https://github.com/jl-neax). This version excludes files that are not needed for the scope of my use of this project. My model classes are located under packages/CompriskV2/model/gan.
 
 
 # Compressor AI Suite 🤖📈
